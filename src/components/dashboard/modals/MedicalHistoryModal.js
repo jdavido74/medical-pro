@@ -4,7 +4,7 @@ import {
   X, Stethoscope, Plus, FileText, User, Calendar
 } from 'lucide-react';
 import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
-import MedicalRecordFormModal from './MedicalRecordFormModal';
+import MedicalRecordForm from '../../medical/MedicalRecordForm';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
 import { medicalRecordsStorage } from '../../../utils/medicalRecordsStorage';
@@ -28,13 +28,7 @@ const MedicalHistoryModal = ({
   if (!isOpen || !patient) return null;
 
   const handleCreateRecord = () => {
-    setEditingRecord({
-      patientId: patient.id,
-      type: 'consultation',
-      date: new Date().toISOString().split('T')[0],
-      practitionerId: user?.id || 'unknown',
-      isNew: true
-    });
+    setEditingRecord(null);
     setIsRecordFormOpen(true);
   };
 
@@ -44,23 +38,22 @@ const MedicalHistoryModal = ({
   };
 
   const handleViewRecord = (record) => {
-    // Pour la visualisation, on peut réutiliser le formulaire en mode lecture seule
-    setEditingRecord({ ...record, readonly: true });
+    setEditingRecord(record);
     setIsRecordFormOpen(true);
   };
 
   const handleSaveRecord = async (recordData) => {
     try {
-      if (editingRecord?.isNew) {
+      if (editingRecord) {
+        // Mettre à jour un dossier existant
+        await medicalRecordsStorage.update(editingRecord.id, recordData, user?.id);
+      } else {
         // Créer un nouveau dossier médical
         await medicalRecordsStorage.create({
           ...recordData,
           patientId: patient.id,
           createdBy: user?.id || 'unknown'
         });
-      } else {
-        // Mettre à jour un dossier existant
-        await medicalRecordsStorage.update(editingRecord.id, recordData, user?.id);
       }
 
       setIsRecordFormOpen(false);
@@ -212,16 +205,45 @@ const MedicalHistoryModal = ({
         </div>
       </div>
 
-      {/* Medical Record Form Modal */}
-      {isRecordFormOpen && editingRecord && (
-        <MedicalRecordFormModal
-          record={editingRecord}
-          patient={patient}
-          isOpen={isRecordFormOpen}
-          onClose={handleCloseRecordForm}
-          onSave={handleSaveRecord}
-          readonly={editingRecord.readonly}
-        />
+      {/* Medical Record Form Modal - Structure complète */}
+      {isRecordFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-green-50">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <Stethoscope className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {editingRecord ? 'Editar Historial Médico' : 'Nuevo Historial Médico'}
+                  </h2>
+                  <p className="text-gray-600">
+                    {patient.firstName} {patient.lastName} - {calculateAge(patient.birthDate)} años
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCloseRecordForm}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(95vh-140px)]">
+              <MedicalRecordForm
+                patient={patient}
+                existingRecord={editingRecord}
+                onSave={handleSaveRecord}
+                onCancel={handleCloseRecordForm}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
