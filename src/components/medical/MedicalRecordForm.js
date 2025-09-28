@@ -1,16 +1,98 @@
 // components/medical/MedicalRecordForm.js
 import React, { useState, useEffect } from 'react';
 import {
-  FileText, User, Activity, Heart, AlertTriangle, Plus, X, Save,
+  FileText, Activity, Heart, AlertTriangle, Plus, X, Save,
   Stethoscope, Thermometer, Scale, Ruler, Droplets, Clock,
-  Pill, CheckCircle, Calendar, Edit2, Trash2
+  Pill, CheckCircle, Trash2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { medicalRecordsStorage } from '../../utils/medicalRecordsStorage';
 
 const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel }) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({
+
+  // Fonction pour sécuriser les données et éviter les erreurs undefined
+  const ensureFormDataStructure = (data) => {
+    return {
+      patientId: data?.patientId || patient?.id || '',
+      practitionerId: data?.practitionerId || user?.id || '',
+      type: data?.type || 'consultation',
+
+      // Antécédents sécurisés
+      antecedents: {
+        personal: {
+          medicalHistory: data?.antecedents?.personal?.medicalHistory || [],
+          surgicalHistory: data?.antecedents?.personal?.surgicalHistory || [],
+          allergies: data?.antecedents?.personal?.allergies || [],
+          habits: {
+            smoking: data?.antecedents?.personal?.habits?.smoking || { status: 'never', details: '' },
+            alcohol: data?.antecedents?.personal?.habits?.alcohol || { status: 'never', details: '' },
+            exercise: data?.antecedents?.personal?.habits?.exercise || { status: 'never', details: '' }
+          }
+        },
+        family: {
+          father: data?.antecedents?.family?.father || '',
+          mother: data?.antecedents?.family?.mother || '',
+          siblings: data?.antecedents?.family?.siblings || '',
+          children: data?.antecedents?.family?.children || ''
+        }
+      },
+
+      // Signes vitaux sécurisés
+      vitalSigns: {
+        weight: data?.vitalSigns?.weight || '',
+        height: data?.vitalSigns?.height || '',
+        bmi: data?.vitalSigns?.bmi || '',
+        bloodPressure: {
+          systolic: data?.vitalSigns?.bloodPressure?.systolic || '',
+          diastolic: data?.vitalSigns?.bloodPressure?.diastolic || ''
+        },
+        heartRate: data?.vitalSigns?.heartRate || '',
+        temperature: data?.vitalSigns?.temperature || '',
+        respiratoryRate: data?.vitalSigns?.respiratoryRate || '',
+        oxygenSaturation: data?.vitalSigns?.oxygenSaturation || ''
+      },
+
+      bloodType: data?.bloodType || '',
+      allergies: data?.allergies || [],
+
+      // Diagnostics sécurisés
+      diagnosis: {
+        primary: data?.diagnosis?.primary || '',
+        secondary: data?.diagnosis?.secondary || [],
+        icd10: data?.diagnosis?.icd10 || []
+      },
+
+      chronicConditions: data?.chronicConditions || [],
+      treatments: data?.treatments || [],
+
+      // Informations basiques sécurisées
+      basicInfo: {
+        chiefComplaint: data?.basicInfo?.chiefComplaint || '',
+        symptoms: data?.basicInfo?.symptoms || [],
+        duration: data?.basicInfo?.duration || ''
+      },
+
+      // Examen physique sécurisé
+      physicalExam: {
+        general: data?.physicalExam?.general || '',
+        cardiovascular: data?.physicalExam?.cardiovascular || '',
+        respiratory: data?.physicalExam?.respiratory || '',
+        abdomen: data?.physicalExam?.abdomen || '',
+        neurological: data?.physicalExam?.neurological || '',
+        other: data?.physicalExam?.other || ''
+      },
+
+      // Plan de traitement sécurisé
+      treatmentPlan: {
+        recommendations: data?.treatmentPlan?.recommendations || [],
+        followUp: data?.treatmentPlan?.followUp || '',
+        tests: data?.treatmentPlan?.tests || []
+      }
+    };
+  };
+
+  const [formData, setFormData] = useState(() => ensureFormDataStructure({
     patientId: patient?.id || '',
     practitionerId: user?.id || '',
     type: 'consultation',
@@ -84,7 +166,7 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
       followUp: '',
       tests: []
     }
-  });
+  }));
 
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState('basic');
@@ -94,13 +176,14 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
   // Cargar données existantes si modification
   useEffect(() => {
     if (existingRecord) {
-      setFormData(existingRecord);
+      setFormData(ensureFormDataStructure(existingRecord));
     }
-  }, [existingRecord]);
+  }, [existingRecord]); // ensureFormDataStructure ne change pas car définie dans le composant
 
   // Calculer BMI automatiquement
   useEffect(() => {
-    const { weight, height } = formData.vitalSigns;
+    const vitalSigns = formData.vitalSigns || {};
+    const { weight, height } = vitalSigns;
     if (weight && height && weight > 0 && height > 0) {
       const heightInMeters = height / 100;
       const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
@@ -109,11 +192,11 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
         vitalSigns: { ...prev.vitalSigns, bmi }
       }));
     }
-  }, [formData.vitalSigns.weight, formData.vitalSigns.height]);
+  }, [formData.vitalSigns?.weight, formData.vitalSigns?.height]);
 
   // Vérifier interactions médicamenteuses
   useEffect(() => {
-    if (formData.treatments.length > 0) {
+    if (formData.treatments && formData.treatments.length > 0) {
       const warnings = medicalRecordsStorage.checkMedicationInteractions(formData.treatments);
       setMedicationWarnings(warnings);
     } else {
@@ -260,16 +343,16 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
     const newErrors = {};
 
     // Validation obligatoire
-    if (!formData.basicInfo.chiefComplaint.trim()) {
+    if (!formData.basicInfo?.chiefComplaint?.trim()) {
       newErrors['basicInfo.chiefComplaint'] = 'El motivo de consulta es obligatorio';
     }
 
-    if (!formData.diagnosis.primary.trim()) {
+    if (!formData.diagnosis?.primary?.trim()) {
       newErrors['diagnosis.primary'] = 'El diagnóstico principal es obligatorio';
     }
 
     // Validation signos vitales
-    if (formData.vitalSigns.bloodPressure.systolic && formData.vitalSigns.bloodPressure.diastolic) {
+    if (formData.vitalSigns?.bloodPressure?.systolic && formData.vitalSigns?.bloodPressure?.diastolic) {
       const systolic = parseInt(formData.vitalSigns.bloodPressure.systolic);
       const diastolic = parseInt(formData.vitalSigns.bloodPressure.diastolic);
 
@@ -329,7 +412,7 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
             Motivo de Consulta *
           </label>
           <textarea
-            value={formData.basicInfo.chiefComplaint}
+            value={formData.basicInfo?.chiefComplaint || ''}
             onChange={(e) => handleInputChange('basicInfo', 'chiefComplaint', e.target.value)}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
               errors['basicInfo.chiefComplaint'] ? 'border-red-300' : 'border-gray-300'
@@ -715,7 +798,7 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
             <input
               type="number"
               step="0.1"
-              value={formData.vitalSigns.weight}
+              value={formData.vitalSigns?.weight || ''}
               onChange={(e) => handleInputChange('vitalSigns', 'weight', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="75.5"
@@ -729,7 +812,7 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
             </label>
             <input
               type="number"
-              value={formData.vitalSigns.height}
+              value={formData.vitalSigns?.height || ''}
               onChange={(e) => handleInputChange('vitalSigns', 'height', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="170"
@@ -742,7 +825,7 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
             </label>
             <input
               type="text"
-              value={formData.vitalSigns.bmi}
+              value={formData.vitalSigns?.bmi || ''}
               readOnly
               className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
               placeholder="Calculado automáticamente"
