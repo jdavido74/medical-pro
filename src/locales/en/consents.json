@@ -1,0 +1,8 @@
+{
+  "title": "Consent Management",
+  "description": "Manage GDPR and medical consents",
+  "templates": {
+    "title": "Consent Templates",
+    "description": "Create and manage your custom consent templates"
+  }
+}

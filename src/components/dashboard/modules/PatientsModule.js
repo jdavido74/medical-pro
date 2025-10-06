@@ -5,7 +5,7 @@ import {
   Phone, Mail, MapPin, Calendar, AlertCircle,
   Heart, Shield, Activity, Archive, Stethoscope
 } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../contexts/AuthContext';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
@@ -15,7 +15,7 @@ import PatientDetailModal from '../modals/PatientDetailModal';
 import MedicalHistoryModal from '../modals/MedicalHistoryModal';
 
 const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const [patients, setPatients] = useState([]);

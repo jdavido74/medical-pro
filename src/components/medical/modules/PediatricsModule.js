@@ -4,11 +4,11 @@ import {
   Baby, TrendingUp, Shield, Calendar, AlertCircle, AlertTriangle,
   Edit2, Save, X, Plus, Trash2, Ruler
 } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useMedicalModules } from '../../../contexts/MedicalModulesContext';
 
 const PediatricsModule = ({ patientData, recordData, onUpdate, canEdit = true }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { canEditModule } = useMedicalModules();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(recordData?.pediatrics || {

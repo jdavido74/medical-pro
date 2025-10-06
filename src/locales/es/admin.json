@@ -1,0 +1,26 @@
+{
+  "title": "Administración",
+  "description": "Gestione su consulta y usuarios",
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Configura tu consulta y preferencias",
+    "clinic": "Consulta",
+    "medical": "Médico",
+    "preferences": "Preferencias",
+    "security": "Seguridad",
+    "clinicInfo": "Información de la Consulta",
+    "practitionerInfo": "Información del Médico",
+    "medicalSettings": "Configuración Médica",
+    "language": "Idioma",
+    "theme": "Tema",
+    "notifications": "Notificaciones",
+    "tabs": {
+      "profile": "Perfil",
+      "company": "Consulta",
+      "catalog": "Catálogo",
+      "security": "Seguridad",
+      "billing": "Facturación",
+      "notifications": "Notificaciones"
+    }
+  }
+}

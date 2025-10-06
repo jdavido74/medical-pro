@@ -1,7 +1,7 @@
 # 🛠️ Guide Technique - MedicalPro
 
-**Version** : v2.0.0
-**Dernière mise à jour** : 27 septembre 2025
+**Version** : v2.1.0
+**Dernière mise à jour** : 29 septembre 2025
 **Public cible** : Développeurs, Architectes, DevOps
 
 ---

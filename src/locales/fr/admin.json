@@ -1,0 +1,26 @@
+{
+  "title": "Administration",
+  "description": "Gérez votre cabinet et vos utilisateurs",
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Configurez votre cabinet et vos préférences",
+    "clinic": "Cabinet",
+    "medical": "Médical",
+    "preferences": "Préférences",
+    "security": "Sécurité",
+    "clinicInfo": "Informations du cabinet",
+    "practitionerInfo": "Informations praticien",
+    "medicalSettings": "Paramètres médicaux",
+    "language": "Langue",
+    "theme": "Thème",
+    "notifications": "Notifications",
+    "tabs": {
+      "profile": "Profil",
+      "company": "Cabinet",
+      "catalog": "Catalogue",
+      "security": "Sécurité",
+      "billing": "Facturation",
+      "notifications": "Notifications"
+    }
+  }
+}

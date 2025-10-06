@@ -1,0 +1,20 @@
+{
+  "title": "Patient Management",
+  "subtitle": "Manage your patients and their follow-up",
+  "newPatient": "New Patient",
+  "searchPatients": "Search patient...",
+  "allPatients": "All Patients",
+  "activePatients": "Active Patients",
+  "archivedPatients": "Archived Patients",
+  "patientsList": "Patients List",
+  "noPatients": "No patients yet",
+  "noPatientsDescription": "Start by adding your first patient to create consultations.",
+  "addPatient": "Add Patient",
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "birthDate": "Birth Date",
+  "socialSecurity": "Social Security Number",
+  "phone": "Phone",
+  "address": "Address",
+  "emergencyContact": "Emergency Contact"
+}

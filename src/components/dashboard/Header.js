@@ -2,12 +2,101 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, ChevronDown, Users, Shield, UserCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import NotificationCenter from '../notifications/NotificationCenter';
+import { loadPractitioners } from '../../utils/practitionersLoader';
 
 const Header = ({ activeModule }) => {
   const { user, login } = useAuth();
+  const { t } = useTranslation();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [testProfiles, setTestProfiles] = useState([]);
   const dropdownRef = useRef(null);
+
+  // Charger les praticiens réels depuis localStorage
+  useEffect(() => {
+    const realPractitioners = loadPractitioners();
+
+    // Créer les profils de test basés sur les praticiens réels
+    const baseProfiles = [
+      {
+        id: 'super_admin',
+        role: 'super_admin',
+        email: 'superadmin@medicalpro.com',
+        firstName: 'Super',
+        lastName: 'Admin',
+        name: 'Super Admin',
+        company: 'Medical Pro SaaS',
+        description: 'Accès complet - Gestion globale',
+        icon: Shield,
+        color: 'text-purple-600 bg-purple-100'
+      },
+      {
+        id: 'admin',
+        role: 'admin',
+        email: 'admin@clinique-example.com',
+        firstName: 'Dr. Elena',
+        lastName: 'Rodriguez',
+        name: 'Dr. Elena Rodriguez',
+        company: 'Clínica Rodriguez',
+        description: 'Admin clinique - Gestion complète',
+        icon: UserCheck,
+        color: 'text-blue-600 bg-blue-100'
+      },
+      {
+        id: 'secretary',
+        role: 'secretary',
+        email: 'secretaria@clinique-example.com',
+        firstName: 'Laura',
+        lastName: 'Fernandez',
+        name: 'Laura Fernandez',
+        company: 'Clínica Rodriguez',
+        description: 'Secrétaire - Gestion administrative',
+        icon: Users,
+        color: 'text-orange-600 bg-orange-100'
+      },
+      {
+        id: 'readonly',
+        role: 'readonly',
+        email: 'readonly@clinique-example.com',
+        firstName: 'Observer',
+        lastName: 'Demo',
+        name: 'Observer Demo',
+        company: 'Clínica Rodriguez',
+        description: 'Lecture seule - Consultation uniquement',
+        icon: Users,
+        color: 'text-gray-600 bg-gray-100'
+      }
+    ];
+
+    // Ajouter les praticiens réels de la clinique
+    const practitionerProfiles = realPractitioners.map(practitioner => {
+      // Déterminer la couleur en fonction du rôle
+      let color = 'text-green-600 bg-green-100';
+      if (practitioner.role === 'specialist') {
+        color = 'text-teal-600 bg-teal-100';
+      } else if (practitioner.role === 'nurse') {
+        color = 'text-pink-600 bg-pink-100';
+      }
+
+      return {
+        id: practitioner.id,
+        role: practitioner.role || 'doctor',
+        email: practitioner.email || `${practitioner.id}@clinique-example.com`,
+        firstName: practitioner.firstName || practitioner.name.split(' ')[0] || practitioner.name,
+        lastName: practitioner.lastName || practitioner.name.split(' ').slice(1).join(' ') || '',
+        name: practitioner.name,
+        company: 'Clínica Rodriguez',
+        description: `${practitioner.specialty || 'Médecin'} - ${practitioner.name}`,
+        icon: Users,
+        color: color,
+        specialty: practitioner.specialty
+      };
+    });
+
+    // Combiner les profils de base avec les praticiens réels
+    setTestProfiles([...baseProfiles, ...practitionerProfiles]);
+  }, []);
 
   // Fermer le dropdown quand on clique à l'extérieur
   useEffect(() => {
@@ -23,87 +112,6 @@ const Header = ({ activeModule }) => {
     };
   }, []);
 
-  // Profils de test disponibles pour les démonstrations
-  const testProfiles = [
-    {
-      id: 'super_admin',
-      role: 'super_admin',
-      email: 'superadmin@medicalpro.com',
-      firstName: 'Super',
-      lastName: 'Admin',
-      company: 'Medical Pro SaaS',
-      description: 'Accès complet - Gestion globale',
-      icon: Shield,
-      color: 'text-purple-600 bg-purple-100'
-    },
-    {
-      id: 'admin',
-      role: 'admin',
-      email: 'admin@clinique-example.com',
-      firstName: 'Dr. Elena',
-      lastName: 'Rodriguez',
-      company: 'Clínica Rodriguez',
-      description: 'Admin clinique - Gestion complète',
-      icon: UserCheck,
-      color: 'text-blue-600 bg-blue-100'
-    },
-    {
-      id: 'doctor',
-      role: 'doctor',
-      email: 'doctor@clinique-example.com',
-      firstName: 'Dr. Carlos',
-      lastName: 'Garcia',
-      company: 'Clínica Rodriguez',
-      description: 'Médecin - Consultations & diagnostics',
-      icon: Users,
-      color: 'text-green-600 bg-green-100'
-    },
-    {
-      id: 'specialist',
-      role: 'specialist',
-      email: 'cardio@clinique-example.com',
-      firstName: 'Dr. Maria',
-      lastName: 'Lopez',
-      company: 'Clínica Rodriguez',
-      description: 'Spécialiste - Cardiologie',
-      icon: Users,
-      color: 'text-teal-600 bg-teal-100'
-    },
-    {
-      id: 'nurse',
-      role: 'nurse',
-      email: 'nurse@clinique-example.com',
-      firstName: 'Ana',
-      lastName: 'Martinez',
-      company: 'Clínica Rodriguez',
-      description: 'Infirmière - Soins & suivi',
-      icon: Users,
-      color: 'text-pink-600 bg-pink-100'
-    },
-    {
-      id: 'secretary',
-      role: 'secretary',
-      email: 'secretaria@clinique-example.com',
-      firstName: 'Laura',
-      lastName: 'Fernandez',
-      company: 'Clínica Rodriguez',
-      description: 'Secrétaire - Gestion administrative',
-      icon: Users,
-      color: 'text-orange-600 bg-orange-100'
-    },
-    {
-      id: 'readonly',
-      role: 'readonly',
-      email: 'readonly@clinique-example.com',
-      firstName: 'Observer',
-      lastName: 'Demo',
-      company: 'Clínica Rodriguez',
-      description: 'Lecture seule - Consultation uniquement',
-      icon: Users,
-      color: 'text-gray-600 bg-gray-100'
-    }
-  ];
-
   // Fonction pour changer de profil de test
   const handleProfileChange = (profile) => {
     login({
@@ -111,8 +119,10 @@ const Header = ({ activeModule }) => {
       email: profile.email,
       firstName: profile.firstName,
       lastName: profile.lastName,
+      name: profile.name,
       role: profile.role,
       company: profile.company,
+      specialty: profile.specialty,
       provider: 'demo',
       isDemo: true
     });
@@ -121,35 +131,50 @@ const Header = ({ activeModule }) => {
 
   // Obtenir le profil actuel
   const getCurrentProfile = () => {
-    return testProfiles.find(p => p.role === user?.role) || testProfiles[0];
+    // D'abord chercher par ID exact
+    const profileById = testProfiles.find(p => p.id === user?.id);
+    if (profileById) return profileById;
+
+    // Sinon chercher par role
+    const profileByRole = testProfiles.find(p => p.role === user?.role);
+    if (profileByRole) return profileByRole;
+
+    // Par défaut, retourner le premier profil
+    return testProfiles[0] || {
+      firstName: user?.firstName || 'User',
+      lastName: user?.lastName || '',
+      description: user?.role || 'User',
+      icon: Users,
+      color: 'text-gray-600 bg-gray-100'
+    };
   };
 
   const currentProfile = getCurrentProfile();
 
   const getModuleTitle = (module) => {
     const modules = {
-      home: 'Accueil',
-      patients: 'Gestion des patients',
-      appointments: 'Rendez-vous',
-      'medical-records': 'Dossiers médicaux',
-      consents: 'Gestion des consentements',
-      'consent-templates': 'Modèles de consentements',
-      analytics: 'Statistiques médicales',
-      settings: 'Paramètres'
+      home: t('modules.home.title'),
+      patients: t('modules.patients.title'),
+      appointments: t('modules.appointments.title'),
+      'medical-records': t('modules.medicalRecords.title'),
+      consents: t('modules.consents.title'),
+      'consent-templates': t('modules.consentTemplates.title'),
+      analytics: t('modules.analytics.title'),
+      settings: t('modules.settings.title')
     };
-    return modules[module] || 'Dashboard';
+    return modules[module] || t('common.dashboard');
   };
 
   const getModuleDescription = (module) => {
     const descriptions = {
-      home: 'Vue d\'ensemble de votre cabinet médical',
-      patients: 'Gérez vos patients et leur suivi',
-      appointments: 'Planifiez et organisez les consultations',
-      'medical-records': 'Consultations, diagnostics et prescriptions',
-      consents: 'Gérez les consentements RGPD et médicaux',
-      'consent-templates': 'Créez et gérez vos modèles de consentements personnalisés',
-      analytics: 'Analysez votre activité médicale',
-      settings: 'Configurez votre cabinet et vos préférences'
+      home: t('modules.home.description'),
+      patients: t('modules.patients.description'),
+      appointments: t('modules.appointments.description'),
+      'medical-records': t('modules.medicalRecords.description'),
+      consents: t('modules.consents.description'),
+      'consent-templates': t('modules.consentTemplates.description'),
+      analytics: t('modules.analytics.description'),
+      settings: t('modules.settings.description')
     };
     return descriptions[module] || '';
   };
@@ -201,7 +226,8 @@ const Header = ({ activeModule }) => {
                   </div>
                   {testProfiles.map((profile) => {
                     const ProfileIcon = profile.icon;
-                    const isActive = profile.role === user?.role;
+                    // Match par ID exact d'abord, puis par role
+                    const isActive = profile.id === user?.id || (profile.role === user?.role && !testProfiles.find(p => p.id === user?.id));
 
                     return (
                       <button

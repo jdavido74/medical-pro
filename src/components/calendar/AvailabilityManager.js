@@ -3,13 +3,44 @@ import React, { useState, useEffect } from 'react';
 import {
   Calendar, Clock, Plus, Edit2, Trash2, Settings,
   ChevronLeft, ChevronRight, User, AlertCircle,
-  Save, X, RotateCcw, Copy, CalendarDays
+  Save, X, RotateCcw, Copy, CalendarDays, RefreshCw,
+  CheckCircle, Zap, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { appointmentsStorage } from '../../utils/appointmentsStorage';
+import { appointmentsStorage, availabilityStorage } from '../../utils/appointmentsStorage';
+import { patientsStorage } from '../../utils/patientsStorage';
+import { usePermissions } from '../auth/PermissionGuard';
+import { PERMISSIONS } from '../../utils/permissionsStorage';
+import { loadPractitioners } from '../../utils/practitionersLoader';
+import PractitionerFilter from '../common/PractitionerFilter';
 
-const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) => {
+const AvailabilityManager = ({
+  onAppointmentScheduled,
+  onAppointmentUpdated,
+  selectedPractitioner,
+  canViewAllPractitioners = false,
+  refreshKey = 0,
+  filterPractitioner = 'all',
+  onFilterPractitionerChange
+}) => {
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
+
+  const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+
+  // Auto-filtrer pour les praticiens au chargement initial
+  useEffect(() => {
+    if (isPractitioner && user && filterPractitioner === 'all') {
+      onFilterPractitionerChange?.(user.id);
+    }
+  }, [isPractitioner, user]);
+
+  // Déterminer le praticien actif pour le filtrage
+  const activePractitioner = selectedPractitioner ||
+    (filterPractitioner !== 'all'
+      ? { id: filterPractitioner }
+      : user);
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('week'); // 'week', 'day'
   const [selectedDate, setSelectedDate] = useState(null);
@@ -18,6 +49,7 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
   const [isEditingAvailability, setIsEditingAvailability] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [practitioners, setPractitioners] = useState([]);
 
   // Configuration des créneaux par défaut
   const defaultAvailability = {
@@ -30,23 +62,105 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
     sunday: { enabled: false, slots: [] }
   };
 
+  // Templates de disponibilité prédéfinis
+  const availabilityTemplates = {
+    standard: {
+      name: 'Horaires standards',
+      icon: Clock,
+      description: 'Lun-Ven: 9h-12h, 14h-18h',
+      config: {
+        monday: { enabled: true, slots: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }] },
+        tuesday: { enabled: true, slots: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }] },
+        wednesday: { enabled: true, slots: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }] },
+        thursday: { enabled: true, slots: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }] },
+        friday: { enabled: true, slots: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '17:00' }] },
+        saturday: { enabled: false, slots: [] },
+        sunday: { enabled: false, slots: [] }
+      }
+    },
+    morning: {
+      name: 'Matinées uniquement',
+      icon: Sun,
+      description: 'Lun-Ven: 8h-12h',
+      config: {
+        monday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }] },
+        tuesday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }] },
+        wednesday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }] },
+        thursday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }] },
+        friday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }] },
+        saturday: { enabled: false, slots: [] },
+        sunday: { enabled: false, slots: [] }
+      }
+    },
+    evening: {
+      name: 'Après-midi/Soir',
+      icon: Moon,
+      description: 'Lun-Ven: 14h-20h',
+      config: {
+        monday: { enabled: true, slots: [{ start: '14:00', end: '20:00' }] },
+        tuesday: { enabled: true, slots: [{ start: '14:00', end: '20:00' }] },
+        wednesday: { enabled: true, slots: [{ start: '14:00', end: '20:00' }] },
+        thursday: { enabled: true, slots: [{ start: '14:00', end: '20:00' }] },
+        friday: { enabled: true, slots: [{ start: '14:00', end: '18:00' }] },
+        saturday: { enabled: false, slots: [] },
+        sunday: { enabled: false, slots: [] }
+      }
+    },
+    intensive: {
+      name: 'Horaires étendus',
+      icon: Zap,
+      description: 'Lun-Sam: 8h-20h',
+      config: {
+        monday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }, { start: '13:00', end: '20:00' }] },
+        tuesday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }, { start: '13:00', end: '20:00' }] },
+        wednesday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }, { start: '13:00', end: '20:00' }] },
+        thursday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }, { start: '13:00', end: '20:00' }] },
+        friday: { enabled: true, slots: [{ start: '08:00', end: '12:00' }, { start: '13:00', end: '18:00' }] },
+        saturday: { enabled: true, slots: [{ start: '09:00', end: '13:00' }] },
+        sunday: { enabled: false, slots: [] }
+      }
+    }
+  };
+
   const [weeklyAvailability, setWeeklyAvailability] = useState(defaultAvailability);
+
+  // Charger les praticiens au démarrage
+  useEffect(() => {
+    const allPractitioners = loadPractitioners(user);
+    setPractitioners(allPractitioners);
+  }, [user]);
 
   // Charger les données
   useEffect(() => {
     loadData();
-  }, [currentDate, selectedPractitioner]);
+  }, [currentDate, selectedPractitioner, filterPractitioner, refreshKey]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
+      // Charger les praticiens
+      const allPractitioners = loadPractitioners(user);
+
       // Charger les rendez-vous pour la période affichée
       const allAppointments = appointmentsStorage.getAll();
 
-      // Filtrer par praticien si sélectionné
+      // Filtrer par praticien selon les droits ET vérifier que le praticien existe
       const filteredAppointments = allAppointments.filter(apt => {
-        if (selectedPractitioner && apt.practitionerId !== selectedPractitioner.id) return false;
-        if (!selectedPractitioner && user?.role !== 'super_admin' && apt.practitionerId !== user.id) return false;
+        // IMPORTANT: Vérifier que le praticien existe dans localStorage
+        const practitionerExists = allPractitioners.some(p => p.id === apt.practitionerId);
+        if (!practitionerExists) {
+          console.warn(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} inexistant`);
+          return false;
+        }
+
+        // Utiliser le filtre du parent
+        if (filterPractitioner !== 'all') {
+          if (apt.practitionerId !== filterPractitioner) return false;
+        } else if (isPractitioner && user) {
+          // Praticien sans filtre = seulement ses RDV
+          if (apt.practitionerId !== user.id) return false;
+        }
+
         return !apt.deleted;
       });
 
@@ -63,24 +177,67 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
   };
 
   const loadAvailabilities = () => {
-    // Simulation du chargement des disponibilités
-    // En production, cela viendrait d'une API
-    const savedAvailability = localStorage.getItem(`availability_${selectedPractitioner?.id || user?.id}`);
-    if (savedAvailability) {
-      try {
-        setWeeklyAvailability(JSON.parse(savedAvailability));
-      } catch (error) {
-        console.error('Erreur lors du parsing des disponibilités:', error);
+    try {
+      const practitionerId = selectedPractitioner?.id || user?.id;
+      if (!practitionerId) {
         setWeeklyAvailability(defaultAvailability);
+        return;
       }
-    } else {
+
+      // Charger les disponibilités pour chaque jour de la semaine
+      const weekAvailability = { ...defaultAvailability };
+      const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+      dayNames.forEach((dayName, index) => {
+        const dayOfWeek = index + 1; // 1 = Monday, 7 = Sunday
+        const availability = availabilityStorage.getPractitionerAvailability(practitionerId, dayOfWeek);
+
+        if (availability) {
+          weekAvailability[dayName] = {
+            enabled: true,
+            slots: availability.timeSlots || []
+          };
+        }
+      });
+
+      setWeeklyAvailability(weekAvailability);
+    } catch (error) {
+      console.error('Erreur lors du chargement des disponibilités:', error);
       setWeeklyAvailability(defaultAvailability);
     }
   };
 
   const saveAvailabilities = () => {
-    // Simulation de la sauvegarde
-    localStorage.setItem(`availability_${selectedPractitioner?.id || user?.id}`, JSON.stringify(weeklyAvailability));
+    try {
+      const practitionerId = selectedPractitioner?.id || user?.id;
+      if (!practitionerId) {
+        console.error('Aucun praticien sélectionné pour sauvegarder les disponibilités');
+        return;
+      }
+
+      const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+      dayNames.forEach((dayName, index) => {
+        const dayOfWeek = index + 1; // 1 = Monday, 7 = Sunday
+        const dayConfig = weeklyAvailability[dayName];
+
+        if (dayConfig?.enabled && dayConfig.slots?.length > 0) {
+          availabilityStorage.setAvailability(
+            practitionerId,
+            dayOfWeek,
+            dayConfig.slots,
+            user?.id || 'system'
+          );
+        }
+      });
+
+      // Also keep localStorage backup for compatibility
+      localStorage.setItem(`availability_${practitionerId}`, JSON.stringify(weeklyAvailability));
+
+      console.log('Disponibilités sauvegardées avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des disponibilités:', error);
+    }
   };
 
   // Navigation dans le calendrier
@@ -166,10 +323,146 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
     return slots;
   };
 
-  // Obtenir les rendez-vous pour une date
+  // Obtenir les rendez-vous pour une date avec enrichissement des données
   const getAppointmentsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return appointments.filter(apt => apt.date === dateStr);
+    const dayAppointments = appointments.filter(apt => apt.date === dateStr);
+
+    // Enrichir les rendez-vous avec les données des patients selon les permissions
+    return dayAppointments.map(appointment => {
+      const patient = patientsStorage.getById(appointment.patientId);
+      const enrichedAppointment = { ...appointment };
+
+      // Gestion des permissions d'accès aux données
+      const canViewPatientDetails = hasPermission(PERMISSIONS.PATIENTS_VIEW);
+      const canViewAllAppointments = hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_ALL);
+      const isOwnAppointment = appointment.practitionerId === user?.id;
+
+      // Si l'utilisateur peut voir tous les rendez-vous OU c'est son propre rendez-vous
+      if (canViewAllAppointments || isOwnAppointment) {
+        if (canViewPatientDetails && patient) {
+          enrichedAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
+          enrichedAppointment.patientPhone = patient.phone;
+          enrichedAppointment.patientAge = calculateAge(patient.birthDate);
+          enrichedAppointment.patientNumber = patient.patientNumber;
+        } else {
+          // Informations limitées si pas d'accès aux patients
+          enrichedAppointment.patientName = 'Patient confidentiel';
+        }
+      } else {
+        // Masquer les détails si pas autorisé
+        enrichedAppointment.patientName = 'Rendez-vous masqué';
+        enrichedAppointment.title = 'RDV privé';
+        enrichedAppointment.description = '';
+      }
+
+      return enrichedAppointment;
+    });
+  };
+
+  // Calculer l'âge à partir de la date de naissance
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+
+    return age;
+  };
+
+  // Obtenir la couleur d'un rendez-vous selon son statut
+  const getAppointmentColor = (status) => {
+    switch (status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-800 border border-blue-300';
+      case 'confirmed': return 'bg-green-100 text-green-800 border border-green-300';
+      case 'in_progress': return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
+      case 'completed': return 'bg-gray-100 text-gray-700 border border-gray-300';
+      case 'cancelled': return 'bg-red-100 text-red-800 border border-red-300';
+      case 'no_show': return 'bg-orange-100 text-orange-800 border border-orange-300';
+      default: return 'bg-blue-100 text-blue-800 border border-blue-300';
+    }
+  };
+
+  // Obtenir le tooltip d'un rendez-vous
+  const getAppointmentTooltip = (appointment) => {
+    if (appointment.title === 'RDV privé') {
+      return 'Rendez-vous privé - Accès restreint';
+    }
+
+    const parts = [];
+    if (appointment.patientName) parts.push(`Patient: ${appointment.patientName}`);
+    if (appointment.title) parts.push(`Type: ${appointment.title}`);
+    if (appointment.startTime && appointment.endTime) {
+      parts.push(`Horaire: ${appointment.startTime} - ${appointment.endTime}`);
+    }
+    if (appointment.duration) parts.push(`Durée: ${appointment.duration}min`);
+    if (appointment.description) parts.push(`Description: ${appointment.description}`);
+
+    const statusLabels = {
+      'scheduled': 'Programmé',
+      'confirmed': 'Confirmé',
+      'in_progress': 'En cours',
+      'completed': 'Terminé',
+      'cancelled': 'Annulé',
+      'no_show': 'Absent'
+    };
+
+    if (appointment.status) {
+      parts.push(`Statut: ${statusLabels[appointment.status] || appointment.status}`);
+    }
+
+    return parts.join('\n');
+  };
+
+  // Gérer le clic sur un rendez-vous
+  const handleAppointmentClick = (appointment) => {
+    if (appointment.title === 'RDV privé') {
+      return; // Pas d'action pour les rendez-vous privés
+    }
+
+    // Afficher plus de détails ou permettre l'édition selon les permissions
+    const canEdit = hasPermission(PERMISSIONS.APPOINTMENTS_EDIT);
+    const isOwnAppointment = appointment.practitionerId === user?.id;
+
+    if (canEdit || isOwnAppointment) {
+      // Ici on pourrait ouvrir un modal de détails/édition
+      console.log('Édition du rendez-vous:', appointment);
+      // onAppointmentEdit && onAppointmentEdit(appointment);
+    } else {
+      console.log('Consultation du rendez-vous:', appointment);
+      // onAppointmentView && onAppointmentView(appointment);
+    }
+  };
+
+  // Obtenir la couleur du badge de statut
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-700';
+      case 'confirmed': return 'bg-green-100 text-green-700';
+      case 'in_progress': return 'bg-yellow-100 text-yellow-700';
+      case 'completed': return 'bg-gray-100 text-gray-700';
+      case 'cancelled': return 'bg-red-100 text-red-700';
+      case 'no_show': return 'bg-orange-100 text-orange-700';
+      default: return 'bg-blue-100 text-blue-700';
+    }
+  };
+
+  // Obtenir le libellé du statut
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'scheduled': return 'Programmé';
+      case 'confirmed': return 'Confirmé';
+      case 'in_progress': return 'En cours';
+      case 'completed': return 'Terminé';
+      case 'cancelled': return 'Annulé';
+      case 'no_show': return 'Absent';
+      default: return status;
+    }
   };
 
   // Modifier les disponibilités
@@ -238,6 +531,12 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
     setWeeklyAvailability(newAvailability);
   };
 
+  const applyTemplate = (templateKey) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir appliquer le template "${availabilityTemplates[templateKey].name}" ? Cela remplacera votre configuration actuelle.`)) {
+      setWeeklyAvailability(availabilityTemplates[templateKey].config);
+    }
+  };
+
   const timeSlots = [];
   for (let hour = 8; hour < 20; hour++) {
     timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
@@ -256,43 +555,47 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestion des disponibilités</h2>
-          <p className="text-gray-600">
-            {selectedPractitioner ? `Disponibilités de ${selectedPractitioner.name}` : 'Gérez vos créneaux et disponibilités'}
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
+    <div className="space-y-4">
+      {/* Filtres et actions - sur une seule ligne */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Filtre de praticiens compact intégré */}
+          <PractitionerFilter
+            practitioners={practitioners}
+            selectedPractitionerId={filterPractitioner}
+            onPractitionerChange={onFilterPractitionerChange}
+            canViewAll={canViewAllPractitioners}
+            isPractitioner={isPractitioner}
+            currentUser={user}
+          />
+
           <button
             onClick={() => setIsEditingAvailability(!isEditingAvailability)}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+            className={`px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${
               isEditingAvailability ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             <Settings className="h-4 w-4" />
-            <span>{isEditingAvailability ? 'Terminer' : 'Modifier'}</span>
+            <span className="hidden sm:inline">{isEditingAvailability ? 'Terminer' : 'Modifier'}</span>
           </button>
-          <div className="flex items-center bg-gray-100 rounded-lg">
-            <button
-              onClick={() => setViewMode('week')}
-              className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                viewMode === 'week' ? 'bg-white shadow-sm' : ''
-              }`}
-            >
-              Semaine
-            </button>
-            <button
-              onClick={() => setViewMode('day')}
-              className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                viewMode === 'day' ? 'bg-white shadow-sm' : ''
-              }`}
-            >
-              Jour
-            </button>
-          </div>
+        </div>
+        <div className="flex items-center bg-gray-100 rounded-lg">
+          <button
+            onClick={() => setViewMode('week')}
+            className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+              viewMode === 'week' ? 'bg-white shadow-sm' : ''
+            }`}
+          >
+            Semaine
+          </button>
+          <button
+            onClick={() => setViewMode('day')}
+            className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+              viewMode === 'day' ? 'bg-white shadow-sm' : ''
+            }`}
+          >
+            Jour
+          </button>
         </div>
       </div>
 
@@ -348,6 +651,29 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
                 <Save className="h-4 w-4" />
                 <span>Sauvegarder</span>
               </button>
+            </div>
+          </div>
+
+          {/* Templates prédéfinis */}
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Templates prédéfinis</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {Object.entries(availabilityTemplates).map(([key, template]) => {
+                const IconComponent = template.icon;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => applyTemplate(key)}
+                    className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                  >
+                    <div className="flex items-center space-x-2 mb-2">
+                      <IconComponent className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-sm text-gray-900">{template.name}</span>
+                    </div>
+                    <p className="text-xs text-gray-600">{template.description}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -474,8 +800,23 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
                   return (
                     <div key={dayIndex} className="p-1 border-l border-gray-200 h-12 relative">
                       {appointmentAtTime ? (
-                        <div className="bg-blue-100 text-blue-800 text-xs p-1 rounded truncate h-full">
-                          {appointmentAtTime.title}
+                        <div
+                          className={`text-xs p-1 rounded truncate h-full cursor-pointer transition-colors ${
+                            appointmentAtTime.title === 'RDV privé'
+                              ? 'bg-gray-100 text-gray-600 border border-gray-300'
+                              : getAppointmentColor(appointmentAtTime.status)
+                          }`}
+                          title={getAppointmentTooltip(appointmentAtTime)}
+                          onClick={() => handleAppointmentClick(appointmentAtTime)}
+                        >
+                          <div className="font-medium truncate">
+                            {appointmentAtTime.patientName || appointmentAtTime.title}
+                          </div>
+                          {appointmentAtTime.patientName && appointmentAtTime.patientName !== 'Rendez-vous masqué' && (
+                            <div className="text-xs opacity-75 truncate">
+                              {appointmentAtTime.startTime} - {appointmentAtTime.endTime}
+                            </div>
+                          )}
                         </div>
                       ) : timeSlot ? (
                         <div
@@ -517,14 +858,23 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
                 return (
                   <div
                     key={index}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                    className={`p-3 border rounded-lg transition-colors ${
                       appointmentAtTime
-                        ? 'bg-blue-50 border-blue-200'
+                        ? appointmentAtTime.title === 'RDV privé'
+                          ? 'bg-gray-50 border-gray-200 cursor-default'
+                          : `cursor-pointer ${getAppointmentColor(appointmentAtTime.status).replace('border border-', 'border-')}`
                         : slot.available
-                          ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                          : 'bg-red-50 border-red-200'
+                          ? 'bg-green-50 border-green-200 hover:bg-green-100 cursor-pointer'
+                          : 'bg-red-50 border-red-200 cursor-default'
                     }`}
-                    onClick={() => slot.available && !appointmentAtTime && onAppointmentScheduled?.(currentDate, slot.start)}
+                    title={appointmentAtTime ? getAppointmentTooltip(appointmentAtTime) : ''}
+                    onClick={() => {
+                      if (appointmentAtTime) {
+                        handleAppointmentClick(appointmentAtTime);
+                      } else if (slot.available) {
+                        onAppointmentScheduled?.(currentDate, slot.start);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -532,8 +882,12 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
                         <span className="font-medium">{slot.start} - {slot.end}</span>
                       </div>
                       {appointmentAtTime ? (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                          Occupé
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          appointmentAtTime.title === 'RDV privé'
+                            ? 'bg-gray-100 text-gray-600'
+                            : getStatusBadgeColor(appointmentAtTime.status)
+                        }`}>
+                          {getStatusLabel(appointmentAtTime.status)}
                         </span>
                       ) : slot.available ? (
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
@@ -545,10 +899,24 @@ const AvailabilityManager = ({ onAppointmentScheduled, selectedPractitioner }) =
                         </span>
                       )}
                     </div>
-                    {appointmentAtTime && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        <div className="font-medium">{appointmentAtTime.title}</div>
-                        <div className="text-xs">{appointmentAtTime.patientName}</div>
+                    {appointmentAtTime && appointmentAtTime.title !== 'RDV privé' && (
+                      <div className="mt-2 text-sm">
+                        <div className="font-medium text-gray-900 truncate">
+                          {appointmentAtTime.patientName}
+                        </div>
+                        <div className="text-xs text-gray-600 truncate">
+                          {appointmentAtTime.title}
+                        </div>
+                        {appointmentAtTime.description && (
+                          <div className="text-xs text-gray-500 mt-1 truncate">
+                            {appointmentAtTime.description}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {appointmentAtTime && appointmentAtTime.title === 'RDV privé' && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        <div className="text-xs">Accès restreint</div>
                       </div>
                     )}
                   </div>

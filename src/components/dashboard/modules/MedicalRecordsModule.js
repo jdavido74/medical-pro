@@ -4,7 +4,7 @@ import {
   Plus, Search, FileText, Filter, Edit2, Trash2, Eye, User,
   Calendar, Stethoscope, Tablet, AlertTriangle, ChevronRight, Heart, Settings
 } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../contexts/AuthContext';
 import { medicalRecordsStorage, initializeSampleMedicalRecords } from '../../../utils/medicalRecordsStorage';
 import { patientsStorage } from '../../../utils/patientsStorage';
@@ -12,7 +12,7 @@ import MedicalRecordForm from '../../medical/MedicalRecordForm';
 import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
 
 const MedicalRecordsModule = ({ navigateToPatient }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);

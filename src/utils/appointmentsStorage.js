@@ -72,7 +72,19 @@ export const appointmentsStorage = {
     try {
       const appointments = appointmentsStorage.getAll();
 
-      // Vérifier les conflits de créneaux
+      // IMPORTANT: Vérifier d'abord que le créneau est dans les horaires de disponibilité du praticien
+      const availabilityCheck = appointmentsStorage.isWithinPractitionerAvailability(
+        appointmentData.practitionerId,
+        appointmentData.date,
+        appointmentData.startTime,
+        appointmentData.endTime
+      );
+
+      if (!availabilityCheck.available) {
+        throw new Error(availabilityCheck.reason);
+      }
+
+      // Vérifier les conflits de créneaux avec d'autres rendez-vous
       const conflicts = appointmentsStorage.checkTimeConflicts(
         appointmentData.practitionerId,
         appointmentData.date,
@@ -81,7 +93,7 @@ export const appointmentsStorage = {
       );
 
       if (conflicts.length > 0) {
-        throw new Error('Conflit de créneaux détecté');
+        throw new Error('Conflit de créneaux détecté avec un autre rendez-vous');
       }
 
       const newAppointment = {
@@ -128,18 +140,36 @@ export const appointmentsStorage = {
       }
 
       // Vérifier les conflits si l'heure change
-      if (appointmentData.date || appointmentData.startTime || appointmentData.endTime) {
+      if (appointmentData.date || appointmentData.startTime || appointmentData.endTime || appointmentData.practitionerId) {
         const currentAppointment = appointments[index];
+        const finalPractitionerId = appointmentData.practitionerId || currentAppointment.practitionerId;
+        const finalDate = appointmentData.date || currentAppointment.date;
+        const finalStartTime = appointmentData.startTime || currentAppointment.startTime;
+        const finalEndTime = appointmentData.endTime || currentAppointment.endTime;
+
+        // IMPORTANT: Vérifier d'abord que le créneau est dans les horaires de disponibilité du praticien
+        const availabilityCheck = appointmentsStorage.isWithinPractitionerAvailability(
+          finalPractitionerId,
+          finalDate,
+          finalStartTime,
+          finalEndTime
+        );
+
+        if (!availabilityCheck.available) {
+          throw new Error(availabilityCheck.reason);
+        }
+
+        // Vérifier les conflits avec d'autres rendez-vous
         const conflicts = appointmentsStorage.checkTimeConflicts(
-          appointmentData.practitionerId || currentAppointment.practitionerId,
-          appointmentData.date || currentAppointment.date,
-          appointmentData.startTime || currentAppointment.startTime,
-          appointmentData.endTime || currentAppointment.endTime,
+          finalPractitionerId,
+          finalDate,
+          finalStartTime,
+          finalEndTime,
           id // Exclure le rendez-vous actuel
         );
 
         if (conflicts.length > 0) {
-          throw new Error('Conflit de créneaux détecté');
+          throw new Error('Conflit de créneaux détecté avec un autre rendez-vous');
         }
       }
 
@@ -167,6 +197,40 @@ export const appointmentsStorage = {
       console.error('Erreur mise à jour rendez-vous:', error);
       throw error;
     }
+  },
+
+  // Vérifier si un créneau est dans les horaires de disponibilité du praticien
+  isWithinPractitionerAvailability: (practitionerId, date, startTime, endTime) => {
+    const availability = appointmentsStorage.getPractitionerAvailability(practitionerId, date);
+
+    // Si pas de disponibilité définie, on retourne false (le praticien n'est pas disponible)
+    if (!availability || !availability.timeSlots || availability.timeSlots.length === 0) {
+      return { available: false, reason: 'Aucun créneau de disponibilité défini pour ce jour' };
+    }
+
+    const newStart = new Date(`${date}T${startTime}`);
+    const newEnd = new Date(`${date}T${endTime}`);
+
+    // Vérifier si le créneau demandé est complètement inclus dans au moins une plage de disponibilité
+    const isInAvailability = availability.timeSlots.some(slot => {
+      const slotStart = new Date(`${date}T${slot.start}`);
+      const slotEnd = new Date(`${date}T${slot.end}`);
+
+      // Le créneau doit être entièrement dans la plage de disponibilité
+      return newStart >= slotStart && newEnd <= slotEnd;
+    });
+
+    if (!isInAvailability) {
+      const availableSlots = availability.timeSlots
+        .map(slot => `${slot.start}-${slot.end}`)
+        .join(', ');
+      return {
+        available: false,
+        reason: `Le praticien n'est disponible que de ${availableSlots} ce jour-là`
+      };
+    }
+
+    return { available: true };
   },
 
   // Vérifier les conflits de créneaux - US 3.2
@@ -690,6 +754,19 @@ export const appointmentsStorage = {
       },
       pendingReminders: appointmentsStorage.getPendingReminders().length
     };
+  },
+
+  // Récupérer la disponibilité d'un praticien pour une date
+  // Note: Cette fonction fait un pont vers availabilityStorage qui est défini plus bas
+  getPractitionerAvailability: (practitionerId, date) => {
+    const availabilities = availabilityStorage.getAll();
+    const dayOfWeek = new Date(date).getDay();
+
+    return availabilities.find(avail =>
+      avail.practitionerId === practitionerId &&
+      avail.dayOfWeek === dayOfWeek &&
+      !avail.deleted
+    );
   }
 };
 

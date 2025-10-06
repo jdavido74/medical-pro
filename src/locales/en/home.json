@@ -1,0 +1,23 @@
+{
+  "welcome": "Hello Dr {{name}}",
+  "welcomeSubtitle": "Welcome to your digital medical practice",
+  "clinic": "Practice",
+  "totalPatients": "Total Patients",
+  "appointmentsMonth": "Appointments This Month",
+  "consultations": "Consultations",
+  "pending": "Pending",
+  "dailyAppointments": "Today's Appointments",
+  "patientsWaiting": "Patients Waiting",
+  "emergencies": "Emergencies Reported",
+  "quickActions": "Quick Actions",
+  "newPatient": "New Patient",
+  "newAppointment": "Schedule Appointment",
+  "newConsultation": "New Consultation",
+  "clinicConfiguration": "Practice Configuration",
+  "configureClinic": "Configure your practice",
+  "addPatients": "Add your first patients",
+  "planConsultations": "Plan your consultations",
+  "createFirstRecord": "Create your first record",
+  "medicalCompliance": "Secure and compliant medical practice",
+  "complianceDescription": "ClinicManager respects medical confidentiality, health data protection (GDPR) and adapts to practitioners' professional requirements."
+}

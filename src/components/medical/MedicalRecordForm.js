@@ -1,5 +1,5 @@
 // components/medical/MedicalRecordForm.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   FileText, Activity, Heart, AlertTriangle, Plus, X, Save,
   Stethoscope, Thermometer, Scale, Ruler, Droplets, Clock,
@@ -8,7 +8,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { medicalRecordsStorage } from '../../utils/medicalRecordsStorage';
 
-const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel }) => {
+const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, onCancel }, ref) => {
   const { user } = useAuth();
 
   // Fonction pour sécuriser les données et éviter les erreurs undefined
@@ -204,6 +204,16 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
     }
   }, [formData.treatments]);
 
+  // Exposer la méthode handleSubmit au composant parent
+  useImperativeHandle(ref, () => ({
+    handleSubmit: () => {
+      if (!validateForm()) {
+        return;
+      }
+      handleSubmitInternal();
+    }
+  }));
+
   const handleInputChange = (section, field, value) => {
     if (section) {
       setFormData(prev => ({
@@ -365,13 +375,7 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+  const handleSubmitInternal = async () => {
     setIsSubmitting(true);
     try {
       const recordData = {
@@ -385,13 +389,21 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
         await medicalRecordsStorage.create(recordData, user?.id);
       }
 
-      onSave && onSave();
+      onSave && onSave(recordData);
     } catch (error) {
       console.error('Error saving medical record:', error);
       setErrors({ submit: error.message });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
+    await handleSubmitInternal();
   };
 
   const tabs = [
@@ -1354,38 +1366,7 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-lg">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {existingRecord ? 'Editar' : 'Nuevo'} Dossier Médico
-            </h2>
-            <p className="text-gray-600">
-              Paciente: {patient?.firstName} {patient?.lastName}
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-            >
-              <Save className="h-4 w-4" />
-              <span>{isSubmitting ? 'Guardando...' : 'Guardar'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="bg-white">{/* Le modal parent gère l'en-tête */}
 
       {/* Tabs Navigation */}
       <div className="border-b bg-gray-50">
@@ -1432,6 +1413,8 @@ const MedicalRecordForm = ({ patient, existingRecord = null, onSave, onCancel })
       )}
     </div>
   );
-};
+});
+
+MedicalRecordForm.displayName = 'MedicalRecordForm';
 
 export default MedicalRecordForm;

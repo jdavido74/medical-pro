@@ -1,0 +1,18 @@
+{
+  "title": "Citas",
+  "subtitle": "Planifica y organiza las consultas",
+  "newAppointment": "Nueva Cita",
+  "searchAppointments": "Buscar cita...",
+  "today": "Hoy",
+  "thisWeek": "Esta Semana",
+  "thisMonth": "Este Mes",
+  "appointmentDate": "Fecha de la Cita",
+  "appointmentTime": "Hora",
+  "duration": "Duración",
+  "reason": "Motivo",
+  "status": "Estado",
+  "scheduled": "Programada",
+  "confirmed": "Confirmada",
+  "completed": "Completada",
+  "cancelled": "Cancelada"
+}

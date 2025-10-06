@@ -1,0 +1,23 @@
+{
+  "welcome": "Hola Dr. {{name}}",
+  "welcomeSubtitle": "Bienvenido a tu consulta médica digital",
+  "clinic": "Consulta",
+  "totalPatients": "Total Pacientes",
+  "appointmentsMonth": "Citas Este Mes",
+  "consultations": "Consultas",
+  "pending": "Pendientes",
+  "dailyAppointments": "Citas del Día",
+  "patientsWaiting": "Pacientes Esperando",
+  "emergencies": "Urgencias Reportadas",
+  "quickActions": "Acciones Rápidas",
+  "newPatient": "Nuevo Paciente",
+  "newAppointment": "Programar Cita",
+  "newConsultation": "Nueva Consulta",
+  "clinicConfiguration": "Configuración de la Consulta",
+  "configureClinic": "Configura tu consulta",
+  "addPatients": "Añade tus primeros pacientes",
+  "planConsultations": "Planifica tus consultas",
+  "createFirstRecord": "Crea tu primer historial",
+  "medicalCompliance": "Consulta médica segura y conforme",
+  "complianceDescription": "ClinicManager respeta la confidencialidad médica, la protección de datos de salud (RGPD) y se adapta a los requisitos profesionales de los médicos."
+}

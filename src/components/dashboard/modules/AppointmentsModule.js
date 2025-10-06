@@ -5,22 +5,30 @@ import {
   User, Phone, ChevronUp, ChevronDown, MapPin, AlertCircle,
   Check, X, Bell, MoreVertical
 } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../contexts/AuthContext';
 import { appointmentsStorage } from '../../../utils/appointmentsStorage';
 import { patientsStorage } from '../../../utils/patientsStorage';
+import { loadPractitioners } from '../../../utils/practitionersLoader';
 import AppointmentFormModal from '../../modals/AppointmentFormModal';
 import AvailabilityManager from '../../calendar/AvailabilityManager';
+import PractitionerFilter from '../../common/PractitionerFilter';
 
 const AppointmentsModule = ({ navigateToPatient }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
+  const [filterPractitioner, setFilterPractitioner] = useState('all'); // 'all' pour vue globale
+  const [practitioners, setPractitioners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Déterminer si l'utilisateur peut voir la vue globale (admin/secrétaire)
+  const canViewAllPractitioners = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'secretary';
+  const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
   const [sortField, setSortField] = useState('date');
   const [sortDirection, setSortDirection] = useState('asc');
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
@@ -33,15 +41,42 @@ const AppointmentsModule = ({ navigateToPatient }) => {
     avgDuration: '30min'
   });
   const [activeTab, setActiveTab] = useState('appointments'); // 'appointments' ou 'availability'
+  const [selectedPractitioner, setSelectedPractitioner] = useState(null);
+  const [preselectedDate, setPreselectedDate] = useState(null);
+  const [preselectedTime, setPreselectedTime] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Pour forcer le rafraîchissement du calendrier
 
   // Charger les données
   useEffect(() => {
     loadData();
+    // Si praticien : filtrer automatiquement sur ses RDV uniquement
+    if (user && isPractitioner) {
+      setFilterPractitioner(user.id);
+    }
+    // Initialiser le praticien sélectionné
+    if (user && !selectedPractitioner) {
+      setSelectedPractitioner(user);
+    }
   }, []);
+
+  useEffect(() => {
+    if (user && !selectedPractitioner) {
+      setSelectedPractitioner(user);
+    }
+    // Si praticien : toujours filtrer sur ses RDV
+    if (user && isPractitioner && filterPractitioner !== user.id) {
+      setFilterPractitioner(user.id);
+    }
+  }, [user]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
+      // Charger les praticiens de la clinique via la fonction centralisée
+      const allPractitioners = loadPractitioners(user);
+      console.log('Praticiens chargés:', allPractitioners.length, allPractitioners);
+      setPractitioners(allPractitioners);
+
       // Charger les rendez-vous
       const allAppointments = appointmentsStorage.getAll();
 
@@ -49,15 +84,29 @@ const AppointmentsModule = ({ navigateToPatient }) => {
       const allPatients = patientsStorage.getAll();
       setPatients(allPatients);
 
-      const enrichedAppointments = allAppointments.map(appointment => {
-        const patient = allPatients.find(p => p.id === appointment.patientId);
-        return {
-          ...appointment,
-          patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Patient inconnu',
-          patientPhone: patient?.phone || '',
-          patientNumber: patient?.patientNumber || ''
-        };
-      });
+      // Filtrer et enrichir les rendez-vous
+      const enrichedAppointments = allAppointments
+        .filter(appointment => {
+          // IMPORTANT: Exclure les rendez-vous avec des praticiens inexistants
+          const practitionerExists = allPractitioners.some(p => p.id === appointment.practitionerId);
+          if (!practitionerExists) {
+            console.warn(`Rendez-vous ${appointment.id} ignoré: praticien ${appointment.practitionerId} inexistant`);
+            return false;
+          }
+          return true;
+        })
+        .map(appointment => {
+          const patient = allPatients.find(p => p.id === appointment.patientId);
+          const practitioner = allPractitioners.find(p => p.id === appointment.practitionerId);
+          return {
+            ...appointment,
+            patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Patient inconnu',
+            patientPhone: patient?.phone || '',
+            patientNumber: patient?.patientNumber || '',
+            practitionerName: practitioner?.name || 'Non assigné',
+            practitionerSpecialty: practitioner?.specialty || ''
+          };
+        });
 
       setAppointments(enrichedAppointments);
 
@@ -93,7 +142,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
 
   useEffect(() => {
     filterAppointments();
-  }, [appointments, searchQuery, filterStatus, filterDate, sortField, sortDirection]);
+  }, [appointments, searchQuery, filterStatus, filterDate, filterPractitioner, sortField, sortDirection]);
 
   const filterAppointments = () => {
     let filtered = appointments.filter(apt => !apt.deleted);
@@ -111,6 +160,11 @@ const AppointmentsModule = ({ navigateToPatient }) => {
     // Filtrer par statut
     if (filterStatus !== 'all') {
       filtered = filtered.filter(appointment => appointment.status === filterStatus);
+    }
+
+    // Filtrer par praticien
+    if (filterPractitioner !== 'all') {
+      filtered = filtered.filter(appointment => appointment.practitionerId === filterPractitioner);
     }
 
     // Filtrer par date
@@ -202,16 +256,29 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   // Fonctions de gestion des rendez-vous
   const handleNewAppointment = () => {
     setEditingAppointment(null);
+    setPreselectedDate(null);
+    setPreselectedTime(null);
     setIsAppointmentModalOpen(true);
   };
 
   const handleEditAppointment = (appointment) => {
     setEditingAppointment(appointment);
+    setPreselectedDate(null);
+    setPreselectedTime(null);
     setIsAppointmentModalOpen(true);
   };
 
   const handleSaveAppointment = (appointmentData) => {
-    loadData(); // Recharger les données
+    // Recharger les données pour synchroniser les deux vues
+    loadData();
+    // Incrémenter la clé de rafraîchissement pour forcer le rechargement du calendrier
+    setRefreshKey(prev => prev + 1);
+  };
+
+  // Callback appelé depuis le calendrier quand un RDV est modifié
+  const handleAppointmentUpdated = () => {
+    loadData(); // Recharge automatiquement la liste
+    setRefreshKey(prev => prev + 1); // Force le rafraîchissement du calendrier
   };
 
   const handleDeleteAppointment = async (appointmentId) => {
@@ -219,6 +286,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
       try {
         appointmentsStorage.delete(appointmentId);
         loadData();
+        setRefreshKey(prev => prev + 1); // Force le rafraîchissement du calendrier
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
       }
@@ -231,6 +299,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
       if (appointment) {
         appointmentsStorage.update(appointmentId, { ...appointment, status: newStatus });
         loadData();
+        setRefreshKey(prev => prev + 1); // Force le rafraîchissement du calendrier
       }
     } catch (error) {
       console.error('Erreur lors du changement de statut:', error);
@@ -249,7 +318,12 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   // Fonction pour planifier un rendez-vous depuis le calendrier
   const handleAppointmentScheduledFromCalendar = (date, time) => {
     setEditingAppointment(null);
-    // Pré-remplir avec la date et l'heure sélectionnées
+
+    // Définir la date et l'heure pré-sélectionnées
+    const selectedDate = date instanceof Date ? date.toISOString().split('T')[0] : date;
+    setPreselectedDate(selectedDate);
+    setPreselectedTime(time);
+
     setIsAppointmentModalOpen(true);
   };
 
@@ -265,13 +339,9 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestion des rendez-vous</h2>
-          <p className="text-gray-600 mt-1">Planifiez et organisez les consultations</p>
-        </div>
+    <div className="space-y-4">
+      {/* Actions et navigation - sur une seule ligne */}
+      <div className="flex justify-between items-center">
         <div className="flex items-center space-x-3">
           {/* Navigation par onglets */}
           <div className="flex items-center bg-gray-100 rounded-lg">
@@ -292,14 +362,14 @@ const AppointmentsModule = ({ navigateToPatient }) => {
               Calendrier
             </button>
           </div>
-          <button
-            onClick={handleNewAppointment}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Nouveau rendez-vous</span>
-          </button>
         </div>
+        <button
+          onClick={handleNewAppointment}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+        >
+          <Plus className="h-5 w-5" />
+          <span>Nouveau rendez-vous</span>
+        </button>
       </div>
 
       {/* Contenu conditionnel selon l'onglet */}
@@ -307,18 +377,28 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         <>
           {/* Filtres et recherche */}
           <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           {/* Recherche */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Rechercher par patient, motif, numéro..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {/* Filtre de praticiens compact - intégré dans la ligne */}
+          <PractitionerFilter
+            practitioners={practitioners}
+            selectedPractitionerId={filterPractitioner}
+            onPractitionerChange={setFilterPractitioner}
+            canViewAll={canViewAllPractitioners}
+            isPractitioner={isPractitioner}
+            currentUser={user}
+          />
 
           {/* Filtre de statut */}
           <div className="relative">
@@ -467,6 +547,13 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                         <Clock className="h-3 w-3 mr-1" />
                         {appointment.duration} min
                       </span>
+                      {canViewAllPractitioners && filterPractitioner === 'all' && appointment.practitionerName && (
+                        <span className="flex items-center bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md">
+                          <User className="h-3 w-3 mr-1" />
+                          {appointment.practitionerName}
+                          {appointment.practitionerSpecialty && ` (${appointment.practitionerSpecialty})`}
+                        </span>
+                      )}
                       {appointment.patientPhone && (
                         <span className="flex items-center">
                           <Phone className="h-3 w-3 mr-1" />
@@ -576,7 +663,12 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         /* Onglet Calendrier - Gestion des disponibilités */
         <AvailabilityManager
           onAppointmentScheduled={handleAppointmentScheduledFromCalendar}
-          selectedPractitioner={user?.role === 'super_admin' ? null : user}
+          onAppointmentUpdated={handleAppointmentUpdated}
+          selectedPractitioner={isPractitioner ? user : (filterPractitioner !== 'all' ? practitioners.find(p => p.id === filterPractitioner) : null)}
+          canViewAllPractitioners={canViewAllPractitioners}
+          refreshKey={refreshKey}
+          filterPractitioner={filterPractitioner}
+          onFilterPractitionerChange={setFilterPractitioner}
         />
       )}
 
@@ -586,9 +678,13 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         onClose={() => {
           setIsAppointmentModalOpen(false);
           setEditingAppointment(null);
+          setPreselectedDate(null);
+          setPreselectedTime(null);
         }}
         onSave={handleSaveAppointment}
         editingAppointment={editingAppointment}
+        preselectedDate={preselectedDate}
+        preselectedTime={preselectedTime}
       />
     </div>
   );

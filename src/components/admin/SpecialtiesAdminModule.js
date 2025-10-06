@@ -4,10 +4,11 @@ import {
   Plus, Edit2, Trash2, Save, X, Globe, Settings,
   Shield, Eye, EyeOff, Copy, AlertTriangle
 } from 'lucide-react';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 
 const SpecialtiesAdminModule = () => {
-  const { t, currentLanguage } = useLanguage();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const [specialties, setSpecialties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingSpecialty, setEditingSpecialty] = useState(null);

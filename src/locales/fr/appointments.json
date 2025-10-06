@@ -1,0 +1,18 @@
+{
+  "title": "Rendez-vous",
+  "subtitle": "Planifiez et organisez les consultations",
+  "newAppointment": "Nouveau rendez-vous",
+  "searchAppointments": "Rechercher un rendez-vous...",
+  "today": "Aujourd'hui",
+  "thisWeek": "Cette semaine",
+  "thisMonth": "Ce mois",
+  "appointmentDate": "Date du rendez-vous",
+  "appointmentTime": "Heure",
+  "duration": "Durée",
+  "reason": "Motif",
+  "status": "Statut",
+  "scheduled": "Programmé",
+  "confirmed": "Confirmé",
+  "completed": "Terminé",
+  "cancelled": "Annulé"
+}

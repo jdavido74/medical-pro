@@ -2,13 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, User, Stethoscope, AlertTriangle, Save, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { appointmentsStorage } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
+import { loadPractitioners } from '../../utils/practitionersLoader';
 
-const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = null, preselectedPatient = null, preselectedDate = null }) => {
+const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = null, preselectedPatient = null, preselectedDate = null, preselectedTime = null }) => {
   const { user } = useAuth();
-  const { currentLanguage, t } = useLanguage();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
 
   const [formData, setFormData] = useState({
     patientId: '',
@@ -35,6 +37,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   const [practitioners, setPractitioners] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [availableSlots, setAvailableSlots] = useState([]);
 
   // Types de rendez-vous
   const appointmentTypes = [
@@ -55,19 +58,15 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     { value: 'urgent', label: 'Urgente', color: 'text-red-600' }
   ];
 
-  // Praticiens de test
-  const testPractitioners = [
-    { id: 'doctor', name: 'Dr. Carlos Garcia', specialty: 'Médecin généraliste', role: 'doctor' },
-    { id: 'specialist', name: 'Dr. Maria Lopez', specialty: 'Cardiologue', role: 'specialist' },
-    { id: 'nurse', name: 'Ana Martinez', specialty: 'Infirmière', role: 'nurse' }
-  ];
-
   useEffect(() => {
     if (isOpen) {
       // Charger les patients
       const allPatients = patientsStorage.getAll();
       setPatients(allPatients);
-      setPractitioners(testPractitioners);
+
+      // Charger les praticiens de la clinique via la fonction centralisée
+      const allPractitioners = loadPractitioners(user);
+      setPractitioners(allPractitioners);
 
       if (editingAppointment) {
         setFormData({
@@ -86,7 +85,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
           title: '',
           description: '',
           date: preselectedDate || '',
-          startTime: '',
+          startTime: preselectedTime || '',
           endTime: '',
           duration: 30,
           status: 'scheduled',
@@ -104,7 +103,29 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       setConflicts([]);
       setErrors({});
     }
-  }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, user]);
+  }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, preselectedTime, user]);
+
+  // Calculer les créneaux disponibles quand praticien ou date change
+  useEffect(() => {
+    if (formData.practitionerId && formData.date && formData.duration) {
+      const slots = appointmentsStorage.getAvailableSlots(
+        formData.practitionerId,
+        formData.date,
+        formData.duration
+      );
+      setAvailableSlots(slots);
+
+      // Si l'heure actuelle n'est plus disponible, la réinitialiser
+      if (formData.startTime) {
+        const isCurrentTimeAvailable = slots.some(slot => slot.start === formData.startTime);
+        if (!isCurrentTimeAvailable) {
+          setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
+        }
+      }
+    } else {
+      setAvailableSlots([]);
+    }
+  }, [formData.practitionerId, formData.date, formData.duration]);
 
   // Calculer l'heure de fin automatiquement
   useEffect(() => {
@@ -116,19 +137,70 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }
   }, [formData.startTime, formData.duration]);
 
-  // Vérifier les conflits en temps réel
+  // Vérifier si une date a des disponibilités pour le praticien sélectionné
+  const isDateAvailable = (dateString) => {
+    if (!formData.practitionerId || !formData.duration) return true;
+
+    const slots = appointmentsStorage.getAvailableSlots(
+      formData.practitionerId,
+      dateString,
+      formData.duration
+    );
+    return slots.length > 0;
+  };
+
+  // Obtenir les jours de la semaine où le praticien a des disponibilités
+  const getAvailableDaysOfWeek = () => {
+    if (!formData.practitionerId) return [];
+
+    const availability = appointmentsStorage.getPractitionerAvailability(formData.practitionerId);
+    if (!availability) return [];
+
+    return [availability.dayOfWeek];
+  };
+
+  // Vérifier les conflits et la disponibilité en temps réel
   useEffect(() => {
     if (formData.practitionerId && formData.date && formData.startTime && formData.endTime) {
-      const foundConflicts = appointmentsStorage.checkTimeConflicts(
+      // Vérifier d'abord que le créneau est dans les horaires de disponibilité
+      const availabilityCheck = appointmentsStorage.isWithinPractitionerAvailability(
         formData.practitionerId,
         formData.date,
         formData.startTime,
-        formData.endTime,
-        editingAppointment?.id
+        formData.endTime
       );
-      setConflicts(foundConflicts);
+
+      if (!availabilityCheck.available) {
+        // Créer un conflit virtuel pour afficher l'erreur de disponibilité
+        setConflicts([{
+          id: 'availability-error',
+          title: 'Hors horaires de disponibilité',
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          reason: availabilityCheck.reason
+        }]);
+        setErrors(prev => ({ ...prev, availability: availabilityCheck.reason }));
+      } else {
+        // Si disponible, vérifier les conflits avec d'autres rendez-vous
+        const foundConflicts = appointmentsStorage.checkTimeConflicts(
+          formData.practitionerId,
+          formData.date,
+          formData.startTime,
+          formData.endTime,
+          editingAppointment?.id
+        );
+        setConflicts(foundConflicts);
+        setErrors(prev => {
+          const { availability, ...rest } = prev;
+          return rest;
+        });
+      }
     } else {
       setConflicts([]);
+      setErrors(prev => {
+        const { availability, ...rest } = prev;
+        return rest;
+      });
     }
   }, [formData.practitionerId, formData.date, formData.startTime, formData.endTime, editingAppointment]);
 
@@ -234,17 +306,26 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
 
         {/* Body */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          {/* Alertes de conflit */}
+          {/* Alertes de conflit et disponibilité */}
           {conflicts.length > 0 && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
-                <h3 className="font-medium text-red-800">Conflit de créneau détecté</h3>
+                <h3 className="font-medium text-red-800">
+                  {conflicts[0]?.id === 'availability-error' ? '⚠️ Hors des horaires de disponibilité' : 'Conflit de créneau détecté'}
+                </h3>
               </div>
               <div className="text-sm text-red-700">
                 {conflicts.map((conflict, index) => (
                   <div key={index} className="mb-1">
-                    Conflit avec: {conflict.title} ({conflict.startTime} - {conflict.endTime})
+                    {conflict.id === 'availability-error' ? (
+                      <div>
+                        <strong>{conflict.reason}</strong>
+                        <p className="mt-1 text-xs">Veuillez choisir un créneau horaire pendant les heures de disponibilité du praticien.</p>
+                      </div>
+                    ) : (
+                      <div>Conflit avec: {conflict.title} ({conflict.startTime} - {conflict.endTime})</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -356,59 +437,91 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date *
+                    {formData.practitionerId && formData.date && !isDateAvailable(formData.date) && (
+                      <span className="ml-2 text-xs text-orange-600">
+                        ⚠️ Aucun créneau disponible pour cette date
+                      </span>
+                    )}
                   </label>
                   <input
                     type="date"
                     value={formData.date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.date ? 'border-red-500' : 'border-gray-300'}`}
+                    onChange={(e) => {
+                      const newDate = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        date: newDate,
+                        // Réinitialiser l'heure si la date change
+                        startTime: '',
+                        endTime: ''
+                      }));
+                    }}
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.date ? 'border-red-500' :
+                      formData.date && formData.practitionerId && !isDateAvailable(formData.date) ? 'border-orange-500 bg-orange-50' :
+                      'border-gray-300'
+                    }`}
                     min={new Date().toISOString().split('T')[0]}
                   />
                   {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
+                  {formData.practitionerId && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      💡 Astuce : Sélectionnez une date où le praticien a des disponibilités
+                    </p>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Heure de début *
-                    </label>
-                    <input
-                      type="time"
-                      value={formData.startTime}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.startTime ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                    {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>}
-                  </div>
+                {/* Sélection de l'heure parmi les créneaux disponibles */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Créneaux horaires disponibles *
+                    {formData.practitionerId && formData.date && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({availableSlots.length} disponibles)
+                      </span>
+                    )}
+                  </label>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Durée (minutes)
-                    </label>
-                    <select
-                      value={formData.duration}
-                      onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value={15}>15 min</option>
-                      <option value={20}>20 min</option>
-                      <option value={30}>30 min</option>
-                      <option value={45}>45 min</option>
-                      <option value={60}>1 heure</option>
-                      <option value={90}>1h30</option>
-                      <option value={120}>2 heures</option>
-                    </select>
-                  </div>
-                </div>
-
-                {formData.endTime && (
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <Clock className="h-4 w-4" />
-                      <span>Heure de fin calculée: {formData.endTime}</span>
+                  {!formData.practitionerId || !formData.date ? (
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-500 text-sm">
+                      {!formData.practitionerId ? '⚠️ Sélectionnez d\'abord un praticien' : '⚠️ Sélectionnez d\'abord une date'}
                     </div>
-                  </div>
-                )}
+                  ) : availableSlots.length === 0 ? (
+                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center text-orange-700 text-sm">
+                      <AlertTriangle className="h-5 w-5 inline-block mr-2" />
+                      Aucun créneau disponible pour cette date. Choisissez une autre date.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      {availableSlots.map((slot, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, startTime: slot.start, endTime: slot.end }))}
+                          className={`p-2 text-sm border rounded transition-colors ${
+                            formData.startTime === slot.start
+                              ? 'border-blue-500 bg-blue-500 text-white font-medium shadow-sm'
+                              : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm'
+                          }`}
+                        >
+                          {slot.start}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>}
+
+                  {formData.startTime && formData.endTime && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mt-2">
+                      <div className="flex items-center space-x-2 text-sm text-blue-700">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-medium">
+                          Créneau sélectionné : {formData.startTime} - {formData.endTime} ({formData.duration} min)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Priorité */}

@@ -5,12 +5,12 @@ import {
   Upload, Eye, EyeOff, CheckCircle, Package, Plus, Edit2, Trash2
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { catalogStorage, productsStorage, servicesStorage } from '../../../utils/productsStorage';
 
 const SettingsModule = () => {
   const { user, updateUser } = useAuth();
-  const { t } = useLanguage();
+  const { t } = useTranslation('admin');
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

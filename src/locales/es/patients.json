@@ -1,0 +1,20 @@
+{
+  "title": "Gestión de Pacientes",
+  "subtitle": "Gestiona tus pacientes y su seguimiento",
+  "newPatient": "Nuevo Paciente",
+  "searchPatients": "Buscar paciente...",
+  "allPatients": "Todos los Pacientes",
+  "activePatients": "Pacientes Activos",
+  "archivedPatients": "Pacientes Archivados",
+  "patientsList": "Lista de Pacientes",
+  "noPatients": "No hay pacientes por ahora",
+  "noPatientsDescription": "Comienza añadiendo tu primer paciente para poder crear consultas.",
+  "addPatient": "Añadir Paciente",
+  "firstName": "Nombre",
+  "lastName": "Apellidos",
+  "birthDate": "Fecha de Nacimiento",
+  "socialSecurity": "Número de Seguridad Social",
+  "phone": "Teléfono",
+  "address": "Dirección",
+  "emergencyContact": "Contacto de Emergencia"
+}

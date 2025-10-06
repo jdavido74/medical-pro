@@ -100,6 +100,7 @@ const SignupPage = ({ setCurrentPage }) => {
           {/* Authentification sociale */}
           <SocialAuth
             isLoading={isLoading}
+            setIsLoading={setIsLoading}
             mode="signup"
             medicalContext={true}
           />

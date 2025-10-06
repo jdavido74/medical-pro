@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import {
   Users, Settings, Globe, Shield, BarChart3,
-  Crown, Stethoscope, Building2, Activity
+  Crown, Stethoscope, Building2, Activity, Calendar
 } from 'lucide-react';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDynamicTranslations } from '../../contexts/DynamicTranslationsContext';
 import { useMedicalModules } from '../../contexts/MedicalModulesContext';
@@ -15,9 +15,11 @@ import RoleManagementModule from './RoleManagementModule';
 import TeamManagementModule from './TeamManagementModule';
 import AuditManagementModule from './AuditManagementModule';
 import BackupManagementModule from './BackupManagementModule';
+import ClinicConfigurationModule from './ClinicConfigurationModule';
 
 const AdminDashboard = () => {
-  const { t, currentLanguage } = useLanguage();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const { user } = useAuth();
   const { isLoading: translationsLoading, getAvailableSpecialties } = useDynamicTranslations();
   const { isLoadingConfig, dynamicSpecialties } = useMedicalModules();
@@ -65,6 +67,12 @@ const AdminDashboard = () => {
       visible: true
     },
     {
+      id: 'clinic-config',
+      label: 'Configuración de Clínica',
+      icon: Calendar,
+      visible: isClinicAdmin || isSuperAdmin
+    },
+    {
       id: 'specialties',
       label: 'Especialidades',
       icon: Stethoscope,
@@ -78,25 +86,25 @@ const AdminDashboard = () => {
     },
     {
       id: 'roles',
-      label: 'Rôles & Permissions',
+      label: 'Roles y Permisos',
       icon: Shield,
       visible: isSuperAdmin || isClinicAdmin
     },
     {
       id: 'teams',
-      label: 'Équipes & Délégations',
+      label: 'Equipos y Delegaciones',
       icon: Users,
       visible: isSuperAdmin || isClinicAdmin
     },
     {
       id: 'audit',
-      label: 'Audit & Logs',
+      label: 'Auditoría y Logs',
       icon: Shield,
       visible: isSuperAdmin || isClinicAdmin
     },
     {
       id: 'backup',
-      label: 'Sauvegardes',
+      label: 'Respaldos',
       icon: Globe,
       visible: isSuperAdmin
     },
@@ -327,6 +335,8 @@ const AdminDashboard = () => {
     switch (activeTab) {
       case 'overview':
         return renderOverview();
+      case 'clinic-config':
+        return <ClinicConfigurationModule />;
       case 'specialties':
         return <SpecialtiesAdminModule />;
       case 'users':

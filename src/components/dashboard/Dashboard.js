@@ -12,10 +12,10 @@ import ConsentManagementModule from './modules/ConsentManagementModule';
 import ConsentTemplatesModule from './modules/ConsentTemplatesModule';
 import SettingsModule from './modules/SettingsModule';
 import AdminDashboard from '../admin/AdminDashboard';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 
 const Dashboard = ({ setCurrentPage }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [activeModule, setActiveModule] = useState('home');
   const [selectedPatientId, setSelectedPatientId] = useState(null);
 

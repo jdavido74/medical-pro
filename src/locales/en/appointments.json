@@ -1,0 +1,18 @@
+{
+  "title": "Appointments",
+  "subtitle": "Schedule and organize consultations",
+  "newAppointment": "New Appointment",
+  "searchAppointments": "Search appointment...",
+  "today": "Today",
+  "thisWeek": "This Week",
+  "thisMonth": "This Month",
+  "appointmentDate": "Appointment Date",
+  "appointmentTime": "Time",
+  "duration": "Duration",
+  "reason": "Reason",
+  "status": "Status",
+  "scheduled": "Scheduled",
+  "confirmed": "Confirmed",
+  "completed": "Completed",
+  "cancelled": "Cancelled"
+}

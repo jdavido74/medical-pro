@@ -25,12 +25,50 @@ const translations = {
       patients: 'Patients',
       appointments: 'Rendez-vous',
       medicalRecords: 'Dossiers médicaux',
+      consents: 'Consentements',
+      consentTemplates: 'Modèles de consentements',
       quotes: 'Devis',
       invoices: 'Factures',
       analytics: 'Statistiques',
       admin: 'Administration',
       settings: 'Paramètres',
       logout: 'Déconnexion'
+    },
+
+    // Modules
+    modules: {
+      home: {
+        title: 'Accueil',
+        description: 'Vue d\'ensemble de votre cabinet médical'
+      },
+      patients: {
+        title: 'Gestion des patients',
+        description: 'Gérez vos patients et leur suivi'
+      },
+      appointments: {
+        title: 'Rendez-vous',
+        description: 'Planifiez et organisez les consultations'
+      },
+      medicalRecords: {
+        title: 'Dossiers médicaux',
+        description: 'Consultations, diagnostics et prescriptions'
+      },
+      consents: {
+        title: 'Gestion des consentements',
+        description: 'Gérez les consentements RGPD et médicaux'
+      },
+      consentTemplates: {
+        title: 'Modèles de consentements',
+        description: 'Créez et gérez vos modèles de consentements personnalisés'
+      },
+      analytics: {
+        title: 'Statistiques médicales',
+        description: 'Analysez votre activité médicale'
+      },
+      settings: {
+        title: 'Paramètres',
+        description: 'Configurez votre cabinet et vos préférences'
+      }
     },
 
     // Common
@@ -45,7 +83,8 @@ const translations = {
       error: 'Erreur',
       success: 'Succès',
       required: 'Requis',
-      optional: 'Optionnel'
+      optional: 'Optionnel',
+      dashboard: 'Tableau de bord'
     },
 
     // Auth
@@ -198,12 +237,50 @@ const translations = {
       patients: 'Patients',
       appointments: 'Appointments',
       medicalRecords: 'Medical Records',
+      consents: 'Consents',
+      consentTemplates: 'Consent Templates',
       quotes: 'Quotes',
       invoices: 'Invoices',
       analytics: 'Analytics',
       admin: 'Administration',
       settings: 'Settings',
       logout: 'Logout'
+    },
+
+    // Modules
+    modules: {
+      home: {
+        title: 'Home',
+        description: 'Overview of your medical practice'
+      },
+      patients: {
+        title: 'Patient Management',
+        description: 'Manage your patients and their follow-up'
+      },
+      appointments: {
+        title: 'Appointments',
+        description: 'Schedule and organize consultations'
+      },
+      medicalRecords: {
+        title: 'Medical Records',
+        description: 'Consultations, diagnostics and prescriptions'
+      },
+      consents: {
+        title: 'Consent Management',
+        description: 'Manage GDPR and medical consents'
+      },
+      consentTemplates: {
+        title: 'Consent Templates',
+        description: 'Create and manage your custom consent templates'
+      },
+      analytics: {
+        title: 'Medical Statistics',
+        description: 'Analyze your medical activity'
+      },
+      settings: {
+        title: 'Settings',
+        description: 'Configure your practice and preferences'
+      }
     },
 
     // Common
@@ -218,7 +295,8 @@ const translations = {
       error: 'Error',
       success: 'Success',
       required: 'Required',
-      optional: 'Optional'
+      optional: 'Optional',
+      dashboard: 'Dashboard'
     },
 
     // Auth
@@ -347,12 +425,50 @@ const translations = {
       patients: 'Pacientes',
       appointments: 'Citas',
       medicalRecords: 'Historiales Médicos',
+      consents: 'Consentimientos',
+      consentTemplates: 'Plantillas de Consentimiento',
       quotes: 'Presupuestos',
       invoices: 'Facturas',
       analytics: 'Estadísticas',
       admin: 'Administración',
       settings: 'Configuración',
       logout: 'Cerrar Sesión'
+    },
+
+    // Modules
+    modules: {
+      home: {
+        title: 'Inicio',
+        description: 'Resumen de su consulta médica'
+      },
+      patients: {
+        title: 'Gestión de Pacientes',
+        description: 'Gestione sus pacientes y su seguimiento'
+      },
+      appointments: {
+        title: 'Citas',
+        description: 'Programe y organice las consultas'
+      },
+      medicalRecords: {
+        title: 'Historiales Médicos',
+        description: 'Consultas, diagnósticos y prescripciones'
+      },
+      consents: {
+        title: 'Gestión de Consentimientos',
+        description: 'Gestione consentimientos RGPD y médicos'
+      },
+      consentTemplates: {
+        title: 'Plantillas de Consentimiento',
+        description: 'Cree y gestione sus plantillas de consentimiento personalizadas'
+      },
+      analytics: {
+        title: 'Estadísticas Médicas',
+        description: 'Analice su actividad médica'
+      },
+      settings: {
+        title: 'Configuración',
+        description: 'Configure su consulta y preferencias'
+      }
     },
 
     // Analytics
@@ -375,7 +491,8 @@ const translations = {
       required: 'Requerido',
       optional: 'Opcional',
       premium: 'Premium',
-      free: 'Gratuito'
+      free: 'Gratuito',
+      dashboard: 'Panel de Control'
     },
 
     // Auth

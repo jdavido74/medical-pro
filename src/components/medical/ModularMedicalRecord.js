@@ -4,7 +4,7 @@ import {
   FileText, Settings, Eye, EyeOff, User, Calendar,
   Heart, Baby, Stethoscope, Activity, Shield, Plus
 } from 'lucide-react';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useMedicalModules } from '../../contexts/MedicalModulesContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -14,7 +14,7 @@ import CardiologyModule from './modules/CardiologyModule';
 import PediatricsModule from './modules/PediatricsModule';
 
 const ModularMedicalRecord = ({ patientData, recordId, onUpdate, onClose }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     userSpecialties,

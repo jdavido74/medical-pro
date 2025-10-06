@@ -4,11 +4,11 @@ import {
   Heart, Activity, Zap, TrendingUp, AlertTriangle,
   Edit2, Save, X, Plus, Trash2
 } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useMedicalModules } from '../../../contexts/MedicalModulesContext';
 
 const CardiologyModule = ({ patientData, recordData, onUpdate, canEdit = true }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { canEditModule } = useMedicalModules();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(recordData?.cardiology || {

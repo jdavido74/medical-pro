@@ -1,7 +1,7 @@
 // components/dashboard/modals/MedicalHistoryModal.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  X, Stethoscope, Plus, FileText, User, Calendar
+  X, Stethoscope, Plus, FileText, User, Calendar, Save
 } from 'lucide-react';
 import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
 import MedicalRecordForm from '../../medical/MedicalRecordForm';
@@ -17,6 +17,8 @@ const MedicalHistoryModal = ({
 }) => {
   const [editingRecord, setEditingRecord] = useState(null);
   const [isRecordFormOpen, setIsRecordFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const formRef = useRef(null);
   const { hasPermission } = usePermissions();
   const { user } = useAuth();
 
@@ -58,15 +60,25 @@ const MedicalHistoryModal = ({
 
       setIsRecordFormOpen(false);
       setEditingRecord(null);
+      setIsSubmitting(false);
       // La liste se rechargera automatiquement via le MedicalHistoryViewer
     } catch (error) {
       console.error('Error saving medical record:', error);
+      setIsSubmitting(false);
     }
   };
 
   const handleCloseRecordForm = () => {
     setIsRecordFormOpen(false);
     setEditingRecord(null);
+    setIsSubmitting(false);
+  };
+
+  const handleFormSubmit = () => {
+    if (formRef.current && formRef.current.handleSubmit) {
+      setIsSubmitting(true);
+      formRef.current.handleSubmit();
+    }
   };
 
   const calculateAge = (birthDate) => {
@@ -225,17 +237,37 @@ const MedicalHistoryModal = ({
                 </div>
               </div>
 
-              <button
-                onClick={handleCloseRecordForm}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleCloseRecordForm}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleFormSubmit}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>{isSubmitting ? 'Guardando...' : 'Guardar'}</span>
+                </button>
+                <button
+                  onClick={handleCloseRecordForm}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Cerrar"
+                  disabled={isSubmitting}
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
             </div>
 
             {/* Form Content */}
             <div className="p-6 overflow-y-auto max-h-[calc(95vh-140px)]">
               <MedicalRecordForm
+                ref={formRef}
                 patient={patient}
                 existingRecord={editingRecord}
                 onSave={handleSaveRecord}

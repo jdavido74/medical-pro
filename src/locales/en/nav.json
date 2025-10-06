@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "home": "Home",
+    "patients": "Patients",
+    "appointments": "Appointments",
+    "medicalRecords": "Medical Records",
+    "quotes": "Quotes",
+    "invoices": "Invoices",
+    "analytics": "Medical Analytics",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "home": "Home",
+    "patients": "Patients",
+    "appointments": "Appointments",
+    "medicalRecords": "Medical Records",
+    "consents": "Consents",
+    "consentTemplates": "Consent Templates",
+    "quotes": "Quotes",
+    "invoices": "Invoices",
+    "analytics": "Analytics",
+    "admin": "Administration",
+    "settings": "Settings",
+    "logout": "Logout"
+  }
+}

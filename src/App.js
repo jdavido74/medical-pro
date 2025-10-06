@@ -2,12 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { DynamicTranslationsProvider } from './contexts/DynamicTranslationsContext';
 import { MedicalModulesProvider } from './contexts/MedicalModulesContext';
-import { initializeDefaultCatalog } from './utils/productsStorage';
-import { initializeSampleConsents } from './utils/consentsStorage';
-import { initializeSampleTemplates } from './utils/consentTemplatesStorage';
+import { initializeAllSampleData } from './utils/dataManager';
 import HomePage from './components/public/HomePage';
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
@@ -16,31 +14,25 @@ import Dashboard from './components/dashboard/Dashboard';
 // Composant principal de l'application
 const ClinicManagerApp = () => {
   useEffect(() => {
-    // Initialiser le catalogue médical par défaut au démarrage
-    initializeDefaultCatalog();
-    // Initialiser les consentements de démonstration
-    initializeSampleConsents();
-    // Initialiser les modèles de consentements de démonstration
-    initializeSampleTemplates();
+    // Initialiser toutes les données de démonstration avec gestion intelligente
+    initializeAllSampleData();
   }, []);
 
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <DynamicTranslationsProvider>
-          <MedicalModulesProvider>
-            <AppContent />
-          </MedicalModulesProvider>
-        </DynamicTranslationsProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <AuthProvider>
+      <DynamicTranslationsProvider>
+        <MedicalModulesProvider>
+          <AppContent />
+        </MedicalModulesProvider>
+      </DynamicTranslationsProvider>
+    </AuthProvider>
   );
 };
 
 // Contenu de l'application avec gestion des routes
 const AppContent = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t } = useTranslation('common');
   const [currentPage, setCurrentPage] = useState('home');
 
   // Afficher un loader pendant le chargement de la session
@@ -49,7 +41,7 @@ const AppContent = () => {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
         <div className="text-center">
           <Heart className="h-12 w-12 text-green-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">{t('common.loading')}</p>
+          <p className="text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );

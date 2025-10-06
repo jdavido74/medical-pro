@@ -7,7 +7,9 @@ const SocialAuth = ({ isLoading, setIsLoading, mode = 'login' }) => {
 
   // Authentification Google Business
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
+    if (typeof setIsLoading === 'function') {
+      setIsLoading(true);
+    }
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       const userData = {
@@ -24,13 +26,17 @@ const SocialAuth = ({ isLoading, setIsLoading, mode = 'login' }) => {
     } catch (error) {
       alert('❌ Erreur de connexion Google');
     } finally {
-      setIsLoading(false);
+      if (typeof setIsLoading === 'function') {
+        setIsLoading(false);
+      }
     }
   };
 
   // Authentification Microsoft
   const handleMicrosoftLogin = async () => {
-    setIsLoading(true);
+    if (typeof setIsLoading === 'function') {
+      setIsLoading(true);
+    }
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       const userData = {
@@ -47,7 +53,9 @@ const SocialAuth = ({ isLoading, setIsLoading, mode = 'login' }) => {
     } catch (error) {
       alert('❌ Erreur de connexion Microsoft');
     } finally {
-      setIsLoading(false);
+      if (typeof setIsLoading === 'function') {
+        setIsLoading(false);
+      }
     }
   };
 

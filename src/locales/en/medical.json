@@ -1,0 +1,14 @@
+{
+  "title": "Medical Records",
+  "subtitle": "Consultations, diagnoses and prescriptions",
+  "newRecord": "New Record",
+  "searchRecords": "Search record...",
+  "consultationDate": "Consultation Date",
+  "diagnosis": "Diagnosis",
+  "treatment": "Treatment",
+  "prescription": "Prescription",
+  "symptoms": "Symptoms",
+  "examination": "Clinical Examination",
+  "vitalSigns": "Vital Signs",
+  "followUp": "Follow-up"
+}

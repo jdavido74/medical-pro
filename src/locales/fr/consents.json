@@ -1,0 +1,8 @@
+{
+  "title": "Gestion des consentements",
+  "description": "Gérez les consentements RGPD et médicaux",
+  "templates": {
+    "title": "Modèles de consentements",
+    "description": "Créez et gérez vos modèles de consentements personnalisés"
+  }
+}

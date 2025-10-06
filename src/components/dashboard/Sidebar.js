@@ -5,11 +5,11 @@ import {
   LogOut, Heart, Shield
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t } = useTranslation('nav');
 
   const handleLogout = () => {
     logout();
@@ -23,8 +23,8 @@ const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
     { id: 'patients', label: t('sidebar.patients'), icon: Users },
     { id: 'appointments', label: t('sidebar.appointments'), icon: Calendar },
     { id: 'medical-records', label: t('sidebar.medicalRecords'), icon: FileText },
-    { id: 'consents', label: 'Consentements', icon: Shield },
-    { id: 'consent-templates', label: 'Modèles de consentements', icon: FileText },
+    { id: 'consents', label: t('sidebar.consents'), icon: Shield },
+    { id: 'consent-templates', label: t('sidebar.consentTemplates'), icon: FileText },
     { id: 'quotes', label: t('sidebar.quotes'), icon: FileText },
     { id: 'invoices', label: t('sidebar.invoices'), icon: FileText },
     { id: 'analytics', label: t('sidebar.analytics'), icon: BarChart3 },

@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import {
   X, Edit2, User, MapPin, Phone, Mail, Building, Calendar,
-  Shield, Heart, Activity, FileText, Clock, Eye, Stethoscope
+  Shield, Heart, Activity, FileText, Clock, Eye, Stethoscope, Plus
 } from 'lucide-react';
 import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
 import MedicalHistoryModal from './MedicalHistoryModal';
+import AppointmentFormModal from '../../modals/AppointmentFormModal';
 import { medicalRecordsStorage } from '../../../utils/medicalRecordsStorage';
+import { appointmentsStorage } from '../../../utils/appointmentsStorage';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
 
@@ -20,11 +22,16 @@ const PatientDetailModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [isMedicalHistoryModalOpen, setIsMedicalHistoryModalOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const { hasPermission } = usePermissions();
 
   // Permissions pour les dossiers médicaux
   const canEditMedicalRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_EDIT);
   const canViewMedicalRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW);
+
+  // Permissions pour les rendez-vous
+  const canViewAppointments = hasPermission(PERMISSIONS.APPOINTMENTS_VIEW);
+  const canCreateAppointments = hasPermission(PERMISSIONS.APPOINTMENTS_CREATE);
 
   // Gestionnaires pour les enregistrements médicaux
   const handleEditMedicalRecord = (record) => {
@@ -39,6 +46,15 @@ const PatientDetailModal = ({
 
   const handleOpenMedicalHistoryModal = () => {
     setIsMedicalHistoryModalOpen(true);
+  };
+
+  const handleOpenAppointmentModal = () => {
+    setIsAppointmentModalOpen(true);
+  };
+
+  const handleSaveAppointment = (appointment) => {
+    // Optionally refresh appointments list
+    console.log('Appointment saved:', appointment);
   };
 
   if (!isOpen || !patient) return null;
@@ -96,6 +112,12 @@ const PatientDetailModal = ({
       label: 'Datos Administrativos',
       icon: Building,
       visible: canViewAllData
+    },
+    {
+      id: 'appointments',
+      label: 'Citas',
+      icon: Calendar,
+      visible: canViewAppointments
     },
     {
       id: 'access',
@@ -345,7 +367,9 @@ const PatientDetailModal = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">0</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {appointmentsStorage.getByPatientId(patient.id).length}
+            </div>
             <div className="text-sm text-blue-600">Citas Totales</div>
           </div>
 
@@ -408,6 +432,195 @@ const PatientDetailModal = ({
       />
     </div>
   );
+
+  const renderAppointmentsTab = () => {
+    const patientAppointments = appointmentsStorage.getByPatientId(patient.id);
+    const upcomingAppointments = patientAppointments.filter(apt =>
+      new Date(apt.date) >= new Date() && !['cancelled', 'no_show'].includes(apt.status)
+    );
+    const pastAppointments = patientAppointments.filter(apt =>
+      new Date(apt.date) < new Date() || ['completed', 'cancelled', 'no_show'].includes(apt.status)
+    );
+
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'scheduled': return 'bg-blue-100 text-blue-800';
+        case 'confirmed': return 'bg-green-100 text-green-800';
+        case 'in_progress': return 'bg-yellow-100 text-yellow-800';
+        case 'completed': return 'bg-gray-100 text-gray-800';
+        case 'cancelled': return 'bg-red-100 text-red-800';
+        case 'no_show': return 'bg-orange-100 text-orange-800';
+        default: return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    const getStatusLabel = (status) => {
+      switch (status) {
+        case 'scheduled': return 'Programado';
+        case 'confirmed': return 'Confirmado';
+        case 'in_progress': return 'En curso';
+        case 'completed': return 'Completado';
+        case 'cancelled': return 'Cancelado';
+        case 'no_show': return 'No asistió';
+        default: return status;
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Quick actions */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">Gestión de Citas</h3>
+          {canCreateAppointments && (
+            <button
+              onClick={handleOpenAppointmentModal}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Nueva Cita</span>
+            </button>
+          )}
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="text-2xl font-bold text-blue-600">{upcomingAppointments.length}</div>
+            <div className="text-sm text-blue-600">Próximas Citas</div>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <div className="text-2xl font-bold text-green-600">
+              {pastAppointments.filter(apt => apt.status === 'completed').length}
+            </div>
+            <div className="text-sm text-green-600">Completadas</div>
+          </div>
+          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+            <div className="text-2xl font-bold text-red-600">
+              {pastAppointments.filter(apt => apt.status === 'cancelled').length}
+            </div>
+            <div className="text-sm text-red-600">Canceladas</div>
+          </div>
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+            <div className="text-2xl font-bold text-orange-600">
+              {pastAppointments.filter(apt => apt.status === 'no_show').length}
+            </div>
+            <div className="text-sm text-orange-600">No Asistió</div>
+          </div>
+        </div>
+
+        {/* Upcoming appointments */}
+        <div className="bg-white rounded-lg border">
+          <div className="p-4 border-b">
+            <h4 className="font-semibold text-gray-900 flex items-center">
+              <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+              Próximas Citas ({upcomingAppointments.length})
+            </h4>
+          </div>
+          <div className="p-4">
+            {upcomingAppointments.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingAppointments
+                  .sort((a, b) => new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime))
+                  .map(appointment => (
+                    <div key={appointment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-gray-900">
+                            {new Date(appointment.date).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: 'short'
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {appointment.startTime}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{appointment.title}</div>
+                          <div className="text-sm text-gray-600">{appointment.description}</div>
+                          <div className="text-xs text-gray-500">
+                            Duración: {appointment.duration || 30} min
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+                          {getStatusLabel(appointment.status)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No hay citas programadas</p>
+                {canCreateAppointments && (
+                  <button
+                    onClick={handleOpenAppointmentModal}
+                    className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
+                  >
+                    Programar primera cita
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Past appointments (last 10) */}
+        {pastAppointments.length > 0 && (
+          <div className="bg-white rounded-lg border">
+            <div className="p-4 border-b">
+              <h4 className="font-semibold text-gray-900 flex items-center">
+                <Clock className="h-5 w-5 mr-2 text-gray-600" />
+                Historial de Citas (últimas 10)
+              </h4>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3">
+                {pastAppointments
+                  .sort((a, b) => new Date(b.date + 'T' + b.startTime) - new Date(a.date + 'T' + a.startTime))
+                  .slice(0, 10)
+                  .map(appointment => (
+                    <div key={appointment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-gray-900">
+                            {new Date(appointment.date).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: '2-digit'
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {appointment.startTime}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{appointment.title}</div>
+                          <div className="text-sm text-gray-600">{appointment.description}</div>
+                          {appointment.notes && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Notas: {appointment.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+                          {getStatusLabel(appointment.status)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderAccessTab = () => (
     <div className="space-y-6">
@@ -484,6 +697,8 @@ const PatientDetailModal = ({
         return renderContactTab();
       case 'medical':
         return renderMedicalTab();
+      case 'appointments':
+        return renderAppointmentsTab();
       case 'administrative':
         return renderAdministrativeTab();
       case 'access':
@@ -573,6 +788,16 @@ const PatientDetailModal = ({
           patient={patient}
           isOpen={isMedicalHistoryModalOpen}
           onClose={() => setIsMedicalHistoryModalOpen(false)}
+        />
+      )}
+
+      {/* Appointment Form Modal */}
+      {isAppointmentModalOpen && (
+        <AppointmentFormModal
+          isOpen={isAppointmentModalOpen}
+          onClose={() => setIsAppointmentModalOpen(false)}
+          onSave={handleSaveAppointment}
+          preselectedPatient={patient}
         />
       )}
     </div>

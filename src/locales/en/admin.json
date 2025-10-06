@@ -1,0 +1,26 @@
+{
+  "title": "Administration",
+  "description": "Manage your practice and users",
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure your practice and preferences",
+    "clinic": "Practice",
+    "medical": "Medical",
+    "preferences": "Preferences",
+    "security": "Security",
+    "clinicInfo": "Practice Information",
+    "practitionerInfo": "Practitioner Information",
+    "medicalSettings": "Medical Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "tabs": {
+      "profile": "Profile",
+      "company": "Practice",
+      "catalog": "Catalog",
+      "security": "Security",
+      "billing": "Billing",
+      "notifications": "Notifications"
+    }
+  }
+}

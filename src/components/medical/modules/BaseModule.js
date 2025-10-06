@@ -4,11 +4,11 @@ import {
   User, Calendar, Thermometer, Heart, Scale,
   Activity, AlertCircle, Edit2, Save, X
 } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useMedicalModules } from '../../../contexts/MedicalModulesContext';
 
 const BaseModule = ({ patientData, recordData, onUpdate, canEdit = true }) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { canEditModule } = useMedicalModules();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(recordData || {

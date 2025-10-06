@@ -1,6 +1,6 @@
 // contexts/DynamicTranslationsContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useLanguage } from './LanguageContext';
+import { useTranslation } from 'react-i18next';
 
 const DynamicTranslationsContext = createContext();
 
@@ -186,7 +186,8 @@ class DynamicTranslationsService {
 }
 
 export const DynamicTranslationsProvider = ({ children }) => {
-  const { currentLanguage } = useLanguage();
+  const { i18n } = useTranslation();
+  const currentLanguage = i18n.language;
   const [translationsService] = useState(() => new DynamicTranslationsService());
   const [specialtyTranslations, setSpecialtyTranslations] = useState({});
   const [roleTranslations, setRoleTranslations] = useState({});

@@ -1,0 +1,14 @@
+{
+  "title": "Dossiers médicaux",
+  "subtitle": "Consultations, diagnostics et prescriptions",
+  "newRecord": "Nouveau dossier",
+  "searchRecords": "Rechercher un dossier...",
+  "consultationDate": "Date de consultation",
+  "diagnosis": "Diagnostic",
+  "treatment": "Traitement",
+  "prescription": "Ordonnance",
+  "symptoms": "Symptômes",
+  "examination": "Examen clinique",
+  "vitalSigns": "Signes vitaux",
+  "followUp": "Suivi"
+}

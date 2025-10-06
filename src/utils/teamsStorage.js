@@ -1,5 +1,5 @@
 // utils/teamsStorage.js
-import storage from './storage';
+import { storage } from './storage';
 import { usersStorage } from './usersStorage';
 
 const TEAMS_STORAGE_KEY = 'clinicmanager_teams';

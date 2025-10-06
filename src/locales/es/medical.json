@@ -1,0 +1,14 @@
+{
+  "title": "Historiales Médicos",
+  "subtitle": "Consultas, diagnósticos y prescripciones",
+  "newRecord": "Nuevo Historial",
+  "searchRecords": "Buscar historial...",
+  "consultationDate": "Fecha de Consulta",
+  "diagnosis": "Diagnóstico",
+  "treatment": "Tratamiento",
+  "prescription": "Receta",
+  "symptoms": "Síntomas",
+  "examination": "Examen Clínico",
+  "vitalSigns": "Signos Vitales",
+  "followUp": "Seguimiento"
+}

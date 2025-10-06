@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "patients": "Pacientes",
+    "appointments": "Citas",
+    "medicalRecords": "Historiales Médicos",
+    "quotes": "Presupuestos",
+    "invoices": "Facturas",
+    "analytics": "Estadísticas Médicas",
+    "settings": "Configuración"
+  },
+  "sidebar": {
+    "home": "Inicio",
+    "patients": "Pacientes",
+    "appointments": "Citas",
+    "medicalRecords": "Historiales Médicos",
+    "consents": "Consentimientos",
+    "consentTemplates": "Plantillas de Consentimiento",
+    "quotes": "Presupuestos",
+    "invoices": "Facturas",
+    "analytics": "Estadísticas",
+    "admin": "Administración",
+    "settings": "Configuración",
+    "logout": "Cerrar Sesión"
+  }
+}

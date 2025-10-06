@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "patients": "Patients",
+    "appointments": "Rendez-vous",
+    "medicalRecords": "Dossiers médicaux",
+    "quotes": "Devis",
+    "invoices": "Factures",
+    "analytics": "Statistiques médicales",
+    "settings": "Paramètres"
+  },
+  "sidebar": {
+    "home": "Accueil",
+    "patients": "Patients",
+    "appointments": "Rendez-vous",
+    "medicalRecords": "Dossiers médicaux",
+    "consents": "Consentements",
+    "consentTemplates": "Modèles de consentements",
+    "quotes": "Devis",
+    "invoices": "Factures",
+    "analytics": "Statistiques",
+    "admin": "Administration",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  }
+}
