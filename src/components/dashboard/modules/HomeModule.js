@@ -1,22 +1,37 @@
 // components/dashboard/modules/HomeModule.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users, Calendar, FileText, Heart, Plus, UserPlus,
   CalendarPlus, ArrowRight, Activity, Stethoscope,
-  Clipboard, Clock, AlertCircle
+  Clipboard, Clock, AlertCircle, Edit2, CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { patientsStorage } from '../../../utils/patientsStorage';
 
 const HomeModule = ({ setActiveModule }) => {
   const { user } = useAuth();
-
-  // Données simulées - seront remplacées par les vraies données depuis la base
-  const stats = {
+  const [incompletePatients, setIncompletePatients] = useState([]);
+  const [stats, setStats] = useState({
     patients: 0,
     appointments: 0,
     consultations: 0,
     pending: 0
-  };
+  });
+
+  // Charger les patients incomplets
+  useEffect(() => {
+    const allPatients = patientsStorage.getAll().filter(p => !p.deleted);
+    const incomplete = allPatients.filter(p => p.isIncomplete);
+    setIncompletePatients(incomplete);
+
+    // Mettre à jour les stats
+    setStats({
+      patients: allPatients.length,
+      appointments: 0,
+      consultations: 0,
+      pending: incomplete.length
+    });
+  }, []);
 
   const quickActions = [
     {
@@ -229,6 +244,68 @@ const HomeModule = ({ setActiveModule }) => {
           })}
         </div>
       </div>
+
+      {/* Fiches patients à compléter */}
+      {incompletePatients.length > 0 && (
+        <div className="bg-orange-50 rounded-xl shadow-sm border border-orange-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-orange-900">
+                  Fiches patients à compléter
+                </h3>
+                <p className="text-sm text-orange-700">
+                  {incompletePatients.length} patient{incompletePatients.length > 1 ? 's' : ''} créé{incompletePatients.length > 1 ? 's' : ''} rapidement nécessite{incompletePatients.length > 1 ? 'nt' : ''} de compléter leur profil
+                </p>
+              </div>
+            </div>
+            <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
+              {incompletePatients.length}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {incompletePatients.slice(0, 5).map((patient) => (
+              <div
+                key={patient.id}
+                className="flex items-center justify-between p-3 bg-white border border-orange-100 rounded-lg hover:bg-orange-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3 flex-1">
+                  <Users className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {patient.firstName} {patient.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {patient.email || patient.phone || 'Pas de contact'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveModule('patients')}
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors text-sm font-medium"
+                  title="Compléter la fiche"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  <span>Compléter</span>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {incompletePatients.length > 5 && (
+            <button
+              onClick={() => setActiveModule('patients')}
+              className="w-full mt-3 px-4 py-2 text-orange-700 hover:bg-orange-100 rounded-lg transition-colors font-medium text-sm"
+            >
+              Voir les {incompletePatients.length - 5} autres fiches à compléter →
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Configuration initiale */}
       {completedSteps < onboardingSteps.length && (

@@ -201,11 +201,27 @@ export const appointmentsStorage = {
 
   // Vérifier si un créneau est dans les horaires de disponibilité du praticien
   isWithinPractitionerAvailability: (practitionerId, date, startTime, endTime) => {
-    const availability = appointmentsStorage.getPractitionerAvailability(practitionerId, date);
+    let availability = appointmentsStorage.getPractitionerAvailability(practitionerId, date);
 
-    // Si pas de disponibilité définie, on retourne false (le praticien n'est pas disponible)
+    // Si pas de disponibilité définie, utiliser les horaires standard par défaut
     if (!availability || !availability.timeSlots || availability.timeSlots.length === 0) {
-      return { available: false, reason: 'Aucun créneau de disponibilité défini pour ce jour' };
+      const dayOfWeek = new Date(date).getDay();
+
+      // Dimanche = 0, Samedi = 6
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return {
+          available: false,
+          reason: 'Le praticien n\'est pas disponible le weekend'
+        };
+      }
+
+      // Utiliser les horaires standards
+      availability = {
+        timeSlots: [
+          { start: '09:00', end: '12:00' },
+          { start: '14:00', end: '18:00' }
+        ]
+      };
     }
 
     const newStart = new Date(`${date}T${startTime}`);
@@ -257,8 +273,29 @@ export const appointmentsStorage = {
 
   // Obtenir les créneaux disponibles - US 3.2
   getAvailableSlots: (practitionerId, date, duration = 30) => {
-    const availability = appointmentsStorage.getPractitionerAvailability(practitionerId, date);
-    if (!availability) return [];
+    let availability = appointmentsStorage.getPractitionerAvailability(practitionerId, date);
+    let usingDefaults = false;
+
+    // Si pas de disponibilité définie, utiliser les horaires standard par défaut
+    if (!availability) {
+      // Horaires standards: 9h-12h et 14h-18h du lundi au vendredi, fermé weekend
+      const dayOfWeek = new Date(date).getDay();
+
+      // Dimanche = 0, Samedi = 6
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return []; // Pas de créneaux le weekend
+      }
+
+      // Utiliser les horaires standards
+      availability = {
+        timeSlots: [
+          { start: '09:00', end: '12:00' },
+          { start: '14:00', end: '18:00' }
+        ]
+      };
+      usingDefaults = true;
+      console.log(`getAvailableSlots: Pas de disponibilité définie pour praticien ${practitionerId}, utilisation des horaires standards`);
+    }
 
     const appointments = appointmentsStorage.getByPractitionerId(practitionerId)
       .filter(apt => apt.date === date && !['cancelled', 'no_show'].includes(apt.status));

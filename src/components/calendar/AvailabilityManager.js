@@ -17,6 +17,7 @@ import PractitionerFilter from '../common/PractitionerFilter';
 const AvailabilityManager = ({
   onAppointmentScheduled,
   onAppointmentUpdated,
+  onAppointmentEdit,
   selectedPractitioner,
   canViewAllPractitioners = false,
   refreshKey = 0,
@@ -430,9 +431,12 @@ const AvailabilityManager = ({
     const isOwnAppointment = appointment.practitionerId === user?.id;
 
     if (canEdit || isOwnAppointment) {
-      // Ici on pourrait ouvrir un modal de détails/édition
-      console.log('Édition du rendez-vous:', appointment);
-      // onAppointmentEdit && onAppointmentEdit(appointment);
+      // Ouvrir le modal d'édition
+      if (onAppointmentEdit) {
+        onAppointmentEdit(appointment);
+      } else {
+        console.log('Édition du rendez-vous:', appointment);
+      }
     } else {
       console.log('Consultation du rendez-vous:', appointment);
       // onAppointmentView && onAppointmentView(appointment);

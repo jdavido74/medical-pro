@@ -12,12 +12,18 @@ import ConsentManagementModule from './modules/ConsentManagementModule';
 import ConsentTemplatesModule from './modules/ConsentTemplatesModule';
 import SettingsModule from './modules/SettingsModule';
 import AdminDashboard from '../admin/AdminDashboard';
+import SaasAdminDashboard from '../saas-admin/SaasAdminDashboard';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Dashboard = ({ setCurrentPage }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [activeModule, setActiveModule] = useState('home');
   const [selectedPatientId, setSelectedPatientId] = useState(null);
+
+  // Détecter si l'utilisateur est super_admin pour redirection automatique
+  const isSuperAdmin = user?.role === 'super_admin';
 
   // Fonction pour naviguer vers la fiche d'un patient spécifique
   const navigateToPatient = (patientId) => {
@@ -51,13 +57,19 @@ const Dashboard = ({ setCurrentPage }) => {
           </div>
         );
       case 'admin':
-        return <AdminDashboard />;
+        // Rediriger vers le bon dashboard selon le rôle
+        return isSuperAdmin ? <SaasAdminDashboard /> : <AdminDashboard />;
       case 'settings':
         return <SettingsModule />;
       default:
         return <HomeModule setActiveModule={setActiveModule} />;
     }
   };
+
+  // Si l'utilisateur est super_admin et sur la page d'accueil, afficher directement le SaaS Admin
+  if (isSuperAdmin && activeModule === 'home') {
+    return <SaasAdminDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

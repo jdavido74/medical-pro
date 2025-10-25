@@ -44,6 +44,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   const [selectedPractitioner, setSelectedPractitioner] = useState(null);
   const [preselectedDate, setPreselectedDate] = useState(null);
   const [preselectedTime, setPreselectedTime] = useState(null);
+  const [preselectedPractitioner, setPreselectedPractitioner] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0); // Pour forcer le rafraîchissement du calendrier
 
   // Charger les données
@@ -323,6 +324,14 @@ const AppointmentsModule = ({ navigateToPatient }) => {
     const selectedDate = date instanceof Date ? date.toISOString().split('T')[0] : date;
     setPreselectedDate(selectedDate);
     setPreselectedTime(time);
+
+    // Pré-sélectionner le praticien actuellement filtré du calendrier
+    if (filterPractitioner !== 'all') {
+      const practitioner = practitioners.find(p => p.id === filterPractitioner);
+      if (practitioner) {
+        setPreselectedPractitioner(practitioner);
+      }
+    }
 
     setIsAppointmentModalOpen(true);
   };
@@ -664,6 +673,10 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         <AvailabilityManager
           onAppointmentScheduled={handleAppointmentScheduledFromCalendar}
           onAppointmentUpdated={handleAppointmentUpdated}
+          onAppointmentEdit={(appointment) => {
+            setEditingAppointment(appointment);
+            setIsAppointmentModalOpen(true);
+          }}
           selectedPractitioner={isPractitioner ? user : (filterPractitioner !== 'all' ? practitioners.find(p => p.id === filterPractitioner) : null)}
           canViewAllPractitioners={canViewAllPractitioners}
           refreshKey={refreshKey}
@@ -680,11 +693,13 @@ const AppointmentsModule = ({ navigateToPatient }) => {
           setEditingAppointment(null);
           setPreselectedDate(null);
           setPreselectedTime(null);
+          setPreselectedPractitioner(null);
         }}
         onSave={handleSaveAppointment}
         editingAppointment={editingAppointment}
         preselectedDate={preselectedDate}
         preselectedTime={preselectedTime}
+        preselectedPractitioner={preselectedPractitioner}
       />
     </div>
   );

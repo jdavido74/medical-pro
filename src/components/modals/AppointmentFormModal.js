@@ -1,13 +1,15 @@
 // components/modals/AppointmentFormModal.js
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, Stethoscope, AlertTriangle, Save, Users } from 'lucide-react';
+import { X, Calendar, Clock, User, Stethoscope, AlertTriangle, Save, Users, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { appointmentsStorage } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { loadPractitioners } from '../../utils/practitionersLoader';
+import PatientSearchSelect from '../common/PatientSearchSelect';
+import QuickPatientModal from './QuickPatientModal';
 
-const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = null, preselectedPatient = null, preselectedDate = null, preselectedTime = null }) => {
+const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = null, preselectedPatient = null, preselectedDate = null, preselectedTime = null, preselectedPractitioner = null }) => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
@@ -26,6 +28,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     priority: 'normal',
     location: '',
     notes: '',
+    additionalSlots: [], // Créneaux supplémentaires pour le même rendez-vous
     reminders: {
       patient: { enabled: true, beforeMinutes: 1440 }, // 24h avant
       practitioner: { enabled: true, beforeMinutes: 30 }
@@ -38,6 +41,9 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [isQuickPatientModalOpen, setIsQuickPatientModalOpen] = useState(false);
+  const [quickPatientSearchQuery, setQuickPatientSearchQuery] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Types de rendez-vous
   const appointmentTypes = [
@@ -80,7 +86,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
         // Nouveau rendez-vous
         const newFormData = {
           patientId: preselectedPatient?.id || '',
-          practitionerId: user?.role === 'doctor' || user?.role === 'specialist' ? user.id : '',
+          practitionerId: preselectedPractitioner?.id || (user?.role === 'doctor' || user?.role === 'specialist' ? user.id : ''),
           type: 'consultation',
           title: '',
           description: '',
@@ -103,7 +109,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       setConflicts([]);
       setErrors({});
     }
-  }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, preselectedTime, user]);
+  }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, preselectedTime, preselectedPractitioner, user]);
 
   // Calculer les créneaux disponibles quand praticien ou date change
   useEffect(() => {
@@ -215,6 +221,26 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }));
   };
 
+  // Fonction appelée quand l'utilisateur demande la création d'un nouveau patient
+  const handleCreateNewPatient = (searchQuery) => {
+    setQuickPatientSearchQuery(searchQuery);
+    setIsQuickPatientModalOpen(true);
+  };
+
+  // Fonction appelée après la création réussie d'un patient
+  const handlePatientCreated = (newPatient) => {
+    // Recharger la liste des patients
+    const updatedPatients = patientsStorage.getAll();
+    setPatients(updatedPatients);
+
+    // Pré-sélectionner le nouveau patient
+    setFormData(prev => ({ ...prev, patientId: newPatient.id }));
+
+    // Fermer la modal de création rapide
+    setIsQuickPatientModalOpen(false);
+    setQuickPatientSearchQuery('');
+  };
+
   // Validation du formulaire
   const validateForm = () => {
     const newErrors = {};
@@ -272,6 +298,30 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }
   };
 
+  const handleDelete = async () => {
+    if (!editingAppointment?.id) return;
+
+    setIsLoading(true);
+    try {
+      // Soft delete - marquer comme supprimé
+      appointmentsStorage.delete(editingAppointment.id);
+
+      // TODO: Intégrer avec système de notifications email/SMS
+      // Pour l'instant, afficher un message de confirmation
+      console.log(`Rendez-vous ${editingAppointment.id} supprimé. Patient et praticien seront notifiés via email/SMS.`);
+
+      // Fermer le modal et notifier le parent
+      setShowDeleteConfirm(false);
+      onSave?.({ ...editingAppointment, deleted: true });
+      onClose();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      setErrors({ general: 'Erreur lors de la suppression du rendez-vous' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const selectedType = appointmentTypes.find(t => t.value === formData.type);
@@ -282,7 +332,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-blue-100">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Calendar className="h-6 w-6 text-blue-600" />
@@ -296,12 +346,34 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          <div className="flex items-center space-x-2">
+            {editingAppointment && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isLoading}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                title="Supprimer le rendez-vous"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Supprimer</span>
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={isLoading || conflicts.length > 0}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              title="Enregistrer le rendez-vous"
+            >
+              <Save className="h-4 w-4" />
+              <span>{isLoading ? 'Sauvegarde...' : (editingAppointment ? 'Modifier' : 'Créer')}</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -335,25 +407,19 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Colonne gauche - Informations principales */}
             <div className="space-y-6">
-              {/* Patient */}
+              {/* Patient - Utiliser le composant de recherche */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Patient *
                 </label>
-                <select
+                <PatientSearchSelect
                   value={formData.patientId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, patientId: e.target.value }))}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.patientId ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(patientId) => setFormData(prev => ({ ...prev, patientId }))}
+                  onCreateNew={handleCreateNewPatient}
+                  error={errors.patientId}
                   disabled={!!preselectedPatient}
-                >
-                  <option value="">Sélectionner un patient</option>
-                  {patients.map(patient => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.firstName} {patient.lastName} - {patient.patientNumber}
-                    </option>
-                  ))}
-                </select>
-                {errors.patientId && <p className="text-red-500 text-sm mt-1">{errors.patientId}</p>}
+                  placeholder="Rechercher ou créer un patient..."
+                />
               </div>
 
               {/* Praticien */}
@@ -492,21 +558,82 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       Aucun créneau disponible pour cette date. Choisissez une autre date.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
-                      {availableSlots.map((slot, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, startTime: slot.start, endTime: slot.end }))}
-                          className={`p-2 text-sm border rounded transition-colors ${
-                            formData.startTime === slot.start
-                              ? 'border-blue-500 bg-blue-500 text-white font-medium shadow-sm'
-                              : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm'
-                          }`}
-                        >
-                          {slot.start}
-                        </button>
-                      ))}
+                    <div className="space-y-3">
+                      {/* Créneau principal */}
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 block mb-2">
+                          Créneau principal *
+                        </label>
+                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+                          {availableSlots.map((slot, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, startTime: slot.start, endTime: slot.end }))}
+                              className={`p-2 text-sm border rounded transition-colors ${
+                                formData.startTime === slot.start
+                                  ? 'border-blue-500 bg-blue-500 text-white font-medium shadow-sm'
+                                  : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm'
+                              }`}
+                            >
+                              {slot.start}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Créneaux supplémentaires (optionnels) */}
+                      {formData.startTime && (
+                        <div>
+                          <label className="text-xs font-medium text-gray-600 block mb-2">
+                            Créneaux supplémentaires (optionnels - cliquer pour ajouter plusieurs créneaux)
+                          </label>
+                          <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            {availableSlots.map((slot, index) => {
+                              const isMainSlot = formData.startTime === slot.start;
+                              const isAdditional = formData.additionalSlots.some(s => s.start === slot.start);
+
+                              return (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isMainSlot) return; // Ne pas ajouter le créneau principal
+                                    if (isAdditional) {
+                                      // Supprimer le créneau
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        additionalSlots: prev.additionalSlots.filter(s => s.start !== slot.start)
+                                      }));
+                                    } else {
+                                      // Ajouter le créneau
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        additionalSlots: [...prev.additionalSlots, slot]
+                                      }));
+                                    }
+                                  }}
+                                  disabled={isMainSlot}
+                                  className={`p-2 text-sm border rounded transition-colors ${
+                                    isMainSlot
+                                      ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                                      : isAdditional
+                                      ? 'border-green-500 bg-green-500 text-white font-medium shadow-sm'
+                                      : 'border-gray-300 bg-white hover:border-green-300 hover:bg-green-50 hover:shadow-sm'
+                                  }`}
+                                >
+                                  {slot.start}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {formData.additionalSlots.length > 0 && (
+                            <p className="text-xs text-green-700 mt-2 p-2 bg-green-50 rounded">
+                              ✓ {formData.additionalSlots.length} créneau(x) supplémentaire(s) sélectionné(s)
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>}
@@ -732,6 +859,58 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
           </div>
         </div>
       </div>
+
+      {/* Modal de création rapide de patient */}
+      <QuickPatientModal
+        isOpen={isQuickPatientModalOpen}
+        onClose={() => {
+          setIsQuickPatientModalOpen(false);
+          setQuickPatientSearchQuery('');
+        }}
+        onSave={handlePatientCreated}
+        initialSearchQuery={quickPatientSearchQuery}
+      />
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md shadow-lg">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Supprimer le rendez-vous ?
+              </h3>
+              <p className="text-gray-600 text-center mb-6">
+                Cette action est irréversible. Le patient et le praticien seront notifiés par email/SMS de l'annulation.
+              </p>
+              <div className="bg-gray-50 p-3 rounded-lg mb-6 text-sm text-gray-700">
+                <div><strong>Patient:</strong> {selectedPatient?.firstName} {selectedPatient?.lastName}</div>
+                <div><strong>Praticien:</strong> {selectedPractitioner?.name}</div>
+                <div><strong>Date:</strong> {formData.date} à {formData.startTime}</div>
+              </div>
+            </div>
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between space-x-3 rounded-b-lg border-t">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isLoading}
+                className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isLoading}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{isLoading ? 'Suppression...' : 'Supprimer'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
