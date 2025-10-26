@@ -456,19 +456,8 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
             {editingAppointment && (() => {
               // Déterminer si l'utilisateur peut supprimer le RDV
               const canDelete = hasPermission(PERMISSIONS.APPOINTMENTS_DELETE);
-              const isAdminClinic = user?.role === 'clinic_admin';
-              const isSecretary = user?.role === 'secretary';
-              const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
-              const isOwnAppointment = editingAppointment?.practitionerId === user?.id;
 
-              // Permettre la suppression si:
-              // - L'utilisateur a la permission APPOINTMENTS_DELETE
-              // - C'est son propre rendez-vous ET c'est un praticien
-              // - L'utilisateur est admin clinique
-              // - L'utilisateur est secrétaire
-              const canDeleteAppointment = canDelete || isAdminClinic || isSecretary || (isPractitioner && isOwnAppointment);
-
-              if (!canDeleteAppointment) return null;
+              if (!canDelete) return null;
 
               return (
                 <button

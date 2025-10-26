@@ -420,22 +420,10 @@ const AvailabilityManager = ({
 
   // Gérer le clic sur un rendez-vous
   const handleAppointmentClick = (appointment) => {
-    // Afficher plus de détails ou permettre l'édition selon les permissions
+    // Utiliser la permission APPOINTMENTS_EDIT pour permettre l'édition
     const canEdit = hasPermission(PERMISSIONS.APPOINTMENTS_EDIT);
-    const isOwnAppointment = appointment.practitionerId === user?.id;
-    const isAdminClinic = user?.role === 'clinic_admin';
-    const isSecretary = user?.role === 'secretary';
-    const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
 
-    // Permettre l'édition si:
-    // - L'utilisateur a la permission APPOINTMENTS_EDIT
-    // - C'est son propre rendez-vous (le praticien peut toujours éditer ses propres RDV)
-    // - L'utilisateur est admin clinique
-    // - L'utilisateur est secrétaire
-    // - L'utilisateur est un praticien (médecin) - les médecins peuvent éditer les RDV affichés dans leur vue
-    const canEditAppointment = canEdit || isOwnAppointment || isAdminClinic || isSecretary || isPractitioner;
-
-    if (canEditAppointment) {
+    if (canEdit) {
       // Ouvrir le modal d'édition
       if (onAppointmentEdit) {
         onAppointmentEdit(appointment);
@@ -443,8 +431,7 @@ const AvailabilityManager = ({
         console.log('Édition du rendez-vous:', appointment);
       }
     } else {
-      console.log('Consultation du rendez-vous:', appointment);
-      // onAppointmentView && onAppointmentView(appointment);
+      console.debug('Utilisateur n\'a pas les permissions pour éditer ce rendez-vous');
     }
   };
 
