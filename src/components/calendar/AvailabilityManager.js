@@ -157,6 +157,15 @@ const AvailabilityManager = ({
       // Charger les rendez-vous pour la période affichée
       let validAppointments = appointmentsStorage.getAll();
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AvailabilityManager] Raw appointments from storage:', {
+          count: validAppointments.length,
+          firstAppointment: validAppointments[0],
+          hasIds: validAppointments.every(apt => !!apt.id),
+          missingIds: validAppointments.filter(apt => !apt.id)
+        });
+      }
+
       // Filtrer les RDV supprimés
       validAppointments = validAppointments.filter(apt => !apt.deleted);
 
@@ -188,7 +197,19 @@ const AvailabilityManager = ({
       const enrichedAppointments = filteredByPermissions.map(appointment => {
         const patient = allPatients.find(p => p.id === appointment.patientId);
         const practitioner = allPractitioners.find(p => p.id === appointment.practitionerId);
-        return enrichAppointmentWithPermissions(appointment, patient, practitioner, user, hasPermission);
+        const enriched = enrichAppointmentWithPermissions(appointment, patient, practitioner, user, hasPermission);
+
+        // Vérifier que l'ID est préservé
+        if (!enriched.id && process.env.NODE_ENV === 'development') {
+          console.error('[AvailabilityManager] Enriched appointment missing ID:', {
+            originalId: appointment.id,
+            enrichedId: enriched.id,
+            appointment,
+            enriched
+          });
+        }
+
+        return enriched;
       });
 
       setAppointments(enrichedAppointments);
