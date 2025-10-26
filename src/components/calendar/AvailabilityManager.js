@@ -843,20 +843,29 @@ const AvailabilityManager = ({
                   });
                   // Pour compatibilité, garder le premier appointment pour la logique existante
                   const appointmentAtTime = appointmentsAtTime[0];
-                  // Calculer la hauteur en fonction du nombre de RDV (24px par RDV + padding)
-                  const cellHeight = appointmentsAtTime.length > 0
-                    ? Math.max(48, appointmentsAtTime.length * 24 + 8)
-                    : 48;
-                  const heightClass = cellHeight === 48 ? 'h-12' : cellHeight === 72 ? 'h-24' : cellHeight === 96 ? 'h-32' : `h-auto`;
+                  // Calculer la hauteur en fonction du nombre de RDV
+                  // Chaque RDV fait ~22px (y compris le praticien si visible)
+                  // Limiter à max 6 RDV visibles (132px) pour éviter une cellule trop haute
+                  const maxVisibleAppointments = 6;
+                  const appointmentsToShow = appointmentsAtTime.slice(0, maxVisibleAppointments);
+                  const hiddenAppointmentsCount = Math.max(0, appointmentsAtTime.length - maxVisibleAppointments);
+                  const cellHeight = Math.max(
+                    48,
+                    appointmentsToShow.length * 22 + 8
+                  );
 
                   return (
-                    <div key={dayIndex} className={`p-1 border-l border-gray-200 ${heightClass} relative`} style={appointmentsAtTime.length > 2 ? { minHeight: `${cellHeight}px` } : {}}>
+                    <div
+                      key={dayIndex}
+                      className="p-1 border-l border-gray-200 relative"
+                      style={{ minHeight: `${cellHeight}px` }}
+                    >
                       {appointmentsAtTime.length > 0 ? (
                         <div className="space-y-0.5 h-full">
-                          {appointmentsAtTime.map((appointment, idx) => (
+                          {appointmentsToShow.map((appointment, idx) => (
                             <div
                               key={idx}
-                              className={`text-xs p-0.5 rounded cursor-pointer transition-colors min-h-[20px] ${
+                              className={`text-xs p-0.5 rounded cursor-pointer transition-colors ${
                                 appointment.title === 'RDV privé'
                                   ? 'bg-gray-100 text-gray-600 border border-gray-300'
                                   : getAppointmentColor(appointment.status)
@@ -874,6 +883,13 @@ const AvailabilityManager = ({
                               )}
                             </div>
                           ))}
+                          {hiddenAppointmentsCount > 0 && (
+                            <div className="text-xs text-center text-white bg-gray-700 py-1 rounded font-semibold cursor-pointer hover:bg-gray-800 transition-colors"
+                              title={`${hiddenAppointmentsCount} rendez-vous supplémentaires cachés`}
+                            >
+                              +{hiddenAppointmentsCount} RDV
+                            </div>
+                          )}
                         </div>
                       ) : timeSlot ? (
                         <div
