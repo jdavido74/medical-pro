@@ -7,7 +7,7 @@ import {
   CheckCircle, Zap, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { appointmentsStorage, availabilityStorage, migrateAppointmentPractitionerIds } from '../../utils/appointmentsStorage';
+import { appointmentsStorage, availabilityStorage, migrateAppointmentPractitionerIds, addMissingAppointmentIds } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
@@ -152,6 +152,12 @@ const AvailabilityManager = ({
       const migratedCount = migrateAppointmentPractitionerIds(allPractitioners);
       if (migratedCount > 0) {
         console.log(`[AvailabilityManager] ${migratedCount} rendez-vous migrés`);
+      }
+
+      // Ajouter des IDs aux rendez-vous existants qui n'en ont pas
+      const fixedCount = addMissingAppointmentIds();
+      if (fixedCount > 0) {
+        console.log(`[AvailabilityManager] ${fixedCount} rendez-vous réparés avec ajout d'IDs`);
       }
 
       // Charger les rendez-vous pour la période affichée

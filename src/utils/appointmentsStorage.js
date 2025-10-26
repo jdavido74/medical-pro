@@ -94,6 +94,40 @@ export const migrateAppointmentPractitionerIds = (practitioners) => {
   return migrated;
 };
 
+/**
+ * Ajouter des IDs aux rendez-vous existants qui n'en ont pas
+ * Cela corrige le bug où les RDV créés avant le fix perdaient leurs IDs
+ */
+export const addMissingAppointmentIds = () => {
+  const allAppointments = appointmentsStorage.getAll();
+
+  const appointmentsNeedingIds = allAppointments.filter(apt => !apt.id);
+
+  if (appointmentsNeedingIds.length === 0) {
+    console.log('[Migration] Aucun rendez-vous sans ID à réparer');
+    return 0;
+  }
+
+  console.warn(`[Migration] ${appointmentsNeedingIds.length} rendez-vous sans ID détectés - ajout des IDs`);
+
+  const fixedAppointments = allAppointments.map(apt => {
+    if (!apt.id) {
+      const newId = generateAppointmentId();
+      console.log(`[Migration] Ajout d'un ID au RDV: ${newId}`);
+      return {
+        ...apt,
+        id: newId
+      };
+    }
+    return apt;
+  });
+
+  localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(fixedAppointments));
+  console.log(`[Migration] ${appointmentsNeedingIds.length} rendez-vous réparés avec succès`);
+
+  return appointmentsNeedingIds.length;
+};
+
 // Service de gestion des rendez-vous
 export const appointmentsStorage = {
   // Récupérer tous les rendez-vous
