@@ -51,7 +51,8 @@ const AvailabilityManager = ({
   const [viewMode, setViewMode] = useState('week'); // 'week', 'day'
   const [selectedDate, setSelectedDate] = useState(null);
   const [availabilities, setAvailabilities] = useState([]);
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments] = useState([]); // RDV filtrés selon les permissions
+  const [allAppointments, setAllAppointments] = useState([]); // Tous les RDV (pour les conflits)
   const [isEditingAvailability, setIsEditingAvailability] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -154,13 +155,13 @@ const AvailabilityManager = ({
       }
 
       // Charger les rendez-vous pour la période affichée
-      let allAppointments = appointmentsStorage.getAll();
+      let validAppointments = appointmentsStorage.getAll();
 
       // Filtrer les RDV supprimés
-      allAppointments = allAppointments.filter(apt => !apt.deleted);
+      validAppointments = validAppointments.filter(apt => !apt.deleted);
 
       // Filtrer les RDV avec des praticiens inexistants
-      allAppointments = allAppointments.filter(apt => {
+      validAppointments = validAppointments.filter(apt => {
         const practitionerExists = allPractitioners.some(p => p.id === apt.practitionerId);
         if (!practitionerExists) {
           console.warn(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} inexistant`);
@@ -168,8 +169,11 @@ const AvailabilityManager = ({
         return practitionerExists;
       });
 
+      // SAUVEGARDER tous les RDV valides pour les vérifications de conflits
+      setAllAppointments(validAppointments);
+
       // FILTRER selon les permissions: voir tous les RDV ou seulement les siens
-      let filteredByPermissions = filterAppointmentsByPermissions(allAppointments, user, hasPermission);
+      let filteredByPermissions = filterAppointmentsByPermissions(validAppointments, user, hasPermission);
 
       // FILTRER par praticien spécifique si un filtre est appliqué
       if (filterPractitioner !== 'all') {
@@ -187,7 +191,7 @@ const AvailabilityManager = ({
       });
 
       setAppointments(enrichedAppointments);
-      console.log(`[AvailabilityManager] Chargement des RDV: ${allAppointments.length} valides, ${filteredByPermissions.length} après permissions`);
+      console.log(`[AvailabilityManager] Chargement des RDV: ${validAppointments.length} valides, ${filteredByPermissions.length} après permissions`);
 
       // Charger les disponibilités personnalisées (simulation)
       // Dans une vraie app, cela viendrait de la base de données
@@ -324,8 +328,9 @@ const AvailabilityManager = ({
           const startTime = currentTime.toTimeString().slice(0, 5);
           const endTime = nextTime.toTimeString().slice(0, 5);
 
-          // Vérifier s'il y a un conflit avec un rendez-vous existant
-          const hasConflict = appointments.some(apt => {
+          // IMPORTANT: Vérifier s'il y a un conflit avec TOUS les rendez-vous (pas juste les visibles)
+          // Cela permet de voir "Occupé" même pour les RDV que l'utilisateur ne peut pas voir
+          const hasConflict = allAppointments.some(apt => {
             if (apt.date !== dateStr) return false;
             const aptStart = new Date(`${dateStr}T${apt.startTime}`);
             const aptEnd = new Date(`${dateStr}T${apt.endTime}`);
