@@ -400,6 +400,11 @@ const AvailabilityManager = ({
     if (appointment.title) parts.push(`Type: ${appointment.title}`);
     if (appointment.startTime && appointment.endTime) {
       parts.push(`Horaire: ${appointment.startTime} - ${appointment.endTime}`);
+      // Ajouter les créneaux supplémentaires s'ils existent
+      if (appointment.additionalSlots && appointment.additionalSlots.length > 0) {
+        const additionalTimes = appointment.additionalSlots.map(s => `${s.start} - ${s.end}`).join(', ');
+        parts.push(`Créneaux supplémentaires: ${additionalTimes}`);
+      }
     }
     if (appointment.duration) parts.push(`Durée: ${appointment.duration}min`);
     if (appointment.description) parts.push(`Description: ${appointment.description}`);

@@ -208,7 +208,8 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
           formData.date,
           formData.startTime,
           formData.endTime,
-          editingAppointment?.id
+          editingAppointment?.id,
+          formData.additionalSlots
         );
         setConflicts(foundConflicts);
         setErrors(prev => {
@@ -232,7 +233,11 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       ...prev,
       type,
       duration: appointmentType?.duration || 30,
-      title: prev.title || appointmentType?.label || ''
+      title: prev.title || appointmentType?.label || '',
+      // Préserver les créneaux sélectionnés
+      startTime: prev.startTime,
+      endTime: prev.endTime,
+      additionalSlots: prev.additionalSlots
     }));
   };
 
@@ -699,19 +704,34 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                                       endTime: slot.end
                                     }));
                                   } else {
-                                    // Ajouter comme créneau supplémentaire
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      additionalSlots: [...prev.additionalSlots, slot]
-                                    }));
+                                    // Vérifier que le nouveau slot est continu avec le dernier
+                                    const lastSlot = formData.additionalSlots.length > 0
+                                      ? formData.additionalSlots[formData.additionalSlots.length - 1]
+                                      : availableSlots.find(s => s.start === formData.startTime);
+
+                                    // Vérifier la continuité
+                                    if (lastSlot && lastSlot.end === slot.start) {
+                                      // Le slot est continu, on peut l'ajouter
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        additionalSlots: [...prev.additionalSlots, slot]
+                                      }));
+                                    }
+                                    // Sinon, on ne fait rien (le clic est ignoré pour slot non-continu)
                                   }
                                 }
                               }}
+                              disabled={!isSelected && formData.startTime && (formData.additionalSlots.length > 0
+                                ? formData.additionalSlots[formData.additionalSlots.length - 1].end !== slot.start
+                                : availableSlots.find(s => s.start === formData.startTime)?.end !== slot.start
+                              )}
                               className={`p-2 text-sm border rounded transition-colors ${
-                                isFirstSelected
+                                isSelected
                                   ? 'border-blue-500 bg-blue-500 text-white font-medium shadow-sm'
-                                  : isSelected
-                                  ? 'border-green-500 bg-green-500 text-white font-medium shadow-sm'
+                                  : !isSelected && formData.startTime && (formData.additionalSlots.length > 0
+                                    ? formData.additionalSlots[formData.additionalSlots.length - 1].end !== slot.start
+                                    : availableSlots.find(s => s.start === formData.startTime)?.end !== slot.start)
+                                  ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                                   : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm'
                               }`}
                             >
@@ -721,7 +741,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                         })}
                       </div>
                       {formData.additionalSlots.length > 0 && (
-                        <p className="text-xs text-green-700 mt-2 p-2 bg-green-50 rounded">
+                        <p className="text-xs text-blue-700 mt-2 p-2 bg-blue-50 rounded">
                           ✓ {1 + formData.additionalSlots.length} slot(s) sélectionné(s): {formData.startTime}
                           {formData.additionalSlots.map(s => ` + ${s.start}`).join('')}
                         </p>

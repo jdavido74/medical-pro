@@ -551,6 +551,11 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                       <span className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
                         {new Date(appointment.date).toLocaleDateString('fr-FR')} à {appointment.startTime}
+                        {appointment.additionalSlots && appointment.additionalSlots.length > 0 && (
+                          <span className="ml-2 text-blue-600 font-medium">
+                            +{appointment.additionalSlots.length} slot(s)
+                          </span>
+                        )}
                       </span>
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />

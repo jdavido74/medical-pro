@@ -250,7 +250,7 @@ export const appointmentsStorage = {
   },
 
   // Vérifier les conflits de créneaux - US 3.2
-  checkTimeConflicts: (practitionerId, date, startTime, endTime, excludeId = null) => {
+  checkTimeConflicts: (practitionerId, date, startTime, endTime, excludeId = null, additionalSlots = []) => {
     const appointments = appointmentsStorage.getAll();
 
     const conflicts = appointments.filter(appointment => {
@@ -259,13 +259,25 @@ export const appointmentsStorage = {
       if (appointment.date !== date) return false;
       if (['cancelled', 'no_show'].includes(appointment.status)) return false;
 
-      // Vérifier le chevauchement des heures
-      const existingStart = new Date(`${date}T${appointment.startTime}`);
-      const existingEnd = new Date(`${date}T${appointment.endTime}`);
-      const newStart = new Date(`${date}T${startTime}`);
-      const newEnd = new Date(`${date}T${endTime}`);
+      // Créer une liste de tous les créneaux à vérifier (principal + supplémentaires)
+      const allNewSlots = [
+        { start: startTime, end: endTime },
+        ...additionalSlots
+      ];
 
-      return (newStart < existingEnd && newEnd > existingStart);
+      // Vérifier le chevauchement pour chaque créneau
+      for (const newSlot of allNewSlots) {
+        const existingStart = new Date(`${date}T${appointment.startTime}`);
+        const existingEnd = new Date(`${date}T${appointment.endTime}`);
+        const newStart = new Date(`${date}T${newSlot.start}`);
+        const newEnd = new Date(`${date}T${newSlot.end}`);
+
+        if (newStart < existingEnd && newEnd > existingStart) {
+          return true; // Conflit détecté
+        }
+      }
+
+      return false;
     });
 
     return conflicts;
