@@ -78,6 +78,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       if (editingAppointment) {
         setFormData({
           ...editingAppointment,
+          additionalSlots: editingAppointment.additionalSlots || [],
           reminders: editingAppointment.reminders || {
             patient: { enabled: true, beforeMinutes: 1440 },
             practitioner: { enabled: true, beforeMinutes: 30 }
@@ -99,6 +100,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
           priority: 'normal',
           location: '',
           notes: '',
+          additionalSlots: [],
           reminders: {
             patient: { enabled: true, beforeMinutes: 1440 },
             practitioner: { enabled: true, beforeMinutes: 30 }
@@ -381,10 +383,10 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {editingAppointment ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}
+                {editingAppointment ? t('appointments.edit') : t('appointments.new')}
               </h2>
               <p className="text-sm text-gray-500">
-                {editingAppointment ? 'Modifiez les informations du rendez-vous' : 'Planifiez un nouveau rendez-vous'}
+                {editingAppointment ? 'Modifique los detalles de la cita' : 'Programe una nueva cita'}
               </p>
             </div>
           </div>
@@ -394,20 +396,20 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isLoading}
                 className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                title="Supprimer le rendez-vous"
+                title={t('appointments.deleteTitle')}
               >
                 <Trash2 className="h-4 w-4" />
-                <span>Supprimer</span>
+                <span>{t('common.delete')}</span>
               </button>
             )}
             <button
               onClick={handleSave}
               disabled={isLoading || conflicts.length > 0}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-              title="Enregistrer le rendez-vous"
+              title={t('appointments.save')}
             >
               <Save className="h-4 w-4" />
-              <span>{isLoading ? 'Sauvegarde...' : (editingAppointment ? 'Modifier' : 'Créer')}</span>
+              <span>{isLoading ? `${t('common.saving')}...` : t('appointments.save')}</span>
             </button>
             <button
               onClick={onClose}
@@ -582,7 +584,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 {/* Sélection de l'heure parmi les créneaux disponibles */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Créneaux horaires disponibles *
+                    {t('appointments.timeSlots')}
                     {formData.practitionerId && formData.date && (
                       <span className="ml-2 text-xs text-gray-500">
                         ({availableSlots.length} disponibles)
@@ -604,7 +606,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       {/* Créneau principal */}
                       <div>
                         <label className="text-xs font-medium text-gray-600 block mb-2">
-                          Créneau principal *
+                          {t('appointments.primarySlot')}
                         </label>
                         <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
                           {availableSlots.map((slot, index) => (
@@ -628,7 +630,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       {formData.startTime && (
                         <div>
                           <label className="text-xs font-medium text-gray-600 block mb-2">
-                            Créneaux supplémentaires (optionnels - cliquer pour ajouter plusieurs créneaux)
+                            {t('appointments.additionalSlots')}
                           </label>
                           <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
                             {availableSlots.map((slot, index) => {
@@ -868,7 +870,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
 
           {errors.general && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{errors.general}</p>
+              <p className="text-red-700 text-sm">{errors.general || t('appointments.deletionError')}</p>
             </div>
           )}
         </div>
@@ -878,7 +880,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
           <div className="text-sm text-gray-500">
             {conflicts.length > 0 && (
               <span className="text-red-600 font-medium">
-                ⚠️ Conflit détecté - Veuillez choisir un autre créneau
+                ⚠️ {t('appointments.slotConflict')}
               </span>
             )}
           </div>
@@ -888,7 +890,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
               disabled={isLoading}
             >
-              Annuler
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSave}
@@ -896,7 +898,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="h-4 w-4" />
-              <span>{isLoading ? 'Sauvegarde...' : (editingAppointment ? 'Modifier' : 'Créer')}</span>
+              <span>{isLoading ? `${t('common.saving')}...` : t('appointments.save')}</span>
             </button>
           </div>
         </div>
@@ -922,10 +924,10 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                Supprimer le rendez-vous ?
+                {t('appointments.deleteTitle')}
               </h3>
               <p className="text-gray-600 text-center mb-4 text-sm">
-                Choisissez comment annuler ce rendez-vous:
+                Elija cómo cancelar esta cita:
               </p>
 
               {/* Détails du rendez-vous */}
@@ -947,9 +949,9 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       : 'border-gray-200 hover:border-blue-300 bg-white'
                   } disabled:opacity-50`}
                 >
-                  <div className="font-medium text-gray-900">📧 Supprimer et prévenir</div>
+                  <div className="font-medium text-gray-900">📧 {t('appointments.deleteWithNotification')}</div>
                   <div className="text-xs text-gray-600 mt-1">
-                    Le patient et le praticien seront notifiés par email/SMS de l'annulation
+                    {t('appointments.notifyPatient')} / {t('appointments.notifyPractitioner')}
                   </div>
                 </button>
 
@@ -963,9 +965,9 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       : 'border-gray-200 hover:border-orange-300 bg-white'
                   } disabled:opacity-50`}
                 >
-                  <div className="font-medium text-gray-900">⚠️ Supprimer sans prévenir</div>
+                  <div className="font-medium text-gray-900">⚠️ {t('appointments.deleteSilent')}</div>
                   <div className="text-xs text-gray-600 mt-1">
-                    Aucune notification ne sera envoyée (à utiliser avec prudence)
+                    {t('appointments.noNotification')}
                   </div>
                 </button>
               </div>
@@ -973,7 +975,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               {/* Avertissement si mode silencieux sélectionné */}
               {deleteMode === 'silent' && (
                 <div className="mb-6 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800">
-                  <strong>⚠️ Attention:</strong> Le patient et le praticien ne seront pas notifiés de cette annulation.
+                  <strong>⚠️ Atención:</strong> El paciente y el médico no serán notificados de esta cancelación.
                 </div>
               )}
             </div>
@@ -988,7 +990,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 disabled={isLoading}
                 className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => handleDelete(deleteMode)}
@@ -997,7 +999,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               >
                 <Trash2 className="h-4 w-4" />
                 <span>
-                  {isLoading ? 'Suppression...' : deleteMode === 'notify' ? 'Supprimer et prévenir' : deleteMode === 'silent' ? 'Supprimer sans prévenir' : 'Supprimer'}
+                  {isLoading ? 'Eliminando...' : deleteMode === 'notify' ? t('appointments.deleteWithNotification') : deleteMode === 'silent' ? t('appointments.deleteSilent') : t('common.delete')}
                 </span>
               </button>
             </div>
