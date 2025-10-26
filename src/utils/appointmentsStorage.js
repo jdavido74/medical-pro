@@ -931,7 +931,7 @@ export const initializeSampleAppointments = () => {
     const sampleAppointments = [
       {
         patientId: 'demo_patient_1',
-        practitionerId: 'demo_doctor_1',
+        practitionerId: 'demo_pract_002', // Dr. Carlos Garcia
         title: 'Consultation de routine',
         type: 'consultation',
         date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Demain
@@ -945,7 +945,7 @@ export const initializeSampleAppointments = () => {
       },
       {
         patientId: 'demo_patient_1',
-        practitionerId: 'demo_doctor_1',
+        practitionerId: 'demo_pract_002', // Dr. Carlos Garcia
         title: 'Suivi diabète',
         type: 'follow_up',
         date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Dans une semaine
@@ -971,12 +971,15 @@ export const initializeSampleAppointments = () => {
   // Initialiser quelques disponibilités de base
   const existingAvailabilities = availabilityStorage.getAll();
   if (existingAvailabilities.length === 0) {
-    // Disponibilités du Dr. Garcia (Lundi à Vendredi)
-    for (let day = 1; day <= 5; day++) {
-      availabilityStorage.setAvailability('demo_doctor_1', day, [
-        { start: '08:00', end: '12:00' },
-        { start: '14:00', end: '18:00' }
-      ], 'demo');
+    // Disponibilités des praticiens (Lundi à Vendredi)
+    const practitioners = ['demo_pract_001', 'demo_pract_002', 'demo_pract_003'];
+    for (const practitionerId of practitioners) {
+      for (let day = 1; day <= 5; day++) {
+        availabilityStorage.setAvailability(practitionerId, day, [
+          { start: '08:00', end: '12:00' },
+          { start: '14:00', end: '18:00' }
+        ], 'demo');
+      }
     }
   }
 };
