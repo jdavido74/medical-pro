@@ -169,9 +169,6 @@ const AvailabilityManager = ({
         return practitionerExists;
       });
 
-      // SAUVEGARDER tous les RDV valides pour les vérifications de conflits
-      setAllAppointments(validAppointments);
-
       // FILTRER selon les permissions: voir tous les RDV ou seulement les siens
       let filteredByPermissions = filterAppointmentsByPermissions(validAppointments, user, hasPermission);
 
@@ -179,6 +176,10 @@ const AvailabilityManager = ({
       if (filterPractitioner !== 'all') {
         filteredByPermissions = filteredByPermissions.filter(apt => apt.practitionerId === filterPractitioner);
       }
+
+      // SAUVEGARDER les RDV filtrés pour les vérifications de conflits
+      // Cela garantit qu'un praticien ne voit les créneaux occupés que pour ses propres RDV
+      setAllAppointments(filteredByPermissions);
 
       // Charger les patients pour l'enrichissement
       const allPatients = patientsStorage.getAll();
