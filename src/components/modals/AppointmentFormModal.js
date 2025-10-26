@@ -475,8 +475,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                   editingAppointment: !!editingAppointment,
                   canDelete,
                   permission: PERMISSIONS.APPOINTMENTS_DELETE,
-                  userRole: user?.role,
-                  userPermissions: usePermissions().permissions
+                  userRole: user?.role
                 });
               }
 
