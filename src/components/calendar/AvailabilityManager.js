@@ -842,8 +842,21 @@ const AvailabilityManager = ({
                               : 'bg-red-100 border border-red-300'
                           }`}
                           onClick={() => timeSlot.available && onAppointmentScheduled?.(day, time)}
+                          title={!timeSlot.available && appointmentAtTime ? getAppointmentTooltip(appointmentAtTime) : ''}
                         >
-                          {!timeSlot.available && (
+                          {timeSlot.available ? (
+                            <div className="text-xs text-green-700 p-1">Libre</div>
+                          ) : appointmentAtTime ? (
+                            // Afficher les données du RDV si un appointment occupe le créneau
+                            <div className="text-xs p-1">
+                              <div className="font-medium truncate text-gray-900">
+                                {appointmentAtTime.patientName || 'RDV'}
+                              </div>
+                              <div className="text-gray-600 truncate">
+                                {appointmentAtTime.startTime} - {appointmentAtTime.endTime}
+                              </div>
+                            </div>
+                          ) : (
                             <div className="text-xs text-red-600 p-1">Occupé</div>
                           )}
                         </div>
