@@ -79,8 +79,15 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       setPractitioners(allPractitioners);
 
       if (editingAppointment) {
+        console.log('[AppointmentFormModal] Setting formData from editingAppointment:', {
+          appointmentId: editingAppointment.id,
+          hasAdditionalSlots: !!editingAppointment.additionalSlots
+        });
+
         setFormData({
           ...editingAppointment,
+          // Assurer explicitement que l'ID est présent
+          id: editingAppointment.id,
           additionalSlots: editingAppointment.additionalSlots || [],
           reminders: editingAppointment.reminders || {
             patient: { enabled: true, beforeMinutes: 1440 },
