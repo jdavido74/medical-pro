@@ -833,38 +833,45 @@ const AvailabilityManager = ({
                   const timeSlot = daySlots.find(slot => slot.start === time);
                   const dayAppointments = getAppointmentsForDate(day);
                   const dateStr = day.toISOString().split('T')[0];
-                  // IMPORTANT: Vérifier que l'appointment chevauche ce créneau horaire, pas juste commencer à cette heure
-                  const appointmentAtTime = dayAppointments.find(apt => {
+                  // IMPORTANT: Obtenir TOUS les appointments qui chevauchent ce créneau (pas juste le premier)
+                  const appointmentsAtTime = dayAppointments.filter(apt => {
                     const apptStart = new Date(`${dateStr}T${apt.startTime}`);
                     const apptEnd = new Date(`${dateStr}T${apt.endTime}`);
                     const slotStart = new Date(`${dateStr}T${time}`);
                     const slotEnd = new Date(`${dateStr}T${daySlots.find(s => s.start === time)?.end || time}`);
                     return apptStart <= slotStart && apptEnd > slotStart;
                   });
+                  // Pour compatibilité, garder le premier appointment pour la logique existante
+                  const appointmentAtTime = appointmentsAtTime[0];
 
                   return (
-                    <div key={dayIndex} className="p-1 border-l border-gray-200 h-12 relative">
-                      {appointmentAtTime ? (
-                        <div
-                          className={`text-xs p-1 rounded truncate h-full cursor-pointer transition-colors ${
-                            appointmentAtTime.title === 'RDV privé'
-                              ? 'bg-gray-100 text-gray-600 border border-gray-300'
-                              : getAppointmentColor(appointmentAtTime.status)
-                          }`}
-                          title={getAppointmentTooltip(appointmentAtTime)}
-                          onClick={() => handleAppointmentClick(appointmentAtTime)}
-                        >
-                          <div className="font-medium truncate">
-                            {appointmentAtTime.patientName || appointmentAtTime.title}
-                          </div>
-                          {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointmentAtTime.practitionerName && (
-                            <div className="text-xs opacity-75 truncate text-blue-600 font-semibold">
-                              {appointmentAtTime.practitionerName}
+                    <div key={dayIndex} className="p-1 border-l border-gray-200 h-12 relative overflow-hidden">
+                      {appointmentsAtTime.length > 0 ? (
+                        <div className="space-y-0.5 h-full overflow-y-auto">
+                          {appointmentsAtTime.map((appointment, idx) => (
+                            <div
+                              key={idx}
+                              className={`text-xs p-0.5 rounded truncate cursor-pointer transition-colors ${
+                                appointment.title === 'RDV privé'
+                                  ? 'bg-gray-100 text-gray-600 border border-gray-300'
+                                  : getAppointmentColor(appointment.status)
+                              }`}
+                              title={getAppointmentTooltip(appointment)}
+                              onClick={() => handleAppointmentClick(appointment)}
+                            >
+                              <div className="font-medium truncate text-xs leading-tight">
+                                {appointment.patientName || appointment.title}
+                              </div>
+                              {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointment.practitionerName && (
+                                <div className="text-xs opacity-75 truncate text-blue-600 font-semibold leading-tight">
+                                  {appointment.practitionerName}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {appointmentAtTime.patientName && appointmentAtTime.patientName !== 'Rendez-vous masqué' && (
-                            <div className="text-xs opacity-75 truncate">
-                              {appointmentAtTime.startTime} - {appointmentAtTime.endTime}
+                          ))}
+                          {appointmentsAtTime.length > 1 && (
+                            <div className="text-xs text-center text-gray-500 py-0.5">
+                              +{appointmentsAtTime.length} RDV
                             </div>
                           )}
                         </div>
