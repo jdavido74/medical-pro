@@ -924,6 +924,25 @@ export const availabilityStorage = {
   }
 };
 
+// Nettoyer les rendez-vous avec des praticiens inexistants
+export const cleanupInvalidAppointments = (practitioners) => {
+  const allAppointments = appointmentsStorage.getAll();
+  const validPractitionerIds = practitioners.map(p => p.id);
+
+  const invalidAppointments = allAppointments.filter(apt =>
+    !validPractitionerIds.includes(apt.practitionerId) && !apt.deleted
+  );
+
+  if (invalidAppointments.length > 0) {
+    console.log(`[Cleanup] Suppression de ${invalidAppointments.length} rendez-vous avec praticiens inexistants`);
+    invalidAppointments.forEach(apt => {
+      appointmentsStorage.delete(apt.id); // Soft delete
+    });
+  }
+
+  return invalidAppointments.length;
+};
+
 // Fonction d'initialisation avec des données de démonstration
 export const initializeSampleAppointments = () => {
   const existingAppointments = appointmentsStorage.getAll();

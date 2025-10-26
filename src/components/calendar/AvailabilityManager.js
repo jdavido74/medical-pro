@@ -7,7 +7,7 @@ import {
   CheckCircle, Zap, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { appointmentsStorage, availabilityStorage, enrichAppointments } from '../../utils/appointmentsStorage';
+import { appointmentsStorage, availabilityStorage, enrichAppointments, cleanupInvalidAppointments } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
@@ -141,6 +141,12 @@ const AvailabilityManager = ({
     try {
       // Charger les praticiens
       const allPractitioners = loadPractitioners(user);
+
+      // NETTOYER les rendez-vous avec des praticiens inexistants
+      const cleanedCount = cleanupInvalidAppointments(allPractitioners);
+      if (cleanedCount > 0) {
+        console.log(`[AvailabilityManager] ${cleanedCount} rendez-vous corrompus ont été supprimés`);
+      }
 
       // Charger les rendez-vous pour la période affichée
       const allAppointments = appointmentsStorage.getAll();
