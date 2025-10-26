@@ -23,6 +23,13 @@ export const enrichAppointmentWithPermissions = (
   user,
   hasPermission
 ) => {
+  if (process.env.NODE_ENV === 'development' && !appointment.id) {
+    console.warn('[enrichAppointmentWithPermissions] Appointment without ID:', {
+      appointment,
+      hasId: !!appointment.id
+    });
+  }
+
   // Données de base toujours enrichies
   const enriched = {
     ...appointment,
