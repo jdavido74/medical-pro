@@ -57,19 +57,28 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   // Charger les données
   useEffect(() => {
     loadData();
-    // Initialiser le praticien sélectionné
-    if (user && !selectedPractitioner) {
+    // Initialiser le praticien sélectionné seulement si l'utilisateur EST un praticien
+    if (user && !selectedPractitioner && (user.role === 'doctor' || user.role === 'specialist')) {
       setSelectedPractitioner(user);
     }
   }, []);
 
   useEffect(() => {
-    if (user && !selectedPractitioner) {
-      setSelectedPractitioner(user);
+    // Pour les praticiens (doctor/specialist), initialiser le filtre sur leurs propres RDV
+    if (user && (user.role === 'doctor' || user.role === 'specialist')) {
+      if (!selectedPractitioner) {
+        setSelectedPractitioner(user);
+      }
+      // Si l'utilisateur ne peut pas voir tous les RDV, forcer le filtre sur ses RDV
+      if (!canViewAllAppointments && filterPractitioner !== user.id) {
+        setFilterPractitioner(user.id);
+      }
     }
-    // Si l'utilisateur ne peut pas voir tous les RDV, forcer le filtre sur ses RDV
-    if (user && !canViewAllAppointments && filterPractitioner !== user.id) {
-      setFilterPractitioner(user.id);
+    // Pour les secrétaires et admins, initialiser avec 'all'
+    else if (user && (user.role === 'secretary' || user.role === 'admin')) {
+      if (filterPractitioner !== 'all') {
+        setFilterPractitioner('all');
+      }
     }
   }, [user, canViewAllAppointments]);
 
