@@ -114,21 +114,28 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
 
       setConflicts([]);
       setErrors({});
+      setShowDeleteConfirm(false);
+      setDeleteMode(null);
     }
   }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, preselectedTime, preselectedPractitioner, user]);
 
   // Calculer les créneaux disponibles quand praticien ou date change
   useEffect(() => {
     if (formData.practitionerId && formData.date && formData.duration) {
+      // Lors de l'édition, exclure le RDV actuel de la vérification de disponibilité
+      // car le créneau est occupé par le RDV en cours d'édition
       const slots = appointmentsStorage.getAvailableSlots(
         formData.practitionerId,
         formData.date,
-        formData.duration
+        formData.duration,
+        editingAppointment?.id // Passer l'ID du RDV en édition pour l'exclure
       );
       setAvailableSlots(slots);
 
-      // Si l'heure actuelle n'est plus disponible, la réinitialiser
-      if (formData.startTime) {
+      // Si on édite un RDV et que l'heure actuelle n'est pas dans les créneaux disponibles,
+      // c'est normal car le RDV occupe ce créneau. Ne pas réinitialiser.
+      // Cependant, si on crée un nouveau RDV et que l'heure n'est pas disponible, réinitialiser.
+      if (formData.startTime && !editingAppointment) {
         const isCurrentTimeAvailable = slots.some(slot => slot.start === formData.startTime);
         if (!isCurrentTimeAvailable) {
           setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
@@ -137,7 +144,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     } else {
       setAvailableSlots([]);
     }
-  }, [formData.practitionerId, formData.date, formData.duration]);
+  }, [formData.practitionerId, formData.date, formData.duration, editingAppointment?.id]);
 
   // Calculer l'heure de fin automatiquement
   useEffect(() => {

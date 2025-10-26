@@ -364,7 +364,7 @@ export const appointmentsStorage = {
   },
 
   // Obtenir les créneaux disponibles - US 3.2
-  getAvailableSlots: (practitionerId, date, duration = 30) => {
+  getAvailableSlots: (practitionerId, date, duration = 30, excludeAppointmentId = null) => {
     let availability = appointmentsStorage.getPractitionerAvailability(practitionerId, date);
     let usingDefaults = false;
 
@@ -389,8 +389,14 @@ export const appointmentsStorage = {
       console.log(`getAvailableSlots: Pas de disponibilité définie pour praticien ${practitionerId}, utilisation des horaires standards`);
     }
 
-    const appointments = appointmentsStorage.getByPractitionerId(practitionerId)
+    let appointments = appointmentsStorage.getByPractitionerId(practitionerId)
       .filter(apt => apt.date === date && !['cancelled', 'no_show'].includes(apt.status));
+
+    // Exclure un rendez-vous spécifique (utile lors de l'édition)
+    // Cela permet de réserver le créneau du RDV en cours d'édition
+    if (excludeAppointmentId) {
+      appointments = appointments.filter(apt => apt.id !== excludeAppointmentId);
+    }
 
     const slots = [];
 
