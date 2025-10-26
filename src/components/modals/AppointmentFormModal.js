@@ -371,8 +371,23 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   };
 
   const handleDelete = async (mode = null) => {
-    if (!editingAppointment?.id) {
-      console.error('[handleDelete] No appointment ID to delete');
+    console.log('[handleDelete] DEBUG:', {
+      editingAppointment,
+      formDataId: formData.id,
+      editingAppointmentId: editingAppointment?.id,
+      mode
+    });
+
+    // Utiliser formData.id si editingAppointment.id n'existe pas
+    const appointmentId = editingAppointment?.id || formData.id;
+
+    if (!appointmentId) {
+      console.error('[handleDelete] No appointment ID to delete', {
+        editingAppointment,
+        formData,
+        hasEditingId: !!editingAppointment?.id,
+        hasFormDataId: !!formData.id
+      });
       return;
     }
 
@@ -383,17 +398,17 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       return;
     }
 
-    console.log('[handleDelete] Starting deletion with mode:', mode, 'appointmentId:', editingAppointment.id);
+    console.log('[handleDelete] Starting deletion with mode:', mode, 'appointmentId:', appointmentId);
     setIsLoading(true);
     try {
       // Soft delete - marquer comme supprimé (passer l'ID de l'utilisateur courant)
-      const deletedAppointment = appointmentsStorage.delete(editingAppointment.id, user?.id || 'system');
+      const deletedAppointment = appointmentsStorage.delete(appointmentId, user?.id || 'system');
       console.log('[handleDelete] Appointment deleted:', deletedAppointment);
 
       // Gérer les notifications selon le mode
       if (mode === 'notify') {
         // Mode avec notifications
-        console.log(`✉️ Rendez-vous ${editingAppointment.id} supprimé avec notifications.`);
+        console.log(`✉️ Rendez-vous ${appointmentId} supprimé avec notifications.`);
         console.log(`📧 Email d'annulation envoyé au patient: ${selectedPatient?.email || 'N/A'}`);
         console.log(`📧 Email d'annulation envoyé au praticien: ${selectedPractitioner?.email || 'N/A'}`);
         console.log(`📱 SMS d'annulation envoyé au patient: ${selectedPatient?.phone || 'N/A'}`);
@@ -424,14 +439,14 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
         console.log('Données de notification préparées:', notificationData);
       } else if (mode === 'silent') {
         // Mode sans notifications
-        console.log(`🗑️ Rendez-vous ${editingAppointment.id} supprimé SANS notifications.`);
+        console.log(`🗑️ Rendez-vous ${appointmentId} supprimé SANS notifications.`);
         console.log(`⚠️ Aucune notification ne sera envoyée au patient ou au praticien.`);
       }
 
       // Fermer les modals et notifier le parent
       setShowDeleteConfirm(false);
       setDeleteMode(null);
-      onSave?.({ ...editingAppointment, deleted: true });
+      onSave?.({ ...(editingAppointment || formData), id: appointmentId, deleted: true });
       onClose();
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
