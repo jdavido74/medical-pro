@@ -55,6 +55,45 @@ export const enrichAppointments = (appointments, patients, practitioners) => {
   });
 };
 
+/**
+ * Migrer les rendez-vous avec des IDs de praticien obsolètes
+ * Corrige les appointments qui utilisaient les anciens IDs (demo_doctor_1, etc.)
+ * vers les nouveaux IDs (demo_pract_002, etc.)
+ * @param {Array} practitioners - Liste des praticiens actuels
+ */
+export const migrateAppointmentPractitionerIds = (practitioners) => {
+  const allAppointments = appointmentsStorage.getAll();
+
+  // Map des anciens IDs vers les nouveaux
+  const idMap = {
+    'demo_doctor_1': 'demo_pract_002' // Dr. Carlos Garcia
+  };
+
+  let migrated = 0;
+  const migratedAppointments = allAppointments.map(apt => {
+    if (idMap[apt.practitionerId]) {
+      const newId = idMap[apt.practitionerId];
+      // Vérifier que le nouveau praticien existe
+      if (practitioners.some(p => p.id === newId)) {
+        console.log(`[Migration] RDV ${apt.id}: praticien ${apt.practitionerId} -> ${newId}`);
+        migrated++;
+        return {
+          ...apt,
+          practitionerId: newId
+        };
+      }
+    }
+    return apt;
+  });
+
+  if (migrated > 0) {
+    localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(migratedAppointments));
+    console.log(`[Migration] ${migrated} rendez-vous migrés avec succès`);
+  }
+
+  return migrated;
+};
+
 // Service de gestion des rendez-vous
 export const appointmentsStorage = {
   // Récupérer tous les rendez-vous
@@ -922,25 +961,6 @@ export const availabilityStorage = {
       throw error;
     }
   }
-};
-
-// Nettoyer les rendez-vous avec des praticiens inexistants
-export const cleanupInvalidAppointments = (practitioners) => {
-  const allAppointments = appointmentsStorage.getAll();
-  const validPractitionerIds = practitioners.map(p => p.id);
-
-  const invalidAppointments = allAppointments.filter(apt =>
-    !validPractitionerIds.includes(apt.practitionerId) && !apt.deleted
-  );
-
-  if (invalidAppointments.length > 0) {
-    console.log(`[Cleanup] Suppression de ${invalidAppointments.length} rendez-vous avec praticiens inexistants`);
-    invalidAppointments.forEach(apt => {
-      appointmentsStorage.delete(apt.id); // Soft delete
-    });
-  }
-
-  return invalidAppointments.length;
 };
 
 // Fonction d'initialisation avec des données de démonstration
