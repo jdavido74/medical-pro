@@ -66,10 +66,10 @@ const Dashboard = ({ setCurrentPage }) => {
     }
   };
 
-  // Si l'utilisateur est super_admin et sur la page d'accueil, afficher directement le SaaS Admin
-  if (isSuperAdmin && activeModule === 'home') {
-    return <SaasAdminDashboard />;
-  }
+  // Redirection au SaaS Admin désactivée pour permettre l'accès au frontend clinique
+  // if (isSuperAdmin && activeModule === 'home') {
+  //   return <SaasAdminDashboard />;
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

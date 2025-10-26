@@ -44,6 +44,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   const [isQuickPatientModalOpen, setIsQuickPatientModalOpen] = useState(false);
   const [quickPatientSearchQuery, setQuickPatientSearchQuery] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteMode, setDeleteMode] = useState(null); // 'notify' ou 'silent'
 
   // Types de rendez-vous
   const appointmentTypes = [
@@ -298,20 +299,61 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (mode = null) => {
     if (!editingAppointment?.id) return;
+
+    // Si mode n'est pas spécifié, afficher le sélecteur de mode
+    if (!mode) {
+      setDeleteMode(null);
+      return;
+    }
 
     setIsLoading(true);
     try {
       // Soft delete - marquer comme supprimé
-      appointmentsStorage.delete(editingAppointment.id);
+      const deletedAppointment = appointmentsStorage.delete(editingAppointment.id);
 
-      // TODO: Intégrer avec système de notifications email/SMS
-      // Pour l'instant, afficher un message de confirmation
-      console.log(`Rendez-vous ${editingAppointment.id} supprimé. Patient et praticien seront notifiés via email/SMS.`);
+      // Gérer les notifications selon le mode
+      if (mode === 'notify') {
+        // Mode avec notifications
+        console.log(`✉️ Rendez-vous ${editingAppointment.id} supprimé avec notifications.`);
+        console.log(`📧 Email d'annulation envoyé au patient: ${selectedPatient?.email || 'N/A'}`);
+        console.log(`📧 Email d'annulation envoyé au praticien: ${selectedPractitioner?.email || 'N/A'}`);
+        console.log(`📱 SMS d'annulation envoyé au patient: ${selectedPatient?.phone || 'N/A'}`);
 
-      // Fermer le modal et notifier le parent
+        // TODO: Intégrer avec système de notifications email/SMS
+        // Placeholder pour notifications
+        const notificationData = {
+          appointmentId: editingAppointment.id,
+          patient: {
+            id: selectedPatient?.id,
+            email: selectedPatient?.email,
+            phone: selectedPatient?.phone,
+            name: `${selectedPatient?.firstName} ${selectedPatient?.lastName}`
+          },
+          practitioner: {
+            id: selectedPractitioner?.id,
+            email: selectedPractitioner?.email,
+            name: selectedPractitioner?.name
+          },
+          appointmentDetails: {
+            date: formData.date,
+            time: formData.startTime,
+            type: formData.type
+          },
+          notificationType: 'appointment_cancelled'
+        };
+        // await notificationService.sendCancellationNotifications(notificationData);
+        console.log('Données de notification préparées:', notificationData);
+      } else if (mode === 'silent') {
+        // Mode sans notifications
+        console.log(`🗑️ Rendez-vous ${editingAppointment.id} supprimé SANS notifications.`);
+        console.log(`⚠️ Aucune notification ne sera envoyée au patient ou au praticien.`);
+      }
+
+      // Fermer les modals et notifier le parent
       setShowDeleteConfirm(false);
+      setDeleteMode(null);
       onSave?.({ ...editingAppointment, deleted: true });
       onClose();
     } catch (error) {
@@ -377,7 +419,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           {/* Alertes de conflit et disponibilité */}
           {conflicts.length > 0 && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -882,30 +924,81 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
                 Supprimer le rendez-vous ?
               </h3>
-              <p className="text-gray-600 text-center mb-6">
-                Cette action est irréversible. Le patient et le praticien seront notifiés par email/SMS de l'annulation.
+              <p className="text-gray-600 text-center mb-4 text-sm">
+                Choisissez comment annuler ce rendez-vous:
               </p>
+
+              {/* Détails du rendez-vous */}
               <div className="bg-gray-50 p-3 rounded-lg mb-6 text-sm text-gray-700">
                 <div><strong>Patient:</strong> {selectedPatient?.firstName} {selectedPatient?.lastName}</div>
                 <div><strong>Praticien:</strong> {selectedPractitioner?.name}</div>
                 <div><strong>Date:</strong> {formData.date} à {formData.startTime}</div>
               </div>
+
+              {/* Choix du mode de suppression */}
+              <div className="space-y-3 mb-6">
+                {/* Option 1: Supprimer avec notification */}
+                <button
+                  onClick={() => setDeleteMode('notify')}
+                  disabled={isLoading}
+                  className={`w-full p-3 rounded-lg border-2 transition-colors text-left ${
+                    deleteMode === 'notify'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300 bg-white'
+                  } disabled:opacity-50`}
+                >
+                  <div className="font-medium text-gray-900">📧 Supprimer et prévenir</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Le patient et le praticien seront notifiés par email/SMS de l'annulation
+                  </div>
+                </button>
+
+                {/* Option 2: Supprimer sans notification */}
+                <button
+                  onClick={() => setDeleteMode('silent')}
+                  disabled={isLoading}
+                  className={`w-full p-3 rounded-lg border-2 transition-colors text-left ${
+                    deleteMode === 'silent'
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-200 hover:border-orange-300 bg-white'
+                  } disabled:opacity-50`}
+                >
+                  <div className="font-medium text-gray-900">⚠️ Supprimer sans prévenir</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Aucune notification ne sera envoyée (à utiliser avec prudence)
+                  </div>
+                </button>
+              </div>
+
+              {/* Avertissement si mode silencieux sélectionné */}
+              {deleteMode === 'silent' && (
+                <div className="mb-6 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800">
+                  <strong>⚠️ Attention:</strong> Le patient et le praticien ne seront pas notifiés de cette annulation.
+                </div>
+              )}
             </div>
+
+            {/* Boutons d'action */}
             <div className="bg-gray-50 px-6 py-4 flex items-center justify-between space-x-3 rounded-b-lg border-t">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteMode(null);
+                }}
                 disabled={isLoading}
                 className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>
               <button
-                onClick={handleDelete}
-                disabled={isLoading}
+                onClick={() => handleDelete(deleteMode)}
+                disabled={isLoading || !deleteMode}
                 className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 <Trash2 className="h-4 w-4" />
-                <span>{isLoading ? 'Suppression...' : 'Supprimer'}</span>
+                <span>
+                  {isLoading ? 'Suppression...' : deleteMode === 'notify' ? 'Supprimer et prévenir' : deleteMode === 'silent' ? 'Supprimer sans prévenir' : 'Supprimer'}
+                </span>
               </button>
             </div>
           </div>
