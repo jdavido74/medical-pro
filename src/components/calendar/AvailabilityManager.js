@@ -843,15 +843,20 @@ const AvailabilityManager = ({
                   });
                   // Pour compatibilité, garder le premier appointment pour la logique existante
                   const appointmentAtTime = appointmentsAtTime[0];
+                  // Calculer la hauteur en fonction du nombre de RDV (24px par RDV + padding)
+                  const cellHeight = appointmentsAtTime.length > 0
+                    ? Math.max(48, appointmentsAtTime.length * 24 + 8)
+                    : 48;
+                  const heightClass = cellHeight === 48 ? 'h-12' : cellHeight === 72 ? 'h-24' : cellHeight === 96 ? 'h-32' : `h-auto`;
 
                   return (
-                    <div key={dayIndex} className="p-1 border-l border-gray-200 h-12 relative overflow-hidden">
+                    <div key={dayIndex} className={`p-1 border-l border-gray-200 ${heightClass} relative`} style={appointmentsAtTime.length > 2 ? { minHeight: `${cellHeight}px` } : {}}>
                       {appointmentsAtTime.length > 0 ? (
-                        <div className="space-y-0.5 h-full overflow-y-auto">
+                        <div className="space-y-0.5 h-full">
                           {appointmentsAtTime.map((appointment, idx) => (
                             <div
                               key={idx}
-                              className={`text-xs p-0.5 rounded truncate cursor-pointer transition-colors ${
+                              className={`text-xs p-0.5 rounded cursor-pointer transition-colors min-h-[20px] ${
                                 appointment.title === 'RDV privé'
                                   ? 'bg-gray-100 text-gray-600 border border-gray-300'
                                   : getAppointmentColor(appointment.status)
@@ -869,11 +874,6 @@ const AvailabilityManager = ({
                               )}
                             </div>
                           ))}
-                          {appointmentsAtTime.length > 1 && (
-                            <div className="text-xs text-center text-gray-500 py-0.5">
-                              +{appointmentsAtTime.length} RDV
-                            </div>
-                          )}
                         </div>
                       ) : timeSlot ? (
                         <div
