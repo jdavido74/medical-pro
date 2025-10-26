@@ -796,12 +796,13 @@ const AvailabilityManager = ({
                   const daySlots = getAvailableSlotsForDate(day);
                   const timeSlot = daySlots.find(slot => slot.start === time);
                   const dayAppointments = getAppointmentsForDate(day);
+                  const dateStr = day.toISOString().split('T')[0];
                   // IMPORTANT: Vérifier que l'appointment chevauche ce créneau horaire, pas juste commencer à cette heure
                   const appointmentAtTime = dayAppointments.find(apt => {
-                    const apptStart = new Date(`${day}T${apt.startTime}`);
-                    const apptEnd = new Date(`${day}T${apt.endTime}`);
-                    const slotStart = new Date(`${day}T${time}`);
-                    const slotEnd = new Date(`${day}T${daySlots.find(s => s.start === time)?.end || time}`);
+                    const apptStart = new Date(`${dateStr}T${apt.startTime}`);
+                    const apptEnd = new Date(`${dateStr}T${apt.endTime}`);
+                    const slotStart = new Date(`${dateStr}T${time}`);
+                    const slotEnd = new Date(`${dateStr}T${daySlots.find(s => s.start === time)?.end || time}`);
                     return apptStart <= slotStart && apptEnd > slotStart;
                   });
 
