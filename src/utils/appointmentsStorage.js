@@ -161,8 +161,9 @@ export const appointmentsStorage = {
       }
 
       const newAppointment = {
-        id: generateAppointmentId(),
         ...appointmentData,
+        // IMPORTANT: Générer un nouvel ID (ne pas utiliser appointmentData.id qui peut être undefined)
+        id: generateAppointmentId(),
         status: appointmentData.status || 'scheduled',
         priority: appointmentData.priority || 'normal',
         createdAt: new Date().toISOString(),
