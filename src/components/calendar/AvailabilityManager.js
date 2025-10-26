@@ -804,7 +804,14 @@ const AvailabilityManager = ({
                   const daySlots = getAvailableSlotsForDate(day);
                   const timeSlot = daySlots.find(slot => slot.start === time);
                   const dayAppointments = getAppointmentsForDate(day);
-                  const appointmentAtTime = dayAppointments.find(apt => apt.startTime === time);
+                  // IMPORTANT: Vérifier que l'appointment chevauche ce créneau horaire, pas juste commencer à cette heure
+                  const appointmentAtTime = dayAppointments.find(apt => {
+                    const apptStart = new Date(`${day}T${apt.startTime}`);
+                    const apptEnd = new Date(`${day}T${apt.endTime}`);
+                    const slotStart = new Date(`${day}T${time}`);
+                    const slotEnd = new Date(`${day}T${daySlots.find(s => s.start === time)?.end || time}`);
+                    return apptStart <= slotStart && apptEnd > slotStart;
+                  });
 
                   return (
                     <div key={dayIndex} className="p-1 border-l border-gray-200 h-12 relative">
@@ -862,7 +869,14 @@ const AvailabilityManager = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {getAvailableSlotsForDate(currentDate).map((slot, index) => {
                 const dayAppointments = getAppointmentsForDate(currentDate);
-                const appointmentAtTime = dayAppointments.find(apt => apt.startTime === slot.start);
+                // IMPORTANT: Vérifier que l'appointment chevauche ce créneau horaire, pas juste commencer à cette heure
+                const appointmentAtTime = dayAppointments.find(apt => {
+                  const apptStart = new Date(`${currentDate.toISOString().split('T')[0]}T${apt.startTime}`);
+                  const apptEnd = new Date(`${currentDate.toISOString().split('T')[0]}T${apt.endTime}`);
+                  const slotStart = new Date(`${currentDate.toISOString().split('T')[0]}T${slot.start}`);
+                  const slotEnd = new Date(`${currentDate.toISOString().split('T')[0]}T${slot.end}`);
+                  return apptStart <= slotStart && apptEnd > slotStart;
+                });
 
                 return (
                   <div

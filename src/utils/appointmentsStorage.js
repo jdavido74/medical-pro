@@ -84,12 +84,14 @@ export const appointmentsStorage = {
         throw new Error(availabilityCheck.reason);
       }
 
-      // Vérifier les conflits de créneaux avec d'autres rendez-vous
+      // Vérifier les conflits de créneaux avec d'autres rendez-vous (incluant les créneaux supplémentaires)
       const conflicts = appointmentsStorage.checkTimeConflicts(
         appointmentData.practitionerId,
         appointmentData.date,
         appointmentData.startTime,
-        appointmentData.endTime
+        appointmentData.endTime,
+        null, // Pas d'ID à exclure (création)
+        appointmentData.additionalSlots || []
       );
 
       if (conflicts.length > 0) {
@@ -132,12 +134,24 @@ export const appointmentsStorage = {
   // Mettre à jour un rendez-vous
   update: (id, appointmentData, userId = 'system') => {
     try {
+      if (!id) {
+        throw new Error('ID du rendez-vous requis pour la mise à jour');
+      }
+
       const appointments = appointmentsStorage.getAll();
       const index = appointments.findIndex(appointment => appointment.id === id);
 
       if (index === -1) {
+        console.error(`Rendez-vous avec ID ${id} non trouvé`);
+        console.error('IDs disponibles:', appointments.map(a => a.id));
         throw new Error('Rendez-vous non trouvé');
       }
+
+      // Log pour debugging
+      console.log(`Mise à jour du rendez-vous ${id}`, {
+        currentData: appointments[index],
+        newData: appointmentData
+      });
 
       // Vérifier les conflits si l'heure change
       if (appointmentData.date || appointmentData.startTime || appointmentData.endTime || appointmentData.practitionerId) {
@@ -146,6 +160,9 @@ export const appointmentsStorage = {
         const finalDate = appointmentData.date || currentAppointment.date;
         const finalStartTime = appointmentData.startTime || currentAppointment.startTime;
         const finalEndTime = appointmentData.endTime || currentAppointment.endTime;
+        const finalAdditionalSlots = appointmentData.additionalSlots !== undefined
+          ? appointmentData.additionalSlots
+          : (currentAppointment.additionalSlots || []);
 
         // IMPORTANT: Vérifier d'abord que le créneau est dans les horaires de disponibilité du praticien
         const availabilityCheck = appointmentsStorage.isWithinPractitionerAvailability(
@@ -159,13 +176,14 @@ export const appointmentsStorage = {
           throw new Error(availabilityCheck.reason);
         }
 
-        // Vérifier les conflits avec d'autres rendez-vous
+        // Vérifier les conflits avec d'autres rendez-vous (incluant les créneaux supplémentaires)
         const conflicts = appointmentsStorage.checkTimeConflicts(
           finalPractitionerId,
           finalDate,
           finalStartTime,
           finalEndTime,
-          id // Exclure le rendez-vous actuel
+          id, // Exclure le rendez-vous actuel
+          finalAdditionalSlots
         );
 
         if (conflicts.length > 0) {
