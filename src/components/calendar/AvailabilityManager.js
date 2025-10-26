@@ -339,8 +339,21 @@ const AvailabilityManager = ({
       const canViewAllAppointments = hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_ALL);
       const isOwnAppointment = appointment.practitionerId === user?.id;
 
-      // Si l'utilisateur peut voir tous les rendez-vous OU c'est son propre rendez-vous
-      if (canViewAllAppointments || isOwnAppointment) {
+      // Vérifier si l'utilisateur peut voir ce RDV selon son rôle
+      // Admin clinique, secrétaire, médecin de la clinique doivent voir les patients
+      const isAdminClinic = user?.role === 'clinic_admin';
+      const isSecretary = user?.role === 'secretary';
+      const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+
+      // Afficher les détails du patient si:
+      // - L'utilisateur peut voir tous les RDV
+      // - C'est son propre RDV
+      // - L'utilisateur est admin clinique
+      // - L'utilisateur est secrétaire
+      // - L'utilisateur est un praticien (médecin) et a la permission de voir les patients
+      const canViewThisAppointment = canViewAllAppointments || isOwnAppointment || isAdminClinic || isSecretary || (isPractitioner && canViewPatientDetails);
+
+      if (canViewThisAppointment) {
         if (canViewPatientDetails && patient) {
           enrichedAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
           enrichedAppointment.patientPhone = patient.phone;
@@ -434,8 +447,19 @@ const AvailabilityManager = ({
     // Afficher plus de détails ou permettre l'édition selon les permissions
     const canEdit = hasPermission(PERMISSIONS.APPOINTMENTS_EDIT);
     const isOwnAppointment = appointment.practitionerId === user?.id;
+    const isAdminClinic = user?.role === 'clinic_admin';
+    const isSecretary = user?.role === 'secretary';
+    const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
 
-    if (canEdit || isOwnAppointment) {
+    // Permettre l'édition si:
+    // - L'utilisateur a la permission APPOINTMENTS_EDIT
+    // - C'est son propre rendez-vous
+    // - L'utilisateur est admin clinique
+    // - L'utilisateur est secrétaire
+    // - L'utilisateur est un praticien (médecin) avec permission de patients
+    const canEditAppointment = canEdit || isOwnAppointment || isAdminClinic || isSecretary || (isPractitioner && hasPermission(PERMISSIONS.PATIENTS_VIEW));
+
+    if (canEditAppointment) {
       // Ouvrir le modal d'édition
       if (onAppointmentEdit) {
         onAppointmentEdit(appointment);

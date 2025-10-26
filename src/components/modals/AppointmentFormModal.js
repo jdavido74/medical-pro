@@ -6,12 +6,15 @@ import { useTranslation } from 'react-i18next';
 import { appointmentsStorage } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { loadPractitioners } from '../../utils/practitionersLoader';
+import { usePermissions } from '../auth/PermissionGuard';
+import { PERMISSIONS } from '../../utils/permissionsStorage';
 import PatientSearchSelect from '../common/PatientSearchSelect';
 import QuickPatientModal from './QuickPatientModal';
 
 const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = null, preselectedPatient = null, preselectedDate = null, preselectedTime = null, preselectedPractitioner = null }) => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const { hasPermission } = usePermissions();
   const currentLanguage = i18n.language;
 
   const [formData, setFormData] = useState({
@@ -441,17 +444,35 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            {editingAppointment && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isLoading}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                title={t('appointments.deleteTitle')}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>{t('common.delete')}</span>
-              </button>
-            )}
+            {editingAppointment && (() => {
+              // Déterminer si l'utilisateur peut supprimer le RDV
+              const canDelete = hasPermission(PERMISSIONS.APPOINTMENTS_DELETE);
+              const isAdminClinic = user?.role === 'clinic_admin';
+              const isSecretary = user?.role === 'secretary';
+              const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+              const isOwnAppointment = editingAppointment?.practitionerId === user?.id;
+
+              // Permettre la suppression si:
+              // - L'utilisateur a la permission APPOINTMENTS_DELETE
+              // - C'est son propre rendez-vous ET c'est un praticien
+              // - L'utilisateur est admin clinique
+              // - L'utilisateur est secrétaire
+              const canDeleteAppointment = canDelete || isAdminClinic || isSecretary || (isPractitioner && isOwnAppointment);
+
+              if (!canDeleteAppointment) return null;
+
+              return (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isLoading}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                  title={t('appointments.deleteTitle')}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>{t('common.delete')}</span>
+                </button>
+              );
+            })()}
             <button
               onClick={handleSave}
               disabled={isLoading || conflicts.length > 0}
