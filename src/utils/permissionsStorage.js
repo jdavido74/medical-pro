@@ -338,10 +338,39 @@ export const PERMISSION_CATEGORIES = {
 
 // Service de gestion des permissions
 export const permissionsStorage = {
-  // Initialiser les rôles par défaut
+  // Initialiser ou mettre à jour les rôles par défaut
   initializeDefaultRoles: () => {
     const existingRoles = permissionsStorage.getRoles();
-    if (existingRoles.length === 0) {
+
+    // Mettre à jour les rôles système avec leurs définitions actuelles
+    // Cela permet de récupérer les nouvelles permissions ajoutées
+    const updatedRoles = existingRoles.map(role => {
+      const defaultRole = DEFAULT_ROLES[role.id];
+      if (defaultRole && defaultRole.isSystemRole) {
+        // Fusionner les rôles système avec leurs définitions actuelles
+        return {
+          ...role,
+          permissions: defaultRole.permissions,
+          name: defaultRole.name,
+          description: defaultRole.description,
+          level: defaultRole.level
+        };
+      }
+      return role;
+    });
+
+    // Ajouter les rôles système manquants
+    Object.values(DEFAULT_ROLES).forEach(defaultRole => {
+      if (!updatedRoles.find(r => r.id === defaultRole.id)) {
+        updatedRoles.push(defaultRole);
+      }
+    });
+
+    // Sauvegarder les rôles mis à jour
+    if (updatedRoles.length > 0) {
+      localStorage.setItem('clinic_roles', JSON.stringify(updatedRoles));
+    } else {
+      // Si aucun rôle n'existe, créer les rôles par défaut
       Object.values(DEFAULT_ROLES).forEach(role => {
         permissionsStorage.createRole(role);
       });

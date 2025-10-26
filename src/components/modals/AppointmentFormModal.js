@@ -371,18 +371,24 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   };
 
   const handleDelete = async (mode = null) => {
-    if (!editingAppointment?.id) return;
+    if (!editingAppointment?.id) {
+      console.error('[handleDelete] No appointment ID to delete');
+      return;
+    }
 
     // Si mode n'est pas spécifié, afficher le sélecteur de mode
     if (!mode) {
+      console.warn('[handleDelete] No deletion mode selected');
       setDeleteMode(null);
       return;
     }
 
+    console.log('[handleDelete] Starting deletion with mode:', mode, 'appointmentId:', editingAppointment.id);
     setIsLoading(true);
     try {
-      // Soft delete - marquer comme supprimé
-      const deletedAppointment = appointmentsStorage.delete(editingAppointment.id);
+      // Soft delete - marquer comme supprimé (passer l'ID de l'utilisateur courant)
+      const deletedAppointment = appointmentsStorage.delete(editingAppointment.id, user?.id || 'system');
+      console.log('[handleDelete] Appointment deleted:', deletedAppointment);
 
       // Gérer les notifications selon le mode
       if (mode === 'notify') {
@@ -463,6 +469,16 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
             {editingAppointment && (() => {
               // Déterminer si l'utilisateur peut supprimer le RDV
               const canDelete = hasPermission(PERMISSIONS.APPOINTMENTS_DELETE);
+
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[AppointmentFormModal] Delete button check:', {
+                  editingAppointment: !!editingAppointment,
+                  canDelete,
+                  permission: PERMISSIONS.APPOINTMENTS_DELETE,
+                  userRole: user?.role,
+                  userPermissions: usePermissions().permissions
+                });
+              }
 
               if (!canDelete) return null;
 
