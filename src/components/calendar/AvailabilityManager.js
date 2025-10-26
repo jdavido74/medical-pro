@@ -154,18 +154,32 @@ const AvailabilityManager = ({
           return false;
         }
 
-        // Utiliser le filtre du parent
-        if (filterPractitioner !== 'all') {
-          if (apt.practitionerId !== filterPractitioner) return false;
-        } else if (isPractitioner && user) {
-          // Praticien sans filtre = seulement ses RDV
-          if (apt.practitionerId !== user.id) return false;
+        // Vérifier si le RDV est marqué comme supprimé
+        if (apt.deleted) {
+          console.debug(`Rendez-vous ${apt.id} ignoré: marqué comme supprimé`);
+          return false;
         }
 
-        return !apt.deleted;
+        // Utiliser le filtre du parent
+        if (filterPractitioner !== 'all') {
+          if (apt.practitionerId !== filterPractitioner) {
+            console.debug(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} ne correspond pas au filtre ${filterPractitioner}`);
+            return false;
+          }
+        } else if (isPractitioner && user) {
+          // Praticien sans filtre = seulement ses RDV
+          if (apt.practitionerId !== user.id) {
+            console.debug(`Rendez-vous ${apt.id} ignoré: appartient au praticien ${apt.practitionerId}, pas à ${user.id}`);
+            return false;
+          }
+        }
+
+        return true;
       });
 
       setAppointments(filteredAppointments);
+      console.log(`[AvailabilityManager] Chargement des RDV: ${allAppointments.length} total, ${filteredAppointments.length} après filtrage`);
+      console.log('[AvailabilityManager] RDV filtrés:', filteredAppointments.map(a => ({ id: a.id, patient: a.patientId, praticien: a.practitionerId, date: a.date, deleted: a.deleted })));
 
       // Charger les disponibilités personnalisées (simulation)
       // Dans une vraie app, cela viendrait de la base de données
@@ -350,21 +364,22 @@ const AvailabilityManager = ({
       // - C'est son propre RDV
       // - L'utilisateur est admin clinique
       // - L'utilisateur est secrétaire
-      // - L'utilisateur est un praticien (médecin) et a la permission de voir les patients
-      const canViewThisAppointment = canViewAllAppointments || isOwnAppointment || isAdminClinic || isSecretary || (isPractitioner && canViewPatientDetails);
+      // - L'utilisateur est un praticien (médecin) - les médecins voient TOUS les détails de leurs RDV
+      // (Pas besoin de vérifier canViewPatientDetails pour les praticiens car ils accèdent à leurs patients)
+      const canViewThisAppointment = canViewAllAppointments || isOwnAppointment || isAdminClinic || isSecretary || isPractitioner;
 
       if (canViewThisAppointment) {
-        if (canViewPatientDetails && patient) {
+        if (patient) {
           enrichedAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
           enrichedAppointment.patientPhone = patient.phone;
           enrichedAppointment.patientAge = calculateAge(patient.birthDate);
           enrichedAppointment.patientNumber = patient.patientNumber;
         } else {
-          // Informations limitées si pas d'accès aux patients
-          enrichedAppointment.patientName = 'Patient confidentiel';
+          // Patient non trouvé
+          enrichedAppointment.patientName = 'Patient inconnu';
         }
       } else {
-        // Masquer les détails si pas autorisé
+        // Masquer les détails si pas autorisé (rôle utilisateur rare, ex: super_admin externe)
         enrichedAppointment.patientName = 'Rendez-vous masqué';
         enrichedAppointment.title = 'RDV privé';
         enrichedAppointment.description = '';
@@ -440,10 +455,6 @@ const AvailabilityManager = ({
 
   // Gérer le clic sur un rendez-vous
   const handleAppointmentClick = (appointment) => {
-    if (appointment.title === 'RDV privé') {
-      return; // Pas d'action pour les rendez-vous privés
-    }
-
     // Afficher plus de détails ou permettre l'édition selon les permissions
     const canEdit = hasPermission(PERMISSIONS.APPOINTMENTS_EDIT);
     const isOwnAppointment = appointment.practitionerId === user?.id;
@@ -453,11 +464,11 @@ const AvailabilityManager = ({
 
     // Permettre l'édition si:
     // - L'utilisateur a la permission APPOINTMENTS_EDIT
-    // - C'est son propre rendez-vous
+    // - C'est son propre rendez-vous (le praticien peut toujours éditer ses propres RDV)
     // - L'utilisateur est admin clinique
     // - L'utilisateur est secrétaire
-    // - L'utilisateur est un praticien (médecin) avec permission de patients
-    const canEditAppointment = canEdit || isOwnAppointment || isAdminClinic || isSecretary || (isPractitioner && hasPermission(PERMISSIONS.PATIENTS_VIEW));
+    // - L'utilisateur est un praticien (médecin) - les médecins peuvent éditer les RDV affichés dans leur vue
+    const canEditAppointment = canEdit || isOwnAppointment || isAdminClinic || isSecretary || isPractitioner;
 
     if (canEditAppointment) {
       // Ouvrir le modal d'édition
