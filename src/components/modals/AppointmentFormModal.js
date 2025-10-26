@@ -168,6 +168,18 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     return [availability.dayOfWeek];
   };
 
+  // Mettre à jour l'endTime quand des créneaux supplémentaires sont ajoutés
+  useEffect(() => {
+    if (formData.additionalSlots.length > 0) {
+      // Mettre à jour endTime pour refléter le dernier créneau sélectionné
+      const lastSlot = formData.additionalSlots[formData.additionalSlots.length - 1];
+      setFormData(prev => ({
+        ...prev,
+        endTime: lastSlot.end
+      }));
+    }
+  }, [formData.additionalSlots]);
+
   // Vérifier les conflits et la disponibilité en temps réel
   useEffect(() => {
     if (formData.practitionerId && formData.date && formData.startTime && formData.endTime) {
@@ -244,6 +256,34 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     setQuickPatientSearchQuery('');
   };
 
+  // Vérifier que les créneaux sélectionnés sont continus
+  const areSlotsContinuous = () => {
+    if (!formData.startTime || formData.additionalSlots.length === 0) {
+      return true; // Pas de vérification si un seul créneau
+    }
+
+    // Créer une liste de tous les créneaux sélectionnés (principal + supplémentaires)
+    const selectedSlots = [
+      { start: formData.startTime },
+      ...formData.additionalSlots
+    ];
+
+    // Vérifier qu'ils sont continus en vérifiant si chaque créneau est suivi du suivant
+    for (let i = 0; i < selectedSlots.length - 1; i++) {
+      const currentSlot = availableSlots.find(s => s.start === selectedSlots[i].start);
+      const nextSlot = availableSlots.find(s => s.start === selectedSlots[i + 1].start);
+
+      if (!currentSlot || !nextSlot) continue;
+
+      // Vérifier que la fin du créneau actuel = début du suivant
+      if (currentSlot.end !== nextSlot.start) {
+        return false; // Les créneaux ne sont pas continus
+      }
+    }
+
+    return true;
+  };
+
   // Validation du formulaire
   const validateForm = () => {
     const newErrors = {};
@@ -262,6 +302,11 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       if (appointmentDate < today) {
         newErrors.date = 'La date ne peut pas être dans le passé';
       }
+    }
+
+    // Vérifier que les créneaux sont continus
+    if (!areSlotsContinuous()) {
+      newErrors.startTime = 'Les créneaux doivent être continus (adjacents)';
     }
 
     // Vérifier les conflits
@@ -602,81 +647,84 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       Aucun créneau disponible pour cette date. Choisissez une autre date.
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {/* Créneau principal */}
-                      <div>
-                        <label className="text-xs font-medium text-gray-600 block mb-2">
-                          {t('appointments.primarySlot')}
-                        </label>
-                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
-                          {availableSlots.map((slot, index) => (
+                    <div>
+                      {/* Sélection des créneaux (simple clic pour sélectionner/désélectionner) */}
+                      <label className="text-xs font-medium text-gray-600 block mb-2">
+                        Slots *
+                      </label>
+                      <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        {availableSlots.map((slot, index) => {
+                          const isSelected = formData.startTime === slot.start || formData.additionalSlots.some(s => s.start === slot.start);
+                          const isFirstSelected = formData.startTime === slot.start;
+
+                          return (
                             <button
                               key={index}
                               type="button"
-                              onClick={() => setFormData(prev => ({ ...prev, startTime: slot.start, endTime: slot.end }))}
+                              onClick={() => {
+                                if (isSelected) {
+                                  // Désélectionner le créneau
+                                  if (isFirstSelected) {
+                                    // Si c'est le premier créneau sélectionné, chercher le prochain
+                                    const nextSelected = formData.additionalSlots[0];
+                                    if (nextSelected) {
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        startTime: nextSelected.start,
+                                        endTime: nextSelected.end,
+                                        additionalSlots: prev.additionalSlots.slice(1)
+                                      }));
+                                    } else {
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        startTime: '',
+                                        endTime: '',
+                                        additionalSlots: []
+                                      }));
+                                    }
+                                  } else {
+                                    // C'est un créneau supplémentaire
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      additionalSlots: prev.additionalSlots.filter(s => s.start !== slot.start)
+                                    }));
+                                  }
+                                } else {
+                                  // Sélectionner le créneau
+                                  if (!formData.startTime) {
+                                    // Premier créneau sélectionné
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      startTime: slot.start,
+                                      endTime: slot.end
+                                    }));
+                                  } else {
+                                    // Ajouter comme créneau supplémentaire
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      additionalSlots: [...prev.additionalSlots, slot]
+                                    }));
+                                  }
+                                }
+                              }}
                               className={`p-2 text-sm border rounded transition-colors ${
-                                formData.startTime === slot.start
+                                isFirstSelected
                                   ? 'border-blue-500 bg-blue-500 text-white font-medium shadow-sm'
+                                  : isSelected
+                                  ? 'border-green-500 bg-green-500 text-white font-medium shadow-sm'
                                   : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm'
                               }`}
                             >
                               {slot.start}
                             </button>
-                          ))}
-                        </div>
+                          );
+                        })}
                       </div>
-
-                      {/* Créneaux supplémentaires (optionnels) */}
-                      {formData.startTime && (
-                        <div>
-                          <label className="text-xs font-medium text-gray-600 block mb-2">
-                            {t('appointments.additionalSlots')}
-                          </label>
-                          <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
-                            {availableSlots.map((slot, index) => {
-                              const isMainSlot = formData.startTime === slot.start;
-                              const isAdditional = formData.additionalSlots.some(s => s.start === slot.start);
-
-                              return (
-                                <button
-                                  key={index}
-                                  type="button"
-                                  onClick={() => {
-                                    if (isMainSlot) return; // Ne pas ajouter le créneau principal
-                                    if (isAdditional) {
-                                      // Supprimer le créneau
-                                      setFormData(prev => ({
-                                        ...prev,
-                                        additionalSlots: prev.additionalSlots.filter(s => s.start !== slot.start)
-                                      }));
-                                    } else {
-                                      // Ajouter le créneau
-                                      setFormData(prev => ({
-                                        ...prev,
-                                        additionalSlots: [...prev.additionalSlots, slot]
-                                      }));
-                                    }
-                                  }}
-                                  disabled={isMainSlot}
-                                  className={`p-2 text-sm border rounded transition-colors ${
-                                    isMainSlot
-                                      ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                                      : isAdditional
-                                      ? 'border-green-500 bg-green-500 text-white font-medium shadow-sm'
-                                      : 'border-gray-300 bg-white hover:border-green-300 hover:bg-green-50 hover:shadow-sm'
-                                  }`}
-                                >
-                                  {slot.start}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {formData.additionalSlots.length > 0 && (
-                            <p className="text-xs text-green-700 mt-2 p-2 bg-green-50 rounded">
-                              ✓ {formData.additionalSlots.length} créneau(x) supplémentaire(s) sélectionné(s)
-                            </p>
-                          )}
-                        </div>
+                      {formData.additionalSlots.length > 0 && (
+                        <p className="text-xs text-green-700 mt-2 p-2 bg-green-50 rounded">
+                          ✓ {1 + formData.additionalSlots.length} slot(s) sélectionné(s): {formData.startTime}
+                          {formData.additionalSlots.map(s => ` + ${s.start}`).join('')}
+                        </p>
                       )}
                     </div>
                   )}
@@ -687,7 +735,10 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       <div className="flex items-center space-x-2 text-sm text-blue-700">
                         <Clock className="h-4 w-4" />
                         <span className="font-medium">
-                          Créneau sélectionné : {formData.startTime} - {formData.endTime} ({formData.duration} min)
+                          Créneaux sélectionnés: {formData.startTime}
+                          {formData.additionalSlots.map((s, i) => (
+                            <span key={i}>, {s.start}</span>
+                          ))}
                         </span>
                       </div>
                     </div>
