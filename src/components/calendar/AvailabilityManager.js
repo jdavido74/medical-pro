@@ -160,21 +160,34 @@ const AvailabilityManager = ({
           return false;
         }
 
-        // Utiliser le filtre du parent
+        // Déterminer les rôles de l'utilisateur
+        const isAdminClinic = user?.role === 'clinic_admin';
+        const isSecretary = user?.role === 'secretary';
+        const isPractitionerRole = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+
+        // Règles d'accès:
+        // 1. Si un filtre praticien est spécifié (admin/secretary filtre un praticien spécifique)
         if (filterPractitioner !== 'all') {
-          if (apt.practitionerId !== filterPractitioner) {
-            console.debug(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} ne correspond pas au filtre ${filterPractitioner}`);
-            return false;
-          }
-        } else if (isPractitioner && user) {
-          // Praticien sans filtre = seulement ses RDV
-          if (apt.practitionerId !== user.id) {
-            console.debug(`Rendez-vous ${apt.id} ignoré: appartient au praticien ${apt.practitionerId}, pas à ${user.id}`);
-            return false;
-          }
+          return apt.practitionerId === filterPractitioner;
         }
 
-        return true;
+        // 2. Si c'est un praticien sans filtre: voir seulement ses RDV
+        if (isPractitionerRole && user) {
+          const isOwn = apt.practitionerId === user.id;
+          if (!isOwn) {
+            console.debug(`Rendez-vous ${apt.id} ignoré: appartient au praticien ${apt.practitionerId}, pas à ${user.id}`);
+          }
+          return isOwn;
+        }
+
+        // 3. Si c'est admin ou secretary sans filtre: voir TOUS les RDV
+        if (isAdminClinic || isSecretary) {
+          return true;
+        }
+
+        // 4. Autres cas: rejeter
+        console.debug(`Rendez-vous ${apt.id} ignoré: utilisateur ${user?.role} n'a pas accès`);
+        return false;
       });
 
       setAppointments(filteredAppointments);
@@ -354,10 +367,12 @@ const AvailabilityManager = ({
       const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
       const isOwnAppointment = appointment.practitionerId === user?.id;
 
-      // Les admins clinique et secrétaires DOIVENT voir toutes les données (pas de masquage)
-      // Les praticiens voient les données de leurs propres RDV
-      // Les autres rôles verront "Rendez-vous masqué"
-      const shouldShowPatientDetails = isAdminClinic || isSecretary || isOwnAppointment || isPractitioner;
+      // RÈGLES DE VISIBILITÉ DES DONNÉES:
+      // - Admin/Secretary: voir TOUTES les données de TOUS les RDV (pas de masquage)
+      // - Praticien: voir les données de LEURS propres RDV uniquement
+      // NOTE: Les RDV affichés sont déjà filtrés dans loadData() selon les rôles,
+      // donc à ce stade on peut faire confiance que seuls les RDV accessibles sont présents
+      const shouldShowPatientDetails = isAdminClinic || isSecretary || isOwnAppointment;
 
       if (shouldShowPatientDetails) {
         if (patient) {
@@ -371,8 +386,9 @@ const AvailabilityManager = ({
           enrichedAppointment.patientName = 'Patient inconnu';
         }
       } else {
-        // Masquer les détails si pas autorisé (rôle utilisateur rare, ex: super_admin externe)
-        console.debug(`[getAppointmentsForDate] RDV ${appointment.id} masqué: role=${user?.role}, own=${isOwnAppointment}`);
+        // Cette branche ne devrait jamais être atteinte en conditions normales
+        // car les RDV sont déjà filtrés dans loadData()
+        console.warn(`[getAppointmentsForDate] RDV ${appointment.id} ne devrait pas être affiché: role=${user?.role}, own=${isOwnAppointment}`);
         enrichedAppointment.patientName = 'Rendez-vous masqué';
         enrichedAppointment.title = 'RDV privé';
         enrichedAppointment.description = '';
