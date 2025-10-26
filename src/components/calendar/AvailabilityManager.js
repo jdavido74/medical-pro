@@ -423,6 +423,14 @@ const AvailabilityManager = ({
 
     const parts = [];
     if (appointment.patientName) parts.push(`Patient: ${appointment.patientName}`);
+    // Afficher le praticien si l'utilisateur a la permission
+    if (hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointment.practitionerName) {
+      let practitionerInfo = `Praticien: ${appointment.practitionerName}`;
+      if (appointment.practitionerSpecialty) {
+        practitionerInfo += ` (${appointment.practitionerSpecialty})`;
+      }
+      parts.push(practitionerInfo);
+    }
     if (appointment.title) parts.push(`Type: ${appointment.title}`);
     if (appointment.startTime && appointment.endTime) {
       parts.push(`Horaire: ${appointment.startTime} - ${appointment.endTime}`);
@@ -849,6 +857,11 @@ const AvailabilityManager = ({
                           <div className="font-medium truncate">
                             {appointmentAtTime.patientName || appointmentAtTime.title}
                           </div>
+                          {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointmentAtTime.practitionerName && (
+                            <div className="text-xs opacity-75 truncate text-blue-600 font-semibold">
+                              {appointmentAtTime.practitionerName}
+                            </div>
+                          )}
                           {appointmentAtTime.patientName && appointmentAtTime.patientName !== 'Rendez-vous masqué' && (
                             <div className="text-xs opacity-75 truncate">
                               {appointmentAtTime.startTime} - {appointmentAtTime.endTime}
@@ -961,6 +974,12 @@ const AvailabilityManager = ({
                         <div className="font-medium text-gray-900 truncate">
                           {appointmentAtTime.patientName}
                         </div>
+                        {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointmentAtTime.practitionerName && (
+                          <div className="text-xs text-blue-600 font-semibold truncate">
+                            {appointmentAtTime.practitionerName}
+                            {appointmentAtTime.practitionerSpecialty && ` (${appointmentAtTime.practitionerSpecialty})`}
+                          </div>
+                        )}
                         <div className="text-xs text-gray-600 truncate">
                           {appointmentAtTime.title}
                         </div>

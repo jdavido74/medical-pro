@@ -19,6 +19,7 @@ import {
   filterAppointmentsByPermissions,
   shouldShowPractitionerFilter
 } from '../../../utils/appointmentPermissions';
+import { PERMISSIONS } from '../../../utils/permissionsStorage';
 
 const AppointmentsModule = ({ navigateToPatient }) => {
   const { t } = useTranslation();
@@ -564,7 +565,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                         <Clock className="h-3 w-3 mr-1" />
                         {appointment.duration} min
                       </span>
-                      {canViewAllAppointments && filterPractitioner === 'all' && appointment.practitionerName && (
+                      {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointment.practitionerName && (
                         <span className="flex items-center bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md">
                           <User className="h-3 w-3 mr-1" />
                           {appointment.practitionerName}
