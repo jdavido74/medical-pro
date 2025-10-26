@@ -7,12 +7,17 @@ import {
   CheckCircle, Zap, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { appointmentsStorage, availabilityStorage, enrichAppointments, migrateAppointmentPractitionerIds } from '../../utils/appointmentsStorage';
+import { appointmentsStorage, availabilityStorage, migrateAppointmentPractitionerIds } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
 import { loadPractitioners } from '../../utils/practitionersLoader';
 import PractitionerFilter from '../common/PractitionerFilter';
+import {
+  enrichAppointmentWithPermissions,
+  filterAppointmentsByPermissions,
+  shouldShowPractitionerFilter
+} from '../../utils/appointmentPermissions';
 
 const AvailabilityManager = ({
   onAppointmentScheduled,
@@ -149,61 +154,40 @@ const AvailabilityManager = ({
       }
 
       // Charger les rendez-vous pour la période affichée
-      const allAppointments = appointmentsStorage.getAll();
+      let allAppointments = appointmentsStorage.getAll();
+
+      // Filtrer les RDV supprimés
+      allAppointments = allAppointments.filter(apt => !apt.deleted);
+
+      // Filtrer les RDV avec des praticiens inexistants
+      allAppointments = allAppointments.filter(apt => {
+        const practitionerExists = allPractitioners.some(p => p.id === apt.practitionerId);
+        if (!practitionerExists) {
+          console.warn(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} inexistant`);
+        }
+        return practitionerExists;
+      });
+
+      // FILTRER selon les permissions: voir tous les RDV ou seulement les siens
+      let filteredByPermissions = filterAppointmentsByPermissions(allAppointments, user, hasPermission);
+
+      // FILTRER par praticien spécifique si un filtre est appliqué
+      if (filterPractitioner !== 'all') {
+        filteredByPermissions = filteredByPermissions.filter(apt => apt.practitionerId === filterPractitioner);
+      }
 
       // Charger les patients pour l'enrichissement
       const allPatients = patientsStorage.getAll();
 
-      // Filtrer par praticien selon les droits ET vérifier que le praticien existe
-      const filteredAppointments = allAppointments.filter(apt => {
-        // IMPORTANT: Vérifier que le praticien existe dans localStorage
-        const practitionerExists = allPractitioners.some(p => p.id === apt.practitionerId);
-        if (!practitionerExists) {
-          console.warn(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} inexistant`);
-          return false;
-        }
-
-        // Vérifier si le RDV est marqué comme supprimé
-        if (apt.deleted) {
-          console.debug(`Rendez-vous ${apt.id} ignoré: marqué comme supprimé`);
-          return false;
-        }
-
-        // Déterminer les rôles de l'utilisateur
-        const isAdminClinic = user?.role === 'clinic_admin';
-        const isSecretary = user?.role === 'secretary';
-        const isPractitionerRole = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
-
-        // Règles d'accès:
-        // 1. Si un filtre praticien est spécifié (admin/secretary filtre un praticien spécifique)
-        if (filterPractitioner !== 'all') {
-          return apt.practitionerId === filterPractitioner;
-        }
-
-        // 2. Si c'est un praticien sans filtre: voir seulement ses RDV
-        if (isPractitionerRole && user) {
-          const isOwn = apt.practitionerId === user.id;
-          if (!isOwn) {
-            console.debug(`Rendez-vous ${apt.id} ignoré: appartient au praticien ${apt.practitionerId}, pas à ${user.id}`);
-          }
-          return isOwn;
-        }
-
-        // 3. Si c'est admin ou secretary sans filtre: voir TOUS les RDV
-        if (isAdminClinic || isSecretary) {
-          return true;
-        }
-
-        // 4. Autres cas: rejeter
-        console.debug(`Rendez-vous ${apt.id} ignoré: utilisateur ${user?.role} n'a pas accès`);
-        return false;
+      // ENRICHIR les RDV avec les données patient et praticien en respectant les permissions
+      const enrichedAppointments = filteredByPermissions.map(appointment => {
+        const patient = allPatients.find(p => p.id === appointment.patientId);
+        const practitioner = allPractitioners.find(p => p.id === appointment.practitionerId);
+        return enrichAppointmentWithPermissions(appointment, patient, practitioner, user, hasPermission);
       });
 
-      // ENRICHIR les RDV avec les données des patients et praticiens
-      const enrichedAppointments = enrichAppointments(filteredAppointments, allPatients, allPractitioners);
       setAppointments(enrichedAppointments);
-      console.log(`[AvailabilityManager] Chargement des RDV: ${allAppointments.length} total, ${filteredAppointments.length} après filtrage`);
-      console.log('[AvailabilityManager] RDV filtrés:', filteredAppointments.map(a => ({ id: a.id, patient: a.patientId, praticien: a.practitionerId, date: a.date, deleted: a.deleted })));
+      console.log(`[AvailabilityManager] Chargement des RDV: ${allAppointments.length} valides, ${filteredByPermissions.length} après permissions`);
 
       // Charger les disponibilités personnalisées (simulation)
       // Dans une vraie app, cela viendrait de la base de données

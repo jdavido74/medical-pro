@@ -10,13 +10,20 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { appointmentsStorage } from '../../../utils/appointmentsStorage';
 import { patientsStorage } from '../../../utils/patientsStorage';
 import { loadPractitioners } from '../../../utils/practitionersLoader';
+import { usePermissions } from '../../auth/PermissionGuard';
 import AppointmentFormModal from '../../modals/AppointmentFormModal';
 import AvailabilityManager from '../../calendar/AvailabilityManager';
 import PractitionerFilter from '../../common/PractitionerFilter';
+import {
+  enrichAppointmentWithPermissions,
+  filterAppointmentsByPermissions,
+  shouldShowPractitionerFilter
+} from '../../../utils/appointmentPermissions';
 
 const AppointmentsModule = ({ navigateToPatient }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,9 +33,8 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   const [practitioners, setPractitioners] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Déterminer si l'utilisateur peut voir la vue globale (admin/secrétaire)
-  const canViewAllPractitioners = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'secretary';
-  const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+  // Déterminer les permissions de l'utilisateur
+  const canViewAllAppointments = shouldShowPractitionerFilter(hasPermission);
   const [sortField, setSortField] = useState('date');
   const [sortDirection, setSortDirection] = useState('asc');
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
@@ -50,10 +56,6 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   // Charger les données
   useEffect(() => {
     loadData();
-    // Si praticien : filtrer automatiquement sur ses RDV uniquement
-    if (user && isPractitioner) {
-      setFilterPractitioner(user.id);
-    }
     // Initialiser le praticien sélectionné
     if (user && !selectedPractitioner) {
       setSelectedPractitioner(user);
@@ -64,11 +66,11 @@ const AppointmentsModule = ({ navigateToPatient }) => {
     if (user && !selectedPractitioner) {
       setSelectedPractitioner(user);
     }
-    // Si praticien : toujours filtrer sur ses RDV
-    if (user && isPractitioner && filterPractitioner !== user.id) {
+    // Si l'utilisateur ne peut pas voir tous les RDV, forcer le filtre sur ses RDV
+    if (user && !canViewAllAppointments && filterPractitioner !== user.id) {
       setFilterPractitioner(user.id);
     }
-  }, [user]);
+  }, [user, canViewAllAppointments]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -79,37 +81,36 @@ const AppointmentsModule = ({ navigateToPatient }) => {
       setPractitioners(allPractitioners);
 
       // Charger les rendez-vous
-      const allAppointments = appointmentsStorage.getAll();
+      let allAppointments = appointmentsStorage.getAll();
+
+      // Filtrer les RDV supprimés
+      allAppointments = allAppointments.filter(apt => !apt.deleted);
+
+      // Filtrer les RDV avec des praticiens inexistants
+      allAppointments = allAppointments.filter(appointment => {
+        const practitionerExists = allPractitioners.some(p => p.id === appointment.practitionerId);
+        if (!practitionerExists) {
+          console.warn(`Rendez-vous ${appointment.id} ignoré: praticien ${appointment.practitionerId} inexistant`);
+        }
+        return practitionerExists;
+      });
+
+      // FILTRER selon les permissions: voir tous les RDV ou seulement les siens
+      const filteredByPermissions = filterAppointmentsByPermissions(allAppointments, user, hasPermission);
 
       // Enrichir avec les données des patients
       const allPatients = patientsStorage.getAll();
       setPatients(allPatients);
 
-      // Filtrer et enrichir les rendez-vous
-      const enrichedAppointments = allAppointments
-        .filter(appointment => {
-          // IMPORTANT: Exclure les rendez-vous avec des praticiens inexistants
-          const practitionerExists = allPractitioners.some(p => p.id === appointment.practitionerId);
-          if (!practitionerExists) {
-            console.warn(`Rendez-vous ${appointment.id} ignoré: praticien ${appointment.practitionerId} inexistant`);
-            return false;
-          }
-          return true;
-        })
-        .map(appointment => {
-          const patient = allPatients.find(p => p.id === appointment.patientId);
-          const practitioner = allPractitioners.find(p => p.id === appointment.practitionerId);
-          return {
-            ...appointment,
-            patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Patient inconnu',
-            patientPhone: patient?.phone || '',
-            patientNumber: patient?.patientNumber || '',
-            practitionerName: practitioner?.name || 'Non assigné',
-            practitionerSpecialty: practitioner?.specialty || ''
-          };
-        });
+      // ENRICHIR les RDV avec les données patient et praticien en respectant les permissions
+      const enrichedAppointments = filteredByPermissions.map(appointment => {
+        const patient = allPatients.find(p => p.id === appointment.patientId);
+        const practitioner = allPractitioners.find(p => p.id === appointment.practitionerId);
+        return enrichAppointmentWithPermissions(appointment, patient, practitioner, user, hasPermission);
+      });
 
       setAppointments(enrichedAppointments);
+      console.log(`[AppointmentsModule] Chargement des RDV: ${allAppointments.length} valides, ${filteredByPermissions.length} après permissions`);
 
       // Calculer les statistiques
       calculateStats(enrichedAppointments);
@@ -400,14 +401,16 @@ const AppointmentsModule = ({ navigateToPatient }) => {
           </div>
 
           {/* Filtre de praticiens compact - intégré dans la ligne */}
-          <PractitionerFilter
-            practitioners={practitioners}
-            selectedPractitionerId={filterPractitioner}
-            onPractitionerChange={setFilterPractitioner}
-            canViewAll={canViewAllPractitioners}
-            isPractitioner={isPractitioner}
-            currentUser={user}
-          />
+          {canViewAllAppointments && (
+            <PractitionerFilter
+              practitioners={practitioners}
+              selectedPractitionerId={filterPractitioner}
+              onPractitionerChange={setFilterPractitioner}
+              canViewAll={canViewAllAppointments}
+              isPractitioner={false}
+              currentUser={user}
+            />
+          )}
 
           {/* Filtre de statut */}
           <div className="relative">
@@ -561,7 +564,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                         <Clock className="h-3 w-3 mr-1" />
                         {appointment.duration} min
                       </span>
-                      {canViewAllPractitioners && filterPractitioner === 'all' && appointment.practitionerName && (
+                      {canViewAllAppointments && filterPractitioner === 'all' && appointment.practitionerName && (
                         <span className="flex items-center bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md">
                           <User className="h-3 w-3 mr-1" />
                           {appointment.practitionerName}
@@ -682,8 +685,8 @@ const AppointmentsModule = ({ navigateToPatient }) => {
             setEditingAppointment(appointment);
             setIsAppointmentModalOpen(true);
           }}
-          selectedPractitioner={isPractitioner ? user : (filterPractitioner !== 'all' ? practitioners.find(p => p.id === filterPractitioner) : null)}
-          canViewAllPractitioners={canViewAllPractitioners}
+          selectedPractitioner={filterPractitioner !== 'all' ? practitioners.find(p => p.id === filterPractitioner) : null}
+          canViewAllPractitioners={canViewAllAppointments}
           refreshKey={refreshKey}
           filterPractitioner={filterPractitioner}
           onFilterPractitionerChange={setFilterPractitioner}
