@@ -330,6 +330,15 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   const handleSave = async () => {
     if (!validateForm()) return;
 
+    // Validation métier: Un médecin ne peut créer que pour lui-même
+    const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+    const isCreating = !editingAppointment;
+
+    if (isPractitioner && isCreating && formData.practitionerId !== user?.id) {
+      setErrors({ general: 'Un médecin ne peut créer que des rendez-vous pour lui-même' });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const appointmentData = {
@@ -542,18 +551,40 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Praticien *
                 </label>
-                <select
-                  value={formData.practitionerId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, practitionerId: e.target.value }))}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.practitionerId ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Sélectionner un praticien</option>
-                  {practitioners.map(practitioner => (
-                    <option key={practitioner.id} value={practitioner.id}>
-                      {practitioner.name} - {practitioner.specialty}
-                    </option>
-                  ))}
-                </select>
+                {(() => {
+                  // Les médecins ne peuvent créer que pour eux-mêmes
+                  const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+                  const isCreating = !editingAppointment;
+                  const canEditPractitioner = !isPractitioner || editingAppointment; // Les praticiens ne peuvent pas changer le praticien si c'est un nouveau RDV
+
+                  if (!canEditPractitioner) {
+                    // Afficher le praticien en lecture seule si c'est un médecin qui crée un nouveau RDV
+                    const selectedPractitionerName = practitioners.find(p => p.id === formData.practitionerId)?.name || 'Non sélectionné';
+                    return (
+                      <>
+                        <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
+                          {selectedPractitionerName}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Vous ne pouvez créer que des rendez-vous pour vous-même</p>
+                      </>
+                    );
+                  }
+
+                  return (
+                    <select
+                      value={formData.practitionerId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, practitionerId: e.target.value }))}
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.practitionerId ? 'border-red-500' : 'border-gray-300'}`}
+                    >
+                      <option value="">Sélectionner un praticien</option>
+                      {practitioners.map(practitioner => (
+                        <option key={practitioner.id} value={practitioner.id}>
+                          {practitioner.name} - {practitioner.specialty}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
                 {errors.practitionerId && <p className="text-red-500 text-sm mt-1">{errors.practitionerId}</p>}
               </div>
 

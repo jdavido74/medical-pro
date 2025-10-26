@@ -348,27 +348,18 @@ const AvailabilityManager = ({
       const patient = patientsStorage.getById(appointment.patientId);
       const enrichedAppointment = { ...appointment };
 
-      // Gestion des permissions d'accès aux données
-      const canViewPatientDetails = hasPermission(PERMISSIONS.PATIENTS_VIEW);
-      const canViewAllAppointments = hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_ALL);
-      const isOwnAppointment = appointment.practitionerId === user?.id;
-
-      // Vérifier si l'utilisateur peut voir ce RDV selon son rôle
-      // Admin clinique, secrétaire, médecin de la clinique doivent voir les patients
+      // Rôles de l'utilisateur
       const isAdminClinic = user?.role === 'clinic_admin';
       const isSecretary = user?.role === 'secretary';
       const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+      const isOwnAppointment = appointment.practitionerId === user?.id;
 
-      // Afficher les détails du patient si:
-      // - L'utilisateur peut voir tous les RDV
-      // - C'est son propre RDV
-      // - L'utilisateur est admin clinique
-      // - L'utilisateur est secrétaire
-      // - L'utilisateur est un praticien (médecin) - les médecins voient TOUS les détails de leurs RDV
-      // (Pas besoin de vérifier canViewPatientDetails pour les praticiens car ils accèdent à leurs patients)
-      const canViewThisAppointment = canViewAllAppointments || isOwnAppointment || isAdminClinic || isSecretary || isPractitioner;
+      // Les admins clinique et secrétaires DOIVENT voir toutes les données (pas de masquage)
+      // Les praticiens voient les données de leurs propres RDV
+      // Les autres rôles verront "Rendez-vous masqué"
+      const shouldShowPatientDetails = isAdminClinic || isSecretary || isOwnAppointment || isPractitioner;
 
-      if (canViewThisAppointment) {
+      if (shouldShowPatientDetails) {
         if (patient) {
           enrichedAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
           enrichedAppointment.patientPhone = patient.phone;
@@ -376,10 +367,12 @@ const AvailabilityManager = ({
           enrichedAppointment.patientNumber = patient.patientNumber;
         } else {
           // Patient non trouvé
+          console.warn(`[getAppointmentsForDate] Patient ${appointment.patientId} non trouvé pour RDV ${appointment.id}`);
           enrichedAppointment.patientName = 'Patient inconnu';
         }
       } else {
         // Masquer les détails si pas autorisé (rôle utilisateur rare, ex: super_admin externe)
+        console.debug(`[getAppointmentsForDate] RDV ${appointment.id} masqué: role=${user?.role}, own=${isOwnAppointment}`);
         enrichedAppointment.patientName = 'Rendez-vous masqué';
         enrichedAppointment.title = 'RDV privé';
         enrichedAppointment.description = '';
