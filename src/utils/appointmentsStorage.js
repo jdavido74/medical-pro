@@ -32,6 +32,29 @@ export const APPOINTMENT_PRIORITY = {
   urgent: 'Urgente'
 };
 
+/**
+ * Enrichir les rendez-vous avec les données des patients et praticiens
+ * Fonction partagée entre la liste des RDV et la vue calendrier
+ * @param {Array} appointments - Les rendez-vous bruts
+ * @param {Array} patients - Les patients
+ * @param {Array} practitioners - Les praticiens
+ * @returns {Array} RDV enrichis avec patientName, practitionerName, etc.
+ */
+export const enrichAppointments = (appointments, patients, practitioners) => {
+  return appointments.map(appointment => {
+    const patient = patients?.find(p => p.id === appointment.patientId);
+    const practitioner = practitioners?.find(p => p.id === appointment.practitionerId);
+    return {
+      ...appointment,
+      patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Patient inconnu',
+      patientPhone: patient?.phone || '',
+      patientNumber: patient?.patientNumber || '',
+      practitionerName: practitioner?.name || 'Non assigné',
+      practitionerSpecialty: practitioner?.specialty || ''
+    };
+  });
+};
+
 // Service de gestion des rendez-vous
 export const appointmentsStorage = {
   // Récupérer tous les rendez-vous

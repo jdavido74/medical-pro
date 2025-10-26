@@ -7,7 +7,7 @@ import {
   CheckCircle, Zap, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { appointmentsStorage, availabilityStorage } from '../../utils/appointmentsStorage';
+import { appointmentsStorage, availabilityStorage, enrichAppointments } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
@@ -145,6 +145,9 @@ const AvailabilityManager = ({
       // Charger les rendez-vous pour la période affichée
       const allAppointments = appointmentsStorage.getAll();
 
+      // Charger les patients pour l'enrichissement
+      const allPatients = patientsStorage.getAll();
+
       // Filtrer par praticien selon les droits ET vérifier que le praticien existe
       const filteredAppointments = allAppointments.filter(apt => {
         // IMPORTANT: Vérifier que le praticien existe dans localStorage
@@ -190,7 +193,9 @@ const AvailabilityManager = ({
         return false;
       });
 
-      setAppointments(filteredAppointments);
+      // ENRICHIR les RDV avec les données des patients et praticiens
+      const enrichedAppointments = enrichAppointments(filteredAppointments, allPatients, allPractitioners);
+      setAppointments(enrichedAppointments);
       console.log(`[AvailabilityManager] Chargement des RDV: ${allAppointments.length} total, ${filteredAppointments.length} après filtrage`);
       console.log('[AvailabilityManager] RDV filtrés:', filteredAppointments.map(a => ({ id: a.id, patient: a.patientId, praticien: a.practitionerId, date: a.date, deleted: a.deleted })));
 
@@ -351,51 +356,12 @@ const AvailabilityManager = ({
     return slots;
   };
 
-  // Obtenir les rendez-vous pour une date avec enrichissement des données
+  // Obtenir les rendez-vous pour une date
+  // NOTE: Les RDV sont déjà enrichis avec patientName, practitionerName, etc. dans loadData()
+  // Les RDV sont également déjà filtrés selon les permissions de l'utilisateur
   const getAppointmentsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    const dayAppointments = appointments.filter(apt => apt.date === dateStr);
-
-    // Enrichir les rendez-vous avec les données des patients selon les permissions
-    return dayAppointments.map(appointment => {
-      const patient = patientsStorage.getById(appointment.patientId);
-      const enrichedAppointment = { ...appointment };
-
-      // Rôles de l'utilisateur
-      const isAdminClinic = user?.role === 'clinic_admin';
-      const isSecretary = user?.role === 'secretary';
-      const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
-      const isOwnAppointment = appointment.practitionerId === user?.id;
-
-      // RÈGLES DE VISIBILITÉ DES DONNÉES:
-      // - Admin/Secretary: voir TOUTES les données de TOUS les RDV (pas de masquage)
-      // - Praticien: voir les données de LEURS propres RDV uniquement
-      // NOTE: Les RDV affichés sont déjà filtrés dans loadData() selon les rôles,
-      // donc à ce stade on peut faire confiance que seuls les RDV accessibles sont présents
-      const shouldShowPatientDetails = isAdminClinic || isSecretary || isOwnAppointment;
-
-      if (shouldShowPatientDetails) {
-        if (patient) {
-          enrichedAppointment.patientName = `${patient.firstName} ${patient.lastName}`;
-          enrichedAppointment.patientPhone = patient.phone;
-          enrichedAppointment.patientAge = calculateAge(patient.birthDate);
-          enrichedAppointment.patientNumber = patient.patientNumber;
-        } else {
-          // Patient non trouvé
-          console.warn(`[getAppointmentsForDate] Patient ${appointment.patientId} non trouvé pour RDV ${appointment.id}`);
-          enrichedAppointment.patientName = 'Patient inconnu';
-        }
-      } else {
-        // Cette branche ne devrait jamais être atteinte en conditions normales
-        // car les RDV sont déjà filtrés dans loadData()
-        console.warn(`[getAppointmentsForDate] RDV ${appointment.id} ne devrait pas être affiché: role=${user?.role}, own=${isOwnAppointment}`);
-        enrichedAppointment.patientName = 'Rendez-vous masqué';
-        enrichedAppointment.title = 'RDV privé';
-        enrichedAppointment.description = '';
-      }
-
-      return enrichedAppointment;
-    });
+    return appointments.filter(apt => apt.date === dateStr);
   };
 
   // Calculer l'âge à partir de la date de naissance
