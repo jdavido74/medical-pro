@@ -2,7 +2,11 @@
   "title": "Historiales Médicos",
   "subtitle": "Consultas, diagnósticos y prescripciones",
   "newRecord": "Nuevo Historial",
+  "editRecord": "Modificar Historial",
+  "deleteRecord": "Eliminar Historial",
   "searchRecords": "Buscar historial...",
+  "allRecords": "Todos los Historiales",
+  "recentRecords": "Historiales Recientes",
   "consultationDate": "Fecha de Consulta",
   "diagnosis": "Diagnóstico",
   "treatment": "Tratamiento",
@@ -10,5 +14,61 @@
   "symptoms": "Síntomas",
   "examination": "Examen Clínico",
   "vitalSigns": "Signos Vitales",
-  "followUp": "Seguimiento"
+  "bloodPressure": "Presión Arterial",
+  "temperature": "Temperatura",
+  "heartRate": "Frecuencia Cardíaca",
+  "respiratoryRate": "Frecuencia Respiratoria",
+  "weight": "Peso",
+  "height": "Altura",
+  "followUp": "Seguimiento",
+  "notes": "Notas",
+  "attachments": "Archivos Adjuntos",
+  "addAttachment": "Agregar Archivo",
+  "table": {
+    "date": "Fecha",
+    "type": "Tipo",
+    "diagnosis": "Diagnóstico",
+    "practitioner": "Médico",
+    "actions": "Acciones"
+  },
+  "form": {
+    "recordType": "Tipo de Historial",
+    "date": "Fecha",
+    "chiefComplaint": "Motivo Principal",
+    "history": "Antecedentes",
+    "symptoms": "Síntomas",
+    "examination": "Examen",
+    "diagnosis": "Diagnóstico",
+    "treatment": "Tratamiento",
+    "medication": "Medicamentos Prescritos",
+    "dosage": "Dosis",
+    "frequency": "Frecuencia",
+    "duration": "Duración",
+    "instructions": "Instrucciones"
+  },
+  "recordTypes": {
+    "consultation": "Consulta",
+    "followup": "Seguimiento",
+    "checkup": "Chequeo",
+    "diagnosis": "Diagnóstico",
+    "procedure": "Procedimiento",
+    "lab_test": "Análisis",
+    "imaging": "Imagenología",
+    "vaccination": "Vacunación",
+    "emergency": "Urgencia"
+  },
+  "messages": {
+    "recordCreated": "Historial creado con éxito",
+    "recordUpdated": "Historial actualizado con éxito",
+    "recordDeleted": "Historial eliminado con éxito",
+    "deleteConfirm": "¿Está seguro de que desea eliminar este historial?",
+    "noRecords": "No hay historiales médicos en este momento",
+    "error": "Ocurrió un error"
+  },
+  "statuses": {
+    "draft": "Borrador",
+    "completed": "Completado",
+    "archived": "Archivado",
+    "pending_review": "En Revisión"
+  }
 }

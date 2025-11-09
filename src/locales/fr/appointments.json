@@ -2,17 +2,77 @@
   "title": "Rendez-vous",
   "subtitle": "Planifiez et organisez les consultations",
   "newAppointment": "Nouveau rendez-vous",
+  "editAppointment": "Modifier le rendez-vous",
+  "deleteAppointment": "Supprimer le rendez-vous",
   "searchAppointments": "Rechercher un rendez-vous...",
+  "calendarView": "Vue calendrier",
+  "listView": "Vue liste",
   "today": "Aujourd'hui",
   "thisWeek": "Cette semaine",
   "thisMonth": "Ce mois",
+  "myAppointments": "Mes rendez-vous",
+  "allAppointments": "Tous les rendez-vous",
+  "upcoming": "À venir",
+  "past": "Passés",
   "appointmentDate": "Date du rendez-vous",
   "appointmentTime": "Heure",
   "duration": "Durée",
   "reason": "Motif",
+  "notes": "Notes",
   "status": "Statut",
-  "scheduled": "Programmé",
-  "confirmed": "Confirmé",
-  "completed": "Terminé",
-  "cancelled": "Annulé"
+  "patient": "Patient",
+  "practitioner": "Praticien",
+  "type": "Type",
+  "location": "Lieu",
+  "table": {
+    "patient": "Patient",
+    "date": "Date",
+    "time": "Heure",
+    "duration": "Durée",
+    "type": "Type",
+    "status": "Statut",
+    "actions": "Actions"
+  },
+  "form": {
+    "basicInfo": "Informations de base",
+    "dateTime": "Date et heure",
+    "appointmentType": "Type de rendez-vous",
+    "reason": "Motif de la consultation",
+    "notes": "Notes supplémentaires",
+    "create": "Créer le rendez-vous",
+    "update": "Mettre à jour",
+    "cancel": "Annuler"
+  },
+  "statuses": {
+    "scheduled": "Programmé",
+    "confirmed": "Confirmé",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "cancelled": "Annulé",
+    "no_show": "Absence",
+    "rescheduled": "Reporté"
+  },
+  "types": {
+    "consultation": "Consultation",
+    "followup": "Suivi",
+    "checkup": "Bilan",
+    "procedure": "Intervention",
+    "emergency": "Urgence",
+    "telemedicine": "Télémédecine"
+  },
+  "messages": {
+    "appointmentCreated": "Rendez-vous créé avec succès",
+    "appointmentUpdated": "Rendez-vous modifié avec succès",
+    "appointmentDeleted": "Rendez-vous supprimé avec succès",
+    "appointmentConfirmed": "Rendez-vous confirmé",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce rendez-vous ?",
+    "noAppointments": "Aucun rendez-vous pour l'instant",
+    "conflict": "Créneau déjà occupé"
+  },
+  "filters": {
+    "filterByStatus": "Filtrer par statut",
+    "filterByType": "Filtrer par type",
+    "filterByDate": "Filtrer par date",
+    "clearFilters": "Effacer les filtres"
+  }
 }

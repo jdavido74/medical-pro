@@ -2,7 +2,11 @@
   "title": "Dossiers médicaux",
   "subtitle": "Consultations, diagnostics et prescriptions",
   "newRecord": "Nouveau dossier",
+  "editRecord": "Modifier le dossier",
+  "deleteRecord": "Supprimer le dossier",
   "searchRecords": "Rechercher un dossier...",
+  "allRecords": "Tous les dossiers",
+  "recentRecords": "Dossiers récents",
   "consultationDate": "Date de consultation",
   "diagnosis": "Diagnostic",
   "treatment": "Traitement",
@@ -10,5 +14,62 @@
   "symptoms": "Symptômes",
   "examination": "Examen clinique",
   "vitalSigns": "Signes vitaux",
-  "followUp": "Suivi"
+  "bloodPressure": "Tension artérielle",
+  "temperature": "Température",
+  "heartRate": "Fréquence cardiaque",
+  "respiratoryRate": "Fréquence respiratoire",
+  "weight": "Poids",
+  "height": "Taille",
+  "followUp": "Suivi",
+  "notes": "Notes",
+  "attachments": "Pièces jointes",
+  "addAttachment": "Ajouter un fichier",
+  "table": {
+    "date": "Date",
+    "type": "Type",
+    "diagnosis": "Diagnostic",
+    "practitioner": "Praticien",
+    "actions": "Actions"
+  },
+  "form": {
+    "recordType": "Type de dossier",
+    "date": "Date",
+    "chiefComplaint": "Motif principal",
+    "history": "Antécédents",
+    "symptoms": "Symptômes",
+    "examination": "Examen",
+    "diagnosis": "Diagnostic",
+    "treatment": "Traitement",
+    "medication": "Médicaments prescrits",
+    "dosage": "Dosage",
+    "frequency": "Fréquence",
+    "duration": "Durée",
+    "instructions": "Instructions",
+    "notes": "Notes du praticien"
+  },
+  "recordTypes": {
+    "consultation": "Consultation",
+    "followup": "Suivi",
+    "checkup": "Bilan",
+    "diagnosis": "Diagnostic",
+    "procedure": "Intervention",
+    "lab_test": "Analyse",
+    "imaging": "Imagerie",
+    "vaccination": "Vaccination",
+    "emergency": "Urgence"
+  },
+  "messages": {
+    "recordCreated": "Dossier créé avec succès",
+    "recordUpdated": "Dossier modifié avec succès",
+    "recordDeleted": "Dossier supprimé avec succès",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce dossier ?",
+    "noRecords": "Aucun dossier médical pour l'instant",
+    "error": "Une erreur est survenue"
+  },
+  "statuses": {
+    "draft": "Brouillon",
+    "completed": "Complété",
+    "archived": "Archivé",
+    "pending_review": "En attente de révision"
+  }
 }
