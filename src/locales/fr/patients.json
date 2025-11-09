@@ -89,5 +89,62 @@
     "active": "Actif",
     "archived": "Archivé",
     "inactive": "Inactif"
+  },
+  "confirmations": {
+    "archivePatient": "Êtes-vous sûr de vouloir archiver ce patient ?"
+  },
+  "stats": {
+    "totalPatients": "Patients total",
+    "active": "Actifs",
+    "newMonth": "Nouveaux (mois)",
+    "newYear": "Nouveaux (année)"
+  },
+  "placeholders": {
+    "search": "Rechercher par nom, numéro, email ou téléphone..."
+  },
+  "filters": {
+    "all": "Tous les patients",
+    "active": "Actifs",
+    "inactive": "Inactifs"
+  },
+  "tableHeaders": {
+    "patient": "Patient",
+    "contact": "Contact",
+    "information": "Informations",
+    "status": "État",
+    "actions": "Actions"
+  },
+  "labels": {
+    "subtitle": "Gestion complète du dossier médical de patients",
+    "birthDateShort": "Nais:",
+    "idNumber": "ID:",
+    "insurance": "Assurance:",
+    "created": "Créé:"
+  },
+  "statuses": {
+    "active": "Actif",
+    "inactive": "Inactif"
+  },
+  "tooltips": {
+    "viewDetails": "Voir les détails",
+    "medicalHistory": "Historique médical",
+    "edit": "Modifier",
+    "archive": "Archiver"
+  },
+  "messagesLoading": {
+    "loading": "Chargement des patients...",
+    "noSearchResults": "Aucun patient trouvé",
+    "noPatients": "Aucun patient",
+    "tryOtherSearchTerms": "Essayez avec d'autres termes de recherche",
+    "createFirstPatient": "Commencez par créer votre premier patient"
+  },
+  "buttons": {
+    "newPatient": "Nouveau patient",
+    "createFirstPatient": "Créer le premier patient"
+  },
+  "audit": {
+    "profileUpdated": "Profil patient mis à jour",
+    "patientCreated": "Patient créé depuis le module patients",
+    "patientArchived": "Patient archivé depuis le module patients"
   }
 }

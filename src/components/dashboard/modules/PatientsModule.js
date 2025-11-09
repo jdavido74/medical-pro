@@ -16,7 +16,7 @@ import PatientDetailModal from '../modals/PatientDetailModal';
 import MedicalHistoryModal from '../modals/MedicalHistoryModal';
 
 const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('patients');
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const patientContext = useContext(PatientContext);
@@ -150,7 +150,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   };
 
   const handleDeletePatient = async (patientId) => {
-    if (window.confirm('¿Está seguro de que desea archivar este paciente?')) {
+    if (window.confirm(t('confirmations.archivePatient'))) {
       try {
         // Suppression via contexte (permissions + audit automatiques)
         await patientContext.deletePatient(patientId, {
@@ -184,7 +184,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Activity className="h-8 w-8 text-green-600 mx-auto mb-4 animate-spin" />
-          <p className="text-gray-600">Cargando pacientes...</p>
+          <p className="text-gray-600">{t('messagesLoading.loading')}</p>
         </div>
       </div>
     );
@@ -212,10 +212,10 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {t('patients.title')} ({stats.total || 0})
+            {t('title')} ({stats.total || 0})
           </h1>
           <p className="text-gray-600 mt-1">
-            Gestión completa del dossier médico de pacientes
+            {t('labels.subtitle')}
           </p>
         </div>
 
@@ -226,7 +226,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
             >
               <UserPlus className="h-4 w-4" />
-              <span>Nuevo Paciente</span>
+              <span>{t('buttons.newPatient')}</span>
             </button>
           </div>
         )}
@@ -238,7 +238,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           <div className="flex items-center">
             <Users className="h-8 w-8 text-blue-600 mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Total Pacientes</p>
+              <p className="text-sm text-gray-600">{t('stats.totalPatients')}</p>
               <p className="text-xl font-bold text-gray-900">{stats.total || 0}</p>
             </div>
           </div>
@@ -248,7 +248,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           <div className="flex items-center">
             <Heart className="h-8 w-8 text-green-600 mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Activos</p>
+              <p className="text-sm text-gray-600">{t('stats.active')}</p>
               <p className="text-xl font-bold text-gray-900">{stats.active || 0}</p>
             </div>
           </div>
@@ -258,7 +258,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           <div className="flex items-center">
             <Calendar className="h-8 w-8 text-orange-600 mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Nuevos (mes)</p>
+              <p className="text-sm text-gray-600">{t('stats.newMonth')}</p>
               <p className="text-xl font-bold text-gray-900">{stats.incomplete || 0}</p>
             </div>
           </div>
@@ -268,7 +268,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           <div className="flex items-center">
             <Shield className="h-8 w-8 text-purple-600 mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Nuevos (año)</p>
+              <p className="text-sm text-gray-600">{t('stats.newYear')}</p>
               <p className="text-xl font-bold text-gray-900">{stats.deleted || 0}</p>
             </div>
           </div>
@@ -284,7 +284,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar por nombre, número, email o teléfono..."
+                placeholder={t('placeholders.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -298,9 +298,9 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
               onChange={(e) => setFilterType(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="all">Todos los pacientes</option>
-              <option value="active">Activos</option>
-              <option value="inactive">Inactivos</option>
+              <option value="all">{t('filters.all')}</option>
+              <option value="active">{t('filters.active')}</option>
+              <option value="inactive">{t('filters.inactive')}</option>
             </select>
           </div>
         </div>
@@ -312,19 +312,19 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           <div className="text-center py-12">
             <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery ? 'No se encontraron pacientes' : 'No hay pacientes'}
+              {searchQuery ? t('messagesLoading.noSearchResults') : t('messagesLoading.noPatients')}
             </h3>
             <p className="text-gray-600 mb-4">
               {searchQuery
-                ? 'Intente con otros términos de búsqueda'
-                : 'Comience creando su primer paciente'}
+                ? t('messagesLoading.tryOtherSearchTerms')
+                : t('messagesLoading.createFirstPatient')}
             </p>
             {canCreatePatients && !searchQuery && (
               <button
                 onClick={handleCreatePatient}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
-                Crear primer paciente
+                {t('buttons.createFirstPatient')}
               </button>
             )}
           </div>
@@ -333,11 +333,11 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Paciente</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Contacto</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Información</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Estado</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-900">Acciones</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">{t('tableHeaders.patient')}</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">{t('tableHeaders.contact')}</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">{t('tableHeaders.information')}</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">{t('tableHeaders.status')}</th>
+                  <th className="text-right py-3 px-4 font-medium text-gray-900">{t('tableHeaders.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -356,7 +356,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                             {patient.patientNumber}
                           </div>
                           <div className="text-xs text-gray-400">
-                            Nac: {new Date(patient.birthDate).toLocaleDateString('es-ES')}
+                            {t('labels.birthDateShort')} {new Date(patient.birthDate).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
@@ -388,22 +388,22 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                     <td className="py-4 px-4">
                       <div className="space-y-1">
                         <div className="text-sm text-gray-600">
-                          ID: {patient.idNumber}
+                          {t('labels.idNumber')} {patient.idNumber}
                         </div>
                         {patient.insurance?.provider && (
                           <div className="text-sm text-gray-600">
-                            Seguro: {patient.insurance.provider}
+                            {t('labels.insurance')} {patient.insurance.provider}
                           </div>
                         )}
                         <div className="text-xs text-gray-400">
-                          Creado: {new Date(patient.createdAt).toLocaleDateString('es-ES')}
+                          {t('labels.created')} {new Date(patient.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                     </td>
 
                     <td className="py-4 px-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(patient.status)}`}>
-                        {patient.status === 'active' ? 'Activo' : 'Inactivo'}
+                        {patient.status === 'active' ? t('statuses.active') : t('statuses.inactive')}
                       </span>
                     </td>
 
@@ -412,7 +412,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                         <button
                           onClick={() => handleViewPatient(patient)}
                           className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                          title="Ver detalles"
+                          title={t('tooltips.viewDetails')}
                         >
                           <Eye className="h-4 w-4" />
                         </button>
@@ -421,7 +421,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                           <button
                             onClick={() => handleViewMedicalHistory(patient)}
                             className="p-2 text-gray-400 hover:text-purple-600 transition-colors"
-                            title="Historial médico"
+                            title={t('tooltips.medicalHistory')}
                           >
                             <Stethoscope className="h-4 w-4" />
                           </button>
@@ -431,7 +431,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                           <button
                             onClick={() => handleEditPatient(patient)}
                             className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                            title="Editar"
+                            title={t('tooltips.edit')}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
@@ -441,7 +441,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                           <button
                             onClick={() => handleDeletePatient(patient.id)}
                             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                            title="Archivar"
+                            title={t('tooltips.archive')}
                           >
                             <Archive className="h-4 w-4" />
                           </button>
