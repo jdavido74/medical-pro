@@ -6,10 +6,12 @@ import {
   Clipboard, Clock, AlertCircle, Edit2, CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { patientsStorage } from '../../../utils/patientsStorage';
 
 const HomeModule = ({ setActiveModule }) => {
   const { user } = useAuth();
+  const { t } = useTranslation('dashboard');
   const [incompletePatients, setIncompletePatients] = useState([]);
   const [stats, setStats] = useState({
     patients: 0,
@@ -36,24 +38,24 @@ const HomeModule = ({ setActiveModule }) => {
   const quickActions = [
     {
       id: 'new-patient',
-      title: 'Nouveau patient',
-      description: 'Ajouter un patient à votre cabinet',
+      title: t('newPatient'),
+      description: t('quickActions.addPatient'),
       icon: UserPlus,
       color: 'green',
       action: () => setActiveModule('patients')
     },
     {
       id: 'new-appointment',
-      title: 'Prendre rendez-vous',
-      description: 'Planifier une consultation',
+      title: t('newAppointment'),
+      description: t('quickActions.planConsultation'),
       icon: CalendarPlus,
       color: 'blue',
       action: () => setActiveModule('appointments')
     },
     {
       id: 'new-consultation',
-      title: 'Nouvelle consultation',
-      description: 'Créer un dossier médical',
+      title: t('newConsultation'),
+      description: t('quickActions.createRecord'),
       icon: Plus,
       color: 'purple',
       action: () => setActiveModule('medical-records')
@@ -62,23 +64,23 @@ const HomeModule = ({ setActiveModule }) => {
 
   const medicalInsights = [
     {
-      title: 'Rendez-vous du jour',
+      title: t('dailyAppointments'),
       value: '0',
-      subtitle: 'Aucune consultation prévue',
+      subtitle: t('insights.noConsultations'),
       icon: Calendar,
       color: 'blue'
     },
     {
-      title: 'Patients en attente',
+      title: t('patientsWaiting'),
       value: '0',
-      subtitle: 'Salle d\'attente vide',
+      subtitle: t('insights.emptyWaitingRoom'),
       icon: Clock,
       color: 'orange'
     },
     {
-      title: 'Urgences signalées',
+      title: t('emergencies'),
       value: '0',
-      subtitle: 'Aucune alerte active',
+      subtitle: t('insights.noAlerts'),
       icon: AlertCircle,
       color: 'red'
     }
@@ -87,29 +89,29 @@ const HomeModule = ({ setActiveModule }) => {
   const onboardingSteps = [
     {
       step: 1,
-      title: 'Configurez votre cabinet',
-      description: 'Informations professionnelles et coordonnées',
+      title: t('configureClinic'),
+      description: t('onboarding.clinicInfo'),
       completed: Boolean(user?.companyName),
       action: () => setActiveModule('settings')
     },
     {
       step: 2,
-      title: 'Ajoutez vos premiers patients',
-      description: 'Créez votre patientèle dans ClinicManager',
+      title: t('addPatients'),
+      description: t('onboarding.addPatients'),
       completed: stats.patients > 0,
       action: () => setActiveModule('patients')
     },
     {
       step: 3,
-      title: 'Planifiez vos consultations',
-      description: 'Organisez votre planning médical',
+      title: t('planConsultations'),
+      description: t('onboarding.planConsultations'),
       completed: stats.appointments > 0,
       action: () => setActiveModule('appointments')
     },
     {
       step: 4,
-      title: 'Créez votre premier dossier',
-      description: 'Consultations et prescriptions',
+      title: t('createFirstRecord'),
+      description: t('onboarding.createRecord'),
       completed: stats.consultations > 0,
       action: () => setActiveModule('medical-records')
     }
@@ -125,15 +127,15 @@ const HomeModule = ({ setActiveModule }) => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">
-              Bonjour Dr {user?.name?.split(' ')[0] || 'Docteur'} 👋
+              {t('welcome', { name: user?.name?.split(' ')[0] || 'Doctor' })}
             </h1>
             <p className="text-green-100 mb-4">
-              Bienvenue dans votre cabinet médical numérique
+              {t('welcomeSubtitle')}
             </p>
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center">
                 <Heart className="h-4 w-4 mr-1" />
-                Cabinet: {user?.companyName || 'À configurer'}
+                {t('clinic')}: {user?.companyName || t('toSetup')}
               </div>
               <div className="flex items-center">
                 <Activity className="h-4 w-4 mr-1" />
@@ -144,7 +146,7 @@ const HomeModule = ({ setActiveModule }) => {
           <div className="text-right">
             <Stethoscope className="h-16 w-16 text-green-200 mb-2" />
             <div className="text-sm text-green-100">
-              {new Date().toLocaleDateString('fr-FR', {
+              {new Date().toLocaleDateString(undefined, {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long'
@@ -159,7 +161,7 @@ const HomeModule = ({ setActiveModule }) => {
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Patients total</p>
+              <p className="text-sm text-gray-600 mb-1">{t('totalPatients')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.patients}</p>
             </div>
             <Users className="h-10 w-10 text-green-600" />
@@ -169,7 +171,7 @@ const HomeModule = ({ setActiveModule }) => {
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">RDV ce mois</p>
+              <p className="text-sm text-gray-600 mb-1">{t('appointmentsMonth')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.appointments}</p>
             </div>
             <Calendar className="h-10 w-10 text-blue-600" />
@@ -179,7 +181,7 @@ const HomeModule = ({ setActiveModule }) => {
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Consultations</p>
+              <p className="text-sm text-gray-600 mb-1">{t('consultations')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.consultations}</p>
             </div>
             <FileText className="h-10 w-10 text-purple-600" />
@@ -189,7 +191,7 @@ const HomeModule = ({ setActiveModule }) => {
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">En attente</p>
+              <p className="text-sm text-gray-600 mb-1">{t('pending')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
             </div>
             <Clipboard className="h-10 w-10 text-orange-600" />
@@ -218,7 +220,7 @@ const HomeModule = ({ setActiveModule }) => {
 
       {/* Actions rapides */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('quickActionsTitle')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -255,10 +257,10 @@ const HomeModule = ({ setActiveModule }) => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-orange-900">
-                  Fiches patients à compléter
+                  {t('incompletePatients.title')}
                 </h3>
                 <p className="text-sm text-orange-700">
-                  {incompletePatients.length} patient{incompletePatients.length > 1 ? 's' : ''} créé{incompletePatients.length > 1 ? 's' : ''} rapidement nécessite{incompletePatients.length > 1 ? 'nt' : ''} de compléter leur profil
+                  {t('incompletePatients.description', { count: incompletePatients.length })}
                 </p>
               </div>
             </div>
@@ -280,17 +282,17 @@ const HomeModule = ({ setActiveModule }) => {
                       {patient.firstName} {patient.lastName}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {patient.email || patient.phone || 'Pas de contact'}
+                      {patient.email || patient.phone || t('noContact')}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setActiveModule('patients')}
                   className="flex items-center space-x-1 px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors text-sm font-medium"
-                  title="Compléter la fiche"
+                  title={t('completeProfile')}
                 >
                   <Edit2 className="h-4 w-4" />
-                  <span>Compléter</span>
+                  <span>{t('complete')}</span>
                 </button>
               </div>
             ))}
@@ -301,7 +303,7 @@ const HomeModule = ({ setActiveModule }) => {
               onClick={() => setActiveModule('patients')}
               className="w-full mt-3 px-4 py-2 text-orange-700 hover:bg-orange-100 rounded-lg transition-colors font-medium text-sm"
             >
-              Voir les {incompletePatients.length - 5} autres fiches à compléter →
+              {t('incompletePatients.seeMore', { count: incompletePatients.length - 5 })}
             </button>
           )}
         </div>
@@ -312,10 +314,10 @@ const HomeModule = ({ setActiveModule }) => {
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Configuration de votre cabinet
+              {t('clinicConfiguration')}
             </h3>
             <div className="text-sm text-gray-500">
-              {completedSteps}/{onboardingSteps.length} étapes
+              {completedSteps}/{onboardingSteps.length} {t('steps')}
             </div>
           </div>
 
@@ -352,7 +354,7 @@ const HomeModule = ({ setActiveModule }) => {
                     onClick={step.action}
                     className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center"
                   >
-                    Commencer <ArrowRight className="h-4 w-4 ml-1" />
+                    {t('start')} <ArrowRight className="h-4 w-4 ml-1" />
                   </button>
                 )}
               </div>
@@ -367,24 +369,23 @@ const HomeModule = ({ setActiveModule }) => {
           <Heart className="h-6 w-6 text-green-600 mt-1" />
           <div>
             <h4 className="font-semibold text-green-800 mb-2">
-              Cabinet médical sécurisé et conforme
+              {t('medicalCompliance')}
             </h4>
             <p className="text-green-700 text-sm mb-3">
-              ClinicManager respecte le secret médical, la protection des données de santé (RGPD)
-              et s'adapte aux exigences professionnelles des praticiens.
+              {t('complianceDescription')}
             </p>
             <div className="flex flex-wrap gap-2">
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Secret médical
+                ✓ {t('compliance.medicalSecret')}
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ RGPD Santé
+                ✓ {t('compliance.gdpr')}
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Audit trail
+                ✓ {t('compliance.auditTrail')}
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Sauvegarde sécurisée
+                ✓ {t('compliance.secureBackup')}
               </span>
             </div>
           </div>

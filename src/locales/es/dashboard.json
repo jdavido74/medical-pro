@@ -2,6 +2,7 @@
   "welcome": "Hola Dr {{name}}",
   "welcomeSubtitle": "Bienvenido a tu consulta médica digital",
   "clinic": "Consulta",
+  "toSetup": "Configurar",
   "totalPatients": "Total Pacientes",
   "appointmentsMonth": "Citas Este Mes",
   "consultations": "Consultas",
@@ -9,7 +10,7 @@
   "dailyAppointments": "Citas del Día",
   "patientsWaiting": "Pacientes Esperando",
   "emergencies": "Urgencias Reportadas",
-  "quickActions": "Acciones Rápidas",
+  "quickActionsTitle": "Acciones Rápidas",
   "newPatient": "Nuevo Paciente",
   "newAppointment": "Programar Cita",
   "newConsultation": "Nueva Consulta",
@@ -35,5 +36,37 @@
   "notifications": "Notificaciones",
   "menu": "Menú",
   "close": "Cerrar",
-  "version": "Versión {{version}}"
+  "version": "Versión {{version}}",
+  "quickActions": {
+    "addPatient": "Añadir un paciente a tu consulta",
+    "planConsultation": "Planificar una consulta",
+    "createRecord": "Crear un historial médico"
+  },
+  "insights": {
+    "noConsultations": "Ninguna consulta prevista",
+    "emptyWaitingRoom": "Sala de espera vacía",
+    "noAlerts": "Sin alertas activas"
+  },
+  "incompletePatients": {
+    "title": "Fichas de pacientes incompletas",
+    "description": "{{count}} paciente creado rápidamente necesita completar su perfil",
+    "seeMore": "Ver las {{count}} otras fichas incompletas →"
+  },
+  "noContact": "Sin contacto",
+  "completeProfile": "Completar ficha",
+  "complete": "Completar",
+  "steps": "pasos",
+  "onboarding": {
+    "clinicInfo": "Información profesional y datos de contacto",
+    "addPatients": "Crea tu base de pacientes en ClinicManager",
+    "planConsultations": "Organiza tu agenda médica",
+    "createRecord": "Consultas y prescripciones"
+  },
+  "start": "Comenzar",
+  "compliance": {
+    "medicalSecret": "Confidencialidad médica",
+    "gdpr": "RGPD Sanitario",
+    "auditTrail": "Registro de auditoría",
+    "secureBackup": "Copia de seguridad segura"
+  }
 }

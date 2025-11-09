@@ -2,6 +2,7 @@
   "welcome": "Bonjour Dr {{name}}",
   "welcomeSubtitle": "Bienvenue dans votre cabinet médical numérique",
   "clinic": "Cabinet",
+  "toSetup": "À configurer",
   "totalPatients": "Patients total",
   "appointmentsMonth": "RDV ce mois",
   "consultations": "Consultations",
@@ -9,7 +10,7 @@
   "dailyAppointments": "Rendez-vous du jour",
   "patientsWaiting": "Patients en attente",
   "emergencies": "Urgences signalées",
-  "quickActions": "Actions rapides",
+  "quickActionsTitle": "Actions rapides",
   "newPatient": "Nouveau patient",
   "newAppointment": "Prendre rendez-vous",
   "newConsultation": "Nouvelle consultation",
@@ -35,5 +36,37 @@
   "notifications": "Notifications",
   "menu": "Menu",
   "close": "Fermer",
-  "version": "Version {{version}}"
+  "version": "Version {{version}}",
+  "quickActions": {
+    "addPatient": "Ajouter un patient à votre cabinet",
+    "planConsultation": "Planifier une consultation",
+    "createRecord": "Créer un dossier médical"
+  },
+  "insights": {
+    "noConsultations": "Aucune consultation prévue",
+    "emptyWaitingRoom": "Salle d'attente vide",
+    "noAlerts": "Aucune alerte active"
+  },
+  "incompletePatients": {
+    "title": "Fiches patients à compléter",
+    "description": "{{count}} patient créé rapidement nécessite de compléter leur profil",
+    "seeMore": "Voir les {{count}} autres fiches à compléter →"
+  },
+  "noContact": "Pas de contact",
+  "completeProfile": "Compléter la fiche",
+  "complete": "Compléter",
+  "steps": "étapes",
+  "onboarding": {
+    "clinicInfo": "Informations professionnelles et coordonnées",
+    "addPatients": "Créez votre patientèle dans ClinicManager",
+    "planConsultations": "Organisez votre planning médical",
+    "createRecord": "Consultations et prescriptions"
+  },
+  "start": "Commencer",
+  "compliance": {
+    "medicalSecret": "Secret médical",
+    "gdpr": "RGPD Santé",
+    "auditTrail": "Audit trail",
+    "secureBackup": "Sauvegarde sécurisée"
+  }
 }
