@@ -1,12 +1,14 @@
 // components/auth/LoginPage.js
 import React, { useState } from 'react';
 import { Heart, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import SocialAuth from './SocialAuth';
 import { validateEmail } from '../../utils/validation';
 
 const LoginPage = ({ setCurrentPage }) => {
   const { login } = useAuth();
+  const { t } = useTranslation('auth');
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({
     email: '',
@@ -32,13 +34,13 @@ const LoginPage = ({ setCurrentPage }) => {
     // Validation
     const newErrors = {};
     if (!loginData.email) {
-      newErrors.email = 'Email requis';
+      newErrors.email = t('validation.required', { field: t('email') });
     } else if (!validateEmail(loginData.email)) {
-      newErrors.email = 'Email invalide';
+      newErrors.email = t('validation.invalidEmail');
     }
-    
+
     if (!loginData.password) {
-      newErrors.password = 'Mot de passe requis';
+      newErrors.password = t('validation.required', { field: t('password') });
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -49,7 +51,7 @@ const LoginPage = ({ setCurrentPage }) => {
     setIsLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       if (loginData.email === 'test@exemple.fr' && loginData.password === 'motdepasse123') {
         const userData = {
           id: 'classic_' + Date.now(),
@@ -63,9 +65,9 @@ const LoginPage = ({ setCurrentPage }) => {
         login(userData);
         alert('✅ Connexion classique réussie !');
       } else {
-        setErrors({ 
-          email: 'Identifiants incorrects', 
-          password: 'Vérifiez vos données' 
+        setErrors({
+          email: t('incorrectCredentials'),
+          password: t('verifyData')
         });
       }
     } finally {
@@ -80,8 +82,8 @@ const LoginPage = ({ setCurrentPage }) => {
           {/* Header */}
           <div className="text-center mb-8">
             <Heart className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900">Connexion</h1>
-            <p className="text-gray-600 mt-2">Accédez à votre cabinet médical</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('loginTitle')}</h1>
+            <p className="text-gray-600 mt-2">{t('loginSubtitle')}</p>
           </div>
 
           {/* Authentification sociale */}
@@ -94,7 +96,7 @@ const LoginPage = ({ setCurrentPage }) => {
           {/* Séparateur */}
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-sm text-gray-500">ou par email</span>
+            <span className="px-4 text-sm text-gray-500">{t('orEmail')}</span>
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
@@ -102,7 +104,7 @@ const LoginPage = ({ setCurrentPage }) => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                {t('email')}
               </label>
               <input
                 type="email"
@@ -112,7 +114,7 @@ const LoginPage = ({ setCurrentPage }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="votre@email.fr"
+                placeholder={t('emailPlaceholder')}
               />
               {errors.email && (
                 <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -121,7 +123,7 @@ const LoginPage = ({ setCurrentPage }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mot de passe
+                {t('password')}
               </label>
               <div className="relative">
                 <input
@@ -132,7 +134,7 @@ const LoginPage = ({ setCurrentPage }) => {
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 pr-10 ${
                     errors.password ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Votre mot de passe"
+                  placeholder={t('passwordPlaceholder')}
                 />
                 <button
                   type="button"
@@ -156,7 +158,7 @@ const LoginPage = ({ setCurrentPage }) => {
                 className="h-4 w-4 text-green-600 border-gray-300 rounded"
               />
               <label className="ml-2 text-sm text-gray-700">
-                Se souvenir de moi
+                {t('rememberMe')}
               </label>
             </div>
 
@@ -165,24 +167,24 @@ const LoginPage = ({ setCurrentPage }) => {
               disabled={isLoading}
               className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
-              {isLoading ? 'Connexion...' : 'Se connecter'}
+              {isLoading ? t('signingIn') : t('signIn')}
             </button>
           </div>
 
           {/* Liens navigation */}
           <div className="text-center mt-6 space-y-3">
             <button className="text-green-600 hover:text-green-700 text-sm">
-              Mot de passe oublié ?
+              {t('forgotPassword')}
             </button>
-            
+
             <div className="border-t pt-4">
               <p className="text-sm text-gray-600">
-                Pas encore de compte ?{' '}
+                {t('noAccount')}{' '}
                 <button
                   onClick={() => setCurrentPage('signup')}
                   className="text-green-600 hover:text-green-700 font-medium"
                 >
-                  Créer un compte
+                  {t('signup')}
                 </button>
               </p>
             </div>
@@ -191,14 +193,14 @@ const LoginPage = ({ setCurrentPage }) => {
               onClick={() => setCurrentPage('home')}
               className="text-gray-500 hover:text-gray-700 text-sm"
             >
-              ← Retour à l'accueil
+              {t('backToHome')}
             </button>
           </div>
 
           {/* Info démo */}
           <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-800 text-center">
-              <strong>🧪 Mode démo :</strong> test@exemple.fr / motdepasse123
+              <strong>🧪 {t('demoMode')}</strong> {t('demoCredentials')}
             </p>
           </div>
         </div>

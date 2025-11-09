@@ -1,12 +1,14 @@
 // components/auth/SignupPage.js
 import React, { useState } from 'react';
 import { Heart, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import SocialAuth from './SocialAuth';
 import { validateEmail, validateMedicalNumber, validateClinicName } from '../../utils/validation';
 
 const SignupPage = ({ setCurrentPage }) => {
   const { register } = useAuth();
+  const { t } = useTranslation('auth');
   const [showPassword, setShowPassword] = useState(false);
   const [signupData, setSignupData] = useState({
     name: '',
@@ -23,27 +25,27 @@ const SignupPage = ({ setCurrentPage }) => {
     const newErrors = {};
 
     if (!signupData.name.trim()) {
-      newErrors.name = 'Nom requis';
+      newErrors.name = t('validation.required', { field: t('name') });
     }
 
     if (!signupData.email || !validateEmail(signupData.email)) {
-      newErrors.email = 'Email invalide';
+      newErrors.email = t('validation.invalidEmail');
     }
 
     if (!signupData.clinicName || !validateClinicName(signupData.clinicName)) {
-      newErrors.clinicName = 'Nom du cabinet requis';
+      newErrors.clinicName = t('validation.clinicNameRequired');
     }
 
     if (!signupData.medicalNumber || !validateMedicalNumber(signupData.medicalNumber)) {
-      newErrors.medicalNumber = 'Numéro ADELI (9 chiffres) ou RPPS (11 chiffres) invalide';
+      newErrors.medicalNumber = t('validation.invalidMedicalNumber');
     }
 
     if (!signupData.password || signupData.password.length < 8) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
+      newErrors.password = t('validation.passwordTooShort');
     }
 
     if (!signupData.acceptTerms) {
-      newErrors.acceptTerms = 'Vous devez accepter les conditions d\'utilisation';
+      newErrors.acceptTerms = t('termsError');
     }
 
     setErrors(newErrors);
@@ -67,7 +69,7 @@ const SignupPage = ({ setCurrentPage }) => {
         password: signupData.password
       });
     } catch (error) {
-      setErrors({ submit: error.message || 'Erreur lors de la création du compte' });
+      setErrors({ submit: error.message || t('accountError') });
     } finally {
       setIsLoading(false);
     }
@@ -93,8 +95,8 @@ const SignupPage = ({ setCurrentPage }) => {
           {/* Header */}
           <div className="text-center mb-8">
             <Heart className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900">Créer un compte</h1>
-            <p className="text-gray-600 mt-2">Rejoignez ClinicManager et gérez votre cabinet médical</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('signupTitle')}</h1>
+            <p className="text-gray-600 mt-2">{t('signupSubtitle')}</p>
           </div>
 
           {/* Authentification sociale */}
@@ -111,7 +113,7 @@ const SignupPage = ({ setCurrentPage }) => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Ou créez votre compte professionnel</span>
+              <span className="px-2 bg-white text-gray-500">{t('orCreateAccount')}</span>
             </div>
           </div>
 
@@ -120,7 +122,7 @@ const SignupPage = ({ setCurrentPage }) => {
             {/* Nom complet */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Nom complet *
+                {t('name')} *
               </label>
               <input
                 id="name"
@@ -131,7 +133,7 @@ const SignupPage = ({ setCurrentPage }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Dr Jean Dupont"
+                placeholder={t('namePlaceholder')}
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
@@ -139,7 +141,7 @@ const SignupPage = ({ setCurrentPage }) => {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email professionnel *
+                {t('email')} *
               </label>
               <input
                 id="email"
@@ -150,7 +152,7 @@ const SignupPage = ({ setCurrentPage }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="dr.dupont@cabinet-medical.fr"
+                placeholder="dr.dupont@cabinet-medical.es"
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
@@ -158,7 +160,7 @@ const SignupPage = ({ setCurrentPage }) => {
             {/* Nom du cabinet */}
             <div>
               <label htmlFor="clinicName" className="block text-sm font-medium text-gray-700 mb-2">
-                Nom du cabinet médical *
+                {t('clinicName')} *
               </label>
               <input
                 id="clinicName"
@@ -169,7 +171,7 @@ const SignupPage = ({ setCurrentPage }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                   errors.clinicName ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Cabinet Dr. Dupont"
+                placeholder={t('clinicNamePlaceholder')}
               />
               {errors.clinicName && <p className="text-red-500 text-sm mt-1">{errors.clinicName}</p>}
             </div>
@@ -177,7 +179,7 @@ const SignupPage = ({ setCurrentPage }) => {
             {/* Numéro professionnel */}
             <div>
               <label htmlFor="medicalNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                Numéro ADELI/RPPS *
+                {t('medicalNumber')} *
               </label>
               <input
                 id="medicalNumber"
@@ -188,19 +190,19 @@ const SignupPage = ({ setCurrentPage }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                   errors.medicalNumber ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="123456789 (ADELI) ou 12345678901 (RPPS)"
+                placeholder={t('medicalNumberPlaceholder')}
                 maxLength="11"
               />
               {errors.medicalNumber && <p className="text-red-500 text-sm mt-1">{errors.medicalNumber}</p>}
               <p className="text-xs text-gray-500 mt-1">
-                Numéro ADELI (9 chiffres) ou RPPS (11 chiffres)
+                {t('medicalNumberHelper')}
               </p>
             </div>
 
             {/* Mot de passe */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Mot de passe *
+                {t('password')} *
               </label>
               <div className="relative">
                 <input
@@ -212,7 +214,7 @@ const SignupPage = ({ setCurrentPage }) => {
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 pr-10 ${
                     errors.password ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="8 caractères minimum"
+                  placeholder={t('passwordHelper')}
                 />
                 <button
                   type="button"
@@ -239,13 +241,13 @@ const SignupPage = ({ setCurrentPage }) => {
                 className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-1"
               />
               <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-700">
-                J'accepte les{' '}
+                {t('acceptTerms')}{' '}
                 <button type="button" className="text-green-600 hover:text-green-700 underline">
-                  conditions d'utilisation
+                  {t('termsLink')}
                 </button>{' '}
-                et la{' '}
+                {t('and')}{' '}
                 <button type="button" className="text-green-600 hover:text-green-700 underline">
-                  charte de protection des données de santé
+                  {t('privacyLink')}
                 </button>
               </label>
             </div>
@@ -265,18 +267,18 @@ const SignupPage = ({ setCurrentPage }) => {
             disabled={isLoading}
             className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            {isLoading ? 'Création en cours...' : 'Créer mon cabinet médical'}
+            {isLoading ? t('creatingAccount') : t('createAccount')}
           </button>
 
           {/* Navigation */}
           <div className="mt-6 text-center">
-            <span className="text-gray-600">Vous avez déjà un compte ? </span>
+            <span className="text-gray-600">{t('alreadyAccount')} </span>
             <button
               type="button"
               onClick={() => setCurrentPage('login')}
               className="text-green-600 hover:text-green-700 font-medium"
             >
-              Se connecter
+              {t('login')}
             </button>
           </div>
         </form>
@@ -285,11 +287,10 @@ const SignupPage = ({ setCurrentPage }) => {
         <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center space-x-2 mb-2">
             <Heart className="h-4 w-4 text-green-600" />
-            <span className="text-sm font-medium text-green-800">Cabinet sécurisé</span>
+            <span className="text-sm font-medium text-green-800">{t('secureClinic')}</span>
           </div>
           <p className="text-xs text-green-700">
-            Vos données médicales sont chiffrées et respectent le secret médical.
-            Conformité RGPD santé garantie.
+            {t('secureDescription')}
           </p>
         </div>
       </div>
