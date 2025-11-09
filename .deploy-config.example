@@ -1,0 +1,110 @@
+# Configuration Example for Multi-Country Deployment
+# Rename to .deploy-config and update with your values
+# Source this file before running deployment scripts
+
+# ==========================================
+# SERVER CONFIGURATION
+# ==========================================
+
+# Production Server
+DEPLOY_HOST="your-production-server.com"
+DEPLOY_USER="deploy-user"
+DEPLOY_PORT=22
+
+# Deploy Paths (where builds are extracted)
+DEPLOY_PATH_ES="/var/www/medical-pro-es"
+DEPLOY_PATH_FR="/var/www/medical-pro-fr"
+
+# ==========================================
+# SSH CONFIGURATION
+# ==========================================
+
+# SSH Key for deployment (path to private key)
+SSH_KEY_PATH="$HOME/.ssh/github-deploy"
+
+# SSH Options
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+# ==========================================
+# BUILD CONFIGURATION
+# ==========================================
+
+# Node version to use
+NODE_VERSION="18"
+
+# Build timeout (seconds)
+BUILD_TIMEOUT=600
+
+# Skip operations
+SKIP_TESTS=false
+SKIP_BUILD=false
+
+# ==========================================
+# DEPLOYMENT STRATEGY
+# ==========================================
+
+# Service to reload after deployment
+WEB_SERVER="nginx"  # or "apache2", "httpd"
+
+# Backup strategy
+BACKUP_BUILDS=true
+BACKUP_DIR="/var/backups/medical-pro-builds"
+BACKUP_RETENTION_DAYS=7
+
+# ==========================================
+# NOTIFICATIONS
+# ==========================================
+
+# Slack Webhook (optional)
+SLACK_WEBHOOK_URL=""
+
+# Email notifications (optional)
+NOTIFY_EMAIL=""
+NOTIFY_SMTP_HOST="smtp.gmail.com"
+NOTIFY_SMTP_PORT=587
+NOTIFY_SMTP_USER=""
+NOTIFY_SMTP_PASS=""
+
+# ==========================================
+# HEALTH CHECKS
+# ==========================================
+
+# Health check endpoints
+HEALTH_CHECK_ES="https://es.medicalpro.com/health"
+HEALTH_CHECK_FR="https://fr.medicalpro.com/health"
+
+# Timeout for health checks (seconds)
+HEALTH_CHECK_TIMEOUT=10
+
+# ==========================================
+# DATABASE/ENVIRONMENT
+# ==========================================
+
+# Backend API URL (for tests)
+API_URL="http://localhost:3001"
+
+# Environment
+ENVIRONMENT="production"  # or "staging", "development"
+
+# ==========================================
+# LOGGING
+# ==========================================
+
+# Log directory
+LOG_DIR="/var/log/medical-pro-deployment"
+
+# Log level
+LOG_LEVEL="info"  # or "debug", "warn", "error"
+
+# ==========================================
+# MISCELLANEOUS
+# ==========================================
+
+# Dry run mode (don't make actual changes)
+DRY_RUN=false
+
+# Verbose output
+VERBOSE=true
+
+# Maximum parallel jobs
+MAX_JOBS=2
