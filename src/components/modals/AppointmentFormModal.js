@@ -1,18 +1,21 @@
 // components/modals/AppointmentFormModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { X, Calendar, Clock, User, Stethoscope, AlertTriangle, Save, Users, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { PatientContext } from '../../contexts/PatientContext';
+import { AppointmentContext } from '../../contexts/AppointmentContext';
 import { useTranslation } from 'react-i18next';
-import { appointmentsStorage } from '../../utils/appointmentsStorage';
-import { patientsStorage } from '../../utils/patientsStorage';
 import { loadPractitioners } from '../../utils/practitionersLoader';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
+import appointmentsStorage from '../../utils/appointmentsStorage';
 import PatientSearchSelect from '../common/PatientSearchSelect';
 import QuickPatientModal from './QuickPatientModal';
 
 const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = null, preselectedPatient = null, preselectedDate = null, preselectedTime = null, preselectedPractitioner = null }) => {
   const { user } = useAuth();
+  const patientContext = useContext(PatientContext);
+  const appointmentContext = useContext(AppointmentContext);
   const { t, i18n } = useTranslation();
   const { hasPermission } = usePermissions();
   const currentLanguage = i18n.language;
@@ -39,7 +42,6 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   });
 
   const [conflicts, setConflicts] = useState([]);
-  const [patients, setPatients] = useState([]);
   const [practitioners, setPractitioners] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -70,10 +72,6 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
 
   useEffect(() => {
     if (isOpen) {
-      // Charger les patients
-      const allPatients = patientsStorage.getAll();
-      setPatients(allPatients);
-
       // Charger les praticiens de la clinique via la fonction centralisée
       const allPractitioners = loadPractitioners(user);
       setPractitioners(allPractitioners);
@@ -126,32 +124,30 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }
   }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, preselectedTime, preselectedPractitioner, user]);
 
-  // Calculer les créneaux disponibles quand praticien ou date change
+  // Vérifier les conflits de créneau quand praticien, date ou heure change
   useEffect(() => {
-    if (formData.practitionerId && formData.date && formData.duration) {
-      // Lors de l'édition, exclure le RDV actuel de la vérification de disponibilité
-      // car le créneau est occupé par le RDV en cours d'édition
-      const slots = appointmentsStorage.getAvailableSlots(
+    if (!appointmentContext) return;
+
+    if (formData.practitionerId && formData.date && formData.startTime && formData.endTime) {
+      // Vérifier s'il y a un conflit avec un autre rendez-vous
+      // checkTimeConflict retourne true s'il y a un conflit
+      const hasConflict = appointmentContext.checkTimeConflict(
         formData.practitionerId,
         formData.date,
-        formData.duration,
-        editingAppointment?.id // Passer l'ID du RDV en édition pour l'exclure
+        formData.startTime,
+        formData.endTime,
+        editingAppointment?.id // Exclure le RDV en édition de la vérification
       );
-      setAvailableSlots(slots);
 
-      // Si on édite un RDV et que l'heure actuelle n'est pas dans les créneaux disponibles,
-      // c'est normal car le RDV occupe ce créneau. Ne pas réinitialiser.
-      // Cependant, si on crée un nouveau RDV et que l'heure n'est pas disponible, réinitialiser.
-      if (formData.startTime && !editingAppointment) {
-        const isCurrentTimeAvailable = slots.some(slot => slot.start === formData.startTime);
-        if (!isCurrentTimeAvailable) {
-          setFormData(prev => ({ ...prev, startTime: '', endTime: '' }));
-        }
+      if (hasConflict) {
+        setConflicts(['Time slot is already booked for this practitioner']);
+      } else {
+        setConflicts([]);
       }
     } else {
-      setAvailableSlots([]);
+      setConflicts([]);
     }
-  }, [formData.practitionerId, formData.date, formData.duration, editingAppointment?.id]);
+  }, [formData.practitionerId, formData.date, formData.startTime, formData.endTime, appointmentContext, editingAppointment?.id]);
 
   // Calculer l'heure de fin automatiquement
   useEffect(() => {
@@ -266,9 +262,8 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
 
   // Fonction appelée après la création réussie d'un patient
   const handlePatientCreated = (newPatient) => {
-    // Recharger la liste des patients
-    const updatedPatients = patientsStorage.getAll();
-    setPatients(updatedPatients);
+    // ✅ PatientContext gère automatiquement la synchronisation
+    // Le nouveau patient est déjà dans patientContext.patients
 
     // Pré-sélectionner le nouveau patient
     setFormData(prev => ({ ...prev, patientId: newPatient.id }));
@@ -353,25 +348,29 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       return;
     }
 
+    if (!appointmentContext) {
+      setErrors({ general: 'Appointment context not available' });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const appointmentData = {
-        ...formData,
-        id: editingAppointment?.id || undefined
-      };
-
+      // ✅ SYNCHRONISATION IMMÉDIATE : Utiliser AppointmentContext
+      // AppointmentContext gère l'optimistic update + API sync en background
       let savedAppointment;
-      if (editingAppointment) {
-        savedAppointment = appointmentsStorage.update(appointmentData.id, appointmentData);
+      if (editingAppointment?.id) {
+        // MISE À JOUR : Utiliser updateAppointment du contexte
+        savedAppointment = await appointmentContext.updateAppointment(editingAppointment.id, formData);
       } else {
-        savedAppointment = appointmentsStorage.create(appointmentData);
+        // CRÉATION : Utiliser createAppointment du contexte
+        savedAppointment = await appointmentContext.createAppointment(formData);
       }
 
       onSave?.(savedAppointment);
       onClose();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      setErrors({ general: 'Erreur lors de la sauvegarde du rendez-vous' });
+      setErrors({ general: error.message || 'Erreur lors de la sauvegarde du rendez-vous' });
     } finally {
       setIsLoading(false);
     }
@@ -406,11 +405,18 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }
 
     console.log('[handleDelete] Starting deletion with mode:', mode, 'appointmentId:', appointmentId);
+
+    if (!appointmentContext) {
+      setErrors({ general: 'Appointment context not available' });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Soft delete - marquer comme supprimé (passer l'ID de l'utilisateur courant)
-      const deletedAppointment = appointmentsStorage.delete(appointmentId, user?.id || 'system');
-      console.log('[handleDelete] Appointment deleted:', deletedAppointment);
+      // ✅ SYNCHRONISATION IMMÉDIATE : Utiliser deleteAppointment du contexte
+      // AppointmentContext gère le soft delete + API sync en background
+      await appointmentContext.deleteAppointment(appointmentId);
+      console.log('[handleDelete] Appointment deleted:', appointmentId);
 
       // Gérer les notifications selon le mode
       if (mode === 'notify') {
@@ -466,7 +472,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   if (!isOpen) return null;
 
   const selectedType = appointmentTypes.find(t => t.value === formData.type);
-  const selectedPatient = patients.find(p => p.id === formData.patientId);
+  const selectedPatient = patientContext?.patients?.find(p => p.id === formData.patientId);
   const selectedPractitioner = practitioners.find(p => p.id === formData.practitionerId);
 
   return (

@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { DynamicTranslationsProvider } from './contexts/DynamicTranslationsContext';
 import { MedicalModulesProvider } from './contexts/MedicalModulesContext';
+import { PatientProvider } from './contexts/PatientContext';
+import { AppointmentProvider } from './contexts/AppointmentContext';
 import { initializeAllSampleData } from './utils/dataManager';
 import HomePage from './components/public/HomePage';
 import LoginPage from './components/auth/LoginPage';
@@ -22,7 +24,11 @@ const ClinicManagerApp = () => {
     <AuthProvider>
       <DynamicTranslationsProvider>
         <MedicalModulesProvider>
-          <AppContent />
+          <PatientProvider>
+            <AppointmentProvider>
+              <AppContent />
+            </AppointmentProvider>
+          </PatientProvider>
         </MedicalModulesProvider>
       </DynamicTranslationsProvider>
     </AuthProvider>

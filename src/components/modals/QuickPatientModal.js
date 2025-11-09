@@ -1,11 +1,12 @@
 // components/modals/QuickPatientModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { X, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { patientsStorage } from '../../utils/patientsStorage';
+import { PatientContext } from '../../contexts/PatientContext';
 
 const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' }) => {
   const { user } = useAuth();
+  const patientContext = useContext(PatientContext);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [duplicateWarning, setDuplicateWarning] = useState(null);
@@ -38,25 +39,30 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
     }
   }, [initialSearchQuery, isOpen]);
 
-  // Vérifier les doublons en temps réel
+  // Vérifier les doublons en temps réel (email + nom)
   useEffect(() => {
-    if (formData.firstName && formData.lastName) {
-      const duplicate = patientsStorage.checkDuplicate(
+    if (!patientContext) return;
+
+    if (formData.firstName || formData.lastName || formData.email) {
+      // Use PatientContext's checkDuplicate method (local search in loaded patients)
+      const duplicate = patientContext.checkDuplicate(
         formData.firstName,
         formData.lastName,
-        null // Pas de date de naissance pour le patient light
+        formData.email
       );
 
       if (duplicate) {
         setDuplicateWarning({
-          message: `Un patient portant le nom "${formData.firstName} ${formData.lastName}" existe déjà`,
-          patientNumber: duplicate.patientNumber
+          message: `Un patient avec ce nom ou email existe déjà`,
+          patientNumber: duplicate.patientNumber,
+          type: 'warning',
+          patient: duplicate
         });
       } else {
         setDuplicateWarning(null);
       }
     }
-  }, [formData.firstName, formData.lastName]);
+  }, [formData.firstName, formData.lastName, formData.email, patientContext]);
 
   // Validation du formulaire
   const validateForm = () => {
@@ -97,24 +103,31 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
 
     setIsLoading(true);
     try {
-      // Créer le patient avec le flag isIncomplete
-      const newPatient = patientsStorage.create({
+      // ✅ SYNCHRONISATION IMMÉDIATE : Créer le patient via le contexte
+      // PatientContext gère l'optimistic update + API sync en background
+      const newPatient = await patientContext.createPatient({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        isIncomplete: true, // Flag pour identifier les patients créés en mode "light"
-        status: 'active',
-        createdBy: user?.id || 'system',
-        // Autres champs seront complétés plus tard
-        address: {},
+        // Structure standardisée de données
+        address: {
+          street: '',
+          city: '',
+          postalCode: '',
+          country: ''
+        },
         contact: {
           phone: formData.phone.trim(),
           email: formData.email.trim(),
-          emergencyContact: {}
-        }
+          emergencyContact: {
+            name: '',
+            relationship: '',
+            phone: ''
+          }
+        },
+        status: 'active'
       });
 
+      // L'API call s'est bien déroulée
       onSave(newPatient);
       onClose();
     } catch (error) {
@@ -161,11 +174,23 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
               <div className="flex items-start space-x-2">
                 <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-orange-800">
+                    ⚠️ Patient détecté
+                  </p>
+                  <p className="text-sm text-orange-700 mt-1 font-semibold">
                     {duplicateWarning.message}
                   </p>
-                  <p className="text-xs text-orange-700 mt-1">
+                  <div className="mt-2 text-xs text-orange-700 space-y-1 bg-white bg-opacity-50 p-2 rounded">
+                    <p><strong>Type de correspondance :</strong> {duplicateWarning.type === 'email' ? '📧 Email' : '👤 Nom et prénom'}</p>
+                    {duplicateWarning.patient && (
+                      <>
+                        <p><strong>Numéro patient :</strong> {duplicateWarning.patient.patientNumber}</p>
+                        <p><strong>Status :</strong> {duplicateWarning.patient.status === 'active' ? '✓ Actif' : '⚠️ Inactif'}</p>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-orange-700 mt-2">
                     Vérifiez que vous ne créez pas un doublon. Vous pouvez procéder si vous êtes certain qu'il s'agit d'une nouvelle personne.
                   </p>
                 </div>

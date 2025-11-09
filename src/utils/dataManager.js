@@ -148,9 +148,13 @@ export const initializeAllSampleData = () => {
 
   try {
     // Vérifier si les données existent déjà
-    const hasPatients = persistenceManager.exists(STORAGE_KEYS.PATIENTS);
+    let hasPatients = persistenceManager.exists(STORAGE_KEYS.PATIENTS);
     const hasAppointments = persistenceManager.exists(STORAGE_KEYS.APPOINTMENTS);
     const hasMedicalRecords = persistenceManager.exists(STORAGE_KEYS.MEDICAL_RECORDS);
+
+    // Vérifier si les patients sont valides (non vides)
+    const patientsData = persistenceManager.get(STORAGE_KEYS.PATIENTS);
+    const patientsAreEmpty = !patientsData || !Array.isArray(patientsData) || patientsData.length === 0;
 
     // Initialiser les catalogues (toujours nécessaire)
     initializeDefaultCatalog();
@@ -167,8 +171,8 @@ export const initializeAllSampleData = () => {
       initializeSamplePractitioners();
     }
 
-    // Initialiser les données médicales si elles n'existent pas
-    if (!hasPatients) {
+    // Initialiser les données médicales si elles n'existent pas OU si elles sont vides
+    if (!hasPatients || patientsAreEmpty) {
       console.log('📋 Initialisation des patients de démonstration...');
       initializeSamplePatients();
     }

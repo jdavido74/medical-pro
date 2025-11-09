@@ -33,6 +33,48 @@ export const patientsStorage = {
     );
   },
 
+  // Vérifier les doublons par email ET nom (pour la création rapide de patient)
+  checkDuplicateByEmailAndName: (firstName, lastName, email, excludeId = null) => {
+    const patients = patientsStorage.getAll();
+
+    // Vérifier par email si fourni
+    if (email?.trim()) {
+      const emailDuplicate = patients.find(patient =>
+        patient.id !== excludeId &&
+        patient.contact?.email?.toLowerCase() === email?.toLowerCase()
+      );
+
+      if (emailDuplicate) {
+        return {
+          exists: true,
+          type: 'email',
+          patient: emailDuplicate,
+          message: `Un patient avec l'email "${email}" existe déjà (${emailDuplicate.patientNumber})`
+        };
+      }
+    }
+
+    // Vérifier par nom et prénom
+    if (firstName?.trim() && lastName?.trim()) {
+      const nameDuplicate = patients.find(patient =>
+        patient.id !== excludeId &&
+        patient.firstName?.toLowerCase() === firstName?.toLowerCase() &&
+        patient.lastName?.toLowerCase() === lastName?.toLowerCase()
+      );
+
+      if (nameDuplicate) {
+        return {
+          exists: true,
+          type: 'name',
+          patient: nameDuplicate,
+          message: `Un patient portant le nom "${firstName} ${lastName}" existe déjà (${nameDuplicate.patientNumber})`
+        };
+      }
+    }
+
+    return null;
+  },
+
   // Générer un numéro patient unique - US 1.1
   generatePatientNumber: () => {
     const patients = patientsStorage.getAll();
@@ -186,8 +228,8 @@ export const patientsStorage = {
       patient.firstName?.toLowerCase().includes(searchTerm) ||
       patient.lastName?.toLowerCase().includes(searchTerm) ||
       patient.patientNumber?.toLowerCase().includes(searchTerm) ||
-      patient.email?.toLowerCase().includes(searchTerm) ||
-      patient.phone?.includes(searchTerm)
+      patient.contact?.email?.toLowerCase().includes(searchTerm) ||
+      patient.contact?.phone?.includes(searchTerm)
     );
   },
 

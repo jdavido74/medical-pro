@@ -1,7 +1,7 @@
 // components/common/PatientSearchSelect.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Search, Plus, AlertCircle } from 'lucide-react';
-import { patientsStorage } from '../../utils/patientsStorage';
+import { PatientContext } from '../../contexts/PatientContext';
 
 const PatientSearchSelect = ({
   value,
@@ -11,20 +11,13 @@ const PatientSearchSelect = ({
   disabled = false,
   placeholder = "Rechercher un patient..."
 }) => {
+  const patientContext = useContext(PatientContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
-
-  // Charger tous les patients une seule fois
-  const [allPatients, setAllPatients] = useState([]);
-
-  useEffect(() => {
-    const patients = patientsStorage.getAll().filter(p => !p.deleted);
-    setAllPatients(patients);
-  }, []);
 
   // Filtrer les patients selon la recherche
   useEffect(() => {
@@ -35,11 +28,13 @@ const PatientSearchSelect = ({
     }
 
     const query = searchQuery.toLowerCase();
+    const allPatients = patientContext?.patients || [];
+
     const filtered = allPatients.filter(patient => {
       const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
       const patientNumber = patient.patientNumber?.toLowerCase() || '';
-      const email = patient.email?.toLowerCase() || '';
-      const phone = patient.phone?.toLowerCase() || '';
+      const email = patient.contact?.email?.toLowerCase() || '';
+      const phone = patient.contact?.phone?.toLowerCase() || '';
 
       return (
         fullName.includes(query) ||
@@ -52,7 +47,7 @@ const PatientSearchSelect = ({
     setFilteredPatients(filtered);
     setShowDropdown(true);
     setHighlightedIndex(-1);
-  }, [searchQuery, allPatients]);
+  }, [searchQuery, patientContext?.patients]);
 
   // Gérer la sélection au clavier
   const handleKeyDown = (e) => {
@@ -109,6 +104,7 @@ const PatientSearchSelect = ({
   }, []);
 
   // Obtenir le patient sélectionné
+  const allPatients = patientContext?.patients || [];
   const selectedPatient = value ? allPatients.find(p => p.id === value) : null;
 
   // Afficher un message "Créer nouveau" si la recherche ne correspond à aucun patient

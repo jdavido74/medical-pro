@@ -1,5 +1,5 @@
 // components/dashboard/modules/PatientsModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Users, Search, Edit2, Eye, UserPlus,
   Phone, Mail, MapPin, Calendar, AlertCircle,
@@ -7,9 +7,10 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../contexts/AuthContext';
+import { PatientContext } from '../../../contexts/PatientContext';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
-import { patientsStorage, initializeSamplePatients } from '../../../utils/patientsStorage';
+import { initializeSamplePatients, patientsStorage } from '../../../utils/patientsStorage';
 import PatientFormModal from '../modals/PatientFormModal';
 import PatientDetailModal from '../modals/PatientDetailModal';
 import MedicalHistoryModal from '../modals/MedicalHistoryModal';
@@ -18,7 +19,9 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
-  const [patients, setPatients] = useState([]);
+  const patientContext = useContext(PatientContext);
+
+  // État local du module
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('active');
@@ -28,9 +31,6 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const [editingPatient, setEditingPatient] = useState(null);
   const [viewingPatient, setViewingPatient] = useState(null);
   const [viewingMedicalHistory, setViewingMedicalHistory] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [statistics, setStatistics] = useState({});
-  const [error, setError] = useState(null);
 
   // Permissions basées sur les permissions système - US nouvelles
   const canViewMedicalData = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW);
@@ -40,50 +40,26 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const canViewAllData = hasPermission(PERMISSIONS.PATIENTS_VIEW_ALL);
 
   useEffect(() => {
+    // Initialiser les données de démonstration si c'est la première visite
     initializeSamplePatients();
-    loadPatients();
-    loadStatistics();
   }, []);
 
   useEffect(() => {
-    if (selectedPatientId && patients.length > 0) {
-      const patient = patients.find(p => p.id === selectedPatientId);
+    if (selectedPatientId && patientContext?.patients?.length > 0) {
+      const patient = patientContext.patients.find(p => p.id === selectedPatientId);
       if (patient) {
         handleViewPatient(patient);
         setSelectedPatientId && setSelectedPatientId(null);
       }
     }
-  }, [selectedPatientId, patients, setSelectedPatientId]);
+  }, [selectedPatientId, patientContext?.patients, setSelectedPatientId]);
 
   useEffect(() => {
     filterPatients();
-  }, [patients, searchQuery, filterType]);
-
-  const loadPatients = () => {
-    try {
-      setIsLoading(true);
-      const patientsData = patientsStorage.getAll().filter(p => !p.deleted);
-      setPatients(patientsData);
-      setError(null);
-    } catch (error) {
-      console.error('Erreur chargement patients:', error);
-      setError('Erreur lors du chargement des patients');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadStatistics = () => {
-    try {
-      const stats = patientsStorage.getStatistics();
-      setStatistics(stats);
-    } catch (error) {
-      console.error('Erreur chargement statistiques:', error);
-    }
-  };
+  }, [patientContext?.patients, searchQuery, filterType]);
 
   const filterPatients = () => {
-    let filtered = [...patients];
+    let filtered = [...(patientContext?.patients || [])];
 
     // Filtre par statut
     if (filterType === 'active') {
@@ -148,37 +124,41 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const handleSavePatient = async (patientData) => {
     try {
       if (editingPatient) {
-        // Mise à jour
-        await patientsStorage.update(editingPatient.id, patientData, user?.id);
-      } else {
-        // Création - US 1.1
-        await patientsStorage.create({
-          ...patientData,
-          createdBy: user?.id || 'unknown'
+        // Mise à jour via contexte (permissions + audit automatiques)
+        await patientContext.updatePatient(editingPatient.id, patientData, {
+          reason: 'Patient profile updated'
         });
+      } else {
+        // Création via contexte (permissions + audit automatiques)
+        await patientContext.createPatient(
+          {
+            ...patientData,
+            createdBy: user?.id || 'system'
+          },
+          {
+            reason: 'Patient created from patients module'
+          }
+        );
       }
 
-      loadPatients();
-      loadStatistics();
+      // Les données sont synchrones via PatientContext
       setIsFormModalOpen(false);
       setEditingPatient(null);
-      setError(null);
     } catch (error) {
-      console.error('Erreur sauvegarde patient:', error);
-      setError(error.message);
+      console.error('[PatientsModule] Erreur sauvegarde patient:', error);
     }
   };
 
   const handleDeletePatient = async (patientId) => {
     if (window.confirm('¿Está seguro de que desea archivar este paciente?')) {
       try {
-        await patientsStorage.delete(patientId, user?.id);
-        loadPatients();
-        loadStatistics();
-        setError(null);
+        // Suppression via contexte (permissions + audit automatiques)
+        await patientContext.deletePatient(patientId, {
+          reason: 'Patient archived from patients module'
+        });
+        // Les données sont synchrones via PatientContext
       } catch (error) {
-        console.error('Erreur suppression patient:', error);
-        setError(error.message);
+        console.error('[PatientsModule] Erreur suppression patient:', error);
       }
     }
   };
@@ -199,7 +179,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
     }
   };
 
-  if (isLoading) {
+  if (patientContext?.isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -210,13 +190,29 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
     );
   }
 
+  // Obtenir les statistiques du contexte
+  const stats = patientContext?.getPatientStatistics?.() || {
+    total: 0,
+    active: 0,
+    inactive: 0,
+    incomplete: 0,
+    deleted: 0
+  };
+
   return (
     <div className="space-y-6">
+      {/* Afficher les erreurs si présentes */}
+      {patientContext?.error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-sm">{patientContext.error}</p>
+        </div>
+      )}
+
       {/* En-tête avec statistiques */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {t('patients.title')} ({statistics.total || 0})
+            {t('patients.title')} ({stats.total || 0})
           </h1>
           <p className="text-gray-600 mt-1">
             Gestión completa del dossier médico de pacientes
@@ -243,7 +239,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
             <Users className="h-8 w-8 text-blue-600 mr-3" />
             <div>
               <p className="text-sm text-gray-600">Total Pacientes</p>
-              <p className="text-xl font-bold text-gray-900">{statistics.total || 0}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.total || 0}</p>
             </div>
           </div>
         </div>
@@ -253,7 +249,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
             <Heart className="h-8 w-8 text-green-600 mr-3" />
             <div>
               <p className="text-sm text-gray-600">Activos</p>
-              <p className="text-xl font-bold text-gray-900">{statistics.active || 0}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.active || 0}</p>
             </div>
           </div>
         </div>
@@ -263,7 +259,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
             <Calendar className="h-8 w-8 text-orange-600 mr-3" />
             <div>
               <p className="text-sm text-gray-600">Nuevos (mes)</p>
-              <p className="text-xl font-bold text-gray-900">{statistics.newThisMonth || 0}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.incomplete || 0}</p>
             </div>
           </div>
         </div>
@@ -273,21 +269,12 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
             <Shield className="h-8 w-8 text-purple-600 mr-3" />
             <div>
               <p className="text-sm text-gray-600">Nuevos (año)</p>
-              <p className="text-xl font-bold text-gray-900">{statistics.newThisYear || 0}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.deleted || 0}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Erreurs */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-            <span className="text-red-800">{error}</span>
-          </div>
-        </div>
-      )}
 
       {/* Barre de recherche et filtres */}
       <div className="bg-white p-4 rounded-lg border">
@@ -477,7 +464,6 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           onClose={() => {
             setIsFormModalOpen(false);
             setEditingPatient(null);
-            setError(null);
           }}
           onSave={handleSavePatient}
         />

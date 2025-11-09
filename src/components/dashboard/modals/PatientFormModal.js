@@ -1,12 +1,14 @@
 // components/dashboard/modals/PatientFormModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   X, Save, User, Calendar, MapPin, Phone, Mail, Shield,
   Heart, AlertCircle, Check, Users, Building
 } from 'lucide-react';
-import { patientsStorage } from '../../../utils/patientsStorage';
+import { PatientContext } from '../../../contexts/PatientContext';
 
 const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
+  const patientContext = useContext(PatientContext);
+
   const [formData, setFormData] = useState({
     // US 1.1 - Identité du patient
     firstName: '',
@@ -91,19 +93,22 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
     }
   }, [formData.firstName, formData.lastName, formData.birthDate]);
 
-  const checkDuplicates = async () => {
+  const checkDuplicates = () => {
+    if (!patientContext) return;
+
     setIsDuplicateChecking(true);
     try {
-      const duplicate = patientsStorage.checkDuplicate(
+      // Use PatientContext's checkDuplicate method (local search in loaded patients)
+      // This performs local duplicate detection without API call
+      const duplicate = patientContext.checkDuplicate(
         formData.firstName,
         formData.lastName,
-        formData.birthDate,
-        patient?.id
+        formData.contact?.email
       );
 
-      if (duplicate) {
+      if (duplicate && duplicate.id !== patient?.id) {
         setDuplicateWarning({
-          message: `Ya existe un paciente con el mismo nombre y fecha de nacimiento`,
+          message: `Ya existe un paciente con el mismo nombre`,
           patientNumber: duplicate.patientNumber,
           patientName: `${duplicate.firstName} ${duplicate.lastName}`
         });
@@ -173,12 +178,27 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
       return;
     }
 
+    if (!patientContext) {
+      setErrors({ submit: 'Patient context not available' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await onSave(formData);
+      if (patient?.id) {
+        // ✅ MISE À JOUR : Utiliser updatePatient du contexte (avec optimistic update)
+        await patientContext.updatePatient(patient.id, formData);
+      } else {
+        // ✅ CRÉATION : Utiliser createPatient du contexte (avec optimistic update)
+        await patientContext.createPatient(formData);
+      }
+
+      // Appeler le callback onSave pour le parent component
+      onSave(formData);
+      onClose();
     } catch (error) {
       console.error('Error saving patient:', error);
-      setErrors({ submit: error.message });
+      setErrors({ submit: error.message || 'Error saving patient' });
     } finally {
       setIsSubmitting(false);
     }
