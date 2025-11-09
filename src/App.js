@@ -31,8 +31,10 @@ const ClinicManagerApp = () => {
   const regionConfig = getRegionConfig(region);
 
   useEffect(() => {
-    // Initialiser toutes les données de démonstration avec gestion intelligente
-    initializeAllSampleData();
+    // NOTE: Demo data initialization is DISABLED
+    // Users will create real data through the platform and database
+    // To re-enable demo data, uncomment the line below:
+    // initializeAllSampleData();
 
     // Log region information
     console.log(`🌍 MedicalPro Region Detected: ${regionConfig.name} (${region.toUpperCase()})`);

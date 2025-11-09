@@ -92,29 +92,39 @@ export function detectRegionFromStorage() {
  * @returns {string} Region code (es, fr)
  */
 export function detectRegion() {
+  let detectedRegion = null;
+
   // 1. Check sub-domain first (highest priority)
   const subdomain = detectRegionFromSubdomain();
   if (subdomain) {
-    // Save to storage for consistency
-    setRegionInStorage(subdomain);
-    return subdomain;
+    detectedRegion = subdomain;
   }
 
-  // 2. Check URL path
-  const pathRegion = detectRegionFromPath();
-  if (pathRegion) {
-    setRegionInStorage(pathRegion);
-    return pathRegion;
+  // 2. Check URL path (if no subdomain)
+  if (!detectedRegion) {
+    const pathRegion = detectRegionFromPath();
+    if (pathRegion) {
+      detectedRegion = pathRegion;
+    }
   }
 
-  // 3. Check localStorage
-  const storedRegion = detectRegionFromStorage();
-  if (storedRegion) {
-    return storedRegion;
+  // 3. Check localStorage (if neither subdomain nor path)
+  if (!detectedRegion) {
+    const storedRegion = detectRegionFromStorage();
+    if (storedRegion) {
+      detectedRegion = storedRegion;
+    }
   }
 
-  // 4. Use default
-  return DEFAULT_REGION;
+  // 4. Use default (and always save to storage)
+  if (!detectedRegion) {
+    detectedRegion = DEFAULT_REGION;
+  }
+
+  // IMPORTANT: Always save to storage for consistency and stickiness
+  setRegionInStorage(detectedRegion);
+
+  return detectedRegion;
 }
 
 /**
