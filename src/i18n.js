@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+import { detectRegion, getRegionLanguage } from './utils/regionDetector';
 
 // Import French translations
 import frCommon from './locales/fr/common.json';
@@ -41,11 +41,12 @@ import esInvoices from './locales/es/invoices.json';
 import esAnalytics from './locales/es/analytics.json';
 import esAdmin from './locales/es/admin.json';
 
-const LANGUAGE_STORAGE_KEY = 'clinicmanager_language';
+// Detect region and get default language (sticky per region)
+const region = detectRegion();
+const defaultLanguage = getRegionLanguage(region);
 
 // Configure i18next
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
@@ -89,18 +90,13 @@ i18n
         admin: esAdmin
       }
     },
-    fallbackLng: 'fr',
+    lng: defaultLanguage,
+    fallbackLng: defaultLanguage,
     defaultNS: 'common',
     ns: ['common', 'auth', 'nav', 'home', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'analytics', 'admin'],
 
     interpolation: {
       escapeValue: false // React already escapes values
-    },
-
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
-      lookupLocalStorage: LANGUAGE_STORAGE_KEY
     },
 
     react: {
@@ -109,3 +105,4 @@ i18n
   });
 
 export default i18n;
+export { region, defaultLanguage };
