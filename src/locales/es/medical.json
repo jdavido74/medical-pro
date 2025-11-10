@@ -70,5 +70,46 @@
     "completed": "Completado",
     "archived": "Archivado",
     "pending_review": "En Revisión"
+  },
+  "module": {
+    "title": "Historiales Médicos",
+    "subtitle": "Gestión completa de historiales y datos médicos de pacientes",
+    "newRecord": "Nuevo Historial",
+    "createFirstRecord": "Crear Primer Historial",
+    "stats": {
+      "totalRecords": "Total Historiales",
+      "thisMonth": "Este Mes",
+      "activeTreatments": "Tratamientos Activos",
+      "medicalAlerts": "Alertas Médicas"
+    },
+    "search": "Buscar en historiales...",
+    "filters": {
+      "allTypes": "Todos los tipos",
+      "allPatients": "Todos los pacientes",
+      "sortNewest": "Más recientes",
+      "sortOldest": "Más antiguos",
+      "sortLastUpdated": "Última actualización"
+    },
+    "types": {
+      "consultation": "Consulta",
+      "examination": "Examen",
+      "treatment": "Tratamiento",
+      "follow_up": "Seguimiento",
+      "emergency": "Urgencia"
+    },
+    "messages": {
+      "loadError": "Error al cargar los historiales médicos",
+      "deleteConfirm": "¿Está seguro de que desea eliminar este historial médico?",
+      "deleteError": "Error al eliminar el historial médico",
+      "updateError": "Error al actualizar el historial",
+      "createError": "Error al crear el historial",
+      "patientNotFound": "Paciente no encontrado",
+      "noRecords": "No hay historiales médicos",
+      "noRecordsWithFilters": "No se encontraron historiales con los filtros aplicados.",
+      "startWithFirstRecord": "Comience creando el primer historial médico."
+    },
+    "badges": {
+      "medicalAlert": "Alerta médica"
+    }
   }
 }

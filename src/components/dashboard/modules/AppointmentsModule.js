@@ -242,12 +242,12 @@ const AppointmentsModule = ({ navigateToPatient }) => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'scheduled': return 'Programmé';
-      case 'confirmed': return 'Confirmé';
-      case 'in_progress': return 'En cours';
-      case 'completed': return 'Terminé';
-      case 'cancelled': return 'Annulé';
-      case 'no_show': return 'Absent';
+      case 'scheduled': return t('appointments.statuses.scheduled');
+      case 'confirmed': return t('appointments.statuses.confirmed');
+      case 'in_progress': return t('appointments.statuses.in_progress');
+      case 'completed': return t('appointments.statuses.completed');
+      case 'cancelled': return t('appointments.statuses.cancelled');
+      case 'no_show': return t('appointments.statuses.no_show');
       default: return status;
     }
   };
@@ -294,7 +294,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   };
 
   const handleDeleteAppointment = async (appointmentId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce rendez-vous ?')) {
+    if (window.confirm(t('appointments.messages.deleteConfirm'))) {
       try {
         appointmentsStorage.delete(appointmentId);
         loadData();
@@ -352,7 +352,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement des rendez-vous...</p>
+          <p className="text-gray-600">{t('appointments.loading')}</p>
         </div>
       </div>
     );
@@ -371,7 +371,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                 activeTab === 'appointments' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
               }`}
             >
-              Liste des RDV
+              {t('appointments.tabs.appointments')}
             </button>
             <button
               onClick={() => setActiveTab('availability')}
@@ -379,7 +379,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                 activeTab === 'availability' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
               }`}
             >
-              Calendrier
+              {t('appointments.tabs.availability')}
             </button>
           </div>
         </div>
@@ -388,7 +388,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
           <Plus className="h-5 w-5" />
-          <span>Nouveau rendez-vous</span>
+          <span>{t('appointments.newAppointment')}</span>
         </button>
       </div>
 
@@ -403,7 +403,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher par patient, motif, numéro..."
+              placeholder={t('appointments.list.search')}
               className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -429,13 +429,13 @@ const AppointmentsModule = ({ navigateToPatient }) => {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none bg-white"
             >
-              <option value="all">Tous les statuts</option>
-              <option value="scheduled">Programmé</option>
-              <option value="confirmed">Confirmé</option>
-              <option value="in_progress">En cours</option>
-              <option value="completed">Terminé</option>
-              <option value="cancelled">Annulé</option>
-              <option value="no_show">Absent</option>
+              <option value="all">{t('appointments.filters.allStatuses')}</option>
+              <option value="scheduled">{t('appointments.statuses.scheduled')}</option>
+              <option value="confirmed">{t('appointments.statuses.confirmed')}</option>
+              <option value="in_progress">{t('appointments.statuses.in_progress')}</option>
+              <option value="completed">{t('appointments.statuses.completed')}</option>
+              <option value="cancelled">{t('appointments.statuses.cancelled')}</option>
+              <option value="no_show">{t('appointments.statuses.no_show')}</option>
             </select>
             <Filter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           </div>
@@ -448,7 +448,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                 filterDate === 'today' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-300 hover:bg-gray-50'
               }`}
             >
-              Aujourd'hui
+              {t('appointments.today')}
             </button>
             <button
               onClick={() => setFilterDate(filterDate === 'week' ? 'all' : 'week')}
@@ -456,7 +456,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                 filterDate === 'week' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-300 hover:bg-gray-50'
               }`}
             >
-              Cette semaine
+              {t('appointments.thisWeek')}
             </button>
             <button
               onClick={() => setFilterDate(filterDate === 'month' ? 'all' : 'month')}
@@ -464,7 +464,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                 filterDate === 'month' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-300 hover:bg-gray-50'
               }`}
             >
-              Ce mois
+              {t('appointments.thisMonth')}
             </button>
           </div>
         </div>
@@ -475,7 +475,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Aujourd'hui</p>
+              <p className="text-sm text-gray-600">{t('appointments.stats.today')}</p>
               <p className="text-2xl font-bold text-gray-900">{stats.today}</p>
             </div>
             <Calendar className="h-8 w-8 text-green-600" />
@@ -484,7 +484,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Confirmés</p>
+              <p className="text-sm text-gray-600">{t('appointments.stats.confirmed')}</p>
               <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
             </div>
             <Check className="h-8 w-8 text-green-600" />
@@ -493,7 +493,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">En cours</p>
+              <p className="text-sm text-gray-600">{t('appointments.stats.inProgress')}</p>
               <p className="text-2xl font-bold text-orange-600">{stats.waiting}</p>
             </div>
             <Clock className="h-8 w-8 text-orange-600" />
@@ -502,7 +502,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Durée moyenne</p>
+              <p className="text-sm text-gray-600">{t('appointments.stats.avgDuration')}</p>
               <p className="text-2xl font-bold text-blue-600">{stats.avgDuration}</p>
             </div>
             <Clock className="h-8 w-8 text-blue-600" />
@@ -514,13 +514,13 @@ const AppointmentsModule = ({ navigateToPatient }) => {
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium text-gray-900">Rendez-vous programmés ({filteredAppointments.length})</h3>
+            <h3 className="font-medium text-gray-900">{t('appointments.list.title')} ({filteredAppointments.length})</h3>
             <div className="flex items-center space-x-2 text-sm">
               <button
                 onClick={() => handleSort('date')}
                 className="flex items-center space-x-1 text-gray-500 hover:text-gray-700"
               >
-                <span>Date</span>
+                <span>{t('appointments.table.date')}</span>
                 {sortField === 'date' && (
                   sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                 )}
@@ -530,7 +530,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                 onClick={() => handleSort('patientName')}
                 className="flex items-center space-x-1 text-gray-500 hover:text-gray-700"
               >
-                <span>Patient</span>
+                <span>{t('appointments.table.patient')}</span>
                 {sortField === 'patientName' && (
                   sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
                 )}
@@ -556,7 +556,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                       )}
                       {appointment.priority === 'urgent' && (
                         <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded font-medium">
-                          URGENT
+                          {t('appointments.priority.urgent')}
                         </span>
                       )}
                     </div>
@@ -601,7 +601,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                       )}
                       {appointment.notes && (
                         <p className="text-gray-500 text-xs mt-1">
-                          <span className="font-medium">Notes internes:</span> {appointment.notes}
+                          <span className="font-medium">{t('appointments.list.internalNotes')}</span> {appointment.notes}
                         </p>
                       )}
                     </div>
@@ -617,7 +617,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                     <button
                       onClick={() => handleStatusChange(appointment.id, 'confirmed')}
                       className="p-1 hover:bg-green-100 rounded text-green-600 transition-colors"
-                      title="Confirmer"
+                      title={t('appointments.actions.confirm')}
                     >
                       <Check className="h-4 w-4" />
                     </button>
@@ -626,7 +626,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                     <button
                       onClick={() => handleStatusChange(appointment.id, 'in_progress')}
                       className="p-1 hover:bg-yellow-100 rounded text-yellow-600 transition-colors"
-                      title="Démarrer"
+                      title={t('appointments.actions.start')}
                     >
                       <Clock className="h-4 w-4" />
                     </button>
@@ -635,7 +635,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                     <button
                       onClick={() => handleStatusChange(appointment.id, 'completed')}
                       className="p-1 hover:bg-gray-100 rounded text-gray-600 transition-colors"
-                      title="Terminer"
+                      title={t('appointments.actions.complete')}
                     >
                       <Check className="h-4 w-4" />
                     </button>
@@ -644,14 +644,14 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                   <button
                     onClick={() => handleEditAppointment(appointment)}
                     className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Modifier"
+                    title={t('appointments.actions.edit')}
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteAppointment(appointment.id)}
                     className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-600 transition-colors"
-                    title="Supprimer"
+                    title={t('appointments.actions.delete')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -667,21 +667,21 @@ const AppointmentsModule = ({ navigateToPatient }) => {
           <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {searchQuery || filterStatus !== 'all' || filterDate !== 'all'
-              ? 'Aucun rendez-vous trouvé'
-              : 'Aucun rendez-vous programmé'
+              ? t('appointments.list.noAppointmentsFound')
+              : t('appointments.list.noAppointmentsScheduled')
             }
           </h3>
           <p className="text-gray-600 mb-4">
             {searchQuery || filterStatus !== 'all' || filterDate !== 'all'
-              ? 'Essayez de modifier vos filtres ou votre recherche.'
-              : 'Commencez par programmer votre premier rendez-vous médical.'
+              ? t('appointments.list.modifyFilters')
+              : t('appointments.list.firstAppointment')
             }
           </p>
           <button
             onClick={handleNewAppointment}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
-            Nouveau rendez-vous
+            {t('appointments.newAppointment')}
           </button>
         </div>
       )}

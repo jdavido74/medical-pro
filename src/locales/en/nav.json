@@ -22,5 +22,38 @@
     "admin": "Administration",
     "settings": "Settings",
     "logout": "Logout"
+  },
+  "header": {
+    "testProfiles": "🧪 Test Profiles",
+    "testProfilesDesc": "Switch profiles to test permissions",
+    "connectedVia": "Connected via",
+    "demoMode": "🧪 Demo Mode",
+    "profiles": {
+      "superAdmin": {
+        "name": "Super Admin",
+        "description": "Full access - Global management"
+      },
+      "admin": {
+        "name": "Clinic Admin",
+        "description": "Admin clinic - Full management"
+      },
+      "secretary": {
+        "name": "Secretary",
+        "description": "Secretary - Administrative management"
+      },
+      "readonly": {
+        "name": "Observer",
+        "description": "Read-only - View only"
+      },
+      "doctor": {
+        "description": "Doctor"
+      },
+      "specialist": {
+        "description": "Specialist"
+      },
+      "nurse": {
+        "description": "Nurse"
+      }
+    }
   }
 }

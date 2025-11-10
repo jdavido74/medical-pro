@@ -4,18 +4,21 @@ import { Heart, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import SocialAuth from './SocialAuth';
-import { validateEmail, validateMedicalNumber, validateClinicName } from '../../utils/validation';
+import { validateEmail, validateClinicName } from '../../utils/validation';
+import { region } from '../../i18n';
 
 const SignupPage = ({ setCurrentPage }) => {
   const { register } = useAuth();
   const { t } = useTranslation('auth');
   const [showPassword, setShowPassword] = useState(false);
   const [signupData, setSignupData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    phone: '',
     clinicName: '',
-    medicalNumber: '',
     password: '',
+    country: region === 'spain' ? 'ES' : 'FR', // Auto-detect country from region
     acceptTerms: false
   });
   const [errors, setErrors] = useState({});
@@ -24,8 +27,16 @@ const SignupPage = ({ setCurrentPage }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!signupData.name.trim()) {
-      newErrors.name = t('validation.required', { field: t('name') });
+    if (!signupData.firstName.trim()) {
+      newErrors.firstName = t('validation.required', { field: t('firstName') });
+    }
+
+    if (!signupData.lastName.trim()) {
+      newErrors.lastName = t('validation.required', { field: t('lastName') });
+    }
+
+    if (!signupData.phone.trim()) {
+      newErrors.phone = t('validation.required', { field: t('phone') });
     }
 
     if (!signupData.email || !validateEmail(signupData.email)) {
@@ -34,10 +45,6 @@ const SignupPage = ({ setCurrentPage }) => {
 
     if (!signupData.clinicName || !validateClinicName(signupData.clinicName)) {
       newErrors.clinicName = t('validation.clinicNameRequired');
-    }
-
-    if (!signupData.medicalNumber || !validateMedicalNumber(signupData.medicalNumber)) {
-      newErrors.medicalNumber = t('validation.invalidMedicalNumber');
     }
 
     if (!signupData.password || signupData.password.length < 8) {
@@ -62,12 +69,20 @@ const SignupPage = ({ setCurrentPage }) => {
     setIsLoading(true);
     try {
       await register({
-        name: signupData.name,
+        firstName: signupData.firstName,
+        lastName: signupData.lastName,
         email: signupData.email,
+        phone: signupData.phone,
         clinicName: signupData.clinicName,
-        medicalNumber: signupData.medicalNumber,
-        password: signupData.password
+        password: signupData.password,
+        country: signupData.country,
+        acceptTerms: signupData.acceptTerms
       });
+
+      // Show success message and redirect to login
+      setErrors({});
+      // In a real app, you'd show a modal or redirect to email verification page
+      setCurrentPage('login');
     } catch (error) {
       setErrors({ submit: error.message || t('accountError') });
     } finally {
@@ -119,23 +134,61 @@ const SignupPage = ({ setCurrentPage }) => {
 
           {/* Formulaire médical */}
           <div className="space-y-4">
-            {/* Nom complet */}
+            {/* Prénom */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('name')} *
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('firstName')} *
               </label>
               <input
-                id="name"
-                name="name"
+                id="firstName"
+                name="firstName"
                 type="text"
-                value={signupData.name}
+                value={signupData.firstName}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
+                  errors.firstName ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder={t('namePlaceholder')}
+                placeholder={t('firstNamePlaceholder')}
               />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+            </div>
+
+            {/* Nom de famille */}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('lastName')} *
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                value={signupData.lastName}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  errors.lastName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder={t('lastNamePlaceholder')}
+              />
+              {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+            </div>
+
+            {/* Téléphone */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('phone')} *
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={signupData.phone}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  errors.phone ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder={t('phonePlaceholder')}
+              />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </div>
 
             {/* Email */}
@@ -174,29 +227,6 @@ const SignupPage = ({ setCurrentPage }) => {
                 placeholder={t('clinicNamePlaceholder')}
               />
               {errors.clinicName && <p className="text-red-500 text-sm mt-1">{errors.clinicName}</p>}
-            </div>
-
-            {/* Numéro professionnel */}
-            <div>
-              <label htmlFor="medicalNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('medicalNumber')} *
-              </label>
-              <input
-                id="medicalNumber"
-                name="medicalNumber"
-                type="text"
-                value={signupData.medicalNumber}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  errors.medicalNumber ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder={t('medicalNumberPlaceholder')}
-                maxLength="11"
-              />
-              {errors.medicalNumber && <p className="text-red-500 text-sm mt-1">{errors.medicalNumber}</p>}
-              <p className="text-xs text-gray-500 mt-1">
-                {t('medicalNumberHelper')}
-              </p>
             </div>
 
             {/* Mot de passe */}

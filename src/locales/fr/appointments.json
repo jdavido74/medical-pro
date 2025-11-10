@@ -73,6 +73,38 @@
     "filterByStatus": "Filtrer par statut",
     "filterByType": "Filtrer par type",
     "filterByDate": "Filtrer par date",
-    "clearFilters": "Effacer les filtres"
-  }
+    "clearFilters": "Effacer les filtres",
+    "allStatuses": "Tous les statuts"
+  },
+  "stats": {
+    "today": "Aujourd'hui",
+    "confirmed": "Confirmés",
+    "inProgress": "En cours",
+    "avgDuration": "Durée moyenne"
+  },
+  "tabs": {
+    "appointments": "Liste des RDV",
+    "availability": "Calendrier"
+  },
+  "list": {
+    "title": "Rendez-vous programmés",
+    "search": "Rechercher par patient, motif, numéro...",
+    "internalNotes": "Notes internes:",
+    "slots": "+{{count}} slot(s)",
+    "noAppointmentsFound": "Aucun rendez-vous trouvé",
+    "noAppointmentsScheduled": "Aucun rendez-vous programmé",
+    "modifyFilters": "Essayez de modifier vos filtres ou votre recherche.",
+    "firstAppointment": "Commencez par programmer votre premier rendez-vous médical."
+  },
+  "actions": {
+    "confirm": "Confirmer",
+    "start": "Démarrer",
+    "complete": "Terminer",
+    "edit": "Modifier",
+    "delete": "Supprimer"
+  },
+  "priority": {
+    "urgent": "URGENT"
+  },
+  "loading": "Chargement des rendez-vous..."
 }

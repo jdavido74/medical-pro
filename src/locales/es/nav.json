@@ -22,5 +22,38 @@
     "admin": "Administración",
     "settings": "Configuración",
     "logout": "Cerrar Sesión"
+  },
+  "header": {
+    "testProfiles": "🧪 Perfiles de Prueba",
+    "testProfilesDesc": "Cambie de perfil para probar permisos",
+    "connectedVia": "Conectado vía",
+    "demoMode": "🧪 Modo Demo",
+    "profiles": {
+      "superAdmin": {
+        "name": "Super Admin",
+        "description": "Acceso completo - Gestión global"
+      },
+      "admin": {
+        "name": "Admin Clínica",
+        "description": "Admin clínica - Gestión completa"
+      },
+      "secretary": {
+        "name": "Secretaria",
+        "description": "Secretaria - Gestión administrativa"
+      },
+      "readonly": {
+        "name": "Observador",
+        "description": "Solo lectura - Consulta solamente"
+      },
+      "doctor": {
+        "description": "Médico"
+      },
+      "specialist": {
+        "description": "Especialista"
+      },
+      "nurse": {
+        "description": "Enfermera"
+      }
+    }
   }
 }

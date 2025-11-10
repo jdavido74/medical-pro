@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { permissionsStorage } from '../utils/permissionsStorage';
 import auditStorage from '../utils/auditStorage';
+import { baseClient } from '../api/baseClient';
 
 const AuthContext = createContext();
 
@@ -91,6 +92,39 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(false);
     }
   }, []);
+
+  const register = async (registrationData) => {
+    try {
+      // Map form data to backend API structure
+      const backendData = {
+        // Company data (mapped from form)
+        companyName: registrationData.clinicName,
+        country: registrationData.country || 'FR', // Default to FR if not provided
+        companyEmail: registrationData.email,
+        companyPhone: registrationData.phone,
+
+        // User data
+        email: registrationData.email,
+        password: registrationData.password,
+        firstName: registrationData.firstName,
+        lastName: registrationData.lastName,
+
+        // Terms acceptance
+        acceptTerms: registrationData.acceptTerms === true
+      };
+
+      // Appel API pour créer le compte using baseClient with correct backend URL
+      const responseData = await baseClient.post('/auth/register', backendData);
+
+      // Return the response but don't auto-login yet - user needs to verify email first
+      return responseData;
+    } catch (error) {
+      console.error('Erreur inscription:', error);
+      // Format error message for user-friendly display
+      const errorMessage = error.message || error.data?.message || 'Erreur lors de la création du compte';
+      throw new Error(errorMessage);
+    }
+  };
 
   const login = (userData) => {
     setUser(userData);
@@ -288,6 +322,7 @@ export const AuthProvider = ({ children }) => {
       sessionInfo,
 
       // Méthodes d'authentification
+      register,
       login,
       logout,
       updateUser,

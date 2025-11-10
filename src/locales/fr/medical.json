@@ -71,5 +71,46 @@
     "completed": "Complété",
     "archived": "Archivé",
     "pending_review": "En attente de révision"
+  },
+  "module": {
+    "title": "Historiques Médicaux",
+    "subtitle": "Gestion complète des historiques et données médicales des patients",
+    "newRecord": "Nouveau Dossier",
+    "createFirstRecord": "Créer le premier dossier",
+    "stats": {
+      "totalRecords": "Total Dossiers",
+      "thisMonth": "Ce Mois",
+      "activeTreatments": "Traitements Actifs",
+      "medicalAlerts": "Alertes Médicales"
+    },
+    "search": "Rechercher dans les dossiers...",
+    "filters": {
+      "allTypes": "Tous les types",
+      "allPatients": "Tous les patients",
+      "sortNewest": "Plus récents",
+      "sortOldest": "Plus anciens",
+      "sortLastUpdated": "Dernière mise à jour"
+    },
+    "types": {
+      "consultation": "Consultation",
+      "examination": "Examen",
+      "treatment": "Traitement",
+      "follow_up": "Suivi",
+      "emergency": "Urgence"
+    },
+    "messages": {
+      "loadError": "Erreur lors du chargement des dossiers médicaux",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce dossier médical ?",
+      "deleteError": "Erreur lors de la suppression du dossier médical",
+      "updateError": "Erreur lors de la mise à jour du dossier",
+      "createError": "Erreur lors de la création du dossier",
+      "patientNotFound": "Patient non trouvé",
+      "noRecords": "Aucun dossier médical",
+      "noRecordsWithFilters": "Aucun dossier trouvé avec les filtres appliqués.",
+      "startWithFirstRecord": "Commencez par créer le premier dossier médical."
+    },
+    "badges": {
+      "medicalAlert": "Alerte médicale"
+    }
   }
 }

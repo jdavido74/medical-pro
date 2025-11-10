@@ -73,6 +73,38 @@
     "filterByStatus": "Filtrar por Estado",
     "filterByType": "Filtrar por Tipo",
     "filterByDate": "Filtrar por Fecha",
-    "clearFilters": "Limpiar Filtros"
-  }
+    "clearFilters": "Limpiar Filtros",
+    "allStatuses": "Todos los Estados"
+  },
+  "stats": {
+    "today": "Hoy",
+    "confirmed": "Confirmadas",
+    "inProgress": "En Curso",
+    "avgDuration": "Duración Promedio"
+  },
+  "tabs": {
+    "appointments": "Lista de Citas",
+    "availability": "Calendario"
+  },
+  "list": {
+    "title": "Citas Programadas",
+    "search": "Buscar por paciente, motivo, número...",
+    "internalNotes": "Notas Internas:",
+    "slots": "+{{count}} hueco(s)",
+    "noAppointmentsFound": "No se encontraron citas",
+    "noAppointmentsScheduled": "No hay citas programadas",
+    "modifyFilters": "Intente modificar sus filtros o búsqueda.",
+    "firstAppointment": "Comience programando su primera cita médica."
+  },
+  "actions": {
+    "confirm": "Confirmar",
+    "start": "Iniciar",
+    "complete": "Completar",
+    "edit": "Modificar",
+    "delete": "Eliminar"
+  },
+  "priority": {
+    "urgent": "URGENTE"
+  },
+  "loading": "Cargando citas..."
 }

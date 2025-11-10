@@ -1,6 +1,7 @@
 // components/common/PatientSearchSelect.js
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Search, Plus, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { PatientContext } from '../../contexts/PatientContext';
 
 const PatientSearchSelect = ({
@@ -9,9 +10,11 @@ const PatientSearchSelect = ({
   onCreateNew,
   error,
   disabled = false,
-  placeholder = "Rechercher un patient..."
+  placeholder = null
 }) => {
+  const { t } = useTranslation();
   const patientContext = useContext(PatientContext);
+  const displayPlaceholder = placeholder || t('common.patientSearch.placeholder');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -127,7 +130,7 @@ const PatientSearchSelect = ({
               }
             }}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={displayPlaceholder}
             disabled={disabled || !!selectedPatient}
             className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
               error ? 'border-red-500' : 'border-gray-300'
@@ -146,7 +149,7 @@ const PatientSearchSelect = ({
               }}
               disabled={disabled}
               className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
-              title="Réinitialiser la sélection"
+              title={t('common.patientSearch.resetSelection')}
             >
               ✕
             </button>
@@ -192,7 +195,7 @@ const PatientSearchSelect = ({
                       </div>
                       {patient.isIncomplete && (
                         <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded">
-                          Fiche incomplète
+                          {t('common.patientSearch.incompleteRecord')}
                         </span>
                       )}
                     </div>
@@ -202,7 +205,7 @@ const PatientSearchSelect = ({
             ) : canCreateNew ? (
               <div className="p-4 text-center">
                 <p className="text-sm text-gray-600 mb-3">
-                  Aucun patient trouvé pour "{searchQuery}"
+                  {t('common.patientSearch.noPatientFound', { query: searchQuery })}
                 </p>
                 <button
                   type="button"
@@ -213,12 +216,12 @@ const PatientSearchSelect = ({
                   className="flex items-center justify-center w-full px-4 py-2 bg-green-50 text-green-700 border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Créer nouveau patient
+                  {t('common.patientSearch.createNewPatient')}
                 </button>
               </div>
             ) : (
               <div className="p-4 text-center text-sm text-gray-500">
-                Commencez à taper pour rechercher un patient
+                {t('common.patientSearch.startTyping')}
               </div>
             )}
           </div>
@@ -235,7 +238,7 @@ const PatientSearchSelect = ({
               </div>
               <div>
                 <p className="text-sm font-bold text-green-900">
-                  Patient sélectionné
+                  {t('common.patientSearch.patientSelected')}
                 </p>
                 <p className="text-lg font-bold text-gray-900">
                   {selectedPatient.firstName} {selectedPatient.lastName}
@@ -259,14 +262,14 @@ const PatientSearchSelect = ({
           {/* Numéro patient */}
           {selectedPatient.patientNumber && (
             <p className="text-xs text-gray-500 ml-10 mt-1">
-              Numéro patient: {selectedPatient.patientNumber}
+              {t('common.patientSearch.patientNumber')} {selectedPatient.patientNumber}
             </p>
           )}
 
           {/* Avertissement fiche incomplète */}
           {selectedPatient.isIncomplete && (
             <p className="text-xs text-orange-700 mt-2 ml-10 p-2 bg-orange-100 rounded">
-              ⚠️ Fiche incomplète - Sera complétée depuis la page Patients
+              ⚠️ {t('common.patientSearch.incompleteWarning')}
             </p>
           )}
         </div>

@@ -40,5 +40,16 @@
     "invalidMedicalNumber": "Invalid ADELI (9 digits) or RPPS (11 digits) number",
     "passwordTooShort": "Password must contain at least 8 characters",
     "clinicNameRequired": "Practice name required"
+  },
+  "patientSearch": {
+    "placeholder": "Search for a patient...",
+    "resetSelection": "Reset selection",
+    "incompleteRecord": "Incomplete record",
+    "noPatientFound": "No patient found for \"{query}\"",
+    "createNewPatient": "Create new patient",
+    "startTyping": "Start typing to search for a patient",
+    "patientSelected": "Patient selected",
+    "patientNumber": "Patient number:",
+    "incompleteWarning": "Incomplete record - Will be completed from Patients page"
   }
 }

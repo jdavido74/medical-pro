@@ -25,9 +25,9 @@ const Header = ({ activeModule }) => {
         email: 'superadmin@medicalpro.com',
         firstName: 'Super',
         lastName: 'Admin',
-        name: 'Super Admin',
+        name: t('nav.header.profiles.superAdmin.name'),
         company: 'Medical Pro SaaS',
-        description: 'Accès complet - Gestion globale',
+        description: t('nav.header.profiles.superAdmin.description'),
         icon: Shield,
         color: 'text-purple-600 bg-purple-100'
       },
@@ -37,9 +37,9 @@ const Header = ({ activeModule }) => {
         email: 'admin@clinique-example.com',
         firstName: 'Dr. Elena',
         lastName: 'Rodriguez',
-        name: 'Dr. Elena Rodriguez',
+        name: t('nav.header.profiles.admin.name'),
         company: 'Clínica Rodriguez',
-        description: 'Admin clinique - Gestion complète',
+        description: t('nav.header.profiles.admin.description'),
         icon: UserCheck,
         color: 'text-blue-600 bg-blue-100'
       },
@@ -49,9 +49,9 @@ const Header = ({ activeModule }) => {
         email: 'secretaria@clinique-example.com',
         firstName: 'Laura',
         lastName: 'Fernandez',
-        name: 'Laura Fernandez',
+        name: t('nav.header.profiles.secretary.name'),
         company: 'Clínica Rodriguez',
-        description: 'Secrétaire - Gestion administrative',
+        description: t('nav.header.profiles.secretary.description'),
         icon: Users,
         color: 'text-orange-600 bg-orange-100'
       },
@@ -61,9 +61,9 @@ const Header = ({ activeModule }) => {
         email: 'readonly@clinique-example.com',
         firstName: 'Observer',
         lastName: 'Demo',
-        name: 'Observer Demo',
+        name: t('nav.header.profiles.readonly.name'),
         company: 'Clínica Rodriguez',
-        description: 'Lecture seule - Consultation uniquement',
+        description: t('nav.header.profiles.readonly.description'),
         icon: Users,
         color: 'text-gray-600 bg-gray-100'
       }
@@ -73,10 +73,13 @@ const Header = ({ activeModule }) => {
     const practitionerProfiles = realPractitioners.map(practitioner => {
       // Déterminer la couleur en fonction du rôle
       let color = 'text-green-600 bg-green-100';
+      let roleKey = 'doctor';
       if (practitioner.role === 'specialist') {
         color = 'text-teal-600 bg-teal-100';
+        roleKey = 'specialist';
       } else if (practitioner.role === 'nurse') {
         color = 'text-pink-600 bg-pink-100';
+        roleKey = 'nurse';
       }
 
       return {
@@ -87,7 +90,7 @@ const Header = ({ activeModule }) => {
         lastName: practitioner.lastName || practitioner.name.split(' ').slice(1).join(' ') || '',
         name: practitioner.name,
         company: 'Clínica Rodriguez',
-        description: `${practitioner.specialty || 'Médecin'} - ${practitioner.name}`,
+        description: `${t(`nav.header.profiles.${roleKey}.description`)} - ${practitioner.name}`,
         icon: Users,
         color: color,
         specialty: practitioner.specialty
@@ -96,7 +99,7 @@ const Header = ({ activeModule }) => {
 
     // Combiner les profils de base avec les praticiens réels
     setTestProfiles([...baseProfiles, ...practitionerProfiles]);
-  }, []);
+  }, [t]);
 
   // Fermer le dropdown quand on clique à l'extérieur
   useEffect(() => {
@@ -221,8 +224,8 @@ const Header = ({ activeModule }) => {
               <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
                 <div className="py-2">
                   <div className="px-4 py-2 border-b">
-                    <h3 className="font-medium text-gray-900">🧪 Profils de test</h3>
-                    <p className="text-xs text-gray-600">Changez de profil pour tester les permissions</p>
+                    <h3 className="font-medium text-gray-900">{t('nav.header.testProfiles')}</h3>
+                    <p className="text-xs text-gray-600">{t('nav.header.testProfilesDesc')}</p>
                   </div>
                   {testProfiles.map((profile) => {
                     const ProfileIcon = profile.icon;
@@ -275,12 +278,12 @@ const Header = ({ activeModule }) => {
               </p>
               {user?.provider && user.provider !== 'demo' && (
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                  Connecté via {getProviderText(user.provider)}
+                  {t('nav.header.connectedVia')} {getProviderText(user.provider)}
                 </span>
               )}
               {user?.isDemo && (
                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                  🧪 Mode Démo
+                  {t('nav.header.demoMode')}
                 </span>
               )}
             </div>

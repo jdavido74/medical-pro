@@ -2,7 +2,11 @@
   "title": "Medical Records",
   "subtitle": "Consultations, diagnoses and prescriptions",
   "newRecord": "New Record",
+  "editRecord": "Edit Record",
+  "deleteRecord": "Delete Record",
   "searchRecords": "Search record...",
+  "allRecords": "All Records",
+  "recentRecords": "Recent Records",
   "consultationDate": "Consultation Date",
   "diagnosis": "Diagnosis",
   "treatment": "Treatment",
@@ -10,5 +14,103 @@
   "symptoms": "Symptoms",
   "examination": "Clinical Examination",
   "vitalSigns": "Vital Signs",
-  "followUp": "Follow-up"
+  "bloodPressure": "Blood Pressure",
+  "temperature": "Temperature",
+  "heartRate": "Heart Rate",
+  "respiratoryRate": "Respiratory Rate",
+  "weight": "Weight",
+  "height": "Height",
+  "followUp": "Follow-up",
+  "notes": "Notes",
+  "attachments": "Attachments",
+  "addAttachment": "Add File",
+  "table": {
+    "date": "Date",
+    "type": "Type",
+    "diagnosis": "Diagnosis",
+    "practitioner": "Practitioner",
+    "actions": "Actions"
+  },
+  "form": {
+    "recordType": "Record Type",
+    "date": "Date",
+    "chiefComplaint": "Chief Complaint",
+    "history": "History",
+    "symptoms": "Symptoms",
+    "examination": "Examination",
+    "diagnosis": "Diagnosis",
+    "treatment": "Treatment",
+    "medication": "Prescribed Medications",
+    "dosage": "Dosage",
+    "frequency": "Frequency",
+    "duration": "Duration",
+    "instructions": "Instructions",
+    "notes": "Practitioner Notes"
+  },
+  "recordTypes": {
+    "consultation": "Consultation",
+    "followup": "Follow-up",
+    "checkup": "Checkup",
+    "diagnosis": "Diagnosis",
+    "procedure": "Procedure",
+    "lab_test": "Lab Test",
+    "imaging": "Imaging",
+    "vaccination": "Vaccination",
+    "emergency": "Emergency"
+  },
+  "messages": {
+    "recordCreated": "Record created successfully",
+    "recordUpdated": "Record updated successfully",
+    "recordDeleted": "Record deleted successfully",
+    "deleteConfirm": "Are you sure you want to delete this record?",
+    "noRecords": "No medical records at the moment",
+    "error": "An error occurred"
+  },
+  "statuses": {
+    "draft": "Draft",
+    "completed": "Completed",
+    "archived": "Archived",
+    "pending_review": "Pending Review"
+  },
+  "module": {
+    "title": "Medical Records",
+    "subtitle": "Complete management of patient medical records and data",
+    "newRecord": "New Record",
+    "createFirstRecord": "Create First Record",
+    "stats": {
+      "totalRecords": "Total Records",
+      "thisMonth": "This Month",
+      "activeTreatments": "Active Treatments",
+      "medicalAlerts": "Medical Alerts"
+    },
+    "search": "Search in records...",
+    "filters": {
+      "allTypes": "All Types",
+      "allPatients": "All Patients",
+      "sortNewest": "Newest",
+      "sortOldest": "Oldest",
+      "sortLastUpdated": "Last Updated"
+    },
+    "types": {
+      "consultation": "Consultation",
+      "examination": "Examination",
+      "treatment": "Treatment",
+      "follow_up": "Follow-up",
+      "emergency": "Emergency"
+    },
+    "messages": {
+      "loadError": "Error loading medical records",
+      "deleteConfirm": "Are you sure you want to delete this medical record?",
+      "deleteError": "Error deleting medical record",
+      "updateError": "Error updating record",
+      "createError": "Error creating record",
+      "patientNotFound": "Patient not found",
+      "noRecords": "No medical records",
+      "noRecordsWithFilters": "No records found with the applied filters.",
+      "startWithFirstRecord": "Start by creating your first medical record."
+    },
+    "badges": {
+      "medicalAlert": "Medical Alert"
+    }
+  }
 }

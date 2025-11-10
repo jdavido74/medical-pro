@@ -2,17 +2,109 @@
   "title": "Appointments",
   "subtitle": "Schedule and organize consultations",
   "newAppointment": "New Appointment",
-  "searchAppointments": "Search appointment...",
+  "editAppointment": "Edit Appointment",
+  "deleteAppointment": "Delete Appointment",
+  "searchAppointments": "Search an appointment...",
+  "calendarView": "Calendar View",
+  "listView": "List View",
   "today": "Today",
   "thisWeek": "This Week",
   "thisMonth": "This Month",
+  "myAppointments": "My Appointments",
+  "allAppointments": "All Appointments",
+  "upcoming": "Upcoming",
+  "past": "Past",
   "appointmentDate": "Appointment Date",
   "appointmentTime": "Time",
   "duration": "Duration",
   "reason": "Reason",
+  "notes": "Notes",
   "status": "Status",
-  "scheduled": "Scheduled",
-  "confirmed": "Confirmed",
-  "completed": "Completed",
-  "cancelled": "Cancelled"
+  "patient": "Patient",
+  "practitioner": "Practitioner",
+  "type": "Type",
+  "location": "Location",
+  "table": {
+    "patient": "Patient",
+    "date": "Date",
+    "time": "Time",
+    "duration": "Duration",
+    "type": "Type",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "form": {
+    "basicInfo": "Basic Information",
+    "dateTime": "Date and Time",
+    "appointmentType": "Appointment Type",
+    "reason": "Reason for Consultation",
+    "notes": "Additional Notes",
+    "create": "Create Appointment",
+    "update": "Update",
+    "cancel": "Cancel"
+  },
+  "statuses": {
+    "scheduled": "Scheduled",
+    "confirmed": "Confirmed",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "no_show": "No Show",
+    "rescheduled": "Rescheduled"
+  },
+  "types": {
+    "consultation": "Consultation",
+    "followup": "Follow-up",
+    "checkup": "Checkup",
+    "procedure": "Procedure",
+    "emergency": "Emergency",
+    "telemedicine": "Telemedicine"
+  },
+  "messages": {
+    "appointmentCreated": "Appointment created successfully",
+    "appointmentUpdated": "Appointment updated successfully",
+    "appointmentDeleted": "Appointment deleted successfully",
+    "appointmentConfirmed": "Appointment confirmed",
+    "deleteConfirm": "Are you sure you want to delete this appointment?",
+    "noAppointments": "No appointments at the moment",
+    "conflict": "Time slot already occupied"
+  },
+  "filters": {
+    "filterByStatus": "Filter by Status",
+    "filterByType": "Filter by Type",
+    "filterByDate": "Filter by Date",
+    "clearFilters": "Clear Filters",
+    "allStatuses": "All Statuses"
+  },
+  "stats": {
+    "today": "Today",
+    "confirmed": "Confirmed",
+    "inProgress": "In Progress",
+    "avgDuration": "Average Duration"
+  },
+  "tabs": {
+    "appointments": "Appointments List",
+    "availability": "Calendar"
+  },
+  "list": {
+    "title": "Scheduled Appointments",
+    "search": "Search by patient, reason, number...",
+    "internalNotes": "Internal Notes:",
+    "slots": "+{{count}} slot(s)",
+    "noAppointmentsFound": "No appointments found",
+    "noAppointmentsScheduled": "No appointments scheduled",
+    "modifyFilters": "Try modifying your filters or search.",
+    "firstAppointment": "Start by scheduling your first medical appointment."
+  },
+  "actions": {
+    "confirm": "Confirm",
+    "start": "Start",
+    "complete": "Complete",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "priority": {
+    "urgent": "URGENT"
+  },
+  "loading": "Loading appointments..."
 }
