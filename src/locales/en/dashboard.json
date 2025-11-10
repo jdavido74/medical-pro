@@ -1,0 +1,72 @@
+{
+  "welcome": "Hello Dr {{name}}",
+  "welcomeSubtitle": "Welcome to your digital medical practice",
+  "clinic": "Practice",
+  "toSetup": "To Setup",
+  "totalPatients": "Total Patients",
+  "appointmentsMonth": "Appointments This Month",
+  "consultations": "Consultations",
+  "pending": "Pending",
+  "dailyAppointments": "Today's Appointments",
+  "patientsWaiting": "Patients Waiting",
+  "emergencies": "Reported Emergencies",
+  "quickActionsTitle": "Quick Actions",
+  "newPatient": "New Patient",
+  "newAppointment": "Schedule Appointment",
+  "newConsultation": "New Consultation",
+  "clinicConfiguration": "Practice Configuration",
+  "configureClinic": "Configure your practice",
+  "addPatients": "Add your first patients",
+  "planConsultations": "Plan your consultations",
+  "createFirstRecord": "Create your first record",
+  "medicalCompliance": "Secure and compliant medical practice",
+  "complianceDescription": "ClinicManager respects medical confidentiality, health data protection (GDPR) and adapts to the professional requirements of practitioners.",
+  "statistics": "Statistics",
+  "appointments": "Appointments",
+  "patients": "Patients",
+  "medicalRecords": "Medical Records",
+  "documents": "Documents",
+  "settings": "Settings",
+  "logout": "Logout",
+  "profile": "My Profile",
+  "help": "Help",
+  "about": "About",
+  "language": "Language",
+  "theme": "Theme",
+  "notifications": "Notifications",
+  "menu": "Menu",
+  "close": "Close",
+  "version": "Version {{version}}",
+  "quickActions": {
+    "addPatient": "Add a patient to your practice",
+    "planConsultation": "Plan a consultation",
+    "createRecord": "Create a medical record"
+  },
+  "insights": {
+    "noConsultations": "No consultations scheduled",
+    "emptyWaitingRoom": "Waiting room empty",
+    "noAlerts": "No active alerts"
+  },
+  "incompletePatients": {
+    "title": "Patient records to complete",
+    "description": "{{count}} patient created quickly needs to complete their profile",
+    "seeMore": "See the {{count}} other incomplete records →"
+  },
+  "noContact": "No contact",
+  "completeProfile": "Complete profile",
+  "complete": "Complete",
+  "steps": "steps",
+  "onboarding": {
+    "clinicInfo": "Professional information and contact details",
+    "addPatients": "Create your patient base in ClinicManager",
+    "planConsultations": "Organize your medical schedule",
+    "createRecord": "Consultations and prescriptions"
+  },
+  "start": "Start",
+  "compliance": {
+    "medicalSecret": "Medical Confidentiality",
+    "gdpr": "Health GDPR",
+    "auditTrail": "Audit Trail",
+    "secureBackup": "Secure Backup"
+  }
+}
