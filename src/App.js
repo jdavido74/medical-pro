@@ -12,6 +12,8 @@ import { detectRegion, getRegionConfig } from './utils/regionDetector';
 import HomePage from './components/public/HomePage';
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
+import EmailVerificationPage from './components/auth/EmailVerificationPage';
+import EmailVerificationCallback from './components/auth/EmailVerificationCallback';
 import Dashboard from './components/dashboard/Dashboard';
 
 // Region Context - To keep track of the current region
@@ -63,6 +65,18 @@ const AppContent = () => {
   const { region } = useRegion();
   const { t } = useTranslation('common');
   const [currentPage, setCurrentPage] = useState('home');
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [verificationToken, setVerificationToken] = useState(null);
+
+  // Extract token from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      setVerificationToken(token);
+      setCurrentPage('email-verification-callback');
+    }
+  }, []);
 
   // Afficher un loader pendant le chargement de la session
   if (isLoading) {
@@ -88,7 +102,11 @@ const AppContent = () => {
     case 'login':
       return <LoginPage setCurrentPage={setCurrentPage} />;
     case 'signup':
-      return <SignupPage setCurrentPage={setCurrentPage} />;
+      return <SignupPage setCurrentPage={setCurrentPage} setPendingEmail={setPendingEmail} />;
+    case 'email-verification':
+      return <EmailVerificationPage email={pendingEmail} setCurrentPage={setCurrentPage} />;
+    case 'email-verification-callback':
+      return <EmailVerificationCallback token={verificationToken} setCurrentPage={setCurrentPage} />;
     case 'home':
     default:
       return <HomePage setCurrentPage={setCurrentPage} />;

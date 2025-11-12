@@ -7,7 +7,7 @@ import SocialAuth from './SocialAuth';
 import { validateEmail, validateClinicName } from '../../utils/validation';
 import { region } from '../../i18n';
 
-const SignupPage = ({ setCurrentPage }) => {
+const SignupPage = ({ setCurrentPage, setPendingEmail }) => {
   const { register } = useAuth();
   const { t } = useTranslation('auth');
   const [showPassword, setShowPassword] = useState(false);
@@ -79,10 +79,10 @@ const SignupPage = ({ setCurrentPage }) => {
         acceptTerms: signupData.acceptTerms
       });
 
-      // Show success message and redirect to login
+      // Store email and redirect to email verification page
       setErrors({});
-      // In a real app, you'd show a modal or redirect to email verification page
-      setCurrentPage('login');
+      setPendingEmail?.(signupData.email);
+      setCurrentPage('email-verification');
     } catch (error) {
       setErrors({ submit: error.message || t('accountError') });
     } finally {
