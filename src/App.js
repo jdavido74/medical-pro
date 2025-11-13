@@ -70,11 +70,24 @@ const AppContent = () => {
 
   // Extract token from URL on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    if (token) {
+    // Check for token in URL path: /auth/verify-email/{TOKEN}
+    const pathname = window.location.pathname;
+    const match = pathname.match(/\/auth\/verify-email\/(.+)$/);
+
+    if (match && match[1]) {
+      const token = match[1];
+      console.log('[App] Token extracted from path:', token.substring(0, 20) + '...');
       setVerificationToken(token);
       setCurrentPage('email-verification-callback');
+    } else {
+      // Fallback: check for token in query string: ?token={TOKEN}
+      const params = new URLSearchParams(window.location.search);
+      const queryToken = params.get('token');
+      if (queryToken) {
+        console.log('[App] Token extracted from query string:', queryToken.substring(0, 20) + '...');
+        setVerificationToken(queryToken);
+        setCurrentPage('email-verification-callback');
+      }
     }
   }, []);
 

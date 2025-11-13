@@ -9,7 +9,7 @@ const EmailVerificationCallback = ({ token, setCurrentPage }) => {
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const [message, setMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState('');
-  const [countdown, setCountdown] = useState(5); // 5 seconds to give time to see the message
+  const [countdown, setCountdown] = useState(10); // 10 seconds to give time to read the message
   const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
@@ -34,7 +34,7 @@ const EmailVerificationCallback = ({ token, setCurrentPage }) => {
           setStatus('success');
           setMessage(t('emailVerification.successMessage') || 'Email verified successfully!');
 
-          console.log('[EmailVerificationCallback] Email verified successfully, redirecting in 5 seconds...');
+          console.log('[EmailVerificationCallback] Email verified successfully, redirecting in 10 seconds...');
 
           // Redirect to login after countdown
           const timer = setInterval(() => {
@@ -117,11 +117,11 @@ const EmailVerificationCallback = ({ token, setCurrentPage }) => {
               </p>
               <div className="mt-3 flex justify-center">
                 <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(10)].map((_, i) => (
                     <div
                       key={i}
                       className={`h-2 w-2 rounded-full transition-all ${
-                        i < 5 - countdown ? 'bg-blue-600' : 'bg-blue-200'
+                        i < 10 - countdown ? 'bg-blue-600' : 'bg-blue-200'
                       }`}
                     />
                   ))}
