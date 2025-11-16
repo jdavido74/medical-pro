@@ -62,6 +62,8 @@ const LoginPage = ({ setCurrentPage }) => {
 
       // Check if login was successful
       if (response.success && response.data?.user) {
+        console.log('[LoginPage] 🔍 Raw backend response user:', response.data.user);
+
         const userData = {
           id: response.data.user.id,
           email: response.data.user.email,
@@ -75,8 +77,13 @@ const LoginPage = ({ setCurrentPage }) => {
           isEmailVerified: response.data.user.isEmailVerified || false
         };
 
+        console.log('[LoginPage] ✅ Constructed userData:', userData);
+        console.log('[LoginPage] 📛 Name field:', userData.name);
+        console.log('[LoginPage] 📝 FirstName:', userData.firstName, 'LastName:', userData.lastName);
+
         // Extract company data from response
         const companyData = response.data.company || null;
+        console.log('[LoginPage] 🏢 Company data:', companyData);
 
         // Store token separately in localStorage for API requests
         const token = response.data.tokens?.accessToken;
@@ -85,9 +92,11 @@ const LoginPage = ({ setCurrentPage }) => {
         }
 
         // Update auth context with both user and company data
+        console.log('[LoginPage] 📤 Calling login() with userData and companyData');
         login(userData, companyData);
 
         // Redirect to dashboard
+        console.log('[LoginPage] ⏭️ Redirecting to dashboard');
         window.location.href = '/dashboard';
       } else if (response.data?.requiresEmailVerification) {
         // User exists but email not verified
