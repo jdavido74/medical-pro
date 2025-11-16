@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { catalogStorage, productsStorage, servicesStorage } from '../../../utils/productsStorage';
 
 const SettingsModule = () => {
-  const { user, updateUser } = useAuth();
+  const { user, company, updateUser } = useAuth();
   const { t } = useTranslation('admin');
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,11 +20,11 @@ const SettingsModule = () => {
     name: user?.name || '',
     email: user?.email || '',
     companyName: user?.companyName || '',
-    phone: '',
-    address: '',
-    postalCode: '',
-    city: '',
-    country: 'France'
+    phone: company?.phone || '',
+    address: company?.address || '',
+    postalCode: company?.postalCode || '',
+    city: company?.city || '',
+    country: company?.country || 'France'
   });
 
   const [securityData, setSecurityData] = useState({
@@ -44,6 +44,23 @@ const SettingsModule = () => {
     category: '',
     type: 'product' // product, service, bundle
   });
+
+  // Synchroniser profileData avec le contexte utilisateur et entreprise
+  useEffect(() => {
+    if (user || company) {
+      setProfileData(prev => ({
+        ...prev,
+        name: user?.name || prev.name,
+        email: user?.email || prev.email,
+        companyName: user?.companyName || prev.companyName,
+        phone: company?.phone || prev.phone,
+        address: company?.address || prev.address,
+        postalCode: company?.postalCode || prev.postalCode,
+        city: company?.city || prev.city,
+        country: company?.country || prev.country || 'France'
+      }));
+    }
+  }, [user, company]);
 
   // Charger le catalogue au montage
   useEffect(() => {
