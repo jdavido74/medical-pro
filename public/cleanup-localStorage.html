@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyage localStorage</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin: 0 0 20px 0;
+        }
+
+        .section {
+            margin: 25px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .storage-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .storage-list li {
+            padding: 8px 10px;
+            margin: 5px 0;
+            background: white;
+            border-left: 3px solid #28a745;
+            border-radius: 2px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .storage-list li.removed {
+            background: #ffe6e6;
+            border-left-color: #dc3545;
+            text-decoration: line-through;
+            color: #666;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 10px 10px 0;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 10px 20px rgba(108, 117, 125, 0.3);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .note {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #0d47a1;
+        }
+
+        .button-group {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Utilitaire de Nettoyage localStorage</h1>
+
+        <div class="section">
+            <h2>Informations en localStorage</h2>
+            <ul class="storage-list" id="storageList"></ul>
+            <div id="emptyMessage" class="status info" style="display: none;">
+                localStorage est vide
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Actions</h2>
+            <div class="button-group">
+                <button onclick="scanStorage()">Rafraîchir l'analyse</button>
+                <button class="secondary" onclick="clearAllResidualData()">Nettoyer les données résiduelles</button>
+                <button class="secondary" onclick="clearAuthOnly()">Nettoyer aussi l'authentification</button>
+                <button class="secondary" onclick="clearEverything()">Tout supprimer</button>
+            </div>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="note">
+            💡 <strong>Conseil:</strong> Cliquez sur "Nettoyer les données résiduelles" pour supprimer uniquement les données de patients, rendez-vous, etc. qui pourraient provenir d'anciens tests.
+        </div>
+    </div>
+
+    <script>
+        const residualKeys = [
+            'patients_data',
+            'patient_data',
+            'patients',
+            'appointments',
+            'medical_records',
+            'consents',
+            'consent_templates',
+            'products',
+            'services',
+            'backup_data',
+            'mutation_queue',
+            'practitioner',
+            'practitioners',
+            'notifications'
+        ];
+
+        const essentialKeys = [
+            'clinicmanager_auth',
+            'clinicmanager_token',
+            'language',
+            'theme'
+        ];
+
+        function scanStorage() {
+            const list = document.getElementById('storageList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            list.innerHTML = '';
+
+            let hasItems = false;
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                const size = (value.length / 1024).toFixed(2);
+
+                const li = document.createElement('li');
+                const isEssential = essentialKeys.includes(key);
+                const isResidual = residualKeys.includes(key);
+
+                let category = '(autre)';
+                if (isEssential) category = '(essentiel)';
+                if (isResidual) category = '(résiduel)';
+
+                li.textContent = key + ' — ' + size + ' KB ' + category;
+                li.className = isResidual ? 'removed' : '';
+
+                list.appendChild(li);
+                hasItems = true;
+            }
+
+            emptyMessage.style.display = hasItems ? 'none' : 'block';
+        }
+
+        function clearAllResidualData() {
+            let clearedCount = 0;
+            residualKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    clearedCount++;
+                }
+            });
+
+            showStatus(`✅ Succès! ${clearedCount} clé(s) supprimée(s).`, 'success');
+            scanStorage();
+        }
+
+        function clearAuthOnly() {
+            localStorage.removeItem('clinicmanager_auth');
+            localStorage.removeItem('clinicmanager_token');
+            showStatus('✅ Authentification supprimée. Vous devrez vous reconnecter.', 'success');
+            scanStorage();
+        }
+
+        function clearEverything() {
+            if (confirm('Êtes-vous sûr? Cela supprimera TOUT le contenu de localStorage et vous devrez vous reconnecter.')) {
+                localStorage.clear();
+                showStatus('✅ localStorage complètement vidé!', 'success');
+                scanStorage();
+            }
+        }
+
+        function showStatus(message, type) {
+            const result = document.getElementById('result');
+            result.innerHTML = '<div class="status ' + type + '">' + message + '</div>';
+        }
+
+        // Scan au chargement
+        scanStorage();
+    </script>
+</body>
+</html>

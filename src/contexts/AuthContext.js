@@ -10,6 +10,7 @@ const AUTH_STORAGE_KEY = 'clinicmanager_auth';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [company, setCompany] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userPermissions, setUserPermissions] = useState([]);
@@ -62,6 +63,7 @@ export const AuthProvider = ({ children }) => {
 
         if (daysDiff < 7) {
           setUser(authData.user);
+          setCompany(authData.company || null);
           setIsAuthenticated(true);
 
           // Charger les permissions
@@ -126,8 +128,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = (userData) => {
+  const login = (userData, companyData) => {
     setUser(userData);
+    setCompany(companyData);
     setIsAuthenticated(true);
 
     // Charger les permissions
@@ -139,7 +142,7 @@ export const AuthProvider = ({ children }) => {
     // Enregistrer l'événement de connexion dans l'audit
     auditStorage.logEvent(auditStorage.constructor.EVENT_TYPES.LOGIN, {
       userId: userData.id,
-      userName: `${userData.firstName} ${userData.lastName}`,
+      userName: `${userData.name || userData.firstName + ' ' + userData.lastName}`,
       userRole: userData.role,
       sessionId: sessionData.sessionId,
       loginMethod: 'credentials',
@@ -150,6 +153,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const authData = {
         user: userData,
+        company: companyData,
         timestamp: new Date().toISOString(),
         sessionInfo: sessionData
       };
@@ -170,7 +174,7 @@ export const AuthProvider = ({ children }) => {
     if (user && sessionInfo) {
       auditStorage.logEvent(auditStorage.constructor.EVENT_TYPES.LOGOUT, {
         userId: user.id,
-        userName: `${user.firstName} ${user.lastName}`,
+        userName: `${user.name || user.firstName + ' ' + user.lastName}`,
         userRole: user.role,
         sessionId: sessionInfo.sessionId,
         sessionDuration: getSessionDuration(),
@@ -179,13 +183,15 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(null);
+    setCompany(null);
     setIsAuthenticated(false);
     setUserPermissions([]);
     setSessionInfo(null);
 
-    // Nettoyer localStorage
+    // Nettoyer localStorage - clear both auth keys
     try {
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem('clinicmanager_token'); // Clear separate token storage
     } catch (error) {
       console.error('Erreur nettoyage session:', error);
       // Logger l'erreur dans l'audit
@@ -316,6 +322,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{
       // État de base
       user,
+      company,
       isAuthenticated,
       isLoading,
       userPermissions,

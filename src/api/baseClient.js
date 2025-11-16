@@ -15,6 +15,13 @@ const API_TIMEOUT = parseInt(process.env.REACT_APP_API_TIMEOUT) || 30000;
  */
 function getAuthToken() {
   try {
+    // First try to get token from dedicated token storage (set during login)
+    const token = localStorage.getItem('clinicmanager_token');
+    if (token) {
+      return token;
+    }
+
+    // Fallback to legacy location for backward compatibility
     const authData = localStorage.getItem('clinicmanager_auth');
     if (authData) {
       const parsed = JSON.parse(authData);

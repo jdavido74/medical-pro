@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import SocialAuth from './SocialAuth';
 import { validateEmail } from '../../utils/validation';
+import { baseClient } from '../../api/baseClient';
 
 const LoginPage = ({ setCurrentPage }) => {
   const { login } = useAuth();
@@ -49,25 +50,78 @@ const LoginPage = ({ setCurrentPage }) => {
     }
 
     setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+    setErrors({});
 
-      if (loginData.email === 'test@exemple.fr' && loginData.password === 'motdepasse123') {
+    try {
+      // Call backend /auth/login endpoint with email and password
+      // This supports all special characters without any encoding issues
+      const response = await baseClient.post('/auth/login', {
+        email: loginData.email,
+        password: loginData.password
+      });
+
+      // Check if login was successful
+      if (response.success && response.data?.user) {
         const userData = {
-          id: 'classic_' + Date.now(),
-          email: loginData.email,
-          name: 'Utilisateur Test',
-          companyName: 'Entreprise Test',
+          id: response.data.user.id,
+          email: response.data.user.email,
+          firstName: response.data.user.firstName,
+          lastName: response.data.user.lastName,
+          name: `${response.data.user.firstName} ${response.data.user.lastName}`,
+          companyId: response.data.user.companyId,
+          companyName: response.data.user.companyName,
+          role: response.data.user.role,
           provider: 'classic',
-          avatar: '🏢',
-          plan: 'premium'
+          isEmailVerified: response.data.user.isEmailVerified || false
         };
-        login(userData);
-        alert('✅ Connexion classique réussie !');
+
+        // Extract company data from response
+        const companyData = response.data.company || null;
+
+        // Store token separately in localStorage for API requests
+        const token = response.data.tokens?.accessToken;
+        if (token) {
+          localStorage.setItem('clinicmanager_token', token);
+        }
+
+        // Update auth context with both user and company data
+        login(userData, companyData);
+
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+      } else if (response.data?.requiresEmailVerification) {
+        // User exists but email not verified
+        setErrors({
+          email: t('emailNotVerified'),
+          password: t('checkEmailVerification')
+        });
       } else {
+        // Invalid credentials
         setErrors({
           email: t('incorrectCredentials'),
           password: t('verifyData')
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+
+      // Handle different error types
+      if (error.status === 401) {
+        setErrors({
+          email: t('incorrectCredentials'),
+          password: t('verifyData')
+        });
+      } else if (error.status === 403) {
+        setErrors({
+          submit: t('accountDisabled') || 'Account is disabled'
+        });
+      } else if (error.isTimeout) {
+        setErrors({
+          submit: t('requestTimeout') || 'Request timeout - please try again'
+        });
+      } else {
+        setErrors({
+          submit: error.message || t('accountError') || 'Login failed - please try again'
         });
       }
     } finally {
@@ -102,6 +156,13 @@ const LoginPage = ({ setCurrentPage }) => {
 
           {/* Connexion classique */}
           <div className="space-y-4">
+            {/* General error message */}
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-800 text-sm">{errors.submit}</p>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('email')}

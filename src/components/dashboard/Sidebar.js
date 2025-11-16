@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 
 const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
-  const { user, logout } = useAuth();
+  const { user, company, logout } = useAuth();
   const { t } = useTranslation('nav');
 
   const handleLogout = () => {
@@ -46,6 +46,9 @@ const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
             <p className="text-xs text-gray-500 truncate">{user?.companyName}</p>
+            {company?.phone && (
+              <p className="text-xs text-gray-500 truncate">{company.phone}</p>
+            )}
             <span className={`inline-block text-xs px-2 py-1 rounded-full mt-1 ${
               user?.plan === 'premium'
                 ? 'bg-yellow-100 text-yellow-800'
