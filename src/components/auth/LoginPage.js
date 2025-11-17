@@ -19,6 +19,18 @@ const LoginPage = ({ setCurrentPage }) => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // Restore remembered email on component mount
+  React.useEffect(() => {
+    const rememberedEmail = localStorage.getItem('clinicmanager_remember_email');
+    if (rememberedEmail) {
+      setLoginData(prev => ({
+        ...prev,
+        email: rememberedEmail,
+        rememberMe: true
+      }));
+    }
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setLoginData(prev => ({
@@ -69,9 +81,9 @@ const LoginPage = ({ setCurrentPage }) => {
           email: response.data.user.email,
           firstName: response.data.user.firstName,
           lastName: response.data.user.lastName,
-          name: `${response.data.user.firstName} ${response.data.user.lastName}`,
+          name: response.data.user.name || `${response.data.user.firstName} ${response.data.user.lastName}`,
           companyId: response.data.user.companyId,
-          companyName: response.data.user.companyName,
+          companyName: response.data.company?.name || response.data.user.companyName,
           role: response.data.user.role,
           provider: 'classic',
           isEmailVerified: response.data.user.isEmailVerified || false
@@ -89,6 +101,13 @@ const LoginPage = ({ setCurrentPage }) => {
         const token = response.data.tokens?.accessToken;
         if (token) {
           localStorage.setItem('clinicmanager_token', token);
+        }
+
+        // Store remember me preference if checked
+        if (loginData.rememberMe) {
+          localStorage.setItem('clinicmanager_remember_me', 'true');
+        } else {
+          localStorage.removeItem('clinicmanager_remember_me');
         }
 
         // Update auth context with both user and company data

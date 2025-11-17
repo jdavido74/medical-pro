@@ -169,7 +169,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = (rememberEmail = false) => {
     // Enregistrer l'événement de déconnexion avant de nettoyer les données
     if (user && sessionInfo) {
       auditStorage.logEvent(auditStorage.constructor.EVENT_TYPES.LOGOUT, {
@@ -182,16 +182,38 @@ export const AuthProvider = ({ children }) => {
       });
     }
 
+    // Préparer les données à conserver (si "Se rappeler de moi" était activé)
+    const emailToRemember = rememberEmail && user ? user.email : null;
+
     setUser(null);
     setCompany(null);
     setIsAuthenticated(false);
     setUserPermissions([]);
     setSessionInfo(null);
 
-    // Nettoyer localStorage - clear both auth keys
+    // Nettoyer localStorage - clear ALL session-related data
     try {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      localStorage.removeItem('clinicmanager_token'); // Clear separate token storage
+      // Conserver les clés à supprimer
+      const keysToRemove = [
+        AUTH_STORAGE_KEY,
+        'clinicmanager_token',
+        'clinicmanager_user',
+        'clinicmanager_company',
+        'clinicmanager_permissions',
+        'clinicmanager_session_info'
+      ];
+
+      // Supprimer toutes les clés de session
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // Si l'utilisateur avait coché "Se rappeler de moi", conserver l'email
+      if (emailToRemember) {
+        localStorage.setItem('clinicmanager_remember_email', emailToRemember);
+      } else {
+        localStorage.removeItem('clinicmanager_remember_email');
+      }
     } catch (error) {
       console.error('Erreur nettoyage session:', error);
       // Logger l'erreur dans l'audit
@@ -201,6 +223,9 @@ export const AuthProvider = ({ children }) => {
         context: 'logout'
       });
     }
+
+    // Rediriger vers la page de connexion avec URL nettoyée
+    window.location.href = '/';
   };
 
   const updateUser = (updatedData) => {

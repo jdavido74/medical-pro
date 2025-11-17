@@ -12,8 +12,11 @@ const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
   const { t } = useTranslation('nav');
 
   const handleLogout = () => {
-    logout();
-    setCurrentPage('home');
+    // Check if user had "remember me" enabled
+    const shouldRememberEmail = localStorage.getItem('clinicmanager_remember_me') === 'true';
+    // Call logout with the remember me preference
+    logout(shouldRememberEmail);
+    // Note: logout() now redirects to '/', so setCurrentPage won't be executed
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
