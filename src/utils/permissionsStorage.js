@@ -53,8 +53,10 @@ export const PERMISSIONS = {
 
   // Administration
   USERS_VIEW: 'users.view',
+  USERS_READ: 'users.read', // Alias pour users.view
   USERS_CREATE: 'users.create',
   USERS_EDIT: 'users.edit',
+  USERS_UPDATE: 'users.update', // Alias pour users.edit
   USERS_DELETE: 'users.delete',
   USERS_PERMISSIONS: 'users.permissions',
   USERS_EXPORT: 'users.export',
@@ -66,8 +68,10 @@ export const PERMISSIONS = {
 
   // Équipes et délégations
   TEAMS_VIEW: 'teams.view',
+  TEAMS_READ: 'teams.read', // Alias pour teams.view
   TEAMS_CREATE: 'teams.create',
   TEAMS_EDIT: 'teams.edit',
+  TEAMS_UPDATE: 'teams.update', // Alias pour teams.edit
   TEAMS_DELETE: 'teams.delete',
   TEAMS_EXPORT: 'teams.export',
 
@@ -131,13 +135,18 @@ export const DEFAULT_ROLES = {
       PERMISSIONS.QUOTES_VIEW, PERMISSIONS.QUOTES_CREATE, PERMISSIONS.QUOTES_EDIT, PERMISSIONS.QUOTES_DELETE,
       // Analytics
       PERMISSIONS.ANALYTICS_VIEW, PERMISSIONS.ANALYTICS_EXPORT,
-      // Administration
-      PERMISSIONS.USERS_VIEW, PERMISSIONS.USERS_CREATE, PERMISSIONS.USERS_EDIT, PERMISSIONS.USERS_DELETE, PERMISSIONS.USERS_EXPORT,
-      PERMISSIONS.ROLES_VIEW,
+      // Administration - Utilisateurs
+      PERMISSIONS.USERS_VIEW, PERMISSIONS.USERS_READ, PERMISSIONS.USERS_CREATE,
+      PERMISSIONS.USERS_EDIT, PERMISSIONS.USERS_UPDATE, PERMISSIONS.USERS_DELETE, PERMISSIONS.USERS_EXPORT,
+      // Administration - Rôles
+      PERMISSIONS.ROLES_VIEW, PERMISSIONS.ROLES_CREATE, PERMISSIONS.ROLES_EDIT, PERMISSIONS.ROLES_DELETE,
       // Équipes et délégations
-      PERMISSIONS.TEAMS_VIEW, PERMISSIONS.TEAMS_CREATE, PERMISSIONS.TEAMS_EDIT, PERMISSIONS.TEAMS_DELETE, PERMISSIONS.TEAMS_EXPORT,
+      PERMISSIONS.TEAMS_VIEW, PERMISSIONS.TEAMS_READ, PERMISSIONS.TEAMS_CREATE,
+      PERMISSIONS.TEAMS_EDIT, PERMISSIONS.TEAMS_UPDATE, PERMISSIONS.TEAMS_DELETE, PERMISSIONS.TEAMS_EXPORT,
       PERMISSIONS.DELEGATIONS_VIEW, PERMISSIONS.DELEGATIONS_CREATE, PERMISSIONS.DELEGATIONS_EDIT,
       PERMISSIONS.DELEGATIONS_APPROVE, PERMISSIONS.DELEGATIONS_REVOKE,
+      // Audit
+      PERMISSIONS.AUDIT_VIEW, PERMISSIONS.AUDIT_EXPORT,
       // Paramètres
       PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC
     ],
@@ -391,6 +400,15 @@ export const permissionsStorage = {
     return roles.find(role => role.id === roleId);
   },
 
+  // Alias pour compatibilité
+  getAllRoles: () => {
+    return permissionsStorage.getRoles();
+  },
+
+  getRoleById: (roleId) => {
+    return permissionsStorage.getRole(roleId);
+  },
+
   createRole: (roleData) => {
     const roles = permissionsStorage.getRoles();
     const newRole = {
@@ -489,7 +507,25 @@ export const permissionsStorage = {
 
     // Combiner les permissions du rôle avec les permissions personnalisées
     const rolePermissions = role.permissions || [];
-    const customPermissions = user.permissions || [];
+
+    // user.permissions peut être soit un objet JSON (depuis la DB) soit un tableau
+    let customPermissions = [];
+    if (user.permissions) {
+      if (Array.isArray(user.permissions)) {
+        customPermissions = user.permissions;
+      } else if (typeof user.permissions === 'object') {
+        // Convertir l'objet de permissions en tableau de permissions
+        // Exemple: {"patients": {"read": true}} => ["patients:read"]
+        customPermissions = Object.entries(user.permissions).flatMap(([resource, actions]) => {
+          if (typeof actions === 'object' && actions !== null) {
+            return Object.entries(actions)
+              .filter(([action, value]) => value === true)
+              .map(([action]) => `${resource}:${action}`);
+          }
+          return [];
+        });
+      }
+    }
 
     return [...new Set([...rolePermissions, ...customPermissions])];
   },

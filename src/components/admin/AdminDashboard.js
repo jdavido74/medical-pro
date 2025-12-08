@@ -1,7 +1,7 @@
 // components/admin/AdminDashboard.js
 // Dashboard d'administration pour les administrateurs de CLINIQUE uniquement
 // Les super_admin doivent utiliser le SaasAdminDashboard
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users, Settings, Shield, BarChart3,
   Stethoscope, Activity, Calendar, UserCheck
@@ -15,15 +15,96 @@ import RoleManagementModule from './RoleManagementModule';
 import TeamManagementModule from './TeamManagementModule';
 import AuditManagementModule from './AuditManagementModule';
 import ClinicConfigurationModule from './ClinicConfigurationModule';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
+import { patientsStorage } from '../../utils/patientsStorage';
+import { appointmentsStorage } from '../../utils/appointmentsStorage';
+import auditStorage from '../../utils/auditStorage';
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const { isLoading: translationsLoading, getAvailableSpecialties } = useDynamicTranslations();
   const [activeTab, setActiveTab] = useState('overview');
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    practitioners: 0,
+    totalPatients: 0,
+    appointmentsThisMonth: 0,
+    activeSpecialties: 0
+  });
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Vérifier si l'utilisateur est admin clinique uniquement
   const isClinicAdmin = user?.role === 'admin';
+
+  // Charger les statistiques réelles depuis la base de données
+  const loadDashboardStats = async () => {
+    try {
+      setIsLoadingStats(true);
+
+      // 1. Charger les utilisateurs (healthcare providers)
+      const usersData = await healthcareProvidersApi.getHealthcareProviders({ limit: 100 });
+      const users = usersData.providers || [];
+
+      // 2. Charger les patients
+      const patients = patientsStorage.getAll();
+
+      // 3. Charger les rendez-vous du mois en cours
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const appointments = appointmentsStorage.search({
+        startDate: startOfMonth,
+        endDate: endOfMonth
+      });
+
+      // 4. Charger l'activité récente depuis l'audit
+      const auditLogs = auditStorage.getAll({ limit: 5 });
+      const formattedActivity = auditLogs.map((log, index) => ({
+        id: index + 1,
+        type: log.eventType,
+        message: log.description || `${log.eventType} - ${log.userName}`,
+        time: formatTimeAgo(log.timestamp)
+      }));
+
+      // Calculer les statistiques
+      setDashboardStats({
+        totalUsers: users.length,
+        activeUsers: users.filter(u => u.isActive).length,
+        practitioners: users.filter(u => u.role === 'practitioner').length,
+        totalPatients: patients.length,
+        appointmentsThisMonth: appointments.length,
+        activeSpecialties: getAvailableSpecialties().length
+      });
+
+      setRecentActivity(formattedActivity);
+    } catch (error) {
+      console.error('[AdminDashboard] Error loading stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Fonction pour formater le temps écoulé
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+
+    if (diffInMinutes < 1) return 'À l\'instant';
+    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
+    if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)} h`;
+    return `Il y a ${Math.floor(diffInMinutes / 1440)} j`;
+  };
+
+  // Charger les stats au montage du composant
+  useEffect(() => {
+    if (isClinicAdmin) {
+      loadDashboardStats();
+    }
+  }, [isClinicAdmin]);
 
   if (!isClinicAdmin) {
     return (
@@ -31,67 +112,50 @@ const AdminDashboard = () => {
         <div className="text-center">
           <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">
-            {t('admin.accessDenied', 'Acceso Denegado')}
+            {t('admin.accessDenied')}
           </h2>
           <p className="text-gray-600">
-            {t('admin.noPermissionClinic', 'No tienes permisos para acceder al panel de administración de clínica.')}
+            {t('admin.noPermissionClinic')}
           </p>
         </div>
       </div>
     );
   }
 
-  // Datos de ejemplo para el dashboard de clínica
-  const dashboardStats = {
-    totalUsers: 15,
-    activeUsers: 12,
-    practitioners: 8,
-    totalPatients: 456,
-    appointmentsThisMonth: 234,
-    activeSpecialties: getAvailableSpecialties().length
-  };
-
-  const recentActivity = [
-    { id: 1, type: 'user_created', message: 'Dr. García agregado al equipo', time: '2 min' },
-    { id: 2, type: 'practitioner_updated', message: 'Disponibilidad actualizada para enfermera López', time: '15 min' },
-    { id: 3, type: 'role_changed', message: 'Permisos actualizados para secretaria', time: '1h' },
-    { id: 4, type: 'config_updated', message: 'Configuración de clínica modificada', time: '2h' }
-  ];
-
   const tabsConfig = [
     {
       id: 'overview',
-      label: t('admin.overview', 'Vista General'),
+      label: t('admin.overview'),
       icon: BarChart3,
       visible: true
     },
     {
       id: 'clinic-config',
-      label: t('admin.clinicConfig', 'Configuración de Clínica'),
+      label: t('admin.clinicConfig'),
       icon: Calendar,
       visible: true
     },
     {
       id: 'users',
-      label: t('admin.users', 'Usuarios'),
+      label: t('admin.users'),
       icon: Users,
       visible: true
     },
     {
       id: 'roles',
-      label: t('admin.roles', 'Roles y Permisos'),
+      label: t('admin.roles'),
       icon: Shield,
       visible: true
     },
     {
       id: 'teams',
-      label: t('admin.teams', 'Equipos y Delegaciones'),
+      label: t('admin.teams'),
       icon: Users,
       visible: true
     },
     {
       id: 'audit',
-      label: t('admin.audit', 'Auditoría y Logs'),
+      label: t('admin.audit'),
       icon: Activity,
       visible: true
     }
@@ -110,11 +174,11 @@ const AdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
-                {t('admin.totalUsers', 'Usuarios Totales')}
+                {t('admin.totalUsers')}
               </p>
               <p className="text-2xl font-bold text-gray-900">{dashboardStats.totalUsers}</p>
               <p className="text-xs text-green-600 mt-1">
-                {dashboardStats.activeUsers} {t('admin.active', 'activos')}
+                {dashboardStats.activeUsers} {t('admin.active')}
               </p>
             </div>
           </div>
@@ -127,7 +191,7 @@ const AdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
-                {t('admin.practitioners', 'Praticiens')}
+                {t('admin.practitioners')}
               </p>
               <p className="text-2xl font-bold text-gray-900">{dashboardStats.practitioners}</p>
             </div>
@@ -141,7 +205,7 @@ const AdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
-                {t('admin.appointmentsMonth', 'RDV ce mois')}
+                {t('admin.appointmentsMonth')}
               </p>
               <p className="text-2xl font-bold text-gray-900">{dashboardStats.appointmentsThisMonth}</p>
             </div>
@@ -154,7 +218,7 @@ const AdminDashboard = () => {
         {/* Especialidades configuradas */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('admin.configuredSpecialties', 'Especialidades Configuradas')}
+            {t('admin.configuredSpecialties')}
           </h3>
           {translationsLoading ? (
             <div className="animate-pulse space-y-2">
@@ -171,13 +235,13 @@ const AdminDashboard = () => {
                     <span className="font-medium text-gray-900">{specialty.name}</span>
                   </div>
                   <span className="text-sm text-gray-500">
-                    {t('admin.active', 'Activa')}
+                    {t('admin.active')}
                   </span>
                 </div>
               ))}
               {getAvailableSpecialties().length > 5 && (
                 <div className="text-sm text-blue-600 font-medium">
-                  +{getAvailableSpecialties().length - 5} {t('admin.moreSpecialties', 'especialidades más')}
+                  +{getAvailableSpecialties().length - 5} {t('admin.moreSpecialties')}
                 </div>
               )}
             </div>
@@ -187,7 +251,7 @@ const AdminDashboard = () => {
         {/* Actividad reciente */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('admin.recentActivity', 'Actividad Reciente')}
+            {t('admin.recentActivity')}
           </h3>
           <div className="space-y-3">
             {recentActivity.map(activity => (
@@ -196,7 +260,7 @@ const AdminDashboard = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900">{activity.message}</p>
                   <p className="text-xs text-gray-500">
-                    {t('admin.timeAgo', 'Hace {{time}}', { time: activity.time })}
+                    {t('admin.timeAgo', { time: activity.time })}
                   </p>
                 </div>
               </div>
@@ -208,7 +272,7 @@ const AdminDashboard = () => {
       {/* Información del usuario actual */}
       <div className="bg-white rounded-lg border p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          {t('admin.yourInfo', 'Tu Información de Administrador')}
+          {t('admin.yourInfo')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -222,38 +286,40 @@ const AdminDashboard = () => {
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('admin.role', 'Rol')}:</span>
+                <span className="text-sm text-gray-600">{t('admin.role')}:</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {t('admin.clinicAdmin', 'Administrador de Clínica')}
+                  {t('admin.clinicAdmin')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('admin.clinic', 'Clínica')}:</span>
-                <span className="text-sm font-medium text-gray-900">{user?.company}</span>
+                <span className="text-sm text-gray-600">{t('admin.clinic')}:</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {company?.name || user?.companyName || 'N/A'}
+                </span>
               </div>
             </div>
           </div>
 
           <div>
             <h5 className="font-medium text-gray-900 mb-3">
-              {t('admin.adminPermissions', 'Permisos de Administración')}
+              {t('admin.adminPermissions')}
             </h5>
             <div className="space-y-2">
               <div className="flex items-center text-sm text-green-600">
                 <Users className="h-4 w-4 mr-2" />
-                {t('admin.manageClinicUsers', 'Gestionar usuarios de la clínica')}
+                {t('admin.manageClinicUsers')}
               </div>
               <div className="flex items-center text-sm text-green-600">
                 <Stethoscope className="h-4 w-4 mr-2" />
-                {t('admin.assignSpecialties', 'Asignar especialidades a usuarios')}
+                {t('admin.assignSpecialties')}
               </div>
               <div className="flex items-center text-sm text-green-600">
                 <Calendar className="h-4 w-4 mr-2" />
-                {t('admin.manageAvailability', 'Gestionar disponibilidad de praticiens')}
+                {t('admin.manageAvailability')}
               </div>
               <div className="flex items-center text-sm text-green-600">
                 <Shield className="h-4 w-4 mr-2" />
-                {t('admin.manageRoles', 'Gestionar roles y permisos')}
+                {t('admin.manageRoles')}
               </div>
             </div>
           </div>
@@ -289,17 +355,17 @@ const AdminDashboard = () => {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {t('admin.clinicAdminPanel', 'Panel de Administración de Clínica')}
+                {t('admin.clinicAdminPanel')}
               </h1>
               <p className="text-gray-600">
-                {user?.company || t('admin.clinicManagement', 'Administración de Clínica')}
+                {company?.name || user?.companyName || t('admin.clinicManagement')}
               </p>
             </div>
 
             <div className="flex items-center space-x-4">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 <Shield className="h-4 w-4 mr-1" />
-                {t('admin.clinicAdmin', 'Admin Clínica')}
+                {t('admin.clinicAdmin')}
               </span>
             </div>
           </div>

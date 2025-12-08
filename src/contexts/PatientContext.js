@@ -35,7 +35,7 @@ export const PatientProvider = ({ children }) => {
         setError(null);
 
         if (user) {
-          const result = await patientsApi.getPatients({ page: 1, limit: 1000 });
+          const result = await patientsApi.getPatients({ page: 1, limit: 100 });
           setPatients(result.patients || []);
         }
         setIsInitialized(true);
@@ -60,6 +60,9 @@ export const PatientProvider = ({ children }) => {
   const createPatient = useCallback(
     async (patientData) => {
       try {
+        // Effacer l'erreur précédente
+        setError(null);
+
         // ✅ SYNCHRONISATION IMMÉDIATE : Générer ID temporaire
         const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const optimisticPatient = {
@@ -99,6 +102,9 @@ export const PatientProvider = ({ children }) => {
   const updatePatient = useCallback(
     async (patientId, patientData) => {
       try {
+        // Effacer l'erreur précédente
+        setError(null);
+
         // Sauvegarder l'état précédent pour rollback
         const previousPatient = patients.find((p) => p.id === patientId);
 
@@ -138,6 +144,9 @@ export const PatientProvider = ({ children }) => {
   const deletePatient = useCallback(
     async (patientId) => {
       try {
+        // Effacer l'erreur précédente
+        setError(null);
+
         // ✅ SYNCHRONISATION IMMÉDIATE : Retirer de la liste
         setPatients((prev) => prev.filter((p) => p.id !== patientId));
 
@@ -148,7 +157,7 @@ export const PatientProvider = ({ children }) => {
       } catch (error) {
         console.error('[PatientContext] Error deleting patient:', error);
         // Rollback en cas d'erreur - recharger les patients
-        const result = await patientsApi.getPatients({ page: 1, limit: 1000 });
+        const result = await patientsApi.getPatients({ page: 1, limit: 100 });
         setPatients(result.patients || []);
         setError(error.message || 'Failed to delete patient');
         throw error;

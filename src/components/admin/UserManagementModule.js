@@ -4,15 +4,17 @@ import {
   Users, UserPlus, Search, Filter, MoreVertical, Trash2, Edit,
   Eye, UserCheck, UserX, Download, RefreshCw, Calendar,
   Shield, Phone, Mail, Building, Award, Clock, Activity,
-  AlertCircle, CheckCircle, XCircle, Pause
+  AlertCircle, CheckCircle, XCircle, Pause, X, Stethoscope
 } from 'lucide-react';
-import { usersStorage } from '../../utils/usersStorage';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { permissionsStorage } from '../../utils/permissionsStorage';
 import { useAuth } from '../../contexts/AuthContext';
 import UserFormModal from '../modals/UserFormModal';
 import { usePermissions } from '../auth/PermissionGuard';
+import { useTranslation } from 'react-i18next';
 
 const UserManagementModule = () => {
+  const { t } = useTranslation('admin');
   const { user: currentUser } = useAuth();
   const { hasPermission } = usePermissions();
   const [users, setUsers] = useState([]);
@@ -34,6 +36,7 @@ const UserManagementModule = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -43,27 +46,74 @@ const UserManagementModule = () => {
     applyFiltersAndSort();
   }, [users, searchQuery, filters, sortField, sortDirection]);
 
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Fonction pour afficher une notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Initialiser les utilisateurs par défaut
-      usersStorage.initializeDefaultUsers();
-
-      // Charger les données
-      const usersData = usersStorage.getAll();
-      const stats = usersStorage.getStatistics();
+      // Charger les healthcare providers (utilisateurs de la clinique)
+      const data = await healthcareProvidersApi.getHealthcareProviders({ limit: 100 });
+      const usersData = data.providers || [];
 
       setUsers(usersData);
+
+      // Calculer les statistiques
+      const stats = {
+        total: usersData.length,
+        active: usersData.filter(u => u.isActive).length,
+        inactive: usersData.filter(u => !u.isActive).length,
+        admins: usersData.filter(u => u.role === 'admin').length,
+        practitioners: usersData.filter(u => u.role === 'practitioner').length
+      };
       setStatistics(stats);
     } catch (error) {
-      console.error('Erreur chargement données:', error);
+      console.error('[UserManagementModule] Error loading data:', error);
+      showNotification(t('users.messages.loadError') || 'Erreur lors du chargement des données', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
   const applyFiltersAndSort = () => {
-    let filtered = usersStorage.search(searchQuery, filters);
+    let filtered = [...users];
+
+    // Filtrage par recherche
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(user => {
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const role = (user.role || '').toLowerCase();
+
+        return fullName.includes(query) ||
+               email.includes(query) ||
+               role.includes(query);
+      });
+    }
+
+    // Filtrage par rôle
+    if (filters.role) {
+      filtered = filtered.filter(user => user.role === filters.role);
+    }
+
+    // Filtrage par statut actif
+    if (filters.isActive !== '') {
+      const isActiveFilter = filters.isActive === 'true';
+      filtered = filtered.filter(user => user.isActive === isActiveFilter);
+    }
 
     // Tri
     filtered.sort((a, b) => {
@@ -79,7 +129,7 @@ const UserManagementModule = () => {
       // Gestion des chaînes
       if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
+        bValue = (bValue || '').toLowerCase();
       }
 
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -114,29 +164,33 @@ const UserManagementModule = () => {
     try {
       if (editingUser) {
         // Modification
-        await usersStorage.update(editingUser.id, userData, currentUser.id);
+        await healthcareProvidersApi.updateHealthcareProvider(editingUser.id, userData);
+        showNotification(t('users.messages.updateSuccess') || 'Utilisateur mis à jour avec succès', 'success');
       } else {
         // Création
-        await usersStorage.create(userData, currentUser.id);
+        await healthcareProvidersApi.createHealthcareProvider(userData);
+        showNotification(t('users.messages.createSuccess') || 'Utilisateur créé avec succès', 'success');
       }
 
       await loadData();
       setShowUserModal(false);
     } catch (error) {
+      showNotification(error.message || t('users.messages.saveError') || 'Erreur lors de la sauvegarde', 'error');
       throw error;
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+    if (!window.confirm(t('users.messages.deleteConfirm') || 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
       return;
     }
 
     try {
-      await usersStorage.delete(userId, currentUser.id);
+      await healthcareProvidersApi.deleteHealthcareProvider(userId);
+      showNotification(t('users.messages.deleteSuccess') || 'Utilisateur supprimé avec succès', 'success');
       await loadData();
     } catch (error) {
-      alert('Erreur lors de la suppression: ' + error.message);
+      showNotification(error.message || t('users.messages.deleteError') || 'Erreur lors de la suppression', 'error');
     }
   };
 
@@ -144,43 +198,63 @@ const UserManagementModule = () => {
     try {
       const user = users.find(u => u.id === userId);
       if (user) {
-        await usersStorage.update(userId, { isActive: !user.isActive }, currentUser.id);
+        await healthcareProvidersApi.updateHealthcareProvider(userId, { isActive: !user.isActive });
+        showNotification(t('users.messages.statusUpdated') || 'Statut mis à jour', 'success');
         await loadData();
       }
     } catch (error) {
-      alert('Erreur lors de la modification: ' + error.message);
+      showNotification(error.message || t('users.messages.updateError') || 'Erreur lors de la modification', 'error');
     }
   };
 
   const handleBulkAction = async (action) => {
     if (selectedUsers.length === 0) return;
 
-    if (!window.confirm(`Êtes-vous sûr d'appliquer cette action à ${selectedUsers.length} utilisateur(s) ?`)) {
+    if (!window.confirm(t('users.messages.bulkConfirm', { count: selectedUsers.length }) || `Êtes-vous sûr d'appliquer cette action à ${selectedUsers.length} utilisateur(s) ?`)) {
       return;
     }
 
     try {
       for (const userId of selectedUsers) {
         if (action === 'activate') {
-          await usersStorage.update(userId, { isActive: true }, currentUser.id);
+          await healthcareProvidersApi.updateHealthcareProvider(userId, { isActive: true });
         } else if (action === 'deactivate') {
-          await usersStorage.update(userId, { isActive: false }, currentUser.id);
+          await healthcareProvidersApi.updateHealthcareProvider(userId, { isActive: false });
         } else if (action === 'delete') {
-          await usersStorage.delete(userId, currentUser.id);
+          await healthcareProvidersApi.deleteHealthcareProvider(userId);
         }
       }
 
       setSelectedUsers([]);
+      showNotification(t('users.messages.bulkSuccess') || 'Action groupée effectuée avec succès', 'success');
       await loadData();
     } catch (error) {
-      alert('Erreur lors de l\'action groupée: ' + error.message);
+      showNotification(error.message || t('users.messages.bulkError') || 'Erreur lors de l\'action groupée', 'error');
     }
   };
 
   const handleExport = () => {
     try {
-      const csvData = usersStorage.export('csv');
-      const blob = new Blob([csvData], { type: 'text/csv' });
+      // Créer le CSV à partir des utilisateurs filtrés
+      const headers = ['ID', 'Prénom', 'Nom', 'Email', 'Téléphone', 'Rôle', 'Profession', 'Statut', 'Créé le'];
+      const rows = filteredUsers.map(user => [
+        user.id,
+        user.firstName || '',
+        user.lastName || '',
+        user.email || '',
+        user.phone || '',
+        user.role || '',
+        user.profession || '',
+        user.isActive ? 'Actif' : 'Inactif',
+        user.createdAt ? new Date(user.createdAt).toLocaleDateString() : ''
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -189,8 +263,10 @@ const UserManagementModule = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+
+      showNotification(t('users.messages.exportSuccess') || 'Export réalisé avec succès', 'success');
     } catch (error) {
-      alert('Erreur lors de l\'export: ' + error.message);
+      showNotification(error.message || t('users.messages.exportError') || 'Erreur lors de l\'export', 'error');
     }
   };
 
@@ -312,22 +388,22 @@ const UserManagementModule = () => {
             </div>
           </div>
 
-          <div className="p-4 bg-orange-50 rounded-lg">
+          <div className="p-4 bg-purple-50 rounded-lg">
             <div className="flex items-center gap-3">
-              <Activity className="h-8 w-8 text-orange-600" />
+              <Shield className="h-8 w-8 text-purple-600" />
               <div>
-                <p className="text-sm text-orange-600">En ligne</p>
-                <p className="text-2xl font-bold text-orange-900">{statistics.onlineNow || 0}</p>
+                <p className="text-sm text-purple-600">Admins</p>
+                <p className="text-2xl font-bold text-purple-900">{statistics.admins || 0}</p>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-purple-50 rounded-lg">
+          <div className="p-4 bg-orange-50 rounded-lg">
             <div className="flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-purple-600" />
+              <Stethoscope className="h-8 w-8 text-orange-600" />
               <div>
-                <p className="text-sm text-purple-600">Connexions 7j</p>
-                <p className="text-2xl font-bold text-purple-900">{statistics.recentLogins || 0}</p>
+                <p className="text-sm text-orange-600">Praticiens</p>
+                <p className="text-2xl font-bold text-orange-900">{statistics.practitioners || 0}</p>
               </div>
             </div>
           </div>
@@ -666,6 +742,40 @@ const UserManagementModule = () => {
         user={editingUser}
         currentUser={currentUser}
       />
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-4 flex items-start gap-3 ${
+            notification.type === 'success'
+              ? 'bg-green-50 border-l-4 border-green-500'
+              : 'bg-red-50 border-l-4 border-red-500'
+          }`}>
+            <div className="flex-shrink-0">
+              {notification.type === 'success' ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-medium ${
+                notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {notification.message}
+              </p>
+            </div>
+            <button
+              onClick={() => setNotification(null)}
+              className={`flex-shrink-0 ${
+                notification.type === 'success' ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'
+              }`}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

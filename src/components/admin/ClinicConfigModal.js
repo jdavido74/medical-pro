@@ -1,7 +1,7 @@
 // components/admin/ClinicConfigModal.js - Modal de configuration de clinique
 import React, { useState, useEffect } from 'react';
-import { X, Clock, Calendar, Settings, Plus, Trash2 } from 'lucide-react';
-import { clinicConfigStorage } from '../../utils/clinicConfigStorage';
+import { X, Clock, Calendar, Settings, Plus, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import { clinicSettingsApi } from '../../api/clinicSettingsApi';
 import { useTranslation } from 'react-i18next';
 
 const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
@@ -9,65 +9,173 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
   const [config, setConfig] = useState(null);
   const [activeTab, setActiveTab] = useState('schedule');
   const [newClosedDate, setNewClosedDate] = useState({ date: '', reason: '', type: 'holiday' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
-      const currentConfig = clinicConfigStorage.getConfig();
-      setConfig(currentConfig);
+      loadConfig();
     }
   }, [isOpen]);
 
-  const handleSave = () => {
-    if (config) {
-      const savedConfig = clinicConfigStorage.saveConfig(config);
+  // Auto-hide notification after 3 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  const loadConfig = async () => {
+    try {
+      const clinicSettings = await clinicSettingsApi.getClinicSettings();
+      setConfig(clinicSettings);
+    } catch (error) {
+      console.error('[ClinicConfigModal] Error loading config:', error);
+      setNotification({ type: 'error', message: 'Erreur lors du chargement de la configuration' });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!config) return;
+
+    try {
+      setIsSaving(true);
+      setNotification(null);
+
+      const savedConfig = await clinicSettingsApi.updateClinicSettings(config);
+      setConfig(savedConfig);
       onSave?.(savedConfig);
-      onClose();
+
+      setNotification({ type: 'success', message: 'Configuration enregistrée avec succès' });
+      // Ne pas fermer le modal - rester sur l'onglet actif
+    } catch (error) {
+      console.error('[ClinicConfigModal] Error saving config:', error);
+      const errorMessage = error.details || error.message || 'Erreur lors de la sauvegarde';
+      setNotification({ type: 'error', message: errorMessage });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const updateOperatingHours = (day, field, value) => {
-    setConfig(prev => ({
-      ...prev,
-      operatingHours: {
-        ...prev.operatingHours,
-        [day]: {
-          ...prev.operatingHours[day],
-          [field]: value
-        }
+    setConfig(prev => {
+      const currentDayHours = prev.operatingHours?.[day] || { enabled: true, hasLunchBreak: false, start: '08:00', end: '18:00' };
+
+      // Gérer les champs imbriqués (morning.start, afternoon.end, etc.)
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        return {
+          ...prev,
+          operatingHours: {
+            ...(prev.operatingHours || {}),
+            [day]: {
+              ...currentDayHours,
+              [parent]: {
+                ...(currentDayHours[parent] || {}),
+                [child]: value
+              }
+            }
+          }
+        };
       }
-    }));
+
+      // Gérer le changement de hasLunchBreak
+      if (field === 'hasLunchBreak') {
+        const newDayHours = { ...currentDayHours, hasLunchBreak: value };
+
+        // Si on active la pause du midi, initialiser les horaires matin/après-midi
+        if (value) {
+          newDayHours.morning = currentDayHours.morning || {
+            start: currentDayHours.start || '08:00',
+            end: '12:00'
+          };
+          newDayHours.afternoon = currentDayHours.afternoon || {
+            start: '14:00',
+            end: currentDayHours.end || '18:00'
+          };
+          // Supprimer les champs start/end simples
+          delete newDayHours.start;
+          delete newDayHours.end;
+        } else {
+          // Si on désactive la pause, revenir à une seule plage
+          newDayHours.start = currentDayHours.morning?.start || currentDayHours.start || '08:00';
+          newDayHours.end = currentDayHours.afternoon?.end || currentDayHours.end || '18:00';
+          // Supprimer les objets morning/afternoon
+          delete newDayHours.morning;
+          delete newDayHours.afternoon;
+        }
+
+        return {
+          ...prev,
+          operatingHours: {
+            ...(prev.operatingHours || {}),
+            [day]: newDayHours
+          }
+        };
+      }
+
+      // Champs simples
+      return {
+        ...prev,
+        operatingHours: {
+          ...(prev.operatingHours || {}),
+          [day]: {
+            ...currentDayHours,
+            [field]: value
+          }
+        }
+      };
+    });
   };
 
   const updateSlotSettings = (field, value) => {
     setConfig(prev => ({
       ...prev,
       slotSettings: {
-        ...prev.slotSettings,
+        ...(prev.slotSettings || {}),
         [field]: value
       }
     }));
   };
 
-  const addClosedDate = () => {
-    if (newClosedDate.date && newClosedDate.reason) {
-      clinicConfigStorage.addClosedDate(newClosedDate.date, newClosedDate.reason, newClosedDate.type);
-      setConfig(clinicConfigStorage.getConfig());
+  const addClosedDate = async () => {
+    if (!newClosedDate.date || !newClosedDate.reason) return;
+
+    try {
+      await clinicSettingsApi.addClosedDate(newClosedDate.date, newClosedDate.reason, newClosedDate.type);
+      await loadConfig();
       setNewClosedDate({ date: '', reason: '', type: 'holiday' });
+      setNotification({ type: 'success', message: 'Jour de fermeture ajouté' });
+    } catch (error) {
+      console.error('[ClinicConfigModal] Error adding closed date:', error);
+      setNotification({ type: 'error', message: 'Erreur lors de l\'ajout du jour de fermeture' });
     }
   };
 
-  const removeClosedDate = (dateId) => {
-    clinicConfigStorage.removeClosedDate(dateId);
-    setConfig(clinicConfigStorage.getConfig());
+  const removeClosedDate = async (dateId) => {
+    try {
+      await clinicSettingsApi.removeClosedDate(dateId);
+      await loadConfig();
+      setNotification({ type: 'success', message: 'Jour de fermeture supprimé' });
+    } catch (error) {
+      console.error('[ClinicConfigModal] Error removing closed date:', error);
+      setNotification({ type: 'error', message: 'Erreur lors de la suppression' });
+    }
   };
 
   const toggleOperatingDay = (dayIndex) => {
-    setConfig(prev => ({
-      ...prev,
-      operatingDays: prev.operatingDays.includes(dayIndex)
-        ? prev.operatingDays.filter(d => d !== dayIndex)
-        : [...prev.operatingDays, dayIndex].sort()
-    }));
+    setConfig(prev => {
+      const currentDays = prev.operatingDays || [];
+      return {
+        ...prev,
+        operatingDays: currentDays.includes(dayIndex)
+          ? currentDays.filter(d => d !== dayIndex)
+          : [...currentDays, dayIndex].sort()
+      };
+    });
   };
 
   if (!isOpen || !config) return null;
@@ -90,6 +198,38 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+        {/* Notification */}
+        {notification && (
+          <div className="absolute top-4 right-4 z-50 animate-slide-in-right">
+            <div className={`rounded-lg shadow-lg p-4 flex items-center space-x-3 min-w-[320px] ${
+              notification.type === 'success'
+                ? 'bg-green-50 border-l-4 border-green-500'
+                : 'bg-red-50 border-l-4 border-red-500'
+            }`}>
+              {notification.type === 'success' ? (
+                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+              )}
+              <p className={`flex-1 text-sm font-medium ${
+                notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {notification.message}
+              </p>
+              <button
+                onClick={() => setNotification(null)}
+                className={`flex-shrink-0 ${
+                  notification.type === 'success'
+                    ? 'text-green-600 hover:text-green-800'
+                    : 'text-red-600 hover:text-red-800'
+                }`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700">
           <div className="flex items-center space-x-3">
@@ -149,7 +289,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                 <div className="grid grid-cols-7 gap-3">
                   {Object.entries(dayNames).map(([key, name]) => {
                     const dayNumber = dayNumbers[key];
-                    const isOpen = config.operatingDays.includes(dayNumber);
+                    const isOpen = config.operatingDays?.includes(dayNumber) ?? false;
                     return (
                       <button
                         key={key}
@@ -170,42 +310,110 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Horaires par jour</h3>
                 <div className="space-y-4">
-                  {Object.entries(dayNames).map(([key, name]) => (
-                    <div key={key} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                      <div className="w-24 font-medium text-gray-700">{name}</div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={config.operatingHours[key].enabled}
-                          onChange={(e) => updateOperatingHours(key, 'enabled', e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-600">Ouvert</span>
+                  {Object.entries(dayNames).map(([key, name]) => {
+                    const dayNumber = dayNumbers[key];
+                    const isDayOpen = config.operatingDays?.includes(dayNumber) ?? false;
+
+                    // Ne pas afficher la configuration des horaires si le jour est fermé
+                    if (!isDayOpen) {
+                      return (
+                        <div key={key} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                          <div className="w-24 font-medium text-gray-500">{name}</div>
+                          <span className="text-sm text-gray-500 italic">Jour fermé</span>
+                        </div>
+                      );
+                    }
+
+                    const dayHours = config.operatingHours?.[key] || {};
+                    const hasLunchBreak = dayHours.hasLunchBreak ?? false;
+
+                    return (
+                      <div key={key} className="p-4 border border-gray-200 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="w-24 font-medium text-gray-700">{name}</div>
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={hasLunchBreak}
+                              onChange={(e) => updateOperatingHours(key, 'hasLunchBreak', e.target.checked)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-600">Pause du midi</span>
+                          </label>
+                        </div>
+
+                        {hasLunchBreak ? (
+                          // Deux tranches horaires : matin et après-midi
+                          <div className="space-y-2 pl-6">
+                            <div className="flex items-center space-x-4">
+                              <span className="text-xs font-medium text-gray-500 w-20">Matin:</span>
+                              <div className="flex items-center space-x-2">
+                                <label className="text-sm text-gray-600">De:</label>
+                                <input
+                                  type="time"
+                                  value={dayHours.morning?.start || '08:00'}
+                                  onChange={(e) => updateOperatingHours(key, 'morning.start', e.target.value)}
+                                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <label className="text-sm text-gray-600">À:</label>
+                                <input
+                                  type="time"
+                                  value={dayHours.morning?.end || '12:00'}
+                                  onChange={(e) => updateOperatingHours(key, 'morning.end', e.target.value)}
+                                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <span className="text-xs font-medium text-gray-500 w-20">Après-midi:</span>
+                              <div className="flex items-center space-x-2">
+                                <label className="text-sm text-gray-600">De:</label>
+                                <input
+                                  type="time"
+                                  value={dayHours.afternoon?.start || '14:00'}
+                                  onChange={(e) => updateOperatingHours(key, 'afternoon.start', e.target.value)}
+                                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <label className="text-sm text-gray-600">À:</label>
+                                <input
+                                  type="time"
+                                  value={dayHours.afternoon?.end || '18:00'}
+                                  onChange={(e) => updateOperatingHours(key, 'afternoon.end', e.target.value)}
+                                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // Une seule tranche horaire
+                          <div className="flex items-center space-x-4 pl-6">
+                            <div className="flex items-center space-x-2">
+                              <label className="text-sm text-gray-600">De:</label>
+                              <input
+                                type="time"
+                                value={dayHours.start || '08:00'}
+                                onChange={(e) => updateOperatingHours(key, 'start', e.target.value)}
+                                className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <label className="text-sm text-gray-600">À:</label>
+                              <input
+                                type="time"
+                                value={dayHours.end || '18:00'}
+                                onChange={(e) => updateOperatingHours(key, 'end', e.target.value)}
+                                className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {config.operatingHours[key].enabled && (
-                        <>
-                          <div className="flex items-center space-x-2">
-                            <label className="text-sm text-gray-600">De:</label>
-                            <input
-                              type="time"
-                              value={config.operatingHours[key].start}
-                              onChange={(e) => updateOperatingHours(key, 'start', e.target.value)}
-                              className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <label className="text-sm text-gray-600">À:</label>
-                            <input
-                              type="time"
-                              value={config.operatingHours[key].end}
-                              onChange={(e) => updateOperatingHours(key, 'end', e.target.value)}
-                              className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -221,11 +429,11 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       Durée par défaut (minutes)
                     </label>
                     <select
-                      value={config.slotSettings.defaultDuration}
+                      value={config.slotSettings?.defaultDuration || 30}
                       onChange={(e) => updateSlotSettings('defaultDuration', parseInt(e.target.value))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      {config.slotSettings.availableDurations.map(duration => (
+                      {(config.slotSettings?.availableDurations || [15, 20, 30, 45, 60, 90, 120]).map(duration => (
                         <option key={duration} value={duration}>{duration} minutes</option>
                       ))}
                     </select>
@@ -239,7 +447,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       type="number"
                       min="0"
                       max="30"
-                      value={config.slotSettings.bufferTime}
+                      value={config.slotSettings?.bufferTime || 5}
                       onChange={(e) => updateSlotSettings('bufferTime', parseInt(e.target.value))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
@@ -253,7 +461,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       type="number"
                       min="1"
                       max="365"
-                      value={config.slotSettings.maxAdvanceBooking}
+                      value={config.slotSettings?.maxAdvanceBooking || 90}
                       onChange={(e) => updateSlotSettings('maxAdvanceBooking', parseInt(e.target.value))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
@@ -267,7 +475,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       type="number"
                       min="0"
                       max="72"
-                      value={config.slotSettings.minAdvanceBooking}
+                      value={config.slotSettings?.minAdvanceBooking || 1}
                       onChange={(e) => updateSlotSettings('minAdvanceBooking', parseInt(e.target.value))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
@@ -278,7 +486,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      checked={config.slotSettings.allowWeekendBooking}
+                      checked={config.slotSettings?.allowWeekendBooking ?? false}
                       onChange={(e) => updateSlotSettings('allowWeekendBooking', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
@@ -379,15 +587,27 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            disabled={isSaving}
+            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Annuler
+            Fermer
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isSaving || !config}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
-            Sauvegarder
+            {isSaving ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Enregistrement...
+              </>
+            ) : (
+              'Sauvegarder'
+            )}
           </button>
         </div>
       </div>

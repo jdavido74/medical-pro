@@ -35,7 +35,7 @@ export const AppointmentProvider = ({ children }) => {
         setError(null);
 
         if (user) {
-          const result = await appointmentsApi.getAppointments({ page: 1, limit: 1000 });
+          const result = await appointmentsApi.getAppointments({ page: 1, limit: 100 });
           setAppointments(result.appointments || []);
         }
         setIsInitialized(true);
@@ -145,7 +145,7 @@ export const AppointmentProvider = ({ children }) => {
       } catch (error) {
         console.error('[AppointmentContext] Error deleting appointment:', error);
         // Rollback en cas d'erreur - recharger les rendez-vous
-        const result = await appointmentsApi.getAppointments({ page: 1, limit: 1000 });
+        const result = await appointmentsApi.getAppointments({ page: 1, limit: 100 });
         setAppointments(result.appointments || []);
         setError(error.message || 'Failed to delete appointment');
         throw error;

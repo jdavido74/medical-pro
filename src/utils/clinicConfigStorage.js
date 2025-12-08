@@ -15,13 +15,48 @@ const DEFAULT_CLINIC_CONFIG = {
 
   // Horaires généraux de la clinique
   operatingHours: {
-    monday: { enabled: true, start: '08:00', end: '18:00' },
-    tuesday: { enabled: true, start: '08:00', end: '18:00' },
-    wednesday: { enabled: true, start: '08:00', end: '18:00' },
-    thursday: { enabled: true, start: '08:00', end: '18:00' },
-    friday: { enabled: true, start: '08:00', end: '17:00' },
-    saturday: { enabled: false, start: '09:00', end: '13:00' },
-    sunday: { enabled: false, start: '09:00', end: '13:00' }
+    monday: {
+      enabled: true,
+      hasLunchBreak: true,
+      morning: { start: '08:00', end: '12:00' },
+      afternoon: { start: '14:00', end: '18:00' }
+    },
+    tuesday: {
+      enabled: true,
+      hasLunchBreak: true,
+      morning: { start: '08:00', end: '12:00' },
+      afternoon: { start: '14:00', end: '18:00' }
+    },
+    wednesday: {
+      enabled: true,
+      hasLunchBreak: true,
+      morning: { start: '08:00', end: '12:00' },
+      afternoon: { start: '14:00', end: '18:00' }
+    },
+    thursday: {
+      enabled: true,
+      hasLunchBreak: true,
+      morning: { start: '08:00', end: '12:00' },
+      afternoon: { start: '14:00', end: '18:00' }
+    },
+    friday: {
+      enabled: true,
+      hasLunchBreak: true,
+      morning: { start: '08:00', end: '12:00' },
+      afternoon: { start: '14:00', end: '17:00' }
+    },
+    saturday: {
+      enabled: false,
+      hasLunchBreak: false,
+      start: '09:00',
+      end: '13:00'
+    },
+    sunday: {
+      enabled: false,
+      hasLunchBreak: false,
+      start: '09:00',
+      end: '13:00'
+    }
   },
 
   // Configuration des créneaux
@@ -137,11 +172,28 @@ export const clinicConfigStorage = {
     // Vérifier l'heure
     if (time) {
       const timeMinutes = timeToMinutes(time);
-      const startMinutes = timeToMinutes(dayHours.start);
-      const endMinutes = timeToMinutes(dayHours.end);
 
-      if (timeMinutes < startMinutes || timeMinutes > endMinutes) {
-        return false;
+      if (dayHours.hasLunchBreak) {
+        // Vérifier si l'heure est dans la plage du matin ou de l'après-midi
+        const morningStart = timeToMinutes(dayHours.morning.start);
+        const morningEnd = timeToMinutes(dayHours.morning.end);
+        const afternoonStart = timeToMinutes(dayHours.afternoon.start);
+        const afternoonEnd = timeToMinutes(dayHours.afternoon.end);
+
+        const isInMorning = timeMinutes >= morningStart && timeMinutes <= morningEnd;
+        const isInAfternoon = timeMinutes >= afternoonStart && timeMinutes <= afternoonEnd;
+
+        if (!isInMorning && !isInAfternoon) {
+          return false;
+        }
+      } else {
+        // Pas de pause, une seule plage horaire
+        const startMinutes = timeToMinutes(dayHours.start);
+        const endMinutes = timeToMinutes(dayHours.end);
+
+        if (timeMinutes < startMinutes || timeMinutes > endMinutes) {
+          return false;
+        }
       }
     }
 
@@ -166,19 +218,56 @@ export const clinicConfigStorage = {
     const dayHours = config.operatingHours[dayName];
 
     const slots = [];
-    const startMinutes = timeToMinutes(dayHours.start);
-    const endMinutes = timeToMinutes(dayHours.end);
     const slotDuration = config.slotSettings.defaultDuration;
     const bufferTime = config.slotSettings.bufferTime;
 
-    for (let minutes = startMinutes; minutes < endMinutes; minutes += slotDuration + bufferTime) {
-      const slotEnd = minutes + slotDuration;
-      if (slotEnd <= endMinutes) {
-        slots.push({
-          start: minutesToTime(minutes),
-          end: minutesToTime(slotEnd),
-          duration: slotDuration
-        });
+    if (dayHours.hasLunchBreak) {
+      // Générer les créneaux du matin
+      const morningStart = timeToMinutes(dayHours.morning.start);
+      const morningEnd = timeToMinutes(dayHours.morning.end);
+
+      for (let minutes = morningStart; minutes < morningEnd; minutes += slotDuration + bufferTime) {
+        const slotEnd = minutes + slotDuration;
+        if (slotEnd <= morningEnd) {
+          slots.push({
+            start: minutesToTime(minutes),
+            end: minutesToTime(slotEnd),
+            duration: slotDuration,
+            period: 'morning'
+          });
+        }
+      }
+
+      // Générer les créneaux de l'après-midi
+      const afternoonStart = timeToMinutes(dayHours.afternoon.start);
+      const afternoonEnd = timeToMinutes(dayHours.afternoon.end);
+
+      for (let minutes = afternoonStart; minutes < afternoonEnd; minutes += slotDuration + bufferTime) {
+        const slotEnd = minutes + slotDuration;
+        if (slotEnd <= afternoonEnd) {
+          slots.push({
+            start: minutesToTime(minutes),
+            end: minutesToTime(slotEnd),
+            duration: slotDuration,
+            period: 'afternoon'
+          });
+        }
+      }
+    } else {
+      // Pas de pause, une seule plage horaire
+      const startMinutes = timeToMinutes(dayHours.start);
+      const endMinutes = timeToMinutes(dayHours.end);
+
+      for (let minutes = startMinutes; minutes < endMinutes; minutes += slotDuration + bufferTime) {
+        const slotEnd = minutes + slotDuration;
+        if (slotEnd <= endMinutes) {
+          slots.push({
+            start: minutesToTime(minutes),
+            end: minutesToTime(slotEnd),
+            duration: slotDuration,
+            period: 'full'
+          });
+        }
       }
     }
 

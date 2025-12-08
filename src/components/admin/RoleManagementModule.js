@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Shield, Plus, Search, Filter, Eye, Edit2, Trash2, Users,
   CheckCircle, XCircle, AlertTriangle, Settings, BarChart3,
-  Crown, Lock, Unlock, Copy, Download, Upload
+  Crown, Lock, Unlock, Copy, Download, Upload, AlertCircle, X
 } from 'lucide-react';
 import {
   permissionsStorage,
@@ -11,10 +11,13 @@ import {
   PERMISSION_CATEGORIES,
   DEFAULT_ROLES
 } from '../../utils/permissionsStorage';
+import { clinicRolesApi } from '../../api/clinicRolesApi';
 import { useAuth } from '../../contexts/AuthContext';
 import PermissionGuard from '../auth/PermissionGuard';
+import { useTranslation } from 'react-i18next';
 
 const RoleManagementModule = () => {
+  const { t } = useTranslation('admin');
   const { user } = useAuth();
   const [roles, setRoles] = useState([]);
   const [filteredRoles, setFilteredRoles] = useState([]);
@@ -25,18 +28,49 @@ const RoleManagementModule = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [stats, setStats] = useState({});
   const [activeTab, setActiveTab] = useState('roles');
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Fonction pour afficher une notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+  };
 
   // Charger les rôles
-  const loadRoles = () => {
-    const allRoles = permissionsStorage.getRoles();
-    setRoles(allRoles);
-    setFilteredRoles(allRoles);
-    setStats(permissionsStorage.getStatistics());
+  const loadRoles = async () => {
+    setIsLoading(true);
+    try {
+      const data = await clinicRolesApi.getClinicRoles({ limit: 100 });
+      const allRoles = data.roles || [];
+      setRoles(allRoles);
+      setFilteredRoles(allRoles);
+
+      // Calculer les statistiques
+      const stats = {
+        totalRoles: allRoles.length,
+        systemRoles: allRoles.filter(r => r.isSystemRole).length,
+        customRoles: allRoles.filter(r => !r.isSystemRole).length
+      };
+      setStats(stats);
+    } catch (error) {
+      console.error('[RoleManagementModule] Error loading roles:', error);
+      showNotification(t('roles.messages.loadError') || 'Erreur lors du chargement des rôles', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    // Initialiser les rôles par défaut
-    permissionsStorage.initializeDefaultRoles();
     loadRoles();
   }, []);
 
@@ -109,7 +143,7 @@ const RoleManagementModule = () => {
       }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
 
       try {
@@ -123,15 +157,17 @@ const RoleManagementModule = () => {
         };
 
         if (isEditMode && selectedRole) {
-          permissionsStorage.updateRole(selectedRole.id, roleData);
+          await clinicRolesApi.updateClinicRole(selectedRole.id, roleData);
+          showNotification(t('roles.messages.updateSuccess') || 'Rôle mis à jour avec succès', 'success');
         } else {
-          permissionsStorage.createRole(roleData);
+          await clinicRolesApi.createClinicRole(roleData);
+          showNotification(t('roles.messages.createSuccess') || 'Rôle créé avec succès', 'success');
         }
 
-        loadRoles();
+        await loadRoles();
         handleCloseModal();
       } catch (error) {
-        alert('Erreur : ' + error.message);
+        showNotification(error.message || t('roles.messages.saveError') || 'Erreur lors de la sauvegarde', 'error');
       }
     };
 
@@ -276,14 +312,17 @@ const RoleManagementModule = () => {
     );
   };
 
-  const handleDeleteRole = (role) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer le rôle "${role.name}" ?`)) {
-      try {
-        permissionsStorage.deleteRole(role.id);
-        loadRoles();
-      } catch (error) {
-        alert('Erreur : ' + error.message);
-      }
+  const handleDeleteRole = async (role) => {
+    if (!window.confirm(t('roles.messages.deleteConfirm', { name: role.name }) || `Êtes-vous sûr de vouloir supprimer le rôle "${role.name}" ?`)) {
+      return;
+    }
+
+    try {
+      await clinicRolesApi.deleteClinicRole(role.id);
+      showNotification(t('roles.messages.deleteSuccess') || 'Rôle supprimé avec succès', 'success');
+      await loadRoles();
+    } catch (error) {
+      showNotification(error.message || t('roles.messages.deleteError') || 'Erreur lors de la suppression', 'error');
     }
   };
 
@@ -632,6 +671,40 @@ const RoleManagementModule = () => {
 
         {/* Modal de formulaire */}
         <RoleFormModal />
+
+        {/* Notification Toast */}
+        {notification && (
+          <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+            <div className={`rounded-lg shadow-lg p-4 flex items-start gap-3 ${
+              notification.type === 'success'
+                ? 'bg-green-50 border-l-4 border-green-500'
+                : 'bg-red-50 border-l-4 border-red-500'
+            }`}>
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p className={`text-sm font-medium ${
+                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className={`flex-shrink-0 ${
+                  notification.type === 'success' ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'
+                }`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </PermissionGuard>
   );
