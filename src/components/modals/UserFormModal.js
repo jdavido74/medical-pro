@@ -3,6 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, Building, Award, Shield, Settings, Eye, EyeOff } from 'lucide-react';
 import { permissionsStorage } from '../../utils/permissionsStorage';
 import { usersStorage } from '../../utils/usersStorage';
+import { useFormErrors } from '../../hooks/useFormErrors';
+import { TextField, SelectField, CheckboxField } from '../common/FormField';
+import ErrorMessage from '../common/ErrorMessage';
+import { validateInternationalPhone } from '../../utils/errorHandler';
 
 const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +34,16 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
     }
   });
 
-  const [errors, setErrors] = useState({});
+  const {
+    errors,
+    generalError,
+    setFieldError,
+    clearFieldError,
+    clearErrors,
+    handleBackendError,
+    getFieldError
+  } = useFormErrors();
+
   const [isLoading, setIsLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [availableRoles, setAvailableRoles] = useState([]);
@@ -150,48 +163,49 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
         });
       }
 
-      setErrors({});
+      clearErrors();
       setShowAdvanced(false);
     }
-  }, [isOpen, user, currentUser]);
+  }, [isOpen, user, currentUser, clearErrors]);
 
   const validateForm = () => {
-    const newErrors = {};
+    clearErrors();
+    let isValid = true;
 
     // Email requis et format
     if (!formData.email.trim()) {
-      newErrors.email = 'Email requis';
+      setFieldError('email', 'Email requis');
+      isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Format email invalide';
+      setFieldError('email', 'Format email invalide');
+      isValid = false;
     }
 
     // Prénom requis
     if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Prénom requis';
+      setFieldError('firstName', 'Prénom requis');
+      isValid = false;
     }
 
     // Nom requis
     if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Nom requis';
+      setFieldError('lastName', 'Nom requis');
+      isValid = false;
     }
 
-    // Téléphone format si fourni
-    if (formData.phone && !/^(\+33|0)[1-9]([0-9]{8})$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Format téléphone invalide';
+    // Téléphone format international (France, Espagne, autres pays)
+    if (formData.phone && !validateInternationalPhone(formData.phone)) {
+      setFieldError('phone', 'Format téléphone invalide (8-15 chiffres attendus)');
+      isValid = false;
     }
 
     // Rôle requis
     if (!formData.role) {
-      newErrors.role = 'Rôle requis';
+      setFieldError('role', 'Rôle requis');
+      isValid = false;
     }
 
-    // License pour certains rôles
-    if (['doctor', 'specialist', 'nurse'].includes(formData.role) && !formData.licenseNumber.trim()) {
-      newErrors.licenseNumber = 'Numéro de licence requis pour ce rôle';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
@@ -202,9 +216,11 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
     setIsLoading(true);
     try {
       await onSave(formData);
+      clearErrors();
       onClose();
     } catch (error) {
-      setErrors({ submit: error.message });
+      console.error('[UserFormModal] Error saving user:', error);
+      handleBackendError(error);
     } finally {
       setIsLoading(false);
     }
@@ -217,13 +233,7 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
     }));
 
     // Effacer l'erreur du champ modifié
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
+    clearFieldError(field);
   };
 
   const handleNestedInputChange = (path, value) => {
@@ -286,111 +296,75 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Erreur générale */}
-            {errors.submit && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{errors.submit}</p>
-              </div>
+            {generalError && (
+              <ErrorMessage
+                message={generalError.message}
+                details={generalError.details}
+                type={generalError.type === 'validation' ? 'validation' : 'error'}
+              />
             )}
 
             {/* Informations de base */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Mail className="inline h-4 w-4 mr-1" />
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="utilisateur@medicalpro.com"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
+              <TextField
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                error={getFieldError('email')}
+                required
+                icon={Mail}
+                placeholder="utilisateur@medicalpro.com"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Phone className="inline h-4 w-4 mr-1" />
-                  Téléphone
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.phone ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="+33 1 23 45 67 89"
-                />
-                {errors.phone && (
-                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                )}
-              </div>
+              <TextField
+                label="Téléphone"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                error={getFieldError('phone')}
+                icon={Phone}
+                placeholder="+33 6 12 34 56 78 ou +34 612 345 678"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prénom *
-                </label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.firstName ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Prénom"
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-                )}
-              </div>
+              <TextField
+                label="Prénom"
+                name="firstName"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange('firstName', e.target.value)}
+                error={getFieldError('firstName')}
+                required
+                placeholder="Prénom"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom *
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.lastName ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Nom"
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </div>
+              <TextField
+                label="Nom"
+                name="lastName"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                error={getFieldError('lastName')}
+                required
+                placeholder="Nom"
+              />
             </div>
 
             {/* Rôle et permissions */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Shield className="inline h-4 w-4 mr-1" />
-                Rôle *
-              </label>
-              <select
+              <SelectField
+                label="Rôle"
+                name="role"
                 value={formData.role}
                 onChange={(e) => handleInputChange('role', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.role ? 'border-red-300' : 'border-gray-300'
-                }`}
-              >
-                {availableRoles.map(role => (
-                  <option key={role.id} value={role.id}>
-                    {role.name} (Niveau {role.level})
-                  </option>
-                ))}
-              </select>
-              {errors.role && (
-                <p className="mt-1 text-sm text-red-600">{errors.role}</p>
-              )}
+                error={getFieldError('role')}
+                required
+                icon={Shield}
+                options={availableRoles.map(role => ({
+                  value: role.id,
+                  label: `${role.name} (Niveau ${role.level})`
+                }))}
+              />
               {formData.role && (
                 <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                   <span className={`font-medium ${getRoleColor(formData.role)}`}>
@@ -402,79 +376,52 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
 
             {/* Département et spécialité */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Building className="inline h-4 w-4 mr-1" />
-                  Département
-                </label>
-                <select
-                  value={formData.department}
-                  onChange={(e) => {
-                    handleInputChange('department', e.target.value);
-                    handleInputChange('speciality', ''); // Reset speciality
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Sélectionner un département</option>
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                label="Département"
+                name="department"
+                value={formData.department}
+                onChange={(e) => {
+                  handleInputChange('department', e.target.value);
+                  handleInputChange('speciality', ''); // Reset speciality
+                }}
+                icon={Building}
+                placeholder="Sélectionner un département"
+                options={departments.map(dept => ({ value: dept, label: dept }))}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Award className="inline h-4 w-4 mr-1" />
-                  Spécialité
-                </label>
-                <select
-                  value={formData.speciality}
-                  onChange={(e) => handleInputChange('speciality', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  disabled={!formData.department}
-                >
-                  <option value="">Sélectionner une spécialité</option>
-                  {getAvailableSpecialities().map(spec => (
-                    <option key={spec} value={spec}>{spec}</option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                label="Spécialité"
+                name="speciality"
+                value={formData.speciality}
+                onChange={(e) => handleInputChange('speciality', e.target.value)}
+                icon={Award}
+                placeholder="Sélectionner une spécialité"
+                disabled={!formData.department}
+                options={getAvailableSpecialities().map(spec => ({ value: spec, label: spec }))}
+              />
             </div>
 
-            {/* Numéro de licence */}
-            {['doctor', 'specialist', 'nurse'].includes(formData.role) && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Numéro de licence/ordre *
-                </label>
-                <input
-                  type="text"
-                  value={formData.licenseNumber}
-                  onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.licenseNumber ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Ex: RPL001234 pour médecin, IDE5678 pour infirmier"
-                />
-                {errors.licenseNumber && (
-                  <p className="mt-1 text-sm text-red-600">{errors.licenseNumber}</p>
-                )}
-              </div>
-            )}
+            {/* Numéro de licence (optionnel) */}
+            <TextField
+              label="Numéro de licence/ordre (optionnel)"
+              name="licenseNumber"
+              value={formData.licenseNumber}
+              onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
+              error={getFieldError('licenseNumber')}
+              icon={Award}
+              placeholder="Ex: RPPS, ADELI, numéro d'ordre..."
+            />
+            <p className="-mt-4 ml-1 text-xs text-gray-500">
+              RPPS pour médecin, ADELI pour infirmier, numéro d'ordre, etc.
+            </p>
 
             {/* Statut actif */}
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                Compte actif
-              </label>
-            </div>
+            <CheckboxField
+              label="Compte actif"
+              name="isActive"
+              checked={formData.isActive}
+              onChange={(e) => handleInputChange('isActive', e.target.checked)}
+            />
 
             {/* Paramètres avancés */}
             <div>
