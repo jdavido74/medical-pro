@@ -1,47 +1,93 @@
 // components/medical/MedicalRecordForm.js
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
 import {
   FileText, Activity, Heart, AlertTriangle, Plus, X, Save,
   Stethoscope, Thermometer, Scale, Ruler, Droplets, Clock,
-  Pill, CheckCircle, Trash2
+  Pill, CheckCircle, Trash2, User, Search, Check, Loader2,
+  FileSignature, Eye, Printer, Settings, Edit3
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { medicalRecordsStorage } from '../../utils/medicalRecordsStorage';
+import { medicalRecordsApi } from '../../api/medicalRecordsApi';
+import { prescriptionsApi } from '../../api/prescriptionsApi';
+import PrescriptionPreview from './PrescriptionPreview';
 
-const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, onCancel }, ref) => {
+// Accept both single patient or patients array, and both onSave/onSubmit, existingRecord/initialData
+const MedicalRecordForm = forwardRef(({
+  patient,
+  patients = [],
+  existingRecord = null,
+  initialData = null,
+  lastRecord = null, // Dernier dossier du patient pour pré-remplir
+  onSave,
+  onSubmit,
+  onCancel,
+  onClose,
+  isOpen
+}, ref) => {
   const { user } = useAuth();
 
+  // Normalize props - support both naming conventions
+  const record = existingRecord || initialData;
+  const handleSaveCallback = onSave || onSubmit;
+  const handleClose = onCancel || onClose;
+
+  // State for patient selection when no patient is pre-selected
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+
+  // Save state
+  const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, saved, error
+  const [currentRecordId, setCurrentRecordId] = useState(record?.id || null);
+
+  // Get the actual patient (either from prop or from selected)
+  const getPatientId = () => {
+    if (patient?.id) return patient.id;
+    if (record?.patientId) return record.patientId;
+    return selectedPatientId;
+  };
+
+  // Filter patients for search
+  const filteredPatients = patients.filter(p => {
+    if (!patientSearchQuery) return true;
+    const fullName = `${p.firstName} ${p.lastName}`.toLowerCase();
+    return fullName.includes(patientSearchQuery.toLowerCase());
+  });
+
   // Fonction pour sécuriser les données et éviter les erreurs undefined
-  const ensureFormDataStructure = (data) => {
+  // previousRecord permet de pré-remplir les données persistantes du patient
+  const ensureFormDataStructure = (data, previousRecord = null) => {
+    // Données du dossier précédent à reprendre (antécédents, groupe sanguin, allergies, conditions chroniques)
+    const prev = previousRecord || lastRecord;
+
     return {
-      patientId: data?.patientId || patient?.id || '',
+      patientId: data?.patientId || patient?.id || selectedPatientId || '',
       practitionerId: data?.practitionerId || user?.id || '',
       type: data?.type || 'consultation',
 
-      // Antécédents sécurisés
+      // Antécédents - repris du dossier précédent si disponible
       antecedents: {
         personal: {
-          medicalHistory: data?.antecedents?.personal?.medicalHistory || [],
-          surgicalHistory: data?.antecedents?.personal?.surgicalHistory || [],
-          allergies: data?.antecedents?.personal?.allergies || [],
+          medicalHistory: data?.antecedents?.personal?.medicalHistory || prev?.antecedents?.personal?.medicalHistory || [],
+          surgicalHistory: data?.antecedents?.personal?.surgicalHistory || prev?.antecedents?.personal?.surgicalHistory || [],
+          allergies: data?.antecedents?.personal?.allergies || prev?.antecedents?.personal?.allergies || [],
           habits: {
-            smoking: data?.antecedents?.personal?.habits?.smoking || { status: 'never', details: '' },
-            alcohol: data?.antecedents?.personal?.habits?.alcohol || { status: 'never', details: '' },
-            exercise: data?.antecedents?.personal?.habits?.exercise || { status: 'never', details: '' }
+            smoking: data?.antecedents?.personal?.habits?.smoking || prev?.antecedents?.personal?.habits?.smoking || { status: 'never', details: '' },
+            alcohol: data?.antecedents?.personal?.habits?.alcohol || prev?.antecedents?.personal?.habits?.alcohol || { status: 'never', details: '' },
+            exercise: data?.antecedents?.personal?.habits?.exercise || prev?.antecedents?.personal?.habits?.exercise || { status: 'never', details: '' }
           }
         },
         family: {
-          father: data?.antecedents?.family?.father || '',
-          mother: data?.antecedents?.family?.mother || '',
-          siblings: data?.antecedents?.family?.siblings || '',
-          children: data?.antecedents?.family?.children || ''
+          father: data?.antecedents?.family?.father || prev?.antecedents?.family?.father || '',
+          mother: data?.antecedents?.family?.mother || prev?.antecedents?.family?.mother || '',
+          siblings: data?.antecedents?.family?.siblings || prev?.antecedents?.family?.siblings || '',
+          children: data?.antecedents?.family?.children || prev?.antecedents?.family?.children || ''
         }
       },
 
-      // Signes vitaux sécurisés
+      // Signes vitaux - repris comme référence mais modifiables
       vitalSigns: {
-        weight: data?.vitalSigns?.weight || '',
-        height: data?.vitalSigns?.height || '',
+        weight: data?.vitalSigns?.weight || prev?.vitalSigns?.weight || '',
+        height: data?.vitalSigns?.height || prev?.vitalSigns?.height || '',
         bmi: data?.vitalSigns?.bmi || '',
         bloodPressure: {
           systolic: data?.vitalSigns?.bloodPressure?.systolic || '',
@@ -53,27 +99,28 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
         oxygenSaturation: data?.vitalSigns?.oxygenSaturation || ''
       },
 
-      bloodType: data?.bloodType || '',
-      allergies: data?.allergies || [],
+      // Données persistantes du patient - repris du dossier précédent
+      bloodType: data?.bloodType || prev?.bloodType || '',
+      allergies: data?.allergies || prev?.allergies || [],
+      chronicConditions: data?.chronicConditions || prev?.chronicConditions || [],
 
-      // Diagnostics sécurisés
+      // Diagnostics - nouveau à chaque visite
       diagnosis: {
         primary: data?.diagnosis?.primary || '',
         secondary: data?.diagnosis?.secondary || [],
         icd10: data?.diagnosis?.icd10 || []
       },
 
-      chronicConditions: data?.chronicConditions || [],
       treatments: data?.treatments || [],
 
-      // Informations basiques sécurisées
+      // Informations basiques - nouveau à chaque visite
       basicInfo: {
         chiefComplaint: data?.basicInfo?.chiefComplaint || '',
         symptoms: data?.basicInfo?.symptoms || [],
         duration: data?.basicInfo?.duration || ''
       },
 
-      // Examen physique sécurisé
+      // Examen physique - nouveau à chaque visite
       physicalExam: {
         general: data?.physicalExam?.general || '',
         cardiovascular: data?.physicalExam?.cardiovascular || '',
@@ -83,12 +130,15 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
         other: data?.physicalExam?.other || ''
       },
 
-      // Plan de traitement sécurisé
+      // Plan de traitement - nouveau à chaque visite
       treatmentPlan: {
         recommendations: data?.treatmentPlan?.recommendations || [],
         followUp: data?.treatmentPlan?.followUp || '',
         tests: data?.treatmentPlan?.tests || []
-      }
+      },
+
+      // Référence aux dernières valeurs vitales pour comparaison
+      _previousVitalSigns: prev?.vitalSigns || null
     };
   };
 
@@ -173,12 +223,52 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
   const [medicationWarnings, setMedicationWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Prescription (Ordonnance) state
+  const [prescriptionData, setPrescriptionData] = useState({
+    medications: [],
+    instructions: '',
+    additionalNotes: '',
+    validUntil: '',
+    renewable: false,
+    renewalsRemaining: 0
+  });
+  // Options pour configurer ce qui est inclus dans l'ordonnance
+  const [prescriptionOptions, setPrescriptionOptions] = useState({
+    includeVitalSigns: true,
+    includeDiagnosis: true,
+    includeFromTreatments: false,  // Copier depuis l'onglet Traitements
+    includeFromPlan: false          // Copier depuis l'onglet Plan
+  });
+  const [showPrescriptionPreview, setShowPrescriptionPreview] = useState(false);
+  const [currentPrescription, setCurrentPrescription] = useState(null);
+  const [prescriptionSaveStatus, setPrescriptionSaveStatus] = useState('idle');
+  // Liste des ordonnances créées pour ce dossier
+  const [savedPrescriptions, setSavedPrescriptions] = useState([]);
+  const [editingPrescriptionIndex, setEditingPrescriptionIndex] = useState(null);
+
   // Cargar données existantes si modification
   useEffect(() => {
     if (existingRecord) {
       setFormData(ensureFormDataStructure(existingRecord));
     }
   }, [existingRecord]); // ensureFormDataStructure ne change pas car définie dans le composant
+
+  // Charger les ordonnances existantes pour ce dossier médical
+  useEffect(() => {
+    const loadExistingPrescriptions = async () => {
+      if (existingRecord?.id) {
+        try {
+          const prescriptions = await prescriptionsApi.getMedicalRecordPrescriptions(existingRecord.id);
+          if (prescriptions && prescriptions.length > 0) {
+            setSavedPrescriptions(prescriptions);
+          }
+        } catch (error) {
+          console.error('Error loading prescriptions:', error);
+        }
+      }
+    };
+    loadExistingPrescriptions();
+  }, [existingRecord?.id]);
 
   // Calculer BMI automatiquement
   useEffect(() => {
@@ -194,15 +284,46 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
     }
   }, [formData.vitalSigns?.weight, formData.vitalSigns?.height]);
 
-  // Vérifier interactions médicamenteuses
+  // Vérifier interactions médicamenteuses (client-side check)
   useEffect(() => {
     if (formData.treatments && formData.treatments.length > 0) {
-      const warnings = medicalRecordsStorage.checkMedicationInteractions(formData.treatments);
+      // Simple client-side medication interaction check
+      const warnings = checkMedicationInteractions(formData.treatments);
       setMedicationWarnings(warnings);
     } else {
       setMedicationWarnings([]);
     }
   }, [formData.treatments]);
+
+  // Simple medication interaction checker (client-side)
+  const checkMedicationInteractions = (treatments) => {
+    const warnings = [];
+    const knownInteractions = [
+      { drugs: ['warfarin', 'aspirin'], warning: 'Riesgo de sangrado aumentado', recommendation: 'Monitorear INR' },
+      { drugs: ['ibuprofen', 'aspirin'], warning: 'Riesgo gastrointestinal aumentado', recommendation: 'Considerar gastroprotección' },
+      { drugs: ['metformin', 'contraste'], warning: 'Riesgo de acidosis láctica', recommendation: 'Suspender metformina antes de contraste' },
+      { drugs: ['enalapril', 'potasio'], warning: 'Riesgo de hiperpotasemia', recommendation: 'Monitorear niveles de potasio' }
+    ];
+
+    const medications = treatments
+      .filter(t => t.medication && t.status === 'active')
+      .map(t => t.medication.toLowerCase());
+
+    for (const interaction of knownInteractions) {
+      const matches = interaction.drugs.filter(drug =>
+        medications.some(med => med.includes(drug))
+      );
+      if (matches.length >= 2) {
+        warnings.push({
+          warning: interaction.warning,
+          recommendation: interaction.recommendation,
+          drugs: matches
+        });
+      }
+    }
+
+    return warnings;
+  };
 
   // Exposer la méthode handleSubmit au composant parent
   useImperativeHandle(ref, () => ({
@@ -253,34 +374,99 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
     }));
   };
 
+  // Helper pour accéder aux propriétés imbriquées avec chemin en dot-notation
+  const getNestedValue = (obj, path) => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  };
+
+  // Helper pour définir une valeur imbriquée
+  const setNestedValue = (obj, path, value) => {
+    const parts = path.split('.');
+    const result = { ...obj };
+    let current = result;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      current[parts[i]] = { ...current[parts[i]] };
+      current = current[parts[i]];
+    }
+
+    current[parts[parts.length - 1]] = value;
+    return result;
+  };
+
   const handleArrayInputChange = (section, field, index, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: prev[section][field].map((item, i) => i === index ? value : item)
+    setFormData(prev => {
+      // Gérer les chemins imbriqués (ex: 'antecedents.personal')
+      if (section.includes('.')) {
+        const sectionValue = getNestedValue(prev, section);
+        const currentArray = sectionValue?.[field] || [];
+        const newSectionValue = {
+          ...sectionValue,
+          [field]: currentArray.map((item, i) => i === index ? value : item)
+        };
+        return setNestedValue(prev, section, newSectionValue);
       }
-    }));
+
+      // Cas simple (section de premier niveau)
+      const currentArray = prev[section]?.[field] || [];
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: currentArray.map((item, i) => i === index ? value : item)
+        }
+      };
+    });
   };
 
   const addArrayItem = (section, field, defaultValue = '') => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: [...prev[section][field], defaultValue]
+    setFormData(prev => {
+      // Gérer les chemins imbriqués (ex: 'antecedents.personal')
+      if (section.includes('.')) {
+        const sectionValue = getNestedValue(prev, section);
+        const currentArray = sectionValue?.[field] || [];
+        const newSectionValue = {
+          ...sectionValue,
+          [field]: [...currentArray, defaultValue]
+        };
+        return setNestedValue(prev, section, newSectionValue);
       }
-    }));
+
+      // Cas simple (section de premier niveau)
+      const currentArray = prev[section]?.[field] || [];
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: [...currentArray, defaultValue]
+        }
+      };
+    });
   };
 
   const removeArrayItem = (section, field, index) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: prev[section][field].filter((_, i) => i !== index)
+    setFormData(prev => {
+      // Gérer les chemins imbriqués (ex: 'antecedents.personal')
+      if (section.includes('.')) {
+        const sectionValue = getNestedValue(prev, section);
+        const currentArray = sectionValue?.[field] || [];
+        const newSectionValue = {
+          ...sectionValue,
+          [field]: currentArray.filter((_, i) => i !== index)
+        };
+        return setNestedValue(prev, section, newSectionValue);
       }
-    }));
+
+      // Cas simple (section de premier niveau)
+      const currentArray = prev[section]?.[field] || [];
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: currentArray.filter((_, i) => i !== index)
+        }
+      };
+    });
   };
 
   const addTreatment = () => {
@@ -378,21 +564,42 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
   const handleSubmitInternal = async () => {
     setIsSubmitting(true);
     try {
-      const recordData = {
-        ...formData,
-        medicationWarnings
-      };
+      // Ensure patientId is set from selected patient if not from props
+      const patientId = formData.patientId || patient?.id || selectedPatientId;
 
-      if (existingRecord) {
-        await medicalRecordsStorage.update(existingRecord.id, recordData, user?.id);
-      } else {
-        await medicalRecordsStorage.create(recordData, user?.id);
+      if (!patientId) {
+        setErrors({ submit: 'Por favor seleccione un paciente' });
+        setIsSubmitting(false);
+        return;
       }
 
-      onSave && onSave(recordData);
+      const recordData = {
+        ...formData,
+        patientId, // Ensure patientId is set
+        medicationWarnings,
+        providerId: user?.id
+      };
+
+      let savedRecord;
+      if (currentRecordId || (record && record.id)) {
+        savedRecord = await medicalRecordsApi.updateMedicalRecord(currentRecordId || record.id, recordData);
+      } else {
+        savedRecord = await medicalRecordsApi.createMedicalRecord(recordData);
+        // Store the new record ID for subsequent saves
+        if (savedRecord?.id) {
+          setCurrentRecordId(savedRecord.id);
+        }
+      }
+
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+
+      handleSaveCallback && handleSaveCallback(savedRecord || recordData);
     } catch (error) {
       console.error('Error saving medical record:', error);
-      setErrors({ submit: error.message });
+      setErrors({ submit: error.message || 'Error al guardar el registro médico' });
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
     } finally {
       setIsSubmitting(false);
     }
@@ -413,7 +620,8 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
     { id: 'diagnosis', label: 'Diagnóstico', icon: Stethoscope },
     { id: 'treatments', label: 'Tratamientos', icon: Pill },
     { id: 'exam', label: 'Examen Físico', icon: Heart },
-    { id: 'plan', label: 'Plan', icon: CheckCircle }
+    { id: 'plan', label: 'Plan', icon: CheckCircle },
+    { id: 'prescription', label: 'Ordonnance', icon: FileSignature }
   ];
 
   const renderBasicTab = () => (
@@ -1365,8 +1573,899 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
     </div>
   );
 
+  // === Prescription (Ordonnance) Tab ===
+
+  // Add medication to prescription
+  const addPrescriptionMedication = () => {
+    setPrescriptionData(prev => ({
+      ...prev,
+      medications: [
+        ...prev.medications,
+        {
+          medication: '',
+          dosage: '',
+          frequency: '',
+          route: 'oral',
+          duration: '',
+          quantity: '',
+          instructions: ''
+        }
+      ]
+    }));
+  };
+
+  // Update medication in prescription
+  const updatePrescriptionMedication = (index, field, value) => {
+    setPrescriptionData(prev => ({
+      ...prev,
+      medications: prev.medications.map((med, i) =>
+        i === index ? { ...med, [field]: value } : med
+      )
+    }));
+  };
+
+  // Remove medication from prescription
+  const removePrescriptionMedication = (index) => {
+    setPrescriptionData(prev => ({
+      ...prev,
+      medications: prev.medications.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Copy treatments to prescription
+  const copyTreatmentsToPrescription = () => {
+    if (formData.treatments && formData.treatments.length > 0) {
+      const newMedications = formData.treatments
+        .filter(t => t.medication && t.status === 'active')
+        .map(t => ({
+          medication: t.medication || '',
+          dosage: t.dosage || '',
+          frequency: t.frequency || '',
+          route: t.route || 'oral',
+          duration: '',
+          quantity: '',
+          instructions: t.notes || ''
+        }));
+
+      setPrescriptionData(prev => ({
+        ...prev,
+        medications: [...prev.medications, ...newMedications]
+      }));
+    }
+  };
+
+  // Build prescription object for preview/save
+  const buildPrescriptionObject = () => {
+    const patientData = patient || {};
+    return {
+      patientId: getPatientId(),
+      providerId: user?.id,
+      medicalRecordId: currentRecordId,
+      medications: prescriptionData.medications,
+      instructions: prescriptionData.instructions,
+      additionalNotes: prescriptionData.additionalNotes,
+      prescribedDate: new Date().toISOString().split('T')[0],
+      validUntil: prescriptionData.validUntil || null,
+      renewable: prescriptionData.renewable,
+      renewalsRemaining: prescriptionData.renewalsRemaining,
+      // Snapshots
+      patientSnapshot: {
+        firstName: patientData.firstName,
+        lastName: patientData.lastName,
+        birthDate: patientData.birthDate,
+        gender: patientData.gender,
+        patientNumber: patientData.patientNumber,
+        address: patientData.address,
+        phone: patientData.phone
+      },
+      providerSnapshot: {
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        specialty: user?.specialty,
+        rpps: user?.rpps,
+        adeli: user?.adeli
+      },
+      vitalSigns: formData.vitalSigns,
+      diagnosis: formData.diagnosis
+    };
+  };
+
+  // Preview prescription
+  const handlePreviewPrescription = () => {
+    if (prescriptionData.medications.length === 0) {
+      setErrors({ prescription: 'Ajoutez au moins un médicament avant de prévisualiser' });
+      return;
+    }
+    setCurrentPrescription(buildPrescriptionObject());
+    setShowPrescriptionPreview(true);
+  };
+
+  // Save prescription
+  const handleSavePrescription = async () => {
+    if (prescriptionData.medications.length === 0) {
+      setErrors({ prescription: 'Ajoutez au moins un médicament' });
+      return;
+    }
+
+    setPrescriptionSaveStatus('saving');
+    try {
+      const prescriptionObj = buildPrescriptionObject();
+      const saved = await prescriptionsApi.createPrescription(prescriptionObj);
+      setCurrentPrescription(saved);
+      setPrescriptionSaveStatus('saved');
+      setTimeout(() => setPrescriptionSaveStatus('idle'), 3000);
+    } catch (error) {
+      console.error('Error saving prescription:', error);
+      setPrescriptionSaveStatus('error');
+      setErrors({ prescription: error.message || 'Erreur lors de l\'enregistrement' });
+    }
+  };
+
+  // Finalize prescription
+  const handleFinalizePrescription = async () => {
+    if (!currentPrescription?.id) {
+      // Save first
+      await handleSavePrescription();
+    }
+    if (currentPrescription?.id) {
+      try {
+        const finalized = await prescriptionsApi.finalizePrescription(currentPrescription.id);
+        setCurrentPrescription(finalized);
+      } catch (error) {
+        console.error('Error finalizing prescription:', error);
+        setErrors({ prescription: error.message });
+      }
+    }
+  };
+
+  // Mark as printed
+  const handlePrescriptionPrinted = async () => {
+    if (currentPrescription?.id) {
+      try {
+        await prescriptionsApi.markPrescriptionPrinted(currentPrescription.id);
+      } catch (error) {
+        console.error('Error marking printed:', error);
+      }
+    }
+  };
+
+  // Reset prescription form for new prescription
+  const resetPrescriptionForm = () => {
+    setPrescriptionData({
+      medications: [],
+      instructions: '',
+      additionalNotes: '',
+      validUntil: '',
+      renewable: false,
+      renewalsRemaining: 0
+    });
+    setEditingPrescriptionIndex(null);
+    setPrescriptionSaveStatus('idle');
+  };
+
+  // Load prescription into form for editing
+  const loadPrescriptionForEdit = (prescription, index) => {
+    setPrescriptionData({
+      medications: prescription.medications || [],
+      instructions: prescription.instructions || '',
+      additionalNotes: prescription.additionalNotes || '',
+      validUntil: prescription.validUntil ? prescription.validUntil.split('T')[0] : '',
+      renewable: prescription.renewable || false,
+      renewalsRemaining: prescription.renewalsRemaining || 0
+    });
+    setCurrentPrescription(prescription);
+    setEditingPrescriptionIndex(index);
+    setPrescriptionSaveStatus('idle');
+  };
+
+  // Get active treatments from the treatments tab
+  const getActiveTreatments = useCallback(() => {
+    if (!formData.treatments) return [];
+    return formData.treatments
+      .filter(t => t.medication && t.status === 'active')
+      .map(t => ({
+        medication: t.medication || '',
+        dosage: t.dosage || '',
+        frequency: t.frequency || '',
+        route: t.route || 'oral',
+        duration: t.duration || '',
+        quantity: '',
+        instructions: t.instructions || ''
+      }));
+  }, [formData.treatments]);
+
+  // Get recommendations from plan tab
+  const getPlanRecommendations = useCallback(() => {
+    if (!formData.treatmentPlan?.recommendations) return [];
+    return formData.treatmentPlan.recommendations.filter(r => r && r.trim());
+  }, [formData.treatmentPlan?.recommendations]);
+
+  // Auto-apply treatments when checkbox is toggled
+  useEffect(() => {
+    if (prescriptionOptions.includeFromTreatments) {
+      const treatmentMeds = getActiveTreatments();
+      if (treatmentMeds.length > 0) {
+        setPrescriptionData(prev => {
+          // Avoid duplicates
+          const existingMedNames = prev.medications.map(m => m.medication.toLowerCase());
+          const newMeds = treatmentMeds.filter(m => !existingMedNames.includes(m.medication.toLowerCase()));
+          if (newMeds.length > 0) {
+            return { ...prev, medications: [...prev.medications, ...newMeds] };
+          }
+          return prev;
+        });
+      }
+    }
+  }, [prescriptionOptions.includeFromTreatments, getActiveTreatments]);
+
+  // Auto-apply recommendations when checkbox is toggled
+  useEffect(() => {
+    if (prescriptionOptions.includeFromPlan) {
+      const recommendations = getPlanRecommendations();
+      if (recommendations.length > 0) {
+        const recommendationsText = recommendations.join('\n- ');
+        setPrescriptionData(prev => {
+          // Only add if not already present
+          if (!prev.instructions.includes('Recommandations:')) {
+            const newInstructions = prev.instructions
+              ? `${prev.instructions}\n\nRecommandations:\n- ${recommendationsText}`
+              : `Recommandations:\n- ${recommendationsText}`;
+            return { ...prev, instructions: newInstructions };
+          }
+          return prev;
+        });
+      }
+    }
+  }, [prescriptionOptions.includeFromPlan, getPlanRecommendations]);
+
+  // Save current prescription to list
+  const handleSavePrescriptionToList = async () => {
+    if (prescriptionData.medications.length === 0) {
+      setErrors(prev => ({ ...prev, prescription: 'Ajoutez au moins un médicament' }));
+      return;
+    }
+
+    setPrescriptionSaveStatus('saving');
+
+    try {
+      const prescriptionPayload = {
+        patientId: getPatientId(),
+        medicalRecordId: existingRecord?.id || null,
+        medications: prescriptionData.medications,
+        instructions: prescriptionData.instructions,
+        additionalNotes: prescriptionData.additionalNotes,
+        validUntil: prescriptionData.validUntil || null,
+        renewable: prescriptionData.renewable,
+        renewalsRemaining: prescriptionData.renewalsRemaining,
+        // Include snapshots based on options
+        vitalSigns: prescriptionOptions.includeVitalSigns ? (formData.vitalSigns || {}) : {},
+        diagnosis: prescriptionOptions.includeDiagnosis ? {
+          primaryDiagnosis: formData.diagnoses?.primary || '',
+          secondaryDiagnoses: formData.diagnoses?.secondary || [],
+          clinicalNotes: formData.subjective?.chiefComplaint || ''
+        } : {},
+        patientSnapshot: {
+          firstName: patient?.firstName || '',
+          lastName: patient?.lastName || '',
+          dateOfBirth: patient?.dateOfBirth || '',
+          gender: patient?.gender || '',
+          address: patient?.address || {}
+        },
+        providerSnapshot: {
+          name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+          specialty: user?.specialty || '',
+          license: user?.licenseNumber || ''
+        }
+      };
+
+      let savedPrescription;
+
+      if (editingPrescriptionIndex !== null && savedPrescriptions[editingPrescriptionIndex]?.id) {
+        // Update existing prescription
+        savedPrescription = await prescriptionsApi.updatePrescription(
+          savedPrescriptions[editingPrescriptionIndex].id,
+          prescriptionPayload
+        );
+
+        setSavedPrescriptions(prev => {
+          const updated = [...prev];
+          updated[editingPrescriptionIndex] = savedPrescription;
+          return updated;
+        });
+      } else {
+        // Create new prescription
+        savedPrescription = await prescriptionsApi.createPrescription(prescriptionPayload);
+        setSavedPrescriptions(prev => [...prev, savedPrescription]);
+      }
+
+      setCurrentPrescription(savedPrescription);
+      setPrescriptionSaveStatus('saved');
+
+      // Reset for new prescription after short delay
+      setTimeout(() => {
+        resetPrescriptionForm();
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error saving prescription:', error);
+      setErrors(prev => ({ ...prev, prescription: error.message || 'Erreur lors de la sauvegarde' }));
+      setPrescriptionSaveStatus('error');
+    }
+  };
+
+  // Delete a saved prescription
+  const handleDeletePrescription = async (index) => {
+    const prescription = savedPrescriptions[index];
+
+    if (prescription?.id) {
+      try {
+        await prescriptionsApi.cancelPrescription(prescription.id);
+      } catch (error) {
+        console.error('Error canceling prescription:', error);
+      }
+    }
+
+    setSavedPrescriptions(prev => prev.filter((_, i) => i !== index));
+
+    if (editingPrescriptionIndex === index) {
+      resetPrescriptionForm();
+    }
+  };
+
+  // Preview a saved prescription
+  const handlePreviewSavedPrescription = (prescription) => {
+    setCurrentPrescription({
+      ...prescription,
+      patientSnapshot: prescription.patientSnapshot || {
+        firstName: patient?.firstName || '',
+        lastName: patient?.lastName || '',
+        dateOfBirth: patient?.dateOfBirth || ''
+      },
+      providerSnapshot: prescription.providerSnapshot || {
+        name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+        specialty: user?.specialty || ''
+      },
+      vitalSigns: prescription.vitalSigns || (prescriptionOptions.includeVitalSigns ? formData.vitalSigns : {}),
+      diagnosis: prescription.diagnosis || {}
+    });
+    setShowPrescriptionPreview(true);
+  };
+
+  const renderPrescriptionTab = () => (
+    <div className="space-y-6">
+      {/* Header with new prescription button */}
+      <div className="flex justify-between items-center">
+        <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+          <FileSignature className="h-5 w-5 mr-2 text-blue-600" />
+          Ordonnances Médicales
+        </h4>
+        <button
+          type="button"
+          onClick={resetPrescriptionForm}
+          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Nouvelle ordonnance</span>
+        </button>
+      </div>
+
+      {/* Saved prescriptions list */}
+      {savedPrescriptions.length > 0 && (
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <h5 className="font-medium text-gray-900 mb-3 flex items-center">
+            <FileSignature className="h-4 w-4 mr-2" />
+            Ordonnances créées ({savedPrescriptions.length})
+          </h5>
+          <div className="space-y-2">
+            {savedPrescriptions.map((prescription, index) => (
+              <div
+                key={prescription.id || index}
+                className={`flex items-center justify-between p-3 bg-white rounded-lg border ${
+                  editingPrescriptionIndex === index ? 'border-blue-500 ring-2 ring-blue-200' : ''
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    prescription.status === 'finalized' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {prescription.prescriptionNumber || `Ordonnance #${index + 1}`}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {prescription.medications?.length || 0} médicament(s)
+                      {prescription.status === 'finalized' && ' • Finalisée'}
+                      {prescription.printCount > 0 && ` • Imprimée ${prescription.printCount}x`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePreviewSavedPrescription(prescription)}
+                    className="p-2 text-gray-500 hover:text-blue-600"
+                    title="Prévisualiser"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  {prescription.status !== 'finalized' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => loadPrescriptionForEdit(prescription, index)}
+                        className="p-2 text-gray-500 hover:text-blue-600"
+                        title="Modifier"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePrescription(index)}
+                        className="p-2 text-gray-500 hover:text-red-600"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Configuration options with live preview */}
+      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+        <h5 className="font-medium text-purple-900 mb-3 flex items-center">
+          <Settings className="h-4 w-4 mr-2" />
+          Configuration de l'ordonnance
+        </h5>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left column - Checkboxes */}
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <p className="text-sm text-purple-700 font-medium">Éléments à inclure dans l'ordonnance :</p>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prescriptionOptions.includeVitalSigns}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeVitalSigns: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">Signes vitaux du jour</span>
+              </label>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prescriptionOptions.includeDiagnosis}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeDiagnosis: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">Diagnostic(s)</span>
+              </label>
+            </div>
+            <div className="space-y-3 pt-2 border-t border-purple-200">
+              <p className="text-sm text-purple-700 font-medium">Ajouter automatiquement depuis le dossier :</p>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prescriptionOptions.includeFromTreatments}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeFromTreatments: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">
+                  Traitements actifs
+                  {getActiveTreatments().length > 0 && (
+                    <span className="ml-1 text-purple-600 font-medium">
+                      ({getActiveTreatments().length})
+                    </span>
+                  )}
+                </span>
+              </label>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prescriptionOptions.includeFromPlan}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeFromPlan: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">
+                  Recommandations du plan
+                  {getPlanRecommendations().length > 0 && (
+                    <span className="ml-1 text-purple-600 font-medium">
+                      ({getPlanRecommendations().length})
+                    </span>
+                  )}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Right column - Live preview */}
+          <div className="bg-white p-3 rounded-lg border border-purple-200 text-sm">
+            <p className="text-purple-700 font-medium mb-2">Aperçu des éléments sélectionnés :</p>
+
+            {/* Vital Signs Preview */}
+            {prescriptionOptions.includeVitalSigns && formData.vitalSigns && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">Signes vitaux :</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
+                  {formData.vitalSigns.bloodPressureSystolic && formData.vitalSigns.bloodPressureDiastolic && (
+                    <span className="block">TA: {formData.vitalSigns.bloodPressureSystolic}/{formData.vitalSigns.bloodPressureDiastolic} mmHg</span>
+                  )}
+                  {formData.vitalSigns.heartRate && <span className="block">FC: {formData.vitalSigns.heartRate} bpm</span>}
+                  {formData.vitalSigns.temperature && <span className="block">T°: {formData.vitalSigns.temperature}°C</span>}
+                  {formData.vitalSigns.weight && <span className="block">Poids: {formData.vitalSigns.weight} kg</span>}
+                  {!formData.vitalSigns.bloodPressureSystolic && !formData.vitalSigns.heartRate && !formData.vitalSigns.temperature && !formData.vitalSigns.weight && (
+                    <span className="text-gray-400 italic">Aucun signe vital renseigné</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Diagnosis Preview */}
+            {prescriptionOptions.includeDiagnosis && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">Diagnostic :</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
+                  {formData.diagnoses?.primary ? (
+                    <span className="block">{formData.diagnoses.primary}</span>
+                  ) : formData.subjective?.chiefComplaint ? (
+                    <span className="block">{formData.subjective.chiefComplaint}</span>
+                  ) : (
+                    <span className="text-gray-400 italic">Aucun diagnostic renseigné</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Treatments Preview */}
+            {prescriptionOptions.includeFromTreatments && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">Traitements à ajouter :</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-green-300">
+                  {getActiveTreatments().length > 0 ? (
+                    getActiveTreatments().map((t, i) => (
+                      <span key={i} className="block">• {t.medication} {t.dosage && `- ${t.dosage}`} {t.frequency && `(${t.frequency})`}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 italic">Aucun traitement actif</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Recommendations Preview */}
+            {prescriptionOptions.includeFromPlan && (
+              <div className="mb-2">
+                <p className="text-xs font-medium text-gray-600 mb-1">Recommandations à ajouter :</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-blue-300">
+                  {getPlanRecommendations().length > 0 ? (
+                    getPlanRecommendations().map((r, i) => (
+                      <span key={i} className="block">• {r}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 italic">Aucune recommandation</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* No selection message */}
+            {!prescriptionOptions.includeVitalSigns && !prescriptionOptions.includeDiagnosis &&
+             !prescriptionOptions.includeFromTreatments && !prescriptionOptions.includeFromPlan && (
+              <p className="text-gray-400 italic text-xs">Cochez les options pour voir l'aperçu</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Error display */}
+      {errors.prescription && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center">
+          <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+          <span className="text-red-800 text-sm">{errors.prescription}</span>
+        </div>
+      )}
+
+      {/* Current prescription form */}
+      <div className={`bg-blue-50 p-4 rounded-lg border border-blue-200 ${editingPrescriptionIndex !== null ? 'ring-2 ring-blue-400' : ''}`}>
+        <div className="flex justify-between items-center mb-4">
+          <h5 className="font-medium text-blue-900">
+            {editingPrescriptionIndex !== null
+              ? `Modification de l'ordonnance #${editingPrescriptionIndex + 1}`
+              : 'Nouvelle ordonnance - Médicaments prescrits'}
+          </h5>
+          <div className="flex items-center space-x-2">
+            {editingPrescriptionIndex !== null && (
+              <button
+                type="button"
+                onClick={resetPrescriptionForm}
+                className="text-sm text-gray-600 hover:text-gray-800 flex items-center"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Annuler
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={addPrescriptionMedication}
+              className="flex items-center space-x-1 bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Ajouter médicament</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {prescriptionData.medications.map((med, index) => (
+            <div key={index} className="bg-white p-4 rounded-lg border shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Médicament *</label>
+                  <input
+                    type="text"
+                    value={med.medication}
+                    onChange={(e) => updatePrescriptionMedication(index, 'medication', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    placeholder="Nom du médicament..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Dosage *</label>
+                  <input
+                    type="text"
+                    value={med.dosage}
+                    onChange={(e) => updatePrescriptionMedication(index, 'dosage', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    placeholder="10mg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Fréquence *</label>
+                  <input
+                    type="text"
+                    value={med.frequency}
+                    onChange={(e) => updatePrescriptionMedication(index, 'frequency', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    placeholder="3x/jour"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Voie</label>
+                  <select
+                    value={med.route}
+                    onChange={(e) => updatePrescriptionMedication(index, 'route', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="oral">Orale</option>
+                    <option value="iv">IV</option>
+                    <option value="im">IM</option>
+                    <option value="topical">Topique</option>
+                    <option value="inhaled">Inhalée</option>
+                    <option value="sublingual">Sublinguale</option>
+                    <option value="rectal">Rectale</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => removePrescriptionMedication(index)}
+                    className="p-2 text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Durée</label>
+                  <input
+                    type="text"
+                    value={med.duration}
+                    onChange={(e) => updatePrescriptionMedication(index, 'duration', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    placeholder="7 jours"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Quantité</label>
+                  <input
+                    type="text"
+                    value={med.quantity}
+                    onChange={(e) => updatePrescriptionMedication(index, 'quantity', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    placeholder="1 boîte"
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Instructions</label>
+                  <input
+                    type="text"
+                    value={med.instructions}
+                    onChange={(e) => updatePrescriptionMedication(index, 'instructions', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    placeholder="À prendre pendant les repas..."
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {prescriptionData.medications.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <FileSignature className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p>Aucun médicament ajouté</p>
+              <p className="text-sm">Cliquez sur "Ajouter médicament" ou utilisez la configuration ci-dessus</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Instructions générales */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Instructions générales pour le patient
+        </label>
+        <textarea
+          value={prescriptionData.instructions}
+          onChange={(e) => setPrescriptionData(prev => ({ ...prev, instructions: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          rows={3}
+          placeholder="Instructions supplémentaires pour le patient..."
+        />
+      </div>
+
+      {/* Notes additionnelles (médecin) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Notes additionnelles du médecin
+        </label>
+        <textarea
+          value={prescriptionData.additionalNotes}
+          onChange={(e) => setPrescriptionData(prev => ({ ...prev, additionalNotes: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          rows={2}
+          placeholder="Notes personnelles (seront incluses dans l'ordonnance)..."
+        />
+      </div>
+
+      {/* Options */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Valide jusqu'au
+          </label>
+          <input
+            type="date"
+            value={prescriptionData.validUntil}
+            onChange={(e) => setPrescriptionData(prev => ({ ...prev, validUntil: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="renewable"
+            checked={prescriptionData.renewable}
+            onChange={(e) => setPrescriptionData(prev => ({ ...prev, renewable: e.target.checked }))}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="renewable" className="ml-2 text-sm text-gray-700">
+            Renouvelable
+          </label>
+        </div>
+        {prescriptionData.renewable && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre de renouvellements
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="12"
+              value={prescriptionData.renewalsRemaining}
+              onChange={(e) => setPrescriptionData(prev => ({ ...prev, renewalsRemaining: parseInt(e.target.value) || 0 }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex justify-end space-x-3 pt-4 border-t">
+        <button
+          type="button"
+          onClick={handlePreviewPrescription}
+          disabled={prescriptionData.medications.length === 0}
+          className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Eye className="h-4 w-4" />
+          <span>Prévisualiser</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleSavePrescriptionToList}
+          disabled={prescriptionData.medications.length === 0 || prescriptionSaveStatus === 'saving'}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {prescriptionSaveStatus === 'saving' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          <span>
+            {prescriptionSaveStatus === 'saving'
+              ? 'Enregistrement...'
+              : editingPrescriptionIndex !== null
+                ? 'Mettre à jour'
+                : 'Enregistrer l\'ordonnance'}
+          </span>
+        </button>
+      </div>
+
+      {/* Status message */}
+      {prescriptionSaveStatus === 'saved' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center">
+          <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+          <span className="text-green-800 text-sm">Ordonnance enregistrée avec succès</span>
+        </div>
+      )}
+    </div>
+  );
+
+  // Check if we need to show patient selector
+  const showPatientSelector = !patient && !record?.patientId && patients.length > 0;
+  const currentPatientId = getPatientId();
+  const currentPatient = patients.find(p => p.id === currentPatientId);
+
   return (
-    <div className="bg-white">{/* Le modal parent gère l'en-tête */}
+    <div className="h-full flex flex-col bg-white">{/* Structure flex pour footer sticky */}
+
+      {/* Patient Selector - shown when no patient is pre-selected */}
+      {showPatientSelector && (
+        <div className="p-6 border-b bg-blue-50">
+          <div className="flex items-center mb-3">
+            <User className="h-5 w-5 text-blue-600 mr-2" />
+            <h3 className="text-lg font-semibold text-blue-900">Seleccionar Paciente</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar paciente por nombre..."
+                value={patientSearchQuery}
+                onChange={(e) => setPatientSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <select
+              value={selectedPatientId}
+              onChange={(e) => {
+                setSelectedPatientId(e.target.value);
+                // Update formData with new patientId
+                setFormData(prev => ({ ...prev, patientId: e.target.value }));
+              }}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">-- Seleccione un paciente --</option>
+              {filteredPatients.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.firstName} {p.lastName} {p.patientNumber ? `(${p.patientNumber})` : ''}
+                </option>
+              ))}
+            </select>
+            {selectedPatientId && (
+              <div className="text-sm text-blue-700 bg-blue-100 px-3 py-2 rounded">
+                Paciente seleccionado: <strong>{currentPatient?.firstName} {currentPatient?.lastName}</strong>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Tabs Navigation */}
       <div className="border-b bg-gray-50">
@@ -1391,25 +2490,104 @@ const MedicalRecordForm = forwardRef(({ patient, existingRecord = null, onSave, 
         </nav>
       </div>
 
-      {/* Tab Content */}
-      <div className="p-6">
-        {activeTab === 'basic' && renderBasicTab()}
-        {activeTab === 'antecedents' && renderAntecedentsTab()}
-        {activeTab === 'vitals' && renderVitalsTab()}
-        {activeTab === 'diagnosis' && renderDiagnosisTab()}
-        {activeTab === 'treatments' && renderTreatmentsTab()}
-        {activeTab === 'exam' && renderExamTab()}
-        {activeTab === 'plan' && renderPlanTab()}
+      {/* Zone scrollable du contenu */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Tab Content */}
+        <div className="p-6">
+          {activeTab === 'basic' && renderBasicTab()}
+          {activeTab === 'antecedents' && renderAntecedentsTab()}
+          {activeTab === 'vitals' && renderVitalsTab()}
+          {activeTab === 'diagnosis' && renderDiagnosisTab()}
+          {activeTab === 'treatments' && renderTreatmentsTab()}
+          {activeTab === 'exam' && renderExamTab()}
+          {activeTab === 'plan' && renderPlanTab()}
+          {activeTab === 'prescription' && renderPrescriptionTab()}
+        </div>
+
+        {/* Error de soumission */}
+        {errors.submit && (
+          <div className="mx-6 mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+              <span className="text-red-800">{errors.submit}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Error de soumission */}
-      {errors.submit && (
-        <div className="mx-6 mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
-            <span className="text-red-800">{errors.submit}</span>
-          </div>
+      {/* Footer fixe avec bouton Enregistrer */}
+      <div className="shrink-0 bg-white border-t px-6 py-3 flex items-center justify-between shadow-lg">
+        {/* Indicateur de statut */}
+        <div className="flex items-center text-sm">
+          {saveStatus === 'saved' && (
+            <span className="flex items-center text-green-600">
+              <Check className="h-4 w-4 mr-2" />
+              Enregistré avec succès
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="flex items-center text-red-600">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Erreur lors de l'enregistrement
+            </span>
+          )}
+          {formData._previousVitalSigns && (
+            <span className="flex items-center text-blue-500 text-xs">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Données pré-remplies depuis le dernier dossier
+            </span>
+          )}
         </div>
+
+        {/* Boutons d'action */}
+        <div className="flex items-center space-x-3">
+          {handleClose && (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Annuler
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Enregistrement...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span>Enregistrer le dossier</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Prescription Preview Modal */}
+      {showPrescriptionPreview && currentPrescription && (
+        <PrescriptionPreview
+          prescription={currentPrescription}
+          patient={patient}
+          provider={user}
+          clinicInfo={{
+            name: 'Clinique Médicale',
+            address: '',
+            phone: '',
+            city: ''
+          }}
+          onClose={() => setShowPrescriptionPreview(false)}
+          onPrint={handlePrescriptionPrinted}
+          onFinalize={handleFinalizePrescription}
+          isFinalized={currentPrescription?.status === 'finalized' || currentPrescription?.status === 'printed'}
+        />
       )}
     </div>
   );
