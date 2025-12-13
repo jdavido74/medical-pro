@@ -1,18 +1,19 @@
 // components/auth/SignupPage.js
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import SocialAuth from './SocialAuth';
 import { validateEmail, validateClinicName } from '../../utils/validation';
-import { region } from '../../i18n';
+import { useLocale } from '../../contexts/LocaleContext';
+import { useLocaleNavigation } from '../../hooks/useLocaleNavigation';
 import PhoneInput from '../common/PhoneInput';
 
 const SignupPage = () => {
   const { register } = useAuth();
   const { t } = useTranslation('auth');
-  const navigate = useNavigate();
+  const { country: localeCountry } = useLocale();
+  const { navigateToLogin, navigateToEmailVerification } = useLocaleNavigation();
   const [showPassword, setShowPassword] = useState(false);
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -21,7 +22,7 @@ const SignupPage = () => {
     phone: '',
     clinicName: '',
     password: '',
-    country: region === 'spain' ? 'ES' : 'FR', // Auto-detect country from region
+    country: localeCountry, // Auto-detect country from locale (ES, FR, GB, etc.)
     acceptTerms: false
   });
   const [errors, setErrors] = useState({});
@@ -87,7 +88,7 @@ const SignupPage = () => {
 
       // Store email and redirect to email verification page
       setErrors({});
-      navigate('/email-verification', { state: { email: signupData.email } });
+      navigateToEmailVerification(signupData.email);
     } catch (error) {
       setErrors({ submit: error.message || t('accountError') });
     } finally {
@@ -187,7 +188,7 @@ const SignupPage = () => {
                 }
               }}
               onValidationChange={(isValid) => setPhoneValid(isValid)}
-              defaultCountry={region === 'spain' ? 'ES' : 'FR'}
+              defaultCountry={localeCountry}
               name="phone"
               label={t('phone') + ' *'}
               required
@@ -309,7 +310,7 @@ const SignupPage = () => {
             <span className="text-gray-600">{t('alreadyAccount')} </span>
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={navigateToLogin}
               className="text-green-600 hover:text-green-700 font-medium"
             >
               {t('login')}

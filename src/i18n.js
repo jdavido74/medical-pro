@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { detectRegion, getRegionLanguage } from './utils/regionDetector';
+import { detectPreferredLocale, getLocaleConfig, LOCALE_CONFIG } from './config/locales';
 
 // Import French translations
 import frCommon from './locales/fr/common.json';
@@ -47,9 +48,37 @@ import esInvoices from './locales/es/invoices.json';
 import esAnalytics from './locales/es/analytics.json';
 import esAdmin from './locales/es/admin.json';
 
-// Detect region and get default language (sticky per region)
+/**
+ * Detect language from URL locale first, then fall back to region detection
+ * Priority:
+ * 1. URL locale (e.g., /fr-FR/dashboard -> 'fr')
+ * 2. Stored preference
+ * 3. Browser language
+ * 4. Default (fr)
+ */
+function detectInitialLanguage() {
+  // Try to get locale from URL path
+  if (typeof window !== 'undefined') {
+    const pathname = window.location.pathname;
+    const localeMatch = pathname.match(/^\/(fr-FR|es-ES|en-GB|en-US)/);
+    if (localeMatch) {
+      const urlLocale = localeMatch[1];
+      const config = LOCALE_CONFIG[urlLocale];
+      if (config) {
+        return config.language;
+      }
+    }
+  }
+
+  // Fall back to preferred locale detection
+  const preferredLocale = detectPreferredLocale();
+  const localeConfig = getLocaleConfig(preferredLocale);
+  return localeConfig.language;
+}
+
+// Detect region (for backward compatibility) and language
 const region = detectRegion();
-const defaultLanguage = getRegionLanguage(region);
+const defaultLanguage = detectInitialLanguage();
 
 // Configure i18next
 i18n
@@ -103,7 +132,7 @@ i18n
       }
     },
     lng: defaultLanguage,
-    fallbackLng: defaultLanguage,
+    fallbackLng: 'fr', // French as fallback for missing translations
     defaultNS: 'common',
     ns: ['common', 'auth', 'nav', 'home', 'public', 'dashboard', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'analytics', 'admin'],
 

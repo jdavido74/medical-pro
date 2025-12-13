@@ -4,9 +4,11 @@ import { X, UserPlus, Edit2, Trash2, User, Mail, Phone, Stethoscope, Calendar, C
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { useTranslation } from 'react-i18next';
 import PhoneInput, { PhoneDisplay } from '../common/PhoneInput';
+import { useLocale } from '../../contexts/LocaleContext';
 
 const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
   const { t } = useTranslation(['admin', 'common']);
+  const { country: localeCountry } = useLocale();
   const [practitioners, setPractitioners] = useState([]);
   const [activeTab, setActiveTab] = useState('list');
   const [editingPractitioner, setEditingPractitioner] = useState(null);
@@ -411,7 +413,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                     <PhoneInput
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      defaultCountry="FR"
+                      defaultCountry={localeCountry}
                       name="practitionerPhone"
                       label={t('common:phone')}
                       required={false}

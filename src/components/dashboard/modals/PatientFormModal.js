@@ -9,10 +9,28 @@ import { PatientContext } from '../../../contexts/PatientContext';
 import { countries, nationalities } from '../../../data/countries';
 import PhoneInput from '../../common/PhoneInput';
 import { validatePhoneForCountry, parseFullPhoneNumber } from '../../../utils/phoneUtils';
+import { useLocale } from '../../../contexts/LocaleContext';
 
 const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
   const { t } = useTranslation('patients');
   const patientContext = useContext(PatientContext);
+  const { country: localeCountry, name: localeName } = useLocale();
+
+  // Get default nationality and country name based on locale
+  const getDefaultNationality = () => {
+    const nationalityMap = {
+      'FR': 'Française',
+      'ES': 'Española',
+      'GB': 'British',
+      'US': 'American',
+      'PT': 'Portuguesa',
+      'DE': 'Deutsche',
+      'IT': 'Italiana',
+      'BE': 'Belge',
+      'CH': 'Suisse'
+    };
+    return nationalityMap[localeCountry] || 'Française';
+  };
 
   const [formData, setFormData] = useState({
     // US 1.1 - Identité du patient
@@ -21,14 +39,14 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
     birthDate: '',
     gender: '',
     idNumber: '',
-    nationality: 'Española',
+    nationality: getDefaultNationality(),
 
     // US 1.2 - Coordonnées
     address: {
       street: '',
       city: '',
       postalCode: '',
-      country: 'España'
+      country: localeName
     },
     contact: {
       phone: '',
@@ -513,7 +531,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                     }
                   }}
                   onValidationChange={(isValid) => setPhoneValid(isValid)}
-                  defaultCountry="ES"
+                  defaultCountry={localeCountry}
                   name="phone"
                   label={t('fields.phone', 'Teléfono') + ' *'}
                   required
@@ -591,7 +609,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                     value={formData.contact.emergencyContact.phone}
                     onChange={(e) => handleEmergencyContactChange('phone', e.target.value)}
                     onValidationChange={(isValid) => setEmergencyPhoneValid(isValid)}
-                    defaultCountry="ES"
+                    defaultCountry={localeCountry}
                     name="emergencyPhone"
                     label={t('fields.emergencyPhone', 'Teléfono')}
                     required={false}

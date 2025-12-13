@@ -6,10 +6,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import SocialAuth from './SocialAuth';
 import { validateEmail } from '../../utils/validation';
 import { baseClient } from '../../api/baseClient';
+import { useLocaleNavigation } from '../../hooks/useLocaleNavigation';
 
-const LoginPage = ({ setCurrentPage }) => {
+const LoginPage = () => {
   const { login } = useAuth();
   const { t } = useTranslation('auth');
+  const { navigateToSignup, navigateToHome, buildPath } = useLocaleNavigation();
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({
     email: '',
@@ -65,16 +67,19 @@ const LoginPage = ({ setCurrentPage }) => {
     setErrors({});
 
     try {
+      console.log('[LoginPage] 🔑 Tentative de connexion avec:', loginData.email);
+
       // Call backend /auth/login endpoint with email and password
-      // This supports all special characters without any encoding issues
       const response = await baseClient.post('/auth/login', {
         email: loginData.email,
         password: loginData.password
       });
 
+      console.log('[LoginPage] 📥 Réponse backend complète:', response);
+
       // Check if login was successful
       if (response.success && response.data?.user) {
-        console.log('[LoginPage] 🔍 Raw backend response user:', response.data.user);
+        console.log('[LoginPage] ✅ Connexion réussie pour:', response.data.user.email);
 
         const userData = {
           id: response.data.user.id,
@@ -89,13 +94,8 @@ const LoginPage = ({ setCurrentPage }) => {
           isEmailVerified: response.data.user.isEmailVerified || false
         };
 
-        console.log('[LoginPage] ✅ Constructed userData:', userData);
-        console.log('[LoginPage] 📛 Name field:', userData.name);
-        console.log('[LoginPage] 📝 FirstName:', userData.firstName, 'LastName:', userData.lastName);
-
         // Extract company data from response
         const companyData = response.data.company || null;
-        console.log('[LoginPage] 🏢 Company data:', companyData);
 
         // Store token separately in localStorage for API requests
         const token = response.data.tokens?.accessToken;
@@ -111,45 +111,58 @@ const LoginPage = ({ setCurrentPage }) => {
         }
 
         // Update auth context with both user and company data
-        console.log('[LoginPage] 📤 Calling login() with userData and companyData');
         login(userData, companyData);
 
-        // Redirect to dashboard
-        console.log('[LoginPage] ⏭️ Redirecting to dashboard');
-        window.location.href = '/dashboard';
+        // Redirect to dashboard with locale
+        console.log('[LoginPage] ⏭️ Redirection vers le dashboard');
+        window.location.href = buildPath('/dashboard');
       } else if (response.data?.requiresEmailVerification) {
+        console.log('[LoginPage] ⚠️ Email non vérifié');
         // User exists but email not verified
         setErrors({
-          email: t('emailNotVerified'),
-          password: t('checkEmailVerification')
+          submit: '❌ Votre email n\'a pas encore été vérifié. Veuillez vérifier votre boîte de réception.'
         });
       } else {
+        console.log('[LoginPage] ❌ Identifiants invalides');
         // Invalid credentials
         setErrors({
-          email: t('incorrectCredentials'),
-          password: t('verifyData')
+          submit: '❌ Email ou mot de passe incorrect. Veuillez réessayer.'
         });
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('[LoginPage] ❌ Erreur de connexion:', error);
+      console.error('[LoginPage] 📊 Détails erreur:', {
+        message: error.message,
+        status: error.status,
+        response: error.response,
+        isTimeout: error.isTimeout
+      });
 
-      // Handle different error types
+      // Handle different error types with clear messages
       if (error.status === 401) {
+        console.log('[LoginPage] 🚫 Erreur 401 - Identifiants incorrects');
         setErrors({
-          email: t('incorrectCredentials'),
-          password: t('verifyData')
+          submit: '❌ Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.'
         });
       } else if (error.status === 403) {
+        console.log('[LoginPage] 🚫 Erreur 403 - Compte désactivé');
         setErrors({
-          submit: t('accountDisabled') || 'Account is disabled'
+          submit: '❌ Votre compte est désactivé. Veuillez contacter l\'administrateur.'
         });
       } else if (error.isTimeout) {
+        console.log('[LoginPage] ⏱️ Timeout');
         setErrors({
-          submit: t('requestTimeout') || 'Request timeout - please try again'
+          submit: '❌ Délai d\'attente dépassé. Veuillez réessayer.'
+        });
+      } else if (error.message && error.message.includes('Network Error')) {
+        console.log('[LoginPage] 🌐 Erreur réseau');
+        setErrors({
+          submit: '❌ Impossible de se connecter au serveur. Vérifiez votre connexion internet.'
         });
       } else {
+        console.log('[LoginPage] ❓ Erreur inconnue');
         setErrors({
-          submit: error.message || t('accountError') || 'Login failed - please try again'
+          submit: `❌ Erreur de connexion: ${error.message || 'Erreur inconnue'}. Veuillez réessayer.`
         });
       }
     } finally {
@@ -270,7 +283,7 @@ const LoginPage = ({ setCurrentPage }) => {
               <p className="text-sm text-gray-600">
                 {t('noAccount')}{' '}
                 <button
-                  onClick={() => setCurrentPage('signup')}
+                  onClick={navigateToSignup}
                   className="text-green-600 hover:text-green-700 font-medium"
                 >
                   {t('signup')}
@@ -279,7 +292,7 @@ const LoginPage = ({ setCurrentPage }) => {
             </div>
 
             <button
-              onClick={() => setCurrentPage('home')}
+              onClick={navigateToHome}
               className="text-gray-500 hover:text-gray-700 text-sm"
             >
               {t('backToHome')}

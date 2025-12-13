@@ -4,10 +4,12 @@ import { X, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PatientContext } from '../../contexts/PatientContext';
 import PhoneInput from '../common/PhoneInput';
+import { useLocale } from '../../contexts/LocaleContext';
 
 const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' }) => {
   const { user } = useAuth();
   const patientContext = useContext(PatientContext);
+  const { country: localeCountry } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [duplicateWarning, setDuplicateWarning] = useState(null);
@@ -272,7 +274,7 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             value={formData.phone}
             onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             onValidationChange={(isValid) => setPhoneValid(isValid)}
-            defaultCountry="FR"
+            defaultCountry={localeCountry}
             name="phone"
             label="Téléphone"
             required={false}

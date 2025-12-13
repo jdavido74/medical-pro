@@ -7,6 +7,7 @@ import { TextField, SelectField, CheckboxField } from '../common/FormField';
 import ErrorMessage from '../common/ErrorMessage';
 import PhoneInput from '../common/PhoneInput';
 import { useTranslation } from 'react-i18next';
+import { useLocale } from '../../contexts/LocaleContext';
 import {
   ADMINISTRATIVE_ROLES,
   ADMINISTRATIVE_ROLE_LABELS,
@@ -15,6 +16,7 @@ import {
 
 const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) => {
   const { t } = useTranslation(['admin', 'common']);
+  const { country: localeCountry } = useLocale();
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -315,7 +317,7 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
                   handleInputChange('phone', e.target.value);
                 }}
                 onValidationChange={(isValid) => setPhoneValid(isValid)}
-                defaultCountry="FR"
+                defaultCountry={localeCountry}
                 name="phone"
                 label={t('admin:usersManagement.fields.phone')}
                 required={false}
