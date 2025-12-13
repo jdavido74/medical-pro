@@ -9,6 +9,7 @@ import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
 import { medicalRecordsApi } from '../../api/medicalRecordsApi';
 import SmokingAssessmentDisplay from './SmokingAssessmentDisplay';
+import AlcoholAssessmentDisplay from './AlcoholAssessmentDisplay';
 
 const MedicalHistoryViewer = ({
   patient,
@@ -491,6 +492,17 @@ const MedicalHistoryViewer = ({
                           <div className="mt-3">
                             <SmokingAssessmentDisplay
                               data={record.antecedents.personal.habits.smoking}
+                              compact={true}
+                            />
+                          </div>
+                        )}
+
+                        {/* Alcool - si données disponibles */}
+                        {record.antecedents?.personal?.habits?.alcohol &&
+                         record.antecedents.personal.habits.alcohol.status !== 'never' && (
+                          <div className="mt-3">
+                            <AlcoholAssessmentDisplay
+                              data={record.antecedents.personal.habits.alcohol}
                               compact={true}
                             />
                           </div>

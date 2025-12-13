@@ -113,6 +113,67 @@
           "yearsSmoking": "Ex: 5, 15...",
           "quitYear": "Ex: 2020"
         }
+      },
+      "alcoholAssessment": {
+        "title": "Alcohol Consumption Assessment",
+        "status": "Alcohol consumption",
+        "formerDrinker": "Former drinker",
+        "drinksPerWeek": "Drinks per week",
+        "standardDrink": "1 standard drink = 10g pure alcohol",
+        "auditC": {
+          "title": "AUDIT-C Questionnaire",
+          "description": "WHO rapid screening tool",
+          "frequency": "How often do you have a drink containing alcohol?",
+          "quantity": "How many standard drinks do you have on a typical drinking day?",
+          "binge": "How often do you have 6 or more drinks on one occasion?",
+          "frequencyOptions": {
+            "never": "Never",
+            "monthly": "Monthly or less",
+            "monthly2_4": "2 to 4 times a month",
+            "weekly2_3": "2 to 3 times a week",
+            "weekly4plus": "4 or more times a week"
+          },
+          "quantityOptions": {
+            "drinks1_2": "1 or 2",
+            "drinks3_4": "3 or 4",
+            "drinks5_6": "5 or 6",
+            "drinks7_9": "7 to 9",
+            "drinks10plus": "10 or more"
+          },
+          "bingeOptions": {
+            "never": "Never",
+            "lessMonthly": "Less than monthly",
+            "monthly": "Monthly",
+            "weekly": "Weekly",
+            "daily": "Daily or almost daily"
+          },
+          "score": "AUDIT-C Score"
+        },
+        "riskLevel": "Risk level",
+        "riskLevels": {
+          "low": "Low",
+          "moderate": "Moderate",
+          "high": "High",
+          "very_high": "Very high"
+        },
+        "healthAlerts": "Health alerts",
+        "alerts": {
+          "hepaticRisk": "Increased hepatic risk",
+          "hepaticMonitoring": "Hepatic monitoring recommended",
+          "cardiovascularRisk": "Cardiovascular risk factor",
+          "dependenceRisk": "Dependence risk – evaluation recommended",
+          "dependenceHigh": "High probability of dependence – specialist referral recommended",
+          "bingeWarning": "Binge drinking behavior detected",
+          "interactionWarning": "Watch for drug interactions"
+        },
+        "disclaimer": "This information is decision-support only and does not replace clinical judgment.",
+        "thresholds": {
+          "recommended": "Recommendation: max 10 drinks/week, no more than 2/day",
+          "withDaysOff": "Include alcohol-free days"
+        },
+        "placeholders": {
+          "drinksPerWeek": "Ex: 5, 10..."
+        }
       }
     },
     "allergies": {

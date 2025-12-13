@@ -11,6 +11,7 @@ import { medicalRecordsApi } from '../../api/medicalRecordsApi';
 import { prescriptionsApi } from '../../api/prescriptionsApi';
 import PrescriptionPreview from './PrescriptionPreview';
 import SmokingAssessment from './SmokingAssessment';
+import AlcoholAssessment from './AlcoholAssessment';
 import { useTranslation } from 'react-i18next';
 
 // Accept both single patient or patients array, and both onSave/onSubmit, existingRecord/initialData
@@ -83,7 +84,14 @@ const MedicalRecordForm = forwardRef(({
               exposureLevel: 'low',
               healthAlerts: []
             },
-            alcohol: data?.antecedents?.personal?.habits?.alcohol || prev?.antecedents?.personal?.habits?.alcohol || { status: 'never', details: '' },
+            alcohol: data?.antecedents?.personal?.habits?.alcohol || prev?.antecedents?.personal?.habits?.alcohol || {
+              status: 'never',
+              drinksPerWeek: 0,
+              auditC: { frequency: 0, quantity: 0, binge: 0 },
+              auditCScore: 0,
+              riskLevel: 'low',
+              healthAlerts: []
+            },
             exercise: data?.antecedents?.personal?.habits?.exercise || prev?.antecedents?.personal?.habits?.exercise || { status: 'never', details: '' }
           }
         },
@@ -177,7 +185,14 @@ const MedicalRecordForm = forwardRef(({
             exposureLevel: 'low',
             healthAlerts: []
           },
-          alcohol: { status: 'never', details: '' },
+          alcohol: {
+            status: 'never',
+            drinksPerWeek: 0,
+            auditC: { frequency: 0, quantity: 0, binge: 0 },
+            auditCScore: 0,
+            riskLevel: 'low',
+            healthAlerts: []
+          },
           exercise: { status: 'never', details: '' }
         }
       },
@@ -863,27 +878,20 @@ const MedicalRecordForm = forwardRef(({
               />
             </div>
 
-            {/* Alcool et Exercice */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('medical:form.habits.alcohol')}
-                </label>
-                <select
-                  value={formData.antecedents.personal.habits.alcohol.status}
-                  onChange={(e) => handleNestedInputChange('antecedents', 'personal', 'habits', {
-                    ...formData.antecedents.personal.habits,
-                    alcohol: { ...formData.antecedents.personal.habits.alcohol, status: e.target.value }
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="never">{t('medical:form.habits.never')}</option>
-                  <option value="occasional">{t('medical:form.habits.occasional')}</option>
-                  <option value="regular">{t('medical:form.habits.regular')}</option>
-                  <option value="excessive">{t('medical:form.habits.excessive')}</option>
-                </select>
-              </div>
+            {/* Alcool - Composant complet avec AUDIT-C */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <AlcoholAssessment
+                value={formData.antecedents.personal.habits.alcohol}
+                onChange={(alcoholData) => handleNestedInputChange('antecedents', 'personal', 'habits', {
+                  ...formData.antecedents.personal.habits,
+                  alcohol: alcoholData
+                })}
+                patientGender={patient?.gender || null}
+              />
+            </div>
 
+            {/* Exercice */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('medical:form.habits.exercise')}

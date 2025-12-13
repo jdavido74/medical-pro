@@ -113,6 +113,67 @@
           "yearsSmoking": "Ex: 5, 15...",
           "quitYear": "Ex: 2020"
         }
+      },
+      "alcoholAssessment": {
+        "title": "Évaluation de la consommation d'alcool",
+        "status": "Consommation d'alcool",
+        "formerDrinker": "Ancien consommateur",
+        "drinksPerWeek": "Verres par semaine",
+        "standardDrink": "1 verre standard = 10g d'alcool pur",
+        "auditC": {
+          "title": "Questionnaire AUDIT-C",
+          "description": "Outil de dépistage rapide OMS",
+          "frequency": "À quelle fréquence consommez-vous des boissons alcoolisées ?",
+          "quantity": "Combien de verres standards buvez-vous un jour typique ?",
+          "binge": "À quelle fréquence buvez-vous 6 verres ou plus en une occasion ?",
+          "frequencyOptions": {
+            "never": "Jamais",
+            "monthly": "1 fois par mois ou moins",
+            "monthly2_4": "2 à 4 fois par mois",
+            "weekly2_3": "2 à 3 fois par semaine",
+            "weekly4plus": "4 fois ou plus par semaine"
+          },
+          "quantityOptions": {
+            "drinks1_2": "1 ou 2",
+            "drinks3_4": "3 ou 4",
+            "drinks5_6": "5 ou 6",
+            "drinks7_9": "7 à 9",
+            "drinks10plus": "10 ou plus"
+          },
+          "bingeOptions": {
+            "never": "Jamais",
+            "lessMonthly": "Moins d'une fois par mois",
+            "monthly": "Une fois par mois",
+            "weekly": "Une fois par semaine",
+            "daily": "Tous les jours ou presque"
+          },
+          "score": "Score AUDIT-C"
+        },
+        "riskLevel": "Niveau de risque",
+        "riskLevels": {
+          "low": "Faible",
+          "moderate": "Modéré",
+          "high": "Élevé",
+          "very_high": "Très élevé"
+        },
+        "healthAlerts": "Alertes santé",
+        "alerts": {
+          "hepaticRisk": "Risque hépatique accru",
+          "hepaticMonitoring": "Surveillance hépatique recommandée",
+          "cardiovascularRisk": "Facteur de risque cardiovasculaire",
+          "dependenceRisk": "Risque de dépendance – évaluation recommandée",
+          "dependenceHigh": "Forte probabilité de dépendance – orientation spécialisée recommandée",
+          "bingeWarning": "Comportement de binge drinking détecté",
+          "interactionWarning": "Attention aux interactions médicamenteuses"
+        },
+        "disclaimer": "Ces informations sont fournies à titre d'aide à la décision uniquement et ne remplacent pas le jugement clinique.",
+        "thresholds": {
+          "recommended": "Recommandation : max 10 verres/semaine, pas plus de 2/jour",
+          "withDaysOff": "Prévoir des jours sans consommation"
+        },
+        "placeholders": {
+          "drinksPerWeek": "Ex: 5, 10..."
+        }
       }
     },
     "allergies": {

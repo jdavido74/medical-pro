@@ -113,6 +113,67 @@
           "yearsSmoking": "Ej: 5, 15...",
           "quitYear": "Ej: 2020"
         }
+      },
+      "alcoholAssessment": {
+        "title": "Evaluación del consumo de alcohol",
+        "status": "Consumo de alcohol",
+        "formerDrinker": "Ex-consumidor",
+        "drinksPerWeek": "Vasos por semana",
+        "standardDrink": "1 vaso estándar = 10g de alcohol puro",
+        "auditC": {
+          "title": "Cuestionario AUDIT-C",
+          "description": "Herramienta de detección rápida OMS",
+          "frequency": "¿Con qué frecuencia consume bebidas alcohólicas?",
+          "quantity": "¿Cuántos vasos estándar bebe en un día típico?",
+          "binge": "¿Con qué frecuencia bebe 6 o más vasos en una ocasión?",
+          "frequencyOptions": {
+            "never": "Nunca",
+            "monthly": "Una vez al mes o menos",
+            "monthly2_4": "2 a 4 veces al mes",
+            "weekly2_3": "2 a 3 veces por semana",
+            "weekly4plus": "4 o más veces por semana"
+          },
+          "quantityOptions": {
+            "drinks1_2": "1 o 2",
+            "drinks3_4": "3 o 4",
+            "drinks5_6": "5 o 6",
+            "drinks7_9": "7 a 9",
+            "drinks10plus": "10 o más"
+          },
+          "bingeOptions": {
+            "never": "Nunca",
+            "lessMonthly": "Menos de una vez al mes",
+            "monthly": "Una vez al mes",
+            "weekly": "Una vez por semana",
+            "daily": "Diariamente o casi"
+          },
+          "score": "Puntuación AUDIT-C"
+        },
+        "riskLevel": "Nivel de riesgo",
+        "riskLevels": {
+          "low": "Bajo",
+          "moderate": "Moderado",
+          "high": "Alto",
+          "very_high": "Muy alto"
+        },
+        "healthAlerts": "Alertas de salud",
+        "alerts": {
+          "hepaticRisk": "Riesgo hepático aumentado",
+          "hepaticMonitoring": "Monitoreo hepático recomendado",
+          "cardiovascularRisk": "Factor de riesgo cardiovascular",
+          "dependenceRisk": "Riesgo de dependencia – evaluación recomendada",
+          "dependenceHigh": "Alta probabilidad de dependencia – derivación especializada recomendada",
+          "bingeWarning": "Comportamiento de consumo excesivo detectado",
+          "interactionWarning": "Atención a las interacciones medicamentosas"
+        },
+        "disclaimer": "Esta información es solo para apoyo a la decisión y no reemplaza el juicio clínico.",
+        "thresholds": {
+          "recommended": "Recomendación: máx 10 vasos/semana, no más de 2/día",
+          "withDaysOff": "Incluir días sin consumo"
+        },
+        "placeholders": {
+          "drinksPerWeek": "Ej: 5, 10..."
+        }
       }
     },
     "allergies": {
