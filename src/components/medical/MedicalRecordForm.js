@@ -10,6 +10,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { medicalRecordsApi } from '../../api/medicalRecordsApi';
 import { prescriptionsApi } from '../../api/prescriptionsApi';
 import PrescriptionPreview from './PrescriptionPreview';
+import SmokingAssessment from './SmokingAssessment';
+import { useTranslation } from 'react-i18next';
 
 // Accept both single patient or patients array, and both onSave/onSubmit, existingRecord/initialData
 const MedicalRecordForm = forwardRef(({
@@ -25,6 +27,7 @@ const MedicalRecordForm = forwardRef(({
   isOpen
 }, ref) => {
   const { user } = useAuth();
+  const { t } = useTranslation(['medical', 'common']);
 
   // Normalize props - support both naming conventions
   const record = existingRecord || initialData;
@@ -71,7 +74,15 @@ const MedicalRecordForm = forwardRef(({
           surgicalHistory: data?.antecedents?.personal?.surgicalHistory || prev?.antecedents?.personal?.surgicalHistory || [],
           allergies: data?.antecedents?.personal?.allergies || prev?.antecedents?.personal?.allergies || [],
           habits: {
-            smoking: data?.antecedents?.personal?.habits?.smoking || prev?.antecedents?.personal?.habits?.smoking || { status: 'never', details: '' },
+            smoking: data?.antecedents?.personal?.habits?.smoking || prev?.antecedents?.personal?.habits?.smoking || {
+              status: 'never',
+              cigarettesPerDay: 0,
+              yearsSmoking: 0,
+              quitYear: null,
+              packYears: 0,
+              exposureLevel: 'low',
+              healthAlerts: []
+            },
             alcohol: data?.antecedents?.personal?.habits?.alcohol || prev?.antecedents?.personal?.habits?.alcohol || { status: 'never', details: '' },
             exercise: data?.antecedents?.personal?.habits?.exercise || prev?.antecedents?.personal?.habits?.exercise || { status: 'never', details: '' }
           }
@@ -112,6 +123,9 @@ const MedicalRecordForm = forwardRef(({
       },
 
       treatments: data?.treatments || [],
+
+      // Traitement actuel - médicaments pris actuellement par le patient (persistant)
+      currentMedications: data?.currentMedications || prev?.currentMedications || [],
 
       // Informations basiques - nouveau à chaque visite
       basicInfo: {
@@ -154,7 +168,15 @@ const MedicalRecordForm = forwardRef(({
         surgicalHistory: [],
         allergies: [],
         habits: {
-          smoking: { status: 'never', details: '' },
+          smoking: {
+            status: 'never',
+            cigarettesPerDay: 0,
+            yearsSmoking: 0,
+            quitYear: null,
+            packYears: 0,
+            exposureLevel: 'low',
+            healthAlerts: []
+          },
           alcohol: { status: 'never', details: '' },
           exercise: { status: 'never', details: '' }
         }
@@ -194,6 +216,9 @@ const MedicalRecordForm = forwardRef(({
 
     // US 2.4 - Traitements
     treatments: [],
+
+    // Traitement actuel - médicaments pris actuellement par le patient
+    currentMedications: [],
 
     // Información de la consulta
     basicInfo: {
@@ -504,6 +529,42 @@ const MedicalRecordForm = forwardRef(({
     }));
   };
 
+  // Fonctions pour les médicaments actuels (traitement en cours du patient)
+  const addCurrentMedication = () => {
+    const newMedication = {
+      medication: '',
+      dosage: '',
+      frequency: '',
+      route: 'oral',
+      startDate: '',
+      prescribedBy: '',
+      reason: '',
+      status: 'active',
+      notes: ''
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      currentMedications: [...(prev.currentMedications || []), newMedication]
+    }));
+  };
+
+  const updateCurrentMedication = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      currentMedications: (prev.currentMedications || []).map((med, i) =>
+        i === index ? { ...med, [field]: value } : med
+      )
+    }));
+  };
+
+  const removeCurrentMedication = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      currentMedications: (prev.currentMedications || []).filter((_, i) => i !== index)
+    }));
+  };
+
   const addAllergy = () => {
     const newAllergy = {
       allergen: '',
@@ -614,14 +675,15 @@ const MedicalRecordForm = forwardRef(({
   };
 
   const tabs = [
-    { id: 'basic', label: 'Información Básica', icon: FileText },
-    { id: 'antecedents', label: 'Antecedentes', icon: Clock },
-    { id: 'vitals', label: 'Signos Vitales', icon: Activity },
-    { id: 'diagnosis', label: 'Diagnóstico', icon: Stethoscope },
-    { id: 'treatments', label: 'Tratamientos', icon: Pill },
-    { id: 'exam', label: 'Examen Físico', icon: Heart },
-    { id: 'plan', label: 'Plan', icon: CheckCircle },
-    { id: 'prescription', label: 'Ordonnance', icon: FileSignature }
+    { id: 'basic', label: t('medical:form.tabs.basic'), icon: FileText },
+    { id: 'antecedents', label: t('medical:form.tabs.antecedents'), icon: Clock },
+    { id: 'vitals', label: t('medical:form.tabs.vitals'), icon: Activity },
+    { id: 'currentMedications', label: t('medical:form.tabs.currentMedications'), icon: Pill },
+    { id: 'diagnosis', label: t('medical:form.tabs.diagnosis'), icon: Stethoscope },
+    { id: 'treatments', label: t('medical:form.tabs.treatments'), icon: Pill },
+    { id: 'exam', label: t('medical:form.tabs.exam'), icon: Heart },
+    { id: 'plan', label: t('medical:form.tabs.plan'), icon: CheckCircle },
+    { id: 'prescription', label: t('medical:form.tabs.prescription'), icon: FileSignature }
   ];
 
   const renderBasicTab = () => (
@@ -629,7 +691,7 @@ const MedicalRecordForm = forwardRef(({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Motivo de Consulta *
+            {t('medical:form.chiefComplaint')} *
           </label>
           <textarea
             value={formData.basicInfo?.chiefComplaint || ''}
@@ -638,7 +700,7 @@ const MedicalRecordForm = forwardRef(({
               errors['basicInfo.chiefComplaint'] ? 'border-red-300' : 'border-gray-300'
             }`}
             rows={3}
-            placeholder="Describa el motivo principal de la consulta..."
+            placeholder={t('medical:form.placeholders.chiefComplaint')}
           />
           {errors['basicInfo.chiefComplaint'] && (
             <p className="text-red-600 text-sm mt-1">{errors['basicInfo.chiefComplaint']}</p>
@@ -647,21 +709,21 @@ const MedicalRecordForm = forwardRef(({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Duración de los Síntomas
+            {t('medical:form.symptomsDuration')}
           </label>
           <input
             type="text"
             value={formData.basicInfo.duration}
             onChange={(e) => handleInputChange('basicInfo', 'duration', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="Ej: 3 días, 1 semana..."
+            placeholder={t('medical:form.placeholders.duration')}
           />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Síntomas
+          {t('medical:symptoms')}
         </label>
         <div className="space-y-2">
           {formData.basicInfo.symptoms.map((symptom, index) => (
@@ -671,7 +733,7 @@ const MedicalRecordForm = forwardRef(({
                 value={symptom}
                 onChange={(e) => handleArrayInputChange('basicInfo', 'symptoms', index, e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Describe el síntoma..."
+                placeholder={t('medical:form.placeholders.symptom')}
               />
               <button
                 type="button"
@@ -688,25 +750,25 @@ const MedicalRecordForm = forwardRef(({
             className="flex items-center space-x-2 text-green-600 hover:text-green-800"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar síntoma</span>
+            <span>{t('medical:form.addSymptom')}</span>
           </button>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Tipo de Consulta
+          {t('medical:form.recordType')}
         </label>
         <select
           value={formData.type}
           onChange={(e) => handleInputChange(null, 'type', e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >
-          <option value="consultation">Consulta</option>
-          <option value="examination">Examen</option>
-          <option value="treatment">Tratamiento</option>
-          <option value="follow_up">Seguimiento</option>
-          <option value="emergency">Urgencia</option>
+          <option value="consultation">{t('medical:recordTypes.consultation')}</option>
+          <option value="examination">{t('medical:module.types.examination')}</option>
+          <option value="treatment">{t('medical:module.types.treatment')}</option>
+          <option value="follow_up">{t('medical:module.types.follow_up')}</option>
+          <option value="emergency">{t('medical:recordTypes.emergency')}</option>
         </select>
       </div>
     </div>
@@ -716,12 +778,12 @@ const MedicalRecordForm = forwardRef(({
     <div className="space-y-6">
       {/* Antécédents personnels */}
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-        <h4 className="font-semibold text-gray-900 mb-4">Antecedentes Personales</h4>
+        <h4 className="font-semibold text-gray-900 mb-4">{t('medical:form.antecedents.personal')}</h4>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Historial Médico
+              {t('medical:form.antecedents.medicalHistory')}
             </label>
             <div className="space-y-2">
               {formData.antecedents.personal.medicalHistory.map((history, index) => (
@@ -731,7 +793,7 @@ const MedicalRecordForm = forwardRef(({
                     value={history}
                     onChange={(e) => handleArrayInputChange('antecedents.personal', 'medicalHistory', index, e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Ej: Diabetes tipo 2 (2020)"
+                    placeholder={t('medical:form.placeholders.medicalHistory')}
                   />
                   <button
                     type="button"
@@ -748,14 +810,14 @@ const MedicalRecordForm = forwardRef(({
                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
               >
                 <Plus className="h-4 w-4" />
-                <span>Agregar antecedente médico</span>
+                <span>{t('medical:form.antecedents.addMedicalHistory')}</span>
               </button>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Historial Quirúrgico
+              {t('medical:form.antecedents.surgicalHistory')}
             </label>
             <div className="space-y-2">
               {formData.antecedents.personal.surgicalHistory.map((surgery, index) => (
@@ -765,7 +827,7 @@ const MedicalRecordForm = forwardRef(({
                     value={surgery}
                     onChange={(e) => handleArrayInputChange('antecedents.personal', 'surgicalHistory', index, e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Ej: Apendicectomía (2015)"
+                    placeholder={t('medical:form.placeholders.surgicalHistory')}
                   />
                   <button
                     type="button"
@@ -782,67 +844,64 @@ const MedicalRecordForm = forwardRef(({
                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
               >
                 <Plus className="h-4 w-4" />
-                <span>Agregar cirugía</span>
+                <span>{t('medical:form.antecedents.addSurgery')}</span>
               </button>
             </div>
           </div>
 
-          {/* Hábitos */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tabaquismo
-              </label>
-              <select
-                value={formData.antecedents.personal.habits.smoking.status}
-                onChange={(e) => handleNestedInputChange('antecedents', 'personal', 'habits', {
+          {/* Habitudes de vie */}
+          <div className="space-y-4">
+            {/* Tabagisme - Composant complet avec évaluation */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <SmokingAssessment
+                value={formData.antecedents.personal.habits.smoking}
+                onChange={(smokingData) => handleNestedInputChange('antecedents', 'personal', 'habits', {
                   ...formData.antecedents.personal.habits,
-                  smoking: { ...formData.antecedents.personal.habits.smoking, status: e.target.value }
+                  smoking: smokingData
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="never">Nunca</option>
-                <option value="former">Ex-fumador</option>
-                <option value="current">Fumador actual</option>
-              </select>
+                patientAge={patient?.birthDate ? Math.floor((new Date() - new Date(patient.birthDate)) / (365.25 * 24 * 60 * 60 * 1000)) : null}
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Alcohol
-              </label>
-              <select
-                value={formData.antecedents.personal.habits.alcohol.status}
-                onChange={(e) => handleNestedInputChange('antecedents', 'personal', 'habits', {
-                  ...formData.antecedents.personal.habits,
-                  alcohol: { ...formData.antecedents.personal.habits.alcohol, status: e.target.value }
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="never">Nunca</option>
-                <option value="occasional">Ocasional</option>
-                <option value="regular">Regular</option>
-                <option value="excessive">Excesivo</option>
-              </select>
-            </div>
+            {/* Alcool et Exercice */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('medical:form.habits.alcohol')}
+                </label>
+                <select
+                  value={formData.antecedents.personal.habits.alcohol.status}
+                  onChange={(e) => handleNestedInputChange('antecedents', 'personal', 'habits', {
+                    ...formData.antecedents.personal.habits,
+                    alcohol: { ...formData.antecedents.personal.habits.alcohol, status: e.target.value }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="never">{t('medical:form.habits.never')}</option>
+                  <option value="occasional">{t('medical:form.habits.occasional')}</option>
+                  <option value="regular">{t('medical:form.habits.regular')}</option>
+                  <option value="excessive">{t('medical:form.habits.excessive')}</option>
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ejercicio
-              </label>
-              <select
-                value={formData.antecedents.personal.habits.exercise.status}
-                onChange={(e) => handleNestedInputChange('antecedents', 'personal', 'habits', {
-                  ...formData.antecedents.personal.habits,
-                  exercise: { ...formData.antecedents.personal.habits.exercise, status: e.target.value }
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="never">Sedentario</option>
-                <option value="occasional">Ocasional</option>
-                <option value="regular">Regular</option>
-                <option value="intense">Intenso</option>
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('medical:form.habits.exercise')}
+                </label>
+                <select
+                  value={formData.antecedents.personal.habits.exercise.status}
+                  onChange={(e) => handleNestedInputChange('antecedents', 'personal', 'habits', {
+                    ...formData.antecedents.personal.habits,
+                    exercise: { ...formData.antecedents.personal.habits.exercise, status: e.target.value }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="never">{t('medical:form.habits.sedentary')}</option>
+                  <option value="occasional">{t('medical:form.habits.occasional')}</option>
+                  <option value="regular">{t('medical:form.habits.regular')}</option>
+                  <option value="intense">{t('medical:form.habits.intense')}</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -850,58 +909,58 @@ const MedicalRecordForm = forwardRef(({
 
       {/* Antécédents familiaux */}
       <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-        <h4 className="font-semibold text-gray-900 mb-4">Antecedentes Familiares</h4>
+        <h4 className="font-semibold text-gray-900 mb-4">{t('medical:form.antecedents.family')}</h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Padre
+              {t('medical:form.antecedents.father')}
             </label>
             <input
               type="text"
               value={formData.antecedents.family.father}
               onChange={(e) => handleNestedInputChange('antecedents', 'family', 'father', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Antecedentes paternos..."
+              placeholder={t('medical:form.placeholders.fatherHistory')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Madre
+              {t('medical:form.antecedents.mother')}
             </label>
             <input
               type="text"
               value={formData.antecedents.family.mother}
               onChange={(e) => handleNestedInputChange('antecedents', 'family', 'mother', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Antecedentes maternos..."
+              placeholder={t('medical:form.placeholders.motherHistory')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Hermanos
+              {t('medical:form.antecedents.siblings')}
             </label>
             <input
               type="text"
               value={formData.antecedents.family.siblings}
               onChange={(e) => handleNestedInputChange('antecedents', 'family', 'siblings', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Antecedentes en hermanos..."
+              placeholder={t('medical:form.placeholders.siblingsHistory')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Hijos
+              {t('medical:form.antecedents.children')}
             </label>
             <input
               type="text"
               value={formData.antecedents.family.children}
               onChange={(e) => handleNestedInputChange('antecedents', 'family', 'children', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Antecedentes en hijos..."
+              placeholder={t('medical:form.placeholders.childrenHistory')}
             />
           </div>
         </div>
@@ -911,7 +970,7 @@ const MedicalRecordForm = forwardRef(({
       <div className="bg-red-50 p-4 rounded-lg border border-red-200">
         <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
           <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
-          Alergias
+          {t('medical:form.allergies.title')}
         </h4>
 
         <div className="space-y-4">
@@ -920,58 +979,58 @@ const MedicalRecordForm = forwardRef(({
               <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Alérgeno
+                    {t('medical:form.allergies.allergen')}
                   </label>
                   <input
                     type="text"
                     value={allergy.allergen}
                     onChange={(e) => updateAllergy(index, 'allergen', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-red-500"
-                    placeholder="Sustancia..."
+                    placeholder={t('medical:form.placeholders.substance')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Tipo
+                    {t('medical:form.allergies.type')}
                   </label>
                   <select
                     value={allergy.type}
                     onChange={(e) => updateAllergy(index, 'type', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-red-500"
                   >
-                    <option value="medicamento">Medicamento</option>
-                    <option value="alimento">Alimento</option>
-                    <option value="ambiental">Ambiental</option>
-                    <option value="otro">Otro</option>
+                    <option value="medicamento">{t('medical:form.allergies.types.medication')}</option>
+                    <option value="alimento">{t('medical:form.allergies.types.food')}</option>
+                    <option value="ambiental">{t('medical:form.allergies.types.environmental')}</option>
+                    <option value="otro">{t('medical:form.allergies.types.other')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Severidad
+                    {t('medical:form.allergies.severity')}
                   </label>
                   <select
                     value={allergy.severity}
                     onChange={(e) => updateAllergy(index, 'severity', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-red-500"
                   >
-                    <option value="leve">Leve</option>
-                    <option value="moderada">Moderada</option>
-                    <option value="grave">Grave</option>
+                    <option value="leve">{t('medical:form.allergies.severities.mild')}</option>
+                    <option value="moderada">{t('medical:form.allergies.severities.moderate')}</option>
+                    <option value="grave">{t('medical:form.allergies.severities.severe')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Reacción
+                    {t('medical:form.allergies.reaction')}
                   </label>
                   <input
                     type="text"
                     value={allergy.reaction}
                     onChange={(e) => updateAllergy(index, 'reaction', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-red-500"
-                    placeholder="Síntomas..."
+                    placeholder={t('medical:form.placeholders.symptoms')}
                   />
                 </div>
 
@@ -994,7 +1053,7 @@ const MedicalRecordForm = forwardRef(({
             className="flex items-center space-x-2 text-red-600 hover:text-red-800"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar alergia</span>
+            <span>{t('medical:form.allergies.add')}</span>
           </button>
         </div>
       </div>
@@ -1006,14 +1065,14 @@ const MedicalRecordForm = forwardRef(({
       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
         <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
           <Activity className="h-5 w-5 mr-2 text-green-600" />
-          Signos Vitales
+          {t('medical:vitalSigns')}
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
               <Scale className="h-4 w-4 mr-2" />
-              Peso (kg)
+              {t('medical:weight')} (kg)
             </label>
             <input
               type="number"
@@ -1028,7 +1087,7 @@ const MedicalRecordForm = forwardRef(({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
               <Ruler className="h-4 w-4 mr-2" />
-              Altura (cm)
+              {t('medical:height')} (cm)
             </label>
             <input
               type="number"
@@ -1041,20 +1100,20 @@ const MedicalRecordForm = forwardRef(({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              IMC
+              {t('medical:form.vitals.bmi')}
             </label>
             <input
               type="text"
               value={formData.vitalSigns?.bmi || ''}
               readOnly
               className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-              placeholder="Calculado automáticamente"
+              placeholder={t('medical:form.placeholders.calculatedAuto')}
             />
           </div>
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Presión Arterial (mmHg)
+              {t('medical:bloodPressure')} (mmHg)
             </label>
             <div className="flex items-center space-x-2">
               <input
@@ -1085,7 +1144,7 @@ const MedicalRecordForm = forwardRef(({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
               <Heart className="h-4 w-4 mr-2" />
-              Frecuencia Cardíaca (lpm)
+              {t('medical:heartRate')} (bpm)
             </label>
             <input
               type="number"
@@ -1099,7 +1158,7 @@ const MedicalRecordForm = forwardRef(({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
               <Thermometer className="h-4 w-4 mr-2" />
-              Temperatura (°C)
+              {t('medical:temperature')} (°C)
             </label>
             <input
               type="number"
@@ -1113,7 +1172,7 @@ const MedicalRecordForm = forwardRef(({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Frecuencia Respiratoria (rpm)
+              {t('medical:respiratoryRate')} (rpm)
             </label>
             <input
               type="number"
@@ -1126,7 +1185,7 @@ const MedicalRecordForm = forwardRef(({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Saturación O₂ (%)
+              {t('medical:form.vitals.oxygenSaturation')} (%)
             </label>
             <input
               type="number"
@@ -1142,14 +1201,14 @@ const MedicalRecordForm = forwardRef(({
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
           <Droplets className="h-4 w-4 mr-2 text-red-600" />
-          Grupo Sanguíneo
+          {t('medical:form.vitals.bloodType')}
         </label>
         <select
           value={formData.bloodType}
           onChange={(e) => handleInputChange(null, 'bloodType', e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >
-          <option value="">Seleccionar grupo sanguíneo</option>
+          <option value="">{t('medical:form.vitals.selectBloodType')}</option>
           <option value="A+">A+</option>
           <option value="A-">A-</option>
           <option value="B+">B+</option>
@@ -1167,7 +1226,7 @@ const MedicalRecordForm = forwardRef(({
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Diagnóstico Principal *
+          {t('medical:form.diagnosisTab.primaryDiagnosis')} *
         </label>
         <input
           type="text"
@@ -1176,7 +1235,7 @@ const MedicalRecordForm = forwardRef(({
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
             errors['diagnosis.primary'] ? 'border-red-300' : 'border-gray-300'
           }`}
-          placeholder="Diagnóstico principal..."
+          placeholder={t('medical:form.placeholders.primaryDiagnosis')}
         />
         {errors['diagnosis.primary'] && (
           <p className="text-red-600 text-sm mt-1">{errors['diagnosis.primary']}</p>
@@ -1185,7 +1244,7 @@ const MedicalRecordForm = forwardRef(({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Diagnósticos Secundarios
+          {t('medical:form.diagnosisTab.secondaryDiagnosis')}
         </label>
         <div className="space-y-2">
           {formData.diagnosis.secondary.map((diagnosis, index) => (
@@ -1195,7 +1254,7 @@ const MedicalRecordForm = forwardRef(({
                 value={diagnosis}
                 onChange={(e) => handleArrayInputChange('diagnosis', 'secondary', index, e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Diagnóstico secundario..."
+                placeholder={t('medical:form.placeholders.secondaryDiagnosis')}
               />
               <button
                 type="button"
@@ -1212,14 +1271,14 @@ const MedicalRecordForm = forwardRef(({
             className="flex items-center space-x-2 text-green-600 hover:text-green-800"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar diagnóstico secundario</span>
+            <span>{t('medical:form.diagnosisTab.addSecondaryDiagnosis')}</span>
           </button>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Códigos CIE-10
+          {t('medical:form.diagnosisTab.icd10Codes')}
         </label>
         <div className="space-y-2">
           {formData.diagnosis.icd10.map((code, index) => (
@@ -1229,7 +1288,7 @@ const MedicalRecordForm = forwardRef(({
                 value={code}
                 onChange={(e) => handleArrayInputChange('diagnosis', 'icd10', index, e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Ej: I10, E11.9..."
+                placeholder={t('medical:form.placeholders.icd10Code')}
               />
               <button
                 type="button"
@@ -1246,8 +1305,185 @@ const MedicalRecordForm = forwardRef(({
             className="flex items-center space-x-2 text-green-600 hover:text-green-800"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar código CIE-10</span>
+            <span>{t('medical:form.diagnosisTab.addIcd10Code')}</span>
           </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Onglet Traitement actuel - médicaments que le patient prend actuellement
+  const renderCurrentMedicationsTab = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="flex items-start">
+          <Pill className="h-5 w-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-medium text-blue-800">{t('medical:form.currentMedicationsTab.infoTitle')}</h4>
+            <p className="text-sm text-blue-700">{t('medical:form.currentMedicationsTab.infoDescription')}</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-semibold text-gray-900">{t('medical:form.currentMedicationsTab.title')}</h4>
+          <button
+            type="button"
+            onClick={addCurrentMedication}
+            className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700"
+          >
+            <Plus className="h-4 w-4" />
+            <span>{t('medical:form.currentMedicationsTab.add')}</span>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {(formData.currentMedications || []).length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Pill className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p>{t('medical:form.currentMedicationsTab.noMedications')}</p>
+              <p className="text-sm">{t('medical:form.currentMedicationsTab.addFirst')}</p>
+            </div>
+          ) : (
+            (formData.currentMedications || []).map((med, index) => (
+              <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.currentMedicationsTab.medication')} *
+                    </label>
+                    <input
+                      type="text"
+                      value={med.medication}
+                      onChange={(e) => updateCurrentMedication(index, 'medication', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                      placeholder={t('medical:form.currentMedicationsTab.medicationPlaceholder')}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.dosage')}
+                    </label>
+                    <input
+                      type="text"
+                      value={med.dosage}
+                      onChange={(e) => updateCurrentMedication(index, 'dosage', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                      placeholder="10mg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.frequency')}
+                    </label>
+                    <input
+                      type="text"
+                      value={med.frequency}
+                      onChange={(e) => updateCurrentMedication(index, 'frequency', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                      placeholder={t('medical:form.placeholders.frequency')}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.treatmentsTab.route')}
+                    </label>
+                    <select
+                      value={med.route}
+                      onChange={(e) => updateCurrentMedication(index, 'route', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                    >
+                      <option value="oral">{t('medical:form.treatmentsTab.routes.oral')}</option>
+                      <option value="iv">{t('medical:form.treatmentsTab.routes.iv')}</option>
+                      <option value="im">{t('medical:form.treatmentsTab.routes.im')}</option>
+                      <option value="topical">{t('medical:form.treatmentsTab.routes.topical')}</option>
+                      <option value="inhaled">{t('medical:form.treatmentsTab.routes.inhaled')}</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => removeCurrentMedication(index)}
+                      className="p-2 text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.currentMedicationsTab.startDate')}
+                    </label>
+                    <input
+                      type="date"
+                      value={med.startDate}
+                      onChange={(e) => updateCurrentMedication(index, 'startDate', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.currentMedicationsTab.prescribedBy')}
+                    </label>
+                    <input
+                      type="text"
+                      value={med.prescribedBy}
+                      onChange={(e) => updateCurrentMedication(index, 'prescribedBy', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                      placeholder={t('medical:form.currentMedicationsTab.prescribedByPlaceholder')}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.currentMedicationsTab.status')}
+                    </label>
+                    <select
+                      value={med.status}
+                      onChange={(e) => updateCurrentMedication(index, 'status', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                    >
+                      <option value="active">{t('medical:form.treatmentsTab.statuses.active')}</option>
+                      <option value="suspended">{t('medical:form.treatmentsTab.statuses.suspended')}</option>
+                      <option value="completed">{t('medical:form.treatmentsTab.statuses.completed')}</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.currentMedicationsTab.reason')}
+                    </label>
+                    <input
+                      type="text"
+                      value={med.reason}
+                      onChange={(e) => updateCurrentMedication(index, 'reason', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                      placeholder={t('medical:form.currentMedicationsTab.reasonPlaceholder')}
+                    />
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('medical:form.notes')}
+                    </label>
+                    <input
+                      type="text"
+                      value={med.notes}
+                      onChange={(e) => updateCurrentMedication(index, 'notes', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                      placeholder={t('medical:form.currentMedicationsTab.notesPlaceholder')}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -1261,7 +1497,7 @@ const MedicalRecordForm = forwardRef(({
           <div className="flex items-start">
             <AlertTriangle className="h-5 w-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="font-medium text-red-800 mb-2">Alertas de Medicación</h4>
+              <h4 className="font-medium text-red-800 mb-2">{t('medical:form.treatmentsTab.medicationAlerts')}</h4>
               <div className="space-y-2">
                 {medicationWarnings.map((warning, index) => (
                   <div key={index} className="text-sm text-red-700">
@@ -1277,14 +1513,14 @@ const MedicalRecordForm = forwardRef(({
 
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-semibold text-gray-900">Tratamientos</h4>
+          <h4 className="font-semibold text-gray-900">{t('medical:form.treatmentsTab.treatments')}</h4>
           <button
             type="button"
             onClick={addTreatment}
             className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar Tratamiento</span>
+            <span>{t('medical:form.treatmentsTab.addTreatment')}</span>
           </button>
         </div>
 
@@ -1294,20 +1530,20 @@ const MedicalRecordForm = forwardRef(({
               <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Medicamento
+                    {t('medical:form.treatmentsTab.medication')}
                   </label>
                   <input
                     type="text"
                     value={treatment.medication}
                     onChange={(e) => updateTreatment(index, 'medication', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
-                    placeholder="Nombre del medicamento..."
+                    placeholder={t('medical:form.placeholders.medicationName')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Dosis
+                    {t('medical:form.dosage')}
                   </label>
                   <input
                     type="text"
@@ -1320,31 +1556,31 @@ const MedicalRecordForm = forwardRef(({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Frecuencia
+                    {t('medical:form.frequency')}
                   </label>
                   <input
                     type="text"
                     value={treatment.frequency}
                     onChange={(e) => updateTreatment(index, 'frequency', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
-                    placeholder="1 vez al día"
+                    placeholder={t('medical:form.placeholders.frequency')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Vía
+                    {t('medical:form.treatmentsTab.route')}
                   </label>
                   <select
                     value={treatment.route}
                     onChange={(e) => updateTreatment(index, 'route', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
                   >
-                    <option value="oral">Oral</option>
-                    <option value="iv">Intravenosa</option>
-                    <option value="im">Intramuscular</option>
-                    <option value="topical">Tópica</option>
-                    <option value="inhaled">Inhalada</option>
+                    <option value="oral">{t('medical:form.treatmentsTab.routes.oral')}</option>
+                    <option value="iv">{t('medical:form.treatmentsTab.routes.iv')}</option>
+                    <option value="im">{t('medical:form.treatmentsTab.routes.im')}</option>
+                    <option value="topical">{t('medical:form.treatmentsTab.routes.topical')}</option>
+                    <option value="inhaled">{t('medical:form.treatmentsTab.routes.inhaled')}</option>
                   </select>
                 </div>
 
@@ -1360,7 +1596,7 @@ const MedicalRecordForm = forwardRef(({
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Fecha Inicio
+                    {t('medical:form.treatmentsTab.startDate')}
                   </label>
                   <input
                     type="date"
@@ -1372,29 +1608,29 @@ const MedicalRecordForm = forwardRef(({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Estado
+                    {t('medical:form.treatmentsTab.status')}
                   </label>
                   <select
                     value={treatment.status}
                     onChange={(e) => updateTreatment(index, 'status', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
                   >
-                    <option value="active">Activo</option>
-                    <option value="suspended">Suspendido</option>
-                    <option value="completed">Completado</option>
+                    <option value="active">{t('medical:form.treatmentsTab.statuses.active')}</option>
+                    <option value="suspended">{t('medical:form.treatmentsTab.statuses.suspended')}</option>
+                    <option value="completed">{t('medical:form.treatmentsTab.statuses.completed')}</option>
                   </select>
                 </div>
 
                 <div className="md:col-span-3">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Notas
+                    {t('medical:notes')}
                   </label>
                   <input
                     type="text"
                     value={treatment.notes}
                     onChange={(e) => updateTreatment(index, 'notes', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
-                    placeholder="Instrucciones adicionales..."
+                    placeholder={t('medical:form.placeholders.additionalInstructions')}
                   />
                 </div>
               </div>
@@ -1410,79 +1646,79 @@ const MedicalRecordForm = forwardRef(({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Aspecto General
+            {t('medical:form.examTab.generalAppearance')}
           </label>
           <textarea
             value={formData.physicalExam.general}
             onChange={(e) => handleInputChange('physicalExam', 'general', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             rows={3}
-            placeholder="Estado general del paciente..."
+            placeholder={t('medical:form.placeholders.generalState')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sistema Cardiovascular
+            {t('medical:form.examTab.cardiovascular')}
           </label>
           <textarea
             value={formData.physicalExam.cardiovascular}
             onChange={(e) => handleInputChange('physicalExam', 'cardiovascular', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             rows={3}
-            placeholder="Hallazgos cardiovasculares..."
+            placeholder={t('medical:form.placeholders.cardiovascularFindings')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sistema Respiratorio
+            {t('medical:form.examTab.respiratory')}
           </label>
           <textarea
             value={formData.physicalExam.respiratory}
             onChange={(e) => handleInputChange('physicalExam', 'respiratory', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             rows={3}
-            placeholder="Hallazgos respiratorios..."
+            placeholder={t('medical:form.placeholders.respiratoryFindings')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Abdomen
+            {t('medical:form.examTab.abdomen')}
           </label>
           <textarea
             value={formData.physicalExam.abdomen}
             onChange={(e) => handleInputChange('physicalExam', 'abdomen', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             rows={3}
-            placeholder="Exploración abdominal..."
+            placeholder={t('medical:form.placeholders.abdominalExam')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sistema Neurológico
+            {t('medical:form.examTab.neurological')}
           </label>
           <textarea
             value={formData.physicalExam.neurological}
             onChange={(e) => handleInputChange('physicalExam', 'neurological', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             rows={3}
-            placeholder="Exploración neurológica..."
+            placeholder={t('medical:form.placeholders.neurologicalExam')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Otros Sistemas
+            {t('medical:form.examTab.otherSystems')}
           </label>
           <textarea
             value={formData.physicalExam.other}
             onChange={(e) => handleInputChange('physicalExam', 'other', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             rows={3}
-            placeholder="Otros hallazgos relevantes..."
+            placeholder={t('medical:form.placeholders.otherFindings')}
           />
         </div>
       </div>
@@ -1493,7 +1729,7 @@ const MedicalRecordForm = forwardRef(({
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Recomendaciones
+          {t('medical:form.planTab.recommendations')}
         </label>
         <div className="space-y-2">
           {formData.treatmentPlan.recommendations.map((recommendation, index) => (
@@ -1503,7 +1739,7 @@ const MedicalRecordForm = forwardRef(({
                 value={recommendation}
                 onChange={(e) => handleArrayInputChange('treatmentPlan', 'recommendations', index, e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Recomendación..."
+                placeholder={t('medical:form.placeholders.recommendation')}
               />
               <button
                 type="button"
@@ -1520,14 +1756,14 @@ const MedicalRecordForm = forwardRef(({
             className="flex items-center space-x-2 text-green-600 hover:text-green-800"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar recomendación</span>
+            <span>{t('medical:form.planTab.addRecommendation')}</span>
           </button>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Próximo Seguimiento
+          {t('medical:form.planTab.nextFollowUp')}
         </label>
         <input
           type="date"
@@ -1539,7 +1775,7 @@ const MedicalRecordForm = forwardRef(({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Pruebas Solicitadas
+          {t('medical:form.planTab.requestedTests')}
         </label>
         <div className="space-y-2">
           {formData.treatmentPlan.tests.map((test, index) => (
@@ -1549,7 +1785,7 @@ const MedicalRecordForm = forwardRef(({
                 value={test}
                 onChange={(e) => handleArrayInputChange('treatmentPlan', 'tests', index, e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Prueba o examen..."
+                placeholder={t('medical:form.placeholders.testOrExam')}
               />
               <button
                 type="button"
@@ -1566,7 +1802,7 @@ const MedicalRecordForm = forwardRef(({
             className="flex items-center space-x-2 text-green-600 hover:text-green-800"
           >
             <Plus className="h-4 w-4" />
-            <span>Agregar prueba</span>
+            <span>{t('medical:form.planTab.addTest')}</span>
           </button>
         </div>
       </div>
@@ -1673,7 +1909,7 @@ const MedicalRecordForm = forwardRef(({
   // Preview prescription
   const handlePreviewPrescription = () => {
     if (prescriptionData.medications.length === 0) {
-      setErrors({ prescription: 'Ajoutez au moins un médicament avant de prévisualiser' });
+      setErrors({ prescription: t('medical:form.prescriptionTab.addAtLeastOneMedication') });
       return;
     }
     setCurrentPrescription(buildPrescriptionObject());
@@ -1683,7 +1919,7 @@ const MedicalRecordForm = forwardRef(({
   // Save prescription
   const handleSavePrescription = async () => {
     if (prescriptionData.medications.length === 0) {
-      setErrors({ prescription: 'Ajoutez au moins un médicament' });
+      setErrors({ prescription: t('medical:form.prescriptionTab.addAtLeastOneMedication') });
       return;
     }
 
@@ -1697,7 +1933,7 @@ const MedicalRecordForm = forwardRef(({
     } catch (error) {
       console.error('Error saving prescription:', error);
       setPrescriptionSaveStatus('error');
-      setErrors({ prescription: error.message || 'Erreur lors de l\'enregistrement' });
+      setErrors({ prescription: error.message || t('medical:form.prescriptionTab.saveError') });
     }
   };
 
@@ -1821,7 +2057,7 @@ const MedicalRecordForm = forwardRef(({
   // Save current prescription to list
   const handleSavePrescriptionToList = async () => {
     if (prescriptionData.medications.length === 0) {
-      setErrors(prev => ({ ...prev, prescription: 'Ajoutez au moins un médicament' }));
+      setErrors(prev => ({ ...prev, prescription: t('medical:form.prescriptionTab.addAtLeastOneMedication') }));
       return;
     }
 
@@ -1888,7 +2124,7 @@ const MedicalRecordForm = forwardRef(({
 
     } catch (error) {
       console.error('Error saving prescription:', error);
-      setErrors(prev => ({ ...prev, prescription: error.message || 'Erreur lors de la sauvegarde' }));
+      setErrors(prev => ({ ...prev, prescription: error.message || t('medical:form.prescriptionTab.saveError') }));
       setPrescriptionSaveStatus('error');
     }
   };
@@ -1937,7 +2173,7 @@ const MedicalRecordForm = forwardRef(({
       <div className="flex justify-between items-center">
         <h4 className="text-lg font-semibold text-gray-900 flex items-center">
           <FileSignature className="h-5 w-5 mr-2 text-blue-600" />
-          Ordonnances Médicales
+          {t('medical:form.prescriptionTab.title')}
         </h4>
         <button
           type="button"
@@ -1945,7 +2181,7 @@ const MedicalRecordForm = forwardRef(({
           className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
         >
           <Plus className="h-4 w-4" />
-          <span>Nouvelle ordonnance</span>
+          <span>{t('medical:form.prescriptionTab.newPrescription')}</span>
         </button>
       </div>
 
@@ -1954,7 +2190,7 @@ const MedicalRecordForm = forwardRef(({
         <div className="bg-gray-50 p-4 rounded-lg border">
           <h5 className="font-medium text-gray-900 mb-3 flex items-center">
             <FileSignature className="h-4 w-4 mr-2" />
-            Ordonnances créées ({savedPrescriptions.length})
+            {t('medical:form.prescriptionTab.createdPrescriptions')} ({savedPrescriptions.length})
           </h5>
           <div className="space-y-2">
             {savedPrescriptions.map((prescription, index) => (
@@ -1972,12 +2208,12 @@ const MedicalRecordForm = forwardRef(({
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">
-                      {prescription.prescriptionNumber || `Ordonnance #${index + 1}`}
+                      {prescription.prescriptionNumber || t('medical:form.prescriptionTab.prescriptionNumber', { number: index + 1 })}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {prescription.medications?.length || 0} médicament(s)
-                      {prescription.status === 'finalized' && ' • Finalisée'}
-                      {prescription.printCount > 0 && ` • Imprimée ${prescription.printCount}x`}
+                      {t('medical:form.prescriptionTab.medicationCount', { count: prescription.medications?.length || 0 })}
+                      {prescription.status === 'finalized' && ` • ${t('medical:form.prescriptionTab.finalized')}`}
+                      {prescription.printCount > 0 && ` • ${t('medical:form.prescriptionTab.printed', { count: prescription.printCount })}`}
                     </p>
                   </div>
                 </div>
@@ -1986,7 +2222,7 @@ const MedicalRecordForm = forwardRef(({
                     type="button"
                     onClick={() => handlePreviewSavedPrescription(prescription)}
                     className="p-2 text-gray-500 hover:text-blue-600"
-                    title="Prévisualiser"
+                    title={t('medical:form.prescriptionTab.preview')}
                   >
                     <Eye className="h-4 w-4" />
                   </button>
@@ -1996,7 +2232,7 @@ const MedicalRecordForm = forwardRef(({
                         type="button"
                         onClick={() => loadPrescriptionForEdit(prescription, index)}
                         className="p-2 text-gray-500 hover:text-blue-600"
-                        title="Modifier"
+                        title={t('medical:form.prescriptionTab.edit')}
                       >
                         <Edit3 className="h-4 w-4" />
                       </button>
@@ -2004,7 +2240,7 @@ const MedicalRecordForm = forwardRef(({
                         type="button"
                         onClick={() => handleDeletePrescription(index)}
                         className="p-2 text-gray-500 hover:text-red-600"
-                        title="Supprimer"
+                        title={t('medical:form.prescriptionTab.delete')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -2021,13 +2257,13 @@ const MedicalRecordForm = forwardRef(({
       <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
         <h5 className="font-medium text-purple-900 mb-3 flex items-center">
           <Settings className="h-4 w-4 mr-2" />
-          Configuration de l'ordonnance
+          {t('medical:form.prescriptionTab.configuration')}
         </h5>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left column - Checkboxes */}
           <div className="space-y-4">
             <div className="space-y-3">
-              <p className="text-sm text-purple-700 font-medium">Éléments à inclure dans l'ordonnance :</p>
+              <p className="text-sm text-purple-700 font-medium">{t('medical:form.prescriptionTab.elementsToInclude')}</p>
               <label className="flex items-start space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -2035,7 +2271,7 @@ const MedicalRecordForm = forwardRef(({
                   onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeVitalSigns: e.target.checked }))}
                   className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
-                <span className="text-sm text-gray-700">Signes vitaux du jour</span>
+                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.vitalSignsToday')}</span>
               </label>
               <label className="flex items-start space-x-2 cursor-pointer">
                 <input
@@ -2044,11 +2280,11 @@ const MedicalRecordForm = forwardRef(({
                   onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeDiagnosis: e.target.checked }))}
                   className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
-                <span className="text-sm text-gray-700">Diagnostic(s)</span>
+                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.diagnoses')}</span>
               </label>
             </div>
             <div className="space-y-3 pt-2 border-t border-purple-200">
-              <p className="text-sm text-purple-700 font-medium">Ajouter automatiquement depuis le dossier :</p>
+              <p className="text-sm text-purple-700 font-medium">{t('medical:form.prescriptionTab.autoAddFromRecord')}</p>
               <label className="flex items-start space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -2057,7 +2293,7 @@ const MedicalRecordForm = forwardRef(({
                   className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
-                  Traitements actifs
+                  {t('medical:form.prescriptionTab.activeTreatments')}
                   {getActiveTreatments().length > 0 && (
                     <span className="ml-1 text-purple-600 font-medium">
                       ({getActiveTreatments().length})
@@ -2073,7 +2309,7 @@ const MedicalRecordForm = forwardRef(({
                   className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">
-                  Recommandations du plan
+                  {t('medical:form.prescriptionTab.planRecommendations')}
                   {getPlanRecommendations().length > 0 && (
                     <span className="ml-1 text-purple-600 font-medium">
                       ({getPlanRecommendations().length})
@@ -2086,21 +2322,21 @@ const MedicalRecordForm = forwardRef(({
 
           {/* Right column - Live preview */}
           <div className="bg-white p-3 rounded-lg border border-purple-200 text-sm">
-            <p className="text-purple-700 font-medium mb-2">Aperçu des éléments sélectionnés :</p>
+            <p className="text-purple-700 font-medium mb-2">{t('medical:form.prescriptionTab.selectedElementsPreview')}</p>
 
             {/* Vital Signs Preview */}
             {prescriptionOptions.includeVitalSigns && formData.vitalSigns && (
               <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">Signes vitaux :</p>
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.vitalSigns')}</p>
                 <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
                   {formData.vitalSigns.bloodPressureSystolic && formData.vitalSigns.bloodPressureDiastolic && (
                     <span className="block">TA: {formData.vitalSigns.bloodPressureSystolic}/{formData.vitalSigns.bloodPressureDiastolic} mmHg</span>
                   )}
                   {formData.vitalSigns.heartRate && <span className="block">FC: {formData.vitalSigns.heartRate} bpm</span>}
                   {formData.vitalSigns.temperature && <span className="block">T°: {formData.vitalSigns.temperature}°C</span>}
-                  {formData.vitalSigns.weight && <span className="block">Poids: {formData.vitalSigns.weight} kg</span>}
+                  {formData.vitalSigns.weight && <span className="block">{t('medical:weight')}: {formData.vitalSigns.weight} kg</span>}
                   {!formData.vitalSigns.bloodPressureSystolic && !formData.vitalSigns.heartRate && !formData.vitalSigns.temperature && !formData.vitalSigns.weight && (
-                    <span className="text-gray-400 italic">Aucun signe vital renseigné</span>
+                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noVitalSigns')}</span>
                   )}
                 </div>
               </div>
@@ -2109,14 +2345,14 @@ const MedicalRecordForm = forwardRef(({
             {/* Diagnosis Preview */}
             {prescriptionOptions.includeDiagnosis && (
               <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">Diagnostic :</p>
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.diagnosis')}</p>
                 <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
                   {formData.diagnoses?.primary ? (
                     <span className="block">{formData.diagnoses.primary}</span>
                   ) : formData.subjective?.chiefComplaint ? (
                     <span className="block">{formData.subjective.chiefComplaint}</span>
                   ) : (
-                    <span className="text-gray-400 italic">Aucun diagnostic renseigné</span>
+                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noDiagnosis')}</span>
                   )}
                 </div>
               </div>
@@ -2125,14 +2361,14 @@ const MedicalRecordForm = forwardRef(({
             {/* Treatments Preview */}
             {prescriptionOptions.includeFromTreatments && (
               <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">Traitements à ajouter :</p>
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.treatmentsToAdd')}</p>
                 <div className="text-xs text-gray-500 pl-2 border-l-2 border-green-300">
                   {getActiveTreatments().length > 0 ? (
-                    getActiveTreatments().map((t, i) => (
-                      <span key={i} className="block">• {t.medication} {t.dosage && `- ${t.dosage}`} {t.frequency && `(${t.frequency})`}</span>
+                    getActiveTreatments().map((treatment, i) => (
+                      <span key={i} className="block">• {treatment.medication} {treatment.dosage && `- ${treatment.dosage}`} {treatment.frequency && `(${treatment.frequency})`}</span>
                     ))
                   ) : (
-                    <span className="text-gray-400 italic">Aucun traitement actif</span>
+                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noActiveTreatment')}</span>
                   )}
                 </div>
               </div>
@@ -2141,14 +2377,14 @@ const MedicalRecordForm = forwardRef(({
             {/* Recommendations Preview */}
             {prescriptionOptions.includeFromPlan && (
               <div className="mb-2">
-                <p className="text-xs font-medium text-gray-600 mb-1">Recommandations à ajouter :</p>
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.recommendationsToAdd')}</p>
                 <div className="text-xs text-gray-500 pl-2 border-l-2 border-blue-300">
                   {getPlanRecommendations().length > 0 ? (
                     getPlanRecommendations().map((r, i) => (
                       <span key={i} className="block">• {r}</span>
                     ))
                   ) : (
-                    <span className="text-gray-400 italic">Aucune recommandation</span>
+                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noRecommendation')}</span>
                   )}
                 </div>
               </div>
@@ -2157,7 +2393,7 @@ const MedicalRecordForm = forwardRef(({
             {/* No selection message */}
             {!prescriptionOptions.includeVitalSigns && !prescriptionOptions.includeDiagnosis &&
              !prescriptionOptions.includeFromTreatments && !prescriptionOptions.includeFromPlan && (
-              <p className="text-gray-400 italic text-xs">Cochez les options pour voir l'aperçu</p>
+              <p className="text-gray-400 italic text-xs">{t('medical:form.prescriptionTab.checkOptionsPreview')}</p>
             )}
           </div>
         </div>
@@ -2176,8 +2412,8 @@ const MedicalRecordForm = forwardRef(({
         <div className="flex justify-between items-center mb-4">
           <h5 className="font-medium text-blue-900">
             {editingPrescriptionIndex !== null
-              ? `Modification de l'ordonnance #${editingPrescriptionIndex + 1}`
-              : 'Nouvelle ordonnance - Médicaments prescrits'}
+              ? t('medical:form.prescriptionTab.editingPrescription', { number: editingPrescriptionIndex + 1 })
+              : t('medical:form.prescriptionTab.newPrescriptionMedications')}
           </h5>
           <div className="flex items-center space-x-2">
             {editingPrescriptionIndex !== null && (
@@ -2187,7 +2423,7 @@ const MedicalRecordForm = forwardRef(({
                 className="text-sm text-gray-600 hover:text-gray-800 flex items-center"
               >
                 <X className="h-4 w-4 mr-1" />
-                Annuler
+                {t('medical:form.prescriptionTab.cancel')}
               </button>
             )}
             <button
@@ -2196,7 +2432,7 @@ const MedicalRecordForm = forwardRef(({
               className="flex items-center space-x-1 bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm"
             >
               <Plus className="h-4 w-4" />
-              <span>Ajouter médicament</span>
+              <span>{t('medical:form.prescriptionTab.addMedication')}</span>
             </button>
           </div>
         </div>
@@ -2206,17 +2442,17 @@ const MedicalRecordForm = forwardRef(({
             <div key={index} className="bg-white p-4 rounded-lg border shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Médicament *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.medicationRequired')}</label>
                   <input
                     type="text"
                     value={med.medication}
                     onChange={(e) => updatePrescriptionMedication(index, 'medication', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    placeholder="Nom du médicament..."
+                    placeholder={t('medical:form.prescriptionTab.medicationPlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Dosage *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.dosageRequired')}</label>
                   <input
                     type="text"
                     value={med.dosage}
@@ -2226,29 +2462,29 @@ const MedicalRecordForm = forwardRef(({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Fréquence *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.frequencyRequired')}</label>
                   <input
                     type="text"
                     value={med.frequency}
                     onChange={(e) => updatePrescriptionMedication(index, 'frequency', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    placeholder="3x/jour"
+                    placeholder={t('medical:form.prescriptionTab.frequencyPlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Voie</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.route')}</label>
                   <select
                     value={med.route}
                     onChange={(e) => updatePrescriptionMedication(index, 'route', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="oral">Orale</option>
-                    <option value="iv">IV</option>
-                    <option value="im">IM</option>
-                    <option value="topical">Topique</option>
-                    <option value="inhaled">Inhalée</option>
-                    <option value="sublingual">Sublinguale</option>
-                    <option value="rectal">Rectale</option>
+                    <option value="oral">{t('medical:form.prescriptionTab.routes.oral')}</option>
+                    <option value="iv">{t('medical:form.prescriptionTab.routes.iv')}</option>
+                    <option value="im">{t('medical:form.prescriptionTab.routes.im')}</option>
+                    <option value="topical">{t('medical:form.prescriptionTab.routes.topical')}</option>
+                    <option value="inhaled">{t('medical:form.prescriptionTab.routes.inhaled')}</option>
+                    <option value="sublingual">{t('medical:form.prescriptionTab.routes.sublingual')}</option>
+                    <option value="rectal">{t('medical:form.prescriptionTab.routes.rectal')}</option>
                   </select>
                 </div>
                 <div className="flex items-end">
@@ -2261,33 +2497,33 @@ const MedicalRecordForm = forwardRef(({
                   </button>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Durée</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.duration')}</label>
                   <input
                     type="text"
                     value={med.duration}
                     onChange={(e) => updatePrescriptionMedication(index, 'duration', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    placeholder="7 jours"
+                    placeholder={t('medical:form.prescriptionTab.durationPlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Quantité</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.quantity')}</label>
                   <input
                     type="text"
                     value={med.quantity}
                     onChange={(e) => updatePrescriptionMedication(index, 'quantity', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    placeholder="1 boîte"
+                    placeholder={t('medical:form.prescriptionTab.quantityPlaceholder')}
                   />
                 </div>
                 <div className="md:col-span-3">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Instructions</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.instructions')}</label>
                   <input
                     type="text"
                     value={med.instructions}
                     onChange={(e) => updatePrescriptionMedication(index, 'instructions', e.target.value)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    placeholder="À prendre pendant les repas..."
+                    placeholder={t('medical:form.prescriptionTab.instructionsPlaceholder')}
                   />
                 </div>
               </div>
@@ -2297,8 +2533,8 @@ const MedicalRecordForm = forwardRef(({
           {prescriptionData.medications.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <FileSignature className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Aucun médicament ajouté</p>
-              <p className="text-sm">Cliquez sur "Ajouter médicament" ou utilisez la configuration ci-dessus</p>
+              <p>{t('medical:form.prescriptionTab.noMedication')}</p>
+              <p className="text-sm">{t('medical:form.prescriptionTab.noMedicationHint')}</p>
             </div>
           )}
         </div>
@@ -2307,28 +2543,28 @@ const MedicalRecordForm = forwardRef(({
       {/* Instructions générales */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Instructions générales pour le patient
+          {t('medical:form.prescriptionTab.generalInstructions')}
         </label>
         <textarea
           value={prescriptionData.instructions}
           onChange={(e) => setPrescriptionData(prev => ({ ...prev, instructions: e.target.value }))}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           rows={3}
-          placeholder="Instructions supplémentaires pour le patient..."
+          placeholder={t('medical:form.prescriptionTab.generalInstructionsPlaceholder')}
         />
       </div>
 
       {/* Notes additionnelles (médecin) */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Notes additionnelles du médecin
+          {t('medical:form.prescriptionTab.doctorNotes')}
         </label>
         <textarea
           value={prescriptionData.additionalNotes}
           onChange={(e) => setPrescriptionData(prev => ({ ...prev, additionalNotes: e.target.value }))}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           rows={2}
-          placeholder="Notes personnelles (seront incluses dans l'ordonnance)..."
+          placeholder={t('medical:form.prescriptionTab.doctorNotesPlaceholder')}
         />
       </div>
 
@@ -2336,7 +2572,7 @@ const MedicalRecordForm = forwardRef(({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Valide jusqu'au
+            {t('medical:form.prescriptionTab.validUntil')}
           </label>
           <input
             type="date"
@@ -2354,13 +2590,13 @@ const MedicalRecordForm = forwardRef(({
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
           <label htmlFor="renewable" className="ml-2 text-sm text-gray-700">
-            Renouvelable
+            {t('medical:form.prescriptionTab.renewable')}
           </label>
         </div>
         {prescriptionData.renewable && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre de renouvellements
+              {t('medical:form.prescriptionTab.renewalCount')}
             </label>
             <input
               type="number"
@@ -2383,7 +2619,7 @@ const MedicalRecordForm = forwardRef(({
           className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Eye className="h-4 w-4" />
-          <span>Prévisualiser</span>
+          <span>{t('medical:form.prescriptionTab.preview')}</span>
         </button>
         <button
           type="button"
@@ -2398,10 +2634,10 @@ const MedicalRecordForm = forwardRef(({
           )}
           <span>
             {prescriptionSaveStatus === 'saving'
-              ? 'Enregistrement...'
+              ? t('medical:form.prescriptionTab.saving')
               : editingPrescriptionIndex !== null
-                ? 'Mettre à jour'
-                : 'Enregistrer l\'ordonnance'}
+                ? t('medical:form.prescriptionTab.update')
+                : t('medical:form.prescriptionTab.savePrescription')}
           </span>
         </button>
       </div>
@@ -2410,7 +2646,7 @@ const MedicalRecordForm = forwardRef(({
       {prescriptionSaveStatus === 'saved' && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center">
           <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-          <span className="text-green-800 text-sm">Ordonnance enregistrée avec succès</span>
+          <span className="text-green-800 text-sm">{t('medical:form.prescriptionTab.savedSuccess')}</span>
         </div>
       )}
     </div>
@@ -2429,14 +2665,14 @@ const MedicalRecordForm = forwardRef(({
         <div className="p-6 border-b bg-blue-50">
           <div className="flex items-center mb-3">
             <User className="h-5 w-5 text-blue-600 mr-2" />
-            <h3 className="text-lg font-semibold text-blue-900">Seleccionar Paciente</h3>
+            <h3 className="text-lg font-semibold text-blue-900">{t('medical:form.patientSelector.title')}</h3>
           </div>
           <div className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar paciente por nombre..."
+                placeholder={t('medical:form.patientSelector.searchPlaceholder')}
                 value={patientSearchQuery}
                 onChange={(e) => setPatientSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -2451,7 +2687,7 @@ const MedicalRecordForm = forwardRef(({
               }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="">-- Seleccione un paciente --</option>
+              <option value="">{t('medical:form.patientSelector.selectPatient')}</option>
               {filteredPatients.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.firstName} {p.lastName} {p.patientNumber ? `(${p.patientNumber})` : ''}
@@ -2460,7 +2696,7 @@ const MedicalRecordForm = forwardRef(({
             </select>
             {selectedPatientId && (
               <div className="text-sm text-blue-700 bg-blue-100 px-3 py-2 rounded">
-                Paciente seleccionado: <strong>{currentPatient?.firstName} {currentPatient?.lastName}</strong>
+                {t('medical:form.patientSelector.selectedPatient')} <strong>{currentPatient?.firstName} {currentPatient?.lastName}</strong>
               </div>
             )}
           </div>
@@ -2497,6 +2733,7 @@ const MedicalRecordForm = forwardRef(({
           {activeTab === 'basic' && renderBasicTab()}
           {activeTab === 'antecedents' && renderAntecedentsTab()}
           {activeTab === 'vitals' && renderVitalsTab()}
+          {activeTab === 'currentMedications' && renderCurrentMedicationsTab()}
           {activeTab === 'diagnosis' && renderDiagnosisTab()}
           {activeTab === 'treatments' && renderTreatmentsTab()}
           {activeTab === 'exam' && renderExamTab()}
@@ -2522,19 +2759,19 @@ const MedicalRecordForm = forwardRef(({
           {saveStatus === 'saved' && (
             <span className="flex items-center text-green-600">
               <Check className="h-4 w-4 mr-2" />
-              Enregistré avec succès
+              {t('medical:form.footer.savedSuccess')}
             </span>
           )}
           {saveStatus === 'error' && (
             <span className="flex items-center text-red-600">
               <AlertTriangle className="h-4 w-4 mr-2" />
-              Erreur lors de l'enregistrement
+              {t('medical:form.footer.saveError')}
             </span>
           )}
           {formData._previousVitalSigns && (
             <span className="flex items-center text-blue-500 text-xs">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              Données pré-remplies depuis le dernier dossier
+              {t('medical:form.footer.prefillNote')}
             </span>
           )}
         </div>
@@ -2547,7 +2784,7 @@ const MedicalRecordForm = forwardRef(({
               onClick={handleClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Annuler
+              {t('medical:form.footer.cancel')}
             </button>
           )}
           <button
@@ -2559,12 +2796,12 @@ const MedicalRecordForm = forwardRef(({
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Enregistrement...</span>
+                <span>{t('medical:form.footer.saving')}</span>
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                <span>Enregistrer le dossier</span>
+                <span>{t('medical:form.footer.saveRecord')}</span>
               </>
             )}
           </button>

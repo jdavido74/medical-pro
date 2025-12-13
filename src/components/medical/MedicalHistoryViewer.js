@@ -1,13 +1,14 @@
 // components/medical/MedicalHistoryViewer.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Calendar, Search, Eye, Edit2, FileText, Activity,
-  Pill, AlertTriangle, User
+  Pill, AlertTriangle, User, Cigarette
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
-import { medicalRecordsStorage } from '../../utils/medicalRecordsStorage';
+import { medicalRecordsApi } from '../../api/medicalRecordsApi';
+import SmokingAssessmentDisplay from './SmokingAssessmentDisplay';
 
 const MedicalHistoryViewer = ({
   patient,
@@ -41,6 +42,37 @@ const MedicalHistoryViewer = ({
   // Support pour les deux props : patient (objet) ou patientId (string)
   const currentPatientId = patientId || patient?.id;
 
+  const loadMedicalHistory = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      if (currentPatientId) {
+        const response = await medicalRecordsApi.getPatientMedicalRecords(currentPatientId);
+        setRecords(response.records || []);
+        // Also set statistics if available from this endpoint
+        if (response.statistics) {
+          setStatistics(response.statistics);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading medical history:', error);
+      setRecords([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPatientId]);
+
+  const loadStatistics = useCallback(async () => {
+    try {
+      if (currentPatientId) {
+        const stats = await medicalRecordsApi.getStatistics();
+        setStatistics(stats);
+      }
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+      setStatistics({});
+    }
+  }, [currentPatientId]);
+
   useEffect(() => {
     if (currentPatientId) {
       loadMedicalHistory();
@@ -48,36 +80,11 @@ const MedicalHistoryViewer = ({
         loadStatistics();
       }
     }
-  }, [currentPatientId, showStatistics]);
+  }, [currentPatientId, showStatistics, loadMedicalHistory, loadStatistics]);
 
   useEffect(() => {
     filterRecords();
   }, [records, searchQuery, filters]);
-
-  const loadMedicalHistory = () => {
-    try {
-      setIsLoading(true);
-      if (currentPatientId) {
-        const patientRecords = medicalRecordsStorage.getByPatientId(currentPatientId);
-        setRecords(patientRecords);
-      }
-    } catch (error) {
-      console.error('Error loading medical history:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadStatistics = () => {
-    try {
-      if (currentPatientId) {
-        const stats = medicalRecordsStorage.getStatistics(currentPatientId);
-        setStatistics(stats);
-      }
-    } catch (error) {
-      console.error('Error loading statistics:', error);
-    }
-  };
 
   const filterRecords = () => {
     let filtered = [...records];
@@ -221,24 +228,26 @@ const MedicalHistoryViewer = ({
     return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
   };
 
-  const handleViewRecord = (record) => {
-    // Journaliser l'accès
-    medicalRecordsStorage.logAccess(record.id, 'view_access', user?.id, {
-      userRole: user?.role,
-      timestamp: new Date().toISOString()
-    });
-
-    onViewRecord && onViewRecord(record);
+  const handleViewRecord = async (record) => {
+    // Access logging is handled by the backend
+    try {
+      const fullRecord = await medicalRecordsApi.getMedicalRecordById(record.id);
+      onViewRecord && onViewRecord(fullRecord);
+    } catch (error) {
+      console.error('Error fetching record:', error);
+      onViewRecord && onViewRecord(record);
+    }
   };
 
-  const handleEditRecord = (record) => {
-    // Journaliser l'accès
-    medicalRecordsStorage.logAccess(record.id, 'edit_access', user?.id, {
-      userRole: user?.role,
-      timestamp: new Date().toISOString()
-    });
-
-    onEditRecord && onEditRecord(record);
+  const handleEditRecord = async (record) => {
+    // Access logging is handled by the backend
+    try {
+      const fullRecord = await medicalRecordsApi.getMedicalRecordById(record.id);
+      onEditRecord && onEditRecord(fullRecord);
+    } catch (error) {
+      console.error('Error fetching record:', error);
+      onEditRecord && onEditRecord(record);
+    }
   };
 
   const handleCreateMedicalRecord = () => {
@@ -248,7 +257,7 @@ const MedicalHistoryViewer = ({
         patientId: currentPatientId,
         type: 'consultation',
         date: new Date().toISOString().split('T')[0],
-        practitionerId: user?.id || 'unknown',
+        providerId: user?.id || 'unknown',
         isNew: true
       };
       onEditRecord(newRecord);
@@ -258,7 +267,7 @@ const MedicalHistoryViewer = ({
   const handleDeleteRecord = async (recordId) => {
     if (window.confirm('¿Está seguro de que desea eliminar este registro médico?')) {
       try {
-        await medicalRecordsStorage.delete(recordId, user?.id);
+        await medicalRecordsApi.archiveMedicalRecord(recordId);
         loadMedicalHistory();
         if (showStatistics) {
           loadStatistics();
@@ -475,6 +484,17 @@ const MedicalHistoryViewer = ({
                             </div>
                           )}
                         </div>
+
+                        {/* Tabagisme - si données disponibles avec niveau d'exposition significatif */}
+                        {record.antecedents?.personal?.habits?.smoking &&
+                         record.antecedents.personal.habits.smoking.status !== 'never' && (
+                          <div className="mt-3">
+                            <SmokingAssessmentDisplay
+                              data={record.antecedents.personal.habits.smoking}
+                              compact={true}
+                            />
+                          </div>
+                        )}
 
                         {/* Alertas de medicación */}
                         {record.medicationWarnings && record.medicationWarnings.length > 0 && (
