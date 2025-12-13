@@ -1,11 +1,12 @@
 // components/admin/PractitionerManagementModal.js - Gestion des praticiens
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Edit2, Trash2, User, Mail, Phone, Stethoscope, Calendar, Check } from 'lucide-react';
-import { practitionersStorage } from '../../utils/clinicConfigStorage';
+import { X, UserPlus, Edit2, Trash2, User, Mail, Phone, Stethoscope, Calendar, Check, CheckCircle, AlertCircle } from 'lucide-react';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { useTranslation } from 'react-i18next';
+import PhoneInput, { PhoneDisplay } from '../common/PhoneInput';
 
 const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['admin', 'common']);
   const [practitioners, setPractitioners] = useState([]);
   const [activeTab, setActiveTab] = useState('list');
   const [editingPractitioner, setEditingPractitioner] = useState(null);
@@ -21,15 +22,43 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
     color: 'blue'
   });
 
+  // États pour le chargement et les notifications
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [notification, setNotification] = useState(null);
+
   useEffect(() => {
     if (isOpen) {
       loadPractitioners();
     }
   }, [isOpen]);
 
-  const loadPractitioners = () => {
-    const allPractitioners = practitionersStorage.getAll();
-    setPractitioners(allPractitioners);
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Fonction pour afficher une notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+  };
+
+  const loadPractitioners = async () => {
+    try {
+      setIsLoading(true);
+      const data = await healthcareProvidersApi.getHealthcareProviders();
+      setPractitioners(data.providers || []);
+    } catch (error) {
+      console.error('[PractitionerManagementModal] Error loading practitioners:', error);
+      showNotification(t('practitioners.messages.loadError') || 'Erreur lors du chargement', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSave = () => {
@@ -69,63 +98,124 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
     setActiveTab('form');
   };
 
-  const handleDelete = (practitionerId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce praticien ?')) {
-      practitionersStorage.delete(practitionerId);
-      loadPractitioners();
+  const handleDelete = async (practitionerId) => {
+    if (!window.confirm(t('practitioners.messages.deleteConfirm') || 'Êtes-vous sûr de vouloir supprimer ce praticien ?')) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await healthcareProvidersApi.deleteHealthcareProvider(practitionerId);
+      showNotification(t('practitioners.messages.deleteSuccess') || 'Praticien supprimé avec succès', 'success');
+      await loadPractitioners();
+    } catch (error) {
+      console.error('[PractitionerManagementModal] Error deleting practitioner:', error);
+      showNotification(t('practitioners.messages.deleteError') || 'Erreur lors de la suppression', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (editingPractitioner) {
-      practitionersStorage.update(editingPractitioner.id, formData);
-    } else {
-      practitionersStorage.add(formData);
-    }
+    try {
+      setIsSaving(true);
 
-    loadPractitioners();
-    setActiveTab('list');
-    setEditingPractitioner(null);
+      if (editingPractitioner) {
+        // Mise à jour d'un praticien existant
+        await healthcareProvidersApi.updateHealthcareProvider(editingPractitioner.id, formData);
+        showNotification(t('practitioners.messages.updateSuccess') || 'Praticien mis à jour avec succès', 'success');
+      } else {
+        // Création d'un nouveau praticien
+        await healthcareProvidersApi.createHealthcareProvider(formData);
+        showNotification(t('practitioners.messages.createSuccess') || 'Praticien créé avec succès', 'success');
+      }
+
+      await loadPractitioners();
+      setActiveTab('list');
+      setEditingPractitioner(null);
+      onSave?.();
+    } catch (error) {
+      console.error('[PractitionerManagementModal] Error saving practitioner:', error);
+      const errorMessage = error.message || (editingPractitioner
+        ? t('practitioners.messages.updateError')
+        : t('practitioners.messages.createError'))
+        || 'Erreur lors de la sauvegarde';
+      showNotification(errorMessage, 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const practitionerTypes = [
-    { value: 'doctor', label: 'Médecin', icon: Stethoscope },
-    { value: 'nurse', label: 'Infirmier(e)', icon: User },
-    { value: 'specialist', label: 'Spécialiste', icon: User },
-    { value: 'therapist', label: 'Thérapeute', icon: User }
+    { value: 'doctor', label: t('admin:practitionersManagement.types.doctor'), icon: Stethoscope },
+    { value: 'nurse', label: t('admin:practitionersManagement.types.nurse'), icon: User },
+    { value: 'specialist', label: t('admin:practitionersManagement.types.specialist'), icon: User },
+    { value: 'therapist', label: t('admin:practitionersManagement.types.therapist'), icon: User }
   ];
 
   const colorOptions = [
-    { value: 'blue', label: 'Bleu', className: 'bg-blue-500' },
-    { value: 'green', label: 'Vert', className: 'bg-green-500' },
-    { value: 'red', label: 'Rouge', className: 'bg-red-500' },
-    { value: 'purple', label: 'Violet', className: 'bg-purple-500' },
-    { value: 'orange', label: 'Orange', className: 'bg-orange-500' },
-    { value: 'teal', label: 'Sarcelle', className: 'bg-teal-500' },
-    { value: 'pink', label: 'Rose', className: 'bg-pink-500' },
-    { value: 'indigo', label: 'Indigo', className: 'bg-indigo-500' }
+    { value: 'blue', label: t('admin:practitionersManagement.colors.blue'), className: 'bg-blue-500' },
+    { value: 'green', label: t('admin:practitionersManagement.colors.green'), className: 'bg-green-500' },
+    { value: 'red', label: t('admin:practitionersManagement.colors.red'), className: 'bg-red-500' },
+    { value: 'purple', label: t('admin:practitionersManagement.colors.purple'), className: 'bg-purple-500' },
+    { value: 'orange', label: t('admin:practitionersManagement.colors.orange'), className: 'bg-orange-500' },
+    { value: 'teal', label: t('admin:practitionersManagement.colors.teal'), className: 'bg-teal-500' },
+    { value: 'pink', label: t('admin:practitionersManagement.colors.pink'), className: 'bg-pink-500' },
+    { value: 'indigo', label: t('admin:practitionersManagement.colors.indigo'), className: 'bg-indigo-500' }
   ];
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700">
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-[60] animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-4 flex items-center space-x-3 min-w-[320px] max-w-md ${
+            notification.type === 'success'
+              ? 'bg-green-50 border-l-4 border-green-500'
+              : 'bg-red-50 border-l-4 border-red-500'
+          }`}>
+            {notification.type === 'success' ? (
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+            )}
+            <p className={`flex-1 text-sm font-medium ${
+              notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {notification.message}
+            </p>
+            <button
+              onClick={() => setNotification(null)}
+              className={`flex-shrink-0 ${
+                notification.type === 'success'
+                  ? 'text-green-600 hover:text-green-800'
+                  : 'text-red-600 hover:text-red-800'
+              }`}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700">
           <div className="flex items-center space-x-3">
             <User className="h-6 w-6 text-white" />
-            <h2 className="text-xl font-semibold text-white">Gestion des Praticiens</h2>
+            <h2 className="text-xl font-semibold text-white">{t('admin:practitionersManagement.title')}</h2>
           </div>
           <button onClick={onClose} className="text-white hover:text-gray-200 transition-colors">
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
+        {/* Tabs - Fixed */}
+        <div className="flex-shrink-0 border-b border-gray-200">
           <div className="flex">
             <button
               onClick={() => setActiveTab('list')}
@@ -136,7 +226,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
               }`}
             >
               <User className="h-4 w-4 inline mr-2" />
-              Liste des praticiens
+              {t('admin:practitionersManagement.tabs.list')}
             </button>
             <button
               onClick={() => setActiveTab('form')}
@@ -147,25 +237,25 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
               }`}
             >
               <UserPlus className="h-4 w-4 inline mr-2" />
-              {editingPractitioner ? 'Modifier' : 'Nouveau'} praticien
+              {editingPractitioner ? t('admin:practitionersManagement.tabs.edit') : t('admin:practitionersManagement.tabs.new')}
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'list' && (
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Praticiens ({practitioners.length})
+                  {t('admin:practitionersManagement.list.title', { count: practitioners.length })}
                 </h3>
                 <button
                   onClick={handleAddNew}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Nouveau praticien
+                  {t('admin:practitionersManagement.buttons.addNew')}
                 </button>
               </div>
 
@@ -187,12 +277,12 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                               </h4>
                               {practitioner.isActive && (
                                 <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                                  Actif
+                                  {t('common:statuses.active')}
                                 </span>
                               )}
                               {!practitioner.isActive && (
                                 <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-                                  Inactif
+                                  {t('common:statuses.inactive')}
                                 </span>
                               )}
                             </div>
@@ -209,7 +299,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                                 {practitioner.phone && (
                                   <span className="flex items-center">
                                     <Phone className="h-4 w-4 mr-1" />
-                                    {practitioner.phone}
+                                    <PhoneDisplay value={practitioner.phone} showFlag />
                                   </span>
                                 )}
                               </div>
@@ -224,7 +314,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                                 </span>
                                 {practitioner.license && (
                                   <span className="ml-2 text-xs text-gray-500">
-                                    Licence: {practitioner.license}
+                                    {t('admin:practitionersManagement.fields.license')}: {practitioner.license}
                                   </span>
                                 )}
                               </div>
@@ -235,14 +325,14 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                           <button
                             onClick={() => handleEdit(practitioner)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Modifier"
+                            title={t('common:edit')}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(practitioner.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Supprimer"
+                            title={t('common:delete')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -254,12 +344,12 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
               ) : (
                 <div className="text-center py-12">
                   <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Aucun praticien enregistré</p>
+                  <p className="text-gray-500 mb-4">{t('admin:practitionersManagement.list.empty')}</p>
                   <button
                     onClick={handleAddNew}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    Ajouter le premier praticien
+                    {t('admin:practitionersManagement.buttons.addFirst')}
                   </button>
                 </div>
               )}
@@ -267,16 +357,17 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
           )}
 
           {activeTab === 'form' && (
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-6">
-                {editingPractitioner ? 'Modifier le praticien' : 'Nouveau praticien'}
+            <div className="h-full flex flex-col">
+              <h3 className="flex-shrink-0 text-lg font-medium text-gray-900 mb-6">
+                {editingPractitioner ? t('admin:practitionersManagement.modal.editTitle') : t('admin:practitionersManagement.modal.createTitle')}
               </h3>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prénom *
+                      {t('common:firstName')} *
                     </label>
                     <input
                       type="text"
@@ -284,13 +375,13 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       value={formData.firstName}
                       onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="Prénom du praticien"
+                      placeholder={t('admin:practitionersManagement.placeholders.firstName')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom *
+                      {t('common:lastName')} *
                     </label>
                     <input
                       type="text"
@@ -298,13 +389,13 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       value={formData.lastName}
                       onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="Nom du praticien"
+                      placeholder={t('admin:practitionersManagement.placeholders.lastName')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email *
+                      {t('common:email')} *
                     </label>
                     <input
                       type="email"
@@ -317,21 +408,20 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Téléphone
-                    </label>
-                    <input
-                      type="tel"
+                    <PhoneInput
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="+33 1 23 45 67 89"
+                      defaultCountry="FR"
+                      name="practitionerPhone"
+                      label={t('common:phone')}
+                      required={false}
+                      showValidation
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Spécialité *
+                      {t('common:specialty')} *
                     </label>
                     <input
                       type="text"
@@ -339,26 +429,26 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       value={formData.speciality}
                       onChange={(e) => setFormData(prev => ({ ...prev, speciality: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="Médecine générale, Cardiologie, etc."
+                      placeholder={t('admin:practitionersManagement.placeholders.specialty')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Numéro de licence
+                      {t('admin:practitionersManagement.fields.license')}
                     </label>
                     <input
                       type="text"
                       value={formData.license}
                       onChange={(e) => setFormData(prev => ({ ...prev, license: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="Numéro ADELI, RPPS, etc."
+                      placeholder={t('admin:practitionersManagement.placeholders.license')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type de praticien *
+                      {t('admin:practitionersManagement.fields.type')} *
                     </label>
                     <select
                       required
@@ -376,7 +466,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Couleur d'affichage
+                      {t('admin:practitionersManagement.fields.displayColor')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {colorOptions.map(color => (
@@ -406,23 +496,25 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                       className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                     />
-                    <span className="text-sm text-gray-700">Praticien actif</span>
+                    <span className="text-sm text-gray-700">{t('admin:practitionersManagement.fields.isActive')}</span>
                   </label>
                 </div>
+                </div>
 
-                <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                {/* Footer - Fixed at bottom */}
+                <div className="flex-shrink-0 flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-white">
                   <button
                     type="button"
                     onClick={() => setActiveTab('list')}
                     className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   >
-                    Annuler
+                    {t('common:cancel')}
                   </button>
                   <button
                     type="submit"
                     className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    {editingPractitioner ? 'Modifier' : 'Créer'}
+                    {editingPractitioner ? t('common:update') : t('common:create')}
                   </button>
                 </div>
               </form>
@@ -430,9 +522,9 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - For list tab */}
         {activeTab === 'list' && (
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end">
+          <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 flex items-center justify-end bg-white">
             <button
               onClick={() => {
                 handleSave();
@@ -440,7 +532,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
               }}
               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
-              Fermer
+              {t('common:close')}
             </button>
           </div>
         )}

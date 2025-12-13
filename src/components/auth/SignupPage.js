@@ -1,15 +1,18 @@
 // components/auth/SignupPage.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import SocialAuth from './SocialAuth';
 import { validateEmail, validateClinicName } from '../../utils/validation';
 import { region } from '../../i18n';
+import PhoneInput from '../common/PhoneInput';
 
-const SignupPage = ({ setCurrentPage, setPendingEmail }) => {
+const SignupPage = () => {
   const { register } = useAuth();
   const { t } = useTranslation('auth');
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -23,6 +26,7 @@ const SignupPage = ({ setCurrentPage, setPendingEmail }) => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [phoneValid, setPhoneValid] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -37,6 +41,8 @@ const SignupPage = ({ setCurrentPage, setPendingEmail }) => {
 
     if (!signupData.phone.trim()) {
       newErrors.phone = t('validation.required', { field: t('phone') });
+    } else if (!phoneValid) {
+      newErrors.phone = t('validation.phoneInvalid', 'Format de téléphone invalide');
     }
 
     if (!signupData.email || !validateEmail(signupData.email)) {
@@ -81,8 +87,7 @@ const SignupPage = ({ setCurrentPage, setPendingEmail }) => {
 
       // Store email and redirect to email verification page
       setErrors({});
-      setPendingEmail?.(signupData.email);
-      setCurrentPage('email-verification');
+      navigate('/email-verification', { state: { email: signupData.email } });
     } catch (error) {
       setErrors({ submit: error.message || t('accountError') });
     } finally {
@@ -173,23 +178,22 @@ const SignupPage = ({ setCurrentPage, setPendingEmail }) => {
             </div>
 
             {/* Téléphone */}
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('phone')} *
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={signupData.phone}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  errors.phone ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder={t('phonePlaceholder')}
-              />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-            </div>
+            <PhoneInput
+              value={signupData.phone}
+              onChange={(e) => {
+                setSignupData(prev => ({ ...prev, phone: e.target.value }));
+                if (errors.phone) {
+                  setErrors(prev => ({ ...prev, phone: '' }));
+                }
+              }}
+              onValidationChange={(isValid) => setPhoneValid(isValid)}
+              defaultCountry={region === 'spain' ? 'ES' : 'FR'}
+              name="phone"
+              label={t('phone') + ' *'}
+              required
+              error={errors.phone}
+              showValidation
+            />
 
             {/* Email */}
             <div>
@@ -305,7 +309,7 @@ const SignupPage = ({ setCurrentPage, setPendingEmail }) => {
             <span className="text-gray-600">{t('alreadyAccount')} </span>
             <button
               type="button"
-              onClick={() => setCurrentPage('login')}
+              onClick={() => navigate('/login')}
               className="text-green-600 hover:text-green-700 font-medium"
             >
               {t('login')}

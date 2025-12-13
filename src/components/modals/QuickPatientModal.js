@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { X, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PatientContext } from '../../contexts/PatientContext';
+import PhoneInput from '../common/PhoneInput';
 
 const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' }) => {
   const { user } = useAuth();
@@ -10,6 +11,7 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [phoneValid, setPhoneValid] = useState(true); // Optional field
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -80,8 +82,8 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
       newErrors.email = 'Email invalide';
     }
 
-    if (formData.phone && formData.phone.length < 10) {
-      newErrors.phone = 'Téléphone invalide (minimum 10 chiffres)';
+    if (formData.phone && !phoneValid) {
+      newErrors.phone = 'Format de téléphone invalide';
     }
 
     setErrors(newErrors);
@@ -266,24 +268,19 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
           </div>
 
           {/* Téléphone */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Téléphone
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                errors.phone ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="+33 6 12 34 56 78"
-              disabled={isLoading}
-            />
-            {errors.phone && (
-              <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-            )}
-          </div>
+          <PhoneInput
+            value={formData.phone}
+            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            onValidationChange={(isValid) => setPhoneValid(isValid)}
+            defaultCountry="FR"
+            name="phone"
+            label="Téléphone"
+            required={false}
+            disabled={isLoading}
+            error={errors.phone}
+            showValidation
+            compact
+          />
 
           {/* Info */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
