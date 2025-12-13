@@ -1,38 +1,41 @@
 // components/dashboard/Sidebar.js
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
   Home, Users, Calendar, FileText, BarChart3, Settings,
   LogOut, Heart, Shield
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { useLocale } from '../../contexts/LocaleContext';
 
-const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
+const Sidebar = () => {
   const { user, company, logout } = useAuth();
   const { t } = useTranslation('nav');
+  const { locale, buildUrl } = useLocale();
 
   const handleLogout = () => {
     // Check if user had "remember me" enabled
     const shouldRememberEmail = localStorage.getItem('clinicmanager_remember_me') === 'true';
     // Call logout with the remember me preference
     logout(shouldRememberEmail);
-    // Note: logout() now redirects to '/', so setCurrentPage won't be executed
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
+  // Build locale-aware menu items
   const menuItems = [
-    { id: 'home', label: t('sidebar.home'), icon: Home },
-    { id: 'patients', label: t('sidebar.patients'), icon: Users },
-    { id: 'appointments', label: t('sidebar.appointments'), icon: Calendar },
-    { id: 'medical-records', label: t('sidebar.medicalRecords'), icon: FileText },
-    { id: 'consents', label: t('sidebar.consents'), icon: Shield },
-    { id: 'consent-templates', label: t('sidebar.consentTemplates'), icon: FileText },
-    { id: 'quotes', label: t('sidebar.quotes'), icon: FileText },
-    { id: 'invoices', label: t('sidebar.invoices'), icon: FileText },
-    { id: 'analytics', label: t('sidebar.analytics'), icon: BarChart3 },
-    ...(isAdmin ? [{ id: 'admin', label: t('sidebar.admin'), icon: Shield }] : []),
-    { id: 'settings', label: t('sidebar.settings'), icon: Settings }
+    { id: 'home', path: buildUrl('/dashboard'), label: t('sidebar.home'), icon: Home },
+    { id: 'patients', path: buildUrl('/patients'), label: t('sidebar.patients'), icon: Users },
+    { id: 'appointments', path: buildUrl('/appointments'), label: t('sidebar.appointments'), icon: Calendar },
+    { id: 'medical-records', path: buildUrl('/medical-records'), label: t('sidebar.medicalRecords'), icon: FileText },
+    { id: 'consents', path: buildUrl('/consents'), label: t('sidebar.consents'), icon: Shield },
+    { id: 'consent-templates', path: buildUrl('/consent-templates'), label: t('sidebar.consentTemplates'), icon: FileText },
+    { id: 'quotes', path: buildUrl('/quotes'), label: t('sidebar.quotes'), icon: FileText },
+    { id: 'invoices', path: buildUrl('/invoices'), label: t('sidebar.invoices'), icon: FileText },
+    { id: 'analytics', path: buildUrl('/analytics'), label: t('sidebar.analytics'), icon: BarChart3 },
+    ...(isAdmin ? [{ id: 'admin', path: buildUrl('/admin'), label: t('sidebar.admin'), icon: Shield }] : []),
+    { id: 'settings', path: buildUrl('/settings'), label: t('sidebar.settings'), icon: Settings }
   ];
 
   return (
@@ -43,7 +46,7 @@ const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
           <Heart className="h-8 w-8 text-green-600" />
           <h1 className="text-xl font-bold text-gray-900">ClinicManager</h1>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <div className="text-2xl">{user?.avatar}</div>
           <div className="flex-1 min-w-0">
@@ -70,17 +73,19 @@ const Sidebar = ({ activeModule, setActiveModule, setCurrentPage }) => {
             const Icon = item.icon;
             return (
               <li key={item.id}>
-                <button
-                  onClick={() => setActiveModule(item.id)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                    activeModule === item.id
-                      ? 'bg-green-100 text-green-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-green-100 text-green-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`
+                  }
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />
                   <span>{item.label}</span>
-                </button>
+                </NavLink>
               </li>
             );
           })}
