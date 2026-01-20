@@ -58,7 +58,10 @@
     "checkup": "Bilan",
     "procedure": "Intervention",
     "emergency": "Urgence",
-    "telemedicine": "Télémédecine"
+    "telemedicine": "Télémédecine",
+    "specialist": "Spécialiste",
+    "vaccination": "Vaccination",
+    "surgery": "Chirurgie"
   },
   "messages": {
     "appointmentCreated": "Rendez-vous créé avec succès",
@@ -67,7 +70,10 @@
     "appointmentConfirmed": "Rendez-vous confirmé",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce rendez-vous ?",
     "noAppointments": "Aucun rendez-vous pour l'instant",
-    "conflict": "Créneau déjà occupé"
+    "conflict": "Créneau déjà occupé",
+    "clinicClosed": "Clinique fermée",
+    "selectAnotherDate": "Veuillez sélectionner une autre date.",
+    "clinicClosedNoAvailability": "La clinique est fermée ce jour. Aucune disponibilité ne peut être configurée."
   },
   "filters": {
     "filterByStatus": "Filtrer par statut",

@@ -58,7 +58,10 @@
     "checkup": "Chequeo",
     "procedure": "Procedimiento",
     "emergency": "Urgencia",
-    "telemedicine": "Telemedicina"
+    "telemedicine": "Telemedicina",
+    "specialist": "Especialista",
+    "vaccination": "Vacunación",
+    "surgery": "Cirugía"
   },
   "messages": {
     "appointmentCreated": "Cita creada con éxito",
@@ -67,7 +70,10 @@
     "appointmentConfirmed": "Cita confirmada",
     "deleteConfirm": "¿Está seguro de que desea eliminar esta cita?",
     "noAppointments": "No hay citas en este momento",
-    "conflict": "Horario ya ocupado"
+    "conflict": "Horario ya ocupado",
+    "clinicClosed": "Clínica cerrada",
+    "selectAnotherDate": "Por favor seleccione otra fecha.",
+    "clinicClosedNoAvailability": "La clínica está cerrada este día. No se puede configurar disponibilidad."
   },
   "filters": {
     "filterByStatus": "Filtrar por Estado",

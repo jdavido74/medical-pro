@@ -1,24 +1,37 @@
 // components/modals/AppointmentFormModal.js
 import React, { useState, useEffect, useContext } from 'react';
-import { X, Calendar, Clock, User, Stethoscope, AlertTriangle, Save, Users, Trash2 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { X, Calendar, Clock, User, Stethoscope, AlertTriangle, Save, Trash2 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import { PatientContext } from '../../contexts/PatientContext';
 import { AppointmentContext } from '../../contexts/AppointmentContext';
 import { useTranslation } from 'react-i18next';
-import { loadPractitioners } from '../../utils/practitionersLoader';
+import { normalizePractitioner } from '../../utils/practitionersLoader';
+import { isPractitionerRole, filterPractitioners } from '../../utils/userRoles';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
-import appointmentsStorage from '../../utils/appointmentsStorage';
+import practitionerAvailabilityApi from '../../api/practitionerAvailabilityApi';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
+import { clinicSettingsApi } from '../../api/clinicSettingsApi';
 import PatientSearchSelect from '../common/PatientSearchSelect';
 import QuickPatientModal from './QuickPatientModal';
+import { useLocale } from '../../contexts/LocaleContext';
+import { useFormErrors } from '../../hooks/useFormErrors';
+import {
+  APPOINTMENT_TYPES,
+  APPOINTMENT_TYPE_KEYS,
+  APPOINTMENT_PRIORITIES,
+  getAppointmentDuration,
+  getAppointmentTypeColor,
+  getPriorityColor
+} from '../../utils/medicalConstants';
 
 const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = null, preselectedPatient = null, preselectedDate = null, preselectedTime = null, preselectedPractitioner = null }) => {
   const { user } = useAuth();
   const patientContext = useContext(PatientContext);
   const appointmentContext = useContext(AppointmentContext);
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
-  const currentLanguage = i18n.language;
+  const { locale } = useLocale();
 
   const [formData, setFormData] = useState({
     patientId: '',
@@ -44,37 +57,135 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   const [conflicts, setConflicts] = useState([]);
   const [practitioners, setPractitioners] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [isSlotsLoading, setIsSlotsLoading] = useState(false);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [isQuickPatientModalOpen, setIsQuickPatientModalOpen] = useState(false);
   const [quickPatientSearchQuery, setQuickPatientSearchQuery] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMode, setDeleteMode] = useState(null); // 'notify' ou 'silent'
+  const [clinicSettings, setClinicSettings] = useState(null);
+  const [isClinicClosedOnSelectedDate, setIsClinicClosedOnSelectedDate] = useState(false);
 
-  // Types de rendez-vous
-  const appointmentTypes = [
-    { value: 'consultation', label: 'Consultation générale', duration: 30, color: 'bg-blue-100 text-blue-800' },
-    { value: 'followup', label: 'Suivi', duration: 20, color: 'bg-green-100 text-green-800' },
-    { value: 'emergency', label: 'Urgence', duration: 15, color: 'bg-red-100 text-red-800' },
-    { value: 'specialist', label: 'Consultation spécialisée', duration: 45, color: 'bg-purple-100 text-purple-800' },
-    { value: 'checkup', label: 'Bilan de santé', duration: 60, color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'vaccination', label: 'Vaccination', duration: 15, color: 'bg-teal-100 text-teal-800' },
-    { value: 'surgery', label: 'Intervention chirurgicale', duration: 120, color: 'bg-orange-100 text-orange-800' }
-  ];
+  // Hook for standardized form error handling
+  const {
+    errors,
+    generalError,
+    setFieldError,
+    clearFieldError,
+    clearErrors,
+    handleBackendError,
+    getFieldError
+  } = useFormErrors();
 
-  // Priorités
-  const priorities = [
-    { value: 'low', label: 'Basse', color: 'text-gray-600' },
-    { value: 'normal', label: 'Normale', color: 'text-blue-600' },
-    { value: 'high', label: 'Haute', color: 'text-orange-600' },
-    { value: 'urgent', label: 'Urgente', color: 'text-red-600' }
-  ];
+  // Generate appointment types from constants with translation
+  const appointmentTypes = APPOINTMENT_TYPE_KEYS.map(key => ({
+    value: key,
+    label: t(`appointments.types.${key}`, APPOINTMENT_TYPES[key]?.label || key),
+    duration: getAppointmentDuration(key),
+    color: getAppointmentTypeColor(key)
+  }));
+
+  // Generate priorities from constants with translation
+  const priorities = APPOINTMENT_PRIORITIES.map(priority => ({
+    value: priority,
+    label: t(`appointments.priorities.${priority}`, priority),
+    color: getPriorityColor(priority)
+  }));
+
+  // Day name mapping for clinic operating hours
+  const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+  // Helper function to check if a date is a clinic closed day
+  const isClinicClosedOnDate = (dateString) => {
+    if (!clinicSettings || !dateString) return false;
+
+    const date = new Date(dateString);
+    const dayName = DAY_NAMES[date.getDay()];
+
+    // Check recurring closed days (operating_hours)
+    if (clinicSettings.operatingHours) {
+      const dayConfig = clinicSettings.operatingHours[dayName];
+      if (dayConfig && dayConfig.enabled === false) {
+        return true;
+      }
+    }
+
+    // Check specific closed dates (holidays, etc.)
+    if (clinicSettings.closedDates && Array.isArray(clinicSettings.closedDates)) {
+      const isClosedDate = clinicSettings.closedDates.some(cd => {
+        const closedDateStr = typeof cd.date === 'string' ? cd.date.split('T')[0] : cd.date;
+        return closedDateStr === dateString;
+      });
+      if (isClosedDate) return true;
+    }
+
+    return false;
+  };
+
+  // Fetch clinic settings on mount
+  useEffect(() => {
+    const fetchClinicSettings = async () => {
+      try {
+        const settings = await clinicSettingsApi.getClinicSettings();
+        setClinicSettings(settings);
+      } catch (error) {
+        console.error('[AppointmentFormModal] Error loading clinic settings:', error);
+      }
+    };
+    fetchClinicSettings();
+  }, []);
+
+  // Update isClinicClosedOnSelectedDate when date changes
+  useEffect(() => {
+    if (formData.date && clinicSettings) {
+      setIsClinicClosedOnSelectedDate(isClinicClosedOnDate(formData.date));
+    } else {
+      setIsClinicClosedOnSelectedDate(false);
+    }
+  }, [formData.date, clinicSettings]);
 
   useEffect(() => {
     if (isOpen) {
-      // Charger les praticiens de la clinique via la fonction centralisée
-      const allPractitioners = loadPractitioners(user);
-      setPractitioners(allPractitioners);
+      // Charger les praticiens de la clinique depuis l'API backend
+      const fetchPractitioners = async () => {
+        try {
+          const result = await healthcareProvidersApi.getHealthcareProviders({ limit: 100 });
+          // Filter only practitioner roles and normalize
+          const practitionerList = filterPractitioners(result.providers || [])
+            .map(normalizePractitioner);
+
+          // S'assurer que l'utilisateur courant est dans la liste s'il est praticien
+          if (user && isPractitionerRole(user.role)) {
+            const currentUserInList = practitionerList.find(p => p.id === user.providerId || p.id === user.id);
+            if (!currentUserInList) {
+              practitionerList.unshift(normalizePractitioner({
+                id: user.providerId || user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                name: user.name,
+                role: user.role,
+                specialty: user.specialty || 'Médecine générale'
+              }));
+            }
+          }
+
+          setPractitioners(practitionerList);
+        } catch (error) {
+          console.error('[AppointmentFormModal] Error loading practitioners:', error);
+          // Fallback: ajouter au moins l'utilisateur courant s'il est praticien
+          if (user && isPractitionerRole(user.role)) {
+            setPractitioners([normalizePractitioner({
+              id: user.providerId || user.id,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              name: user.name,
+              role: user.role,
+              specialty: user.specialty || 'Médecine générale'
+            })]);
+          }
+        }
+      };
+      fetchPractitioners();
 
       if (editingAppointment) {
         console.log('[AppointmentFormModal] Setting formData from editingAppointment:', {
@@ -94,9 +205,10 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
         });
       } else {
         // Nouveau rendez-vous
+        // Utiliser providerId (healthcare_provider.id) et non user.id (central user id)
         const newFormData = {
           patientId: preselectedPatient?.id || '',
-          practitionerId: preselectedPractitioner?.id || (user?.role === 'doctor' || user?.role === 'specialist' ? user.id : ''),
+          practitionerId: preselectedPractitioner?.id || (isPractitionerRole(user?.role) ? (user.providerId || user.id) : ''),
           type: 'consultation',
           title: '',
           description: '',
@@ -118,36 +230,14 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       }
 
       setConflicts([]);
-      setErrors({});
+      clearErrors(); // Use useFormErrors clearErrors
       setShowDeleteConfirm(false);
       setDeleteMode(null);
     }
-  }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, preselectedTime, preselectedPractitioner, user]);
+  }, [isOpen, editingAppointment, preselectedPatient, preselectedDate, preselectedTime, preselectedPractitioner, user, clearErrors]);
 
-  // Vérifier les conflits de créneau quand praticien, date ou heure change
-  useEffect(() => {
-    if (!appointmentContext) return;
-
-    if (formData.practitionerId && formData.date && formData.startTime && formData.endTime) {
-      // Vérifier s'il y a un conflit avec un autre rendez-vous
-      // checkTimeConflict retourne true s'il y a un conflit
-      const hasConflict = appointmentContext.checkTimeConflict(
-        formData.practitionerId,
-        formData.date,
-        formData.startTime,
-        formData.endTime,
-        editingAppointment?.id // Exclure le RDV en édition de la vérification
-      );
-
-      if (hasConflict) {
-        setConflicts(['Time slot is already booked for this practitioner']);
-      } else {
-        setConflicts([]);
-      }
-    } else {
-      setConflicts([]);
-    }
-  }, [formData.practitionerId, formData.date, formData.startTime, formData.endTime, appointmentContext, editingAppointment?.id]);
+  // Note: La vérification des conflits est faite dans un useEffect plus bas (lignes ~290-340)
+  // qui vérifie à la fois la disponibilité ET les conflits
 
   // Calculer l'heure de fin automatiquement
   useEffect(() => {
@@ -159,26 +249,63 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }
   }, [formData.startTime, formData.duration]);
 
+  // Charger les créneaux disponibles depuis le backend
+  useEffect(() => {
+    const loadAvailableSlots = async () => {
+      if (!formData.practitionerId || !formData.date) {
+        setAvailableSlots([]);
+        setIsSlotsLoading(false);
+        return;
+      }
+
+      setIsSlotsLoading(true);
+      try {
+        console.log('[AppointmentFormModal] Loading available slots for:', {
+          providerId: formData.practitionerId,
+          date: formData.date,
+          duration: formData.duration
+        });
+
+        const response = await practitionerAvailabilityApi.getAvailableSlots(
+          formData.practitionerId,
+          formData.date,
+          formData.duration || 30
+        );
+
+        if (response.success && response.data?.slots) {
+          let slots = response.data.slots;
+          console.log('[AppointmentFormModal] Loaded slots:', slots.length);
+          setAvailableSlots(slots);
+        } else {
+          console.warn('[AppointmentFormModal] No slots returned:', response);
+          setAvailableSlots([]);
+        }
+      } catch (error) {
+        console.error('[AppointmentFormModal] Error loading available slots:', error);
+        setAvailableSlots([]);
+      } finally {
+        setIsSlotsLoading(false);
+      }
+    };
+
+    loadAvailableSlots();
+  }, [formData.practitionerId, formData.date, formData.duration, editingAppointment?.startTime]);
+
   // Vérifier si une date a des disponibilités pour le praticien sélectionné
   const isDateAvailable = (dateString) => {
-    if (!formData.practitionerId || !formData.duration) return true;
-
-    const slots = appointmentsStorage.getAvailableSlots(
-      formData.practitionerId,
-      dateString,
-      formData.duration
-    );
-    return slots.length > 0;
+    // Si on a déjà chargé les slots pour cette date, utiliser le state
+    if (dateString === formData.date) {
+      return availableSlots.length > 0;
+    }
+    // Sinon, on ne sait pas encore - retourner true par défaut
+    return true;
   };
 
-  // Obtenir les jours de la semaine où le praticien a des disponibilités
+  // Obtenir les jours de la semaine où le praticien a des disponibilités (non utilisé avec le backend)
   const getAvailableDaysOfWeek = () => {
-    if (!formData.practitionerId) return [];
-
-    const availability = appointmentsStorage.getPractitionerAvailability(formData.practitionerId);
-    if (!availability) return [];
-
-    return [availability.dayOfWeek];
+    // Cette fonction n'est plus utilisée avec le backend API
+    // Les disponibilités sont chargées dynamiquement par date
+    return [];
   };
 
   // Mettre à jour l'endTime quand des créneaux supplémentaires sont ajoutés
@@ -194,64 +321,77 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   }, [formData.additionalSlots]);
 
   // Vérifier les conflits et la disponibilité en temps réel
+  // Note: Le backend retourne uniquement les créneaux disponibles (non réservés)
+  // donc la validation est simplifiée - si le créneau est dans availableSlots, il est valide
+  // EXCEPTION: En mode édition, le créneau actuel du RDV est considéré comme disponible
   useEffect(() => {
-    if (formData.practitionerId && formData.date && formData.startTime && formData.endTime) {
-      // Vérifier d'abord que le créneau est dans les horaires de disponibilité
-      const availabilityCheck = appointmentsStorage.isWithinPractitionerAvailability(
-        formData.practitionerId,
-        formData.date,
-        formData.startTime,
-        formData.endTime
-      );
+    // Ne pas valider pendant le chargement des créneaux
+    if (isSlotsLoading) {
+      return;
+    }
 
-      if (!availabilityCheck.available) {
-        // Créer un conflit virtuel pour afficher l'erreur de disponibilité
+    // En mode édition, vérifier si on est sur le créneau du RDV en cours d'édition
+    // Dans ce cas, ne jamais afficher d'alerte (c'est le même RDV)
+    const isEditingCurrentSlot = editingAppointment &&
+      editingAppointment.date === formData.date &&
+      editingAppointment.startTime === formData.startTime &&
+      editingAppointment.practitionerId === formData.practitionerId;
+
+    // Si on édite le créneau actuel, pas d'alerte
+    if (isEditingCurrentSlot) {
+      setConflicts([]);
+      clearFieldError('availability');
+      return;
+    }
+
+    // Validation uniquement si tous les champs sont remplis et les créneaux sont chargés
+    if (formData.practitionerId && formData.date && formData.startTime && formData.endTime && availableSlots.length > 0) {
+      // Vérifier que le créneau sélectionné est dans les créneaux disponibles
+      const isSlotAvailable = availableSlots.some(slot => slot.start === formData.startTime);
+
+      if (!isSlotAvailable) {
+        // Le créneau sélectionné n'est pas disponible (hors des disponibilités ou déjà réservé)
         setConflicts([{
           id: 'availability-error',
-          title: 'Hors horaires de disponibilité',
+          title: 'Créneau non disponible',
           startTime: formData.startTime,
           endTime: formData.endTime,
-          reason: availabilityCheck.reason
+          reason: 'Ce créneau n\'est pas disponible pour ce praticien'
         }]);
-        setErrors(prev => ({ ...prev, availability: availabilityCheck.reason }));
+        setFieldError('availability', 'Créneau non disponible');
       } else {
-        // Si disponible, vérifier les conflits avec d'autres rendez-vous
-        const foundConflicts = appointmentsStorage.checkTimeConflicts(
-          formData.practitionerId,
-          formData.date,
-          formData.startTime,
-          formData.endTime,
-          editingAppointment?.id,
-          formData.additionalSlots
-        );
-        setConflicts(foundConflicts);
-        setErrors(prev => {
-          const { availability, ...rest } = prev;
-          return rest;
-        });
+        // Créneau valide
+        setConflicts([]);
+        clearFieldError('availability');
       }
     } else {
+      // Pas assez de données pour valider - pas d'alerte
       setConflicts([]);
-      setErrors(prev => {
-        const { availability, ...rest } = prev;
-        return rest;
-      });
+      clearFieldError('availability');
     }
-  }, [formData.practitionerId, formData.date, formData.startTime, formData.endTime, editingAppointment]);
+  }, [formData.practitionerId, formData.date, formData.startTime, formData.endTime, availableSlots, editingAppointment, isSlotsLoading, setFieldError, clearFieldError]);
 
   // Changer le type de rendez-vous
   const handleTypeChange = (type) => {
     const appointmentType = appointmentTypes.find(t => t.value === type);
-    setFormData(prev => ({
-      ...prev,
-      type,
-      duration: appointmentType?.duration || 30,
-      title: prev.title || appointmentType?.label || '',
-      // Préserver les créneaux sélectionnés
-      startTime: prev.startTime,
-      endTime: prev.endTime,
-      additionalSlots: prev.additionalSlots
-    }));
+    const newDuration = appointmentType?.duration || 30;
+
+    setFormData(prev => {
+      // Si la durée change, réinitialiser les créneaux sélectionnés
+      // car les créneaux disponibles seront différents
+      const durationChanged = newDuration !== prev.duration;
+
+      return {
+        ...prev,
+        type,
+        duration: newDuration,
+        title: prev.title || appointmentType?.label || '',
+        // Réinitialiser les créneaux si la durée a changé
+        startTime: durationChanged ? '' : prev.startTime,
+        endTime: durationChanged ? '' : prev.endTime,
+        additionalSlots: durationChanged ? [] : prev.additionalSlots
+      };
+    });
   };
 
   // Fonction appelée quand l'utilisateur demande la création d'un nouveau patient
@@ -301,15 +441,28 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     return true;
   };
 
-  // Validation du formulaire
+  // Validation du formulaire - Using useFormErrors
   const validateForm = () => {
-    const newErrors = {};
+    clearErrors();
+    let isValid = true;
 
-    if (!formData.patientId) newErrors.patientId = 'Patient requis';
-    if (!formData.practitionerId) newErrors.practitionerId = 'Praticien requis';
-    if (!formData.date) newErrors.date = 'Date requise';
-    if (!formData.startTime) newErrors.startTime = 'Heure de début requise';
-    if (!formData.title) newErrors.title = 'Titre requis';
+    if (!formData.patientId) {
+      setFieldError('patientId', t('appointments.validation.patientRequired', 'Patient requis'));
+      isValid = false;
+    }
+    if (!formData.practitionerId) {
+      setFieldError('practitionerId', t('appointments.validation.practitionerRequired', 'Praticien requis'));
+      isValid = false;
+    }
+    if (!formData.date) {
+      setFieldError('date', t('appointments.validation.dateRequired', 'Date requise'));
+      isValid = false;
+    }
+    if (!formData.startTime) {
+      setFieldError('startTime', t('appointments.validation.timeRequired', 'Heure de début requise'));
+      isValid = false;
+    }
+    // Title is optional - if not provided, patient name will be used as fallback
 
     // Vérifier que la date n'est pas dans le passé
     if (formData.date) {
@@ -317,39 +470,43 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (appointmentDate < today) {
-        newErrors.date = 'La date ne peut pas être dans le passé';
+        setFieldError('date', t('appointments.validation.dateInPast', 'La date ne peut pas être dans le passé'));
+        isValid = false;
       }
     }
 
     // Vérifier que les créneaux sont continus
     if (!areSlotsContinuous()) {
-      newErrors.startTime = 'Les créneaux doivent être continus (adjacents)';
+      setFieldError('startTime', t('appointments.validation.slotsContinuous', 'Les créneaux doivent être continus (adjacents)'));
+      isValid = false;
     }
 
     // Vérifier les conflits
     if (conflicts.length > 0) {
-      newErrors.time = 'Créneau en conflit avec un autre rendez-vous';
+      setFieldError('time', t('appointments.validation.slotConflict', 'Créneau en conflit avec un autre rendez-vous'));
+      isValid = false;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   // Sauvegarder le rendez-vous
   const handleSave = async () => {
     if (!validateForm()) return;
 
-    // Validation métier: Un médecin ne peut créer que pour lui-même
-    const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+    // Validation métier: Un praticien ne peut créer que pour lui-même
+    const isPractitioner = isPractitionerRole(user?.role);
     const isCreating = !editingAppointment;
+    // Comparer avec providerId (healthcare_provider.id) qui est l'ID utilisé dans le formulaire
+    const userProviderId = user?.providerId || user?.id;
 
-    if (isPractitioner && isCreating && formData.practitionerId !== user?.id) {
-      setErrors({ general: 'Un médecin ne peut créer que des rendez-vous pour lui-même' });
+    if (isPractitioner && isCreating && formData.practitionerId !== userProviderId) {
+      setFieldError('general', t('appointments.validation.selfOnly', 'Un médecin ne peut créer que des rendez-vous pour lui-même'));
       return;
     }
 
     if (!appointmentContext) {
-      setErrors({ general: 'Appointment context not available' });
+      setFieldError('general', t('appointments.validation.contextError', 'Appointment context not available'));
       return;
     }
 
@@ -370,7 +527,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       onClose();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      setErrors({ general: error.message || 'Erreur lors de la sauvegarde du rendez-vous' });
+      handleBackendError(error);
     } finally {
       setIsLoading(false);
     }
@@ -407,7 +564,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     console.log('[handleDelete] Starting deletion with mode:', mode, 'appointmentId:', appointmentId);
 
     if (!appointmentContext) {
-      setErrors({ general: 'Appointment context not available' });
+      setFieldError('general', t('appointments.validation.contextError', 'Appointment context not available'));
       return;
     }
 
@@ -463,7 +620,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       onClose();
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
-      setErrors({ general: 'Erreur lors de la suppression du rendez-vous' });
+      handleBackendError(error);
     } finally {
       setIsLoading(false);
     }
@@ -591,20 +748,20 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                   Praticien *
                 </label>
                 {(() => {
-                  // Les médecins ne peuvent créer que pour eux-mêmes
-                  const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
-                  const isCreating = !editingAppointment;
-                  const canEditPractitioner = !isPractitioner || editingAppointment; // Les praticiens ne peuvent pas changer le praticien si c'est un nouveau RDV
+                  // Seuls les admins et secrétaires peuvent changer le praticien
+                  // Les praticiens ne peuvent créer/modifier que leurs propres RDV
+                  const isPractitioner = isPractitionerRole(user?.role);
+                  const canEditPractitioner = !isPractitioner; // Seuls admin/secrétaire peuvent changer
 
                   if (!canEditPractitioner) {
-                    // Afficher le praticien en lecture seule si c'est un médecin qui crée un nouveau RDV
+                    // Afficher le praticien en lecture seule pour les praticiens
                     const selectedPractitionerName = practitioners.find(p => p.id === formData.practitionerId)?.name || 'Non sélectionné';
                     return (
                       <>
                         <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700">
                           {selectedPractitionerName}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Vous ne pouvez créer que des rendez-vous pour vous-même</p>
+                        <p className="text-xs text-gray-500 mt-1">Seuls les administrateurs et secrétaires peuvent modifier le praticien</p>
                       </>
                     );
                   }
@@ -651,19 +808,19 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 </div>
               </div>
 
-              {/* Titre */}
+              {/* Titre (optionnel - nom du patient par défaut) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Titre *
+                  {t('appointments.title', 'Titre')}
+                  <span className="text-gray-400 text-xs ml-1">({t('common.optional', 'optionnel')})</span>
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.title ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Titre du rendez-vous"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={t('appointments.titlePlaceholder', 'Laisser vide pour utiliser le nom du patient')}
                 />
-                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
               </div>
 
               {/* Description */}
@@ -688,7 +845,12 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date *
-                    {formData.practitionerId && formData.date && !isDateAvailable(formData.date) && (
+                    {isClinicClosedOnSelectedDate && (
+                      <span className="ml-2 text-xs text-red-600 font-medium">
+                        🚫 {t('appointments.messages.clinicClosed')}
+                      </span>
+                    )}
+                    {!isClinicClosedOnSelectedDate && formData.practitionerId && formData.date && !isDateAvailable(formData.date) && (
                       <span className="ml-2 text-xs text-orange-600">
                         ⚠️ Aucun créneau disponible pour cette date
                       </span>
@@ -709,13 +871,19 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                     }}
                     className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.date ? 'border-red-500' :
+                      isClinicClosedOnSelectedDate ? 'border-red-500 bg-red-50' :
                       formData.date && formData.practitionerId && !isDateAvailable(formData.date) ? 'border-orange-500 bg-orange-50' :
                       'border-gray-300'
                     }`}
                     min={new Date().toISOString().split('T')[0]}
                   />
                   {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
-                  {formData.practitionerId && (
+                  {isClinicClosedOnSelectedDate && (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      🚫 {t('appointments.messages.clinicClosed')} - {t('appointments.selectAnotherDate')}
+                    </p>
+                  )}
+                  {!isClinicClosedOnSelectedDate && formData.practitionerId && (
                     <p className="text-xs text-gray-500 mt-1">
                       💡 Astuce : Sélectionnez une date où le praticien a des disponibilités
                     </p>
@@ -737,11 +905,24 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-500 text-sm">
                       {!formData.practitionerId ? '⚠️ Sélectionnez d\'abord un praticien' : '⚠️ Sélectionnez d\'abord une date'}
                     </div>
-                  ) : availableSlots.length === 0 ? (
-                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center text-orange-700 text-sm">
-                      <AlertTriangle className="h-5 w-5 inline-block mr-2" />
-                      Aucun créneau disponible pour cette date. Choisissez une autre date.
+                  ) : isSlotsLoading ? (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center text-blue-700 text-sm">
+                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                      Chargement des créneaux disponibles...
                     </div>
+                  ) : availableSlots.length === 0 ? (
+                    isClinicClosedOnSelectedDate ? (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center text-red-700 text-sm">
+                        <AlertTriangle className="h-5 w-5 inline-block mr-2" />
+                        <strong>{t('appointments.messages.clinicClosed')}</strong>
+                        <p className="mt-1 text-xs">{t('appointments.selectAnotherDate', 'Veuillez sélectionner une autre date.')}</p>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center text-orange-700 text-sm">
+                        <AlertTriangle className="h-5 w-5 inline-block mr-2" />
+                        Aucun créneau disponible pour cette date. Vérifiez que le praticien a défini ses disponibilités.
+                      </div>
+                    )
                   ) : (
                     <div>
                       {/* Sélection des créneaux (simple clic pour sélectionner/désélectionner) */}
@@ -1004,7 +1185,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 <div>
                   <span className="text-blue-700">Date:</span>
                   <span className="ml-2 font-medium">
-                    {new Date(formData.date).toLocaleDateString('fr-FR', {
+                    {new Date(formData.date).toLocaleDateString(locale, {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -1030,9 +1211,9 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
             </div>
           )}
 
-          {errors.general && (
+          {(getFieldError('general') || generalError) && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{errors.general || t('appointments.deletionError')}</p>
+              <p className="text-red-700 text-sm">{getFieldError('general') || generalError?.message || t('appointments.deletionError')}</p>
             </div>
           )}
         </div>

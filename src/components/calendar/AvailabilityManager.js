@@ -4,20 +4,24 @@ import {
   Calendar, Clock, Plus, Edit2, Trash2, Settings,
   ChevronLeft, ChevronRight, User, AlertCircle,
   Save, X, RotateCcw, Copy, CalendarDays, RefreshCw,
-  CheckCircle, Zap, Sun, Moon
+  CheckCircle, Zap, Sun, Moon, Ban
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { appointmentsStorage, availabilityStorage, migrateAppointmentPractitionerIds, addMissingAppointmentIds } from '../../utils/appointmentsStorage';
+import { useAuth } from '../../hooks/useAuth';
+import { availabilityStorage } from '../../utils/appointmentsStorage';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
 import { loadPractitioners } from '../../utils/practitionersLoader';
+import { isPractitionerRole } from '../../utils/userRoles';
 import PractitionerFilter from '../common/PractitionerFilter';
 import {
   enrichAppointmentWithPermissions,
   filterAppointmentsByPermissions,
   shouldShowPractitionerFilter
 } from '../../utils/appointmentPermissions';
+import { useLocale } from '../../contexts/LocaleContext';
+import { clinicSettingsApi } from '../../api/clinicSettingsApi';
+import { useTranslation } from 'react-i18next';
 
 const AvailabilityManager = ({
   onAppointmentScheduled,
@@ -27,19 +31,76 @@ const AvailabilityManager = ({
   canViewAllPractitioners = false,
   refreshKey = 0,
   filterPractitioner = 'all',
-  onFilterPractitionerChange
+  onFilterPractitionerChange,
+  contextAppointments = [] // Rendez-vous depuis AppointmentContext (API)
 }) => {
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
+  const { locale } = useLocale();
+  const { t } = useTranslation();
 
-  const isPractitioner = user?.role === 'doctor' || user?.role === 'nurse' || user?.role === 'practitioner';
+  const isPractitioner = isPractitionerRole(user?.role);
+
+  // État pour les paramètres de la clinique (horaires d'ouverture, jours fermés)
+  const [clinicSettings, setClinicSettings] = useState(null);
+
+  // Mapping des jours pour vérifier les fermetures de la clinique
+  const DAY_NAMES_MAP = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+  // Vérifier si un jour est fermé par la clinique
+  const isClinicClosedOnDay = (date) => {
+    if (!clinicSettings || !date) return false;
+
+    const dayName = DAY_NAMES_MAP[date.getDay()];
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Vérifier les jours de fermeture récurrents (operating_hours)
+    if (clinicSettings.operatingHours) {
+      const dayConfig = clinicSettings.operatingHours[dayName];
+      if (dayConfig && dayConfig.enabled === false) {
+        return true;
+      }
+    }
+
+    // Vérifier les dates de fermeture exceptionnelles (holidays, etc.)
+    if (clinicSettings.closedDates && Array.isArray(clinicSettings.closedDates)) {
+      const isClosedDate = clinicSettings.closedDates.some(cd => {
+        const closedDateStr = typeof cd.date === 'string' ? cd.date.split('T')[0] : cd.date;
+        return closedDateStr === dateStr;
+      });
+      if (isClosedDate) return true;
+    }
+
+    return false;
+  };
+
+  // Vérifier si un jour de la semaine est fermé (pour la configuration)
+  const isClinicClosedOnDayName = (dayName) => {
+    if (!clinicSettings?.operatingHours) return false;
+    const dayConfig = clinicSettings.operatingHours[dayName];
+    return dayConfig && dayConfig.enabled === false;
+  };
+
+  // Charger les paramètres de la clinique
+  useEffect(() => {
+    const fetchClinicSettings = async () => {
+      try {
+        const settings = await clinicSettingsApi.getClinicSettings();
+        setClinicSettings(settings);
+      } catch (error) {
+        console.error('[AvailabilityManager] Error loading clinic settings:', error);
+      }
+    };
+    fetchClinicSettings();
+  }, []);
 
   // Auto-filtrer pour les praticiens au chargement initial
+  // Utiliser providerId (healthcare_provider.id) et non user.id (central user id)
   useEffect(() => {
-    if (isPractitioner && user && filterPractitioner === 'all') {
-      onFilterPractitionerChange?.(user.id);
+    if (isPractitioner && user?.providerId && filterPractitioner === 'all') {
+      onFilterPractitionerChange?.(user.providerId);
     }
-  }, [isPractitioner, user]);
+  }, [isPractitioner, user?.providerId]);
 
   // Déterminer le praticien actif pour le filtrage
   const activePractitioner = selectedPractitioner ||
@@ -137,10 +198,10 @@ const AvailabilityManager = ({
     setPractitioners(allPractitioners);
   }, [user]);
 
-  // Charger les données
+  // Charger les données - recharger quand les RDV du contexte changent
   useEffect(() => {
     loadData();
-  }, [currentDate, selectedPractitioner, filterPractitioner, refreshKey]);
+  }, [currentDate, selectedPractitioner, filterPractitioner, refreshKey, contextAppointments]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -148,27 +209,14 @@ const AvailabilityManager = ({
       // Charger les praticiens
       const allPractitioners = loadPractitioners(user);
 
-      // Migrer les rendez-vous avec des IDs de praticien obsolètes
-      const migratedCount = migrateAppointmentPractitionerIds(allPractitioners);
-      if (migratedCount > 0) {
-        console.log(`[AvailabilityManager] ${migratedCount} rendez-vous migrés`);
-      }
-
-      // Ajouter des IDs aux rendez-vous existants qui n'en ont pas
-      const fixedCount = addMissingAppointmentIds();
-      if (fixedCount > 0) {
-        console.log(`[AvailabilityManager] ${fixedCount} rendez-vous réparés avec ajout d'IDs`);
-      }
-
-      // Charger les rendez-vous pour la période affichée
-      let validAppointments = appointmentsStorage.getAll();
+      // Utiliser les rendez-vous du contexte (API) au lieu du localStorage
+      let validAppointments = [...contextAppointments];
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('[AvailabilityManager] Raw appointments from storage:', {
+        console.log('[AvailabilityManager] Appointments from context:', {
           count: validAppointments.length,
           firstAppointment: validAppointments[0],
-          hasIds: validAppointments.every(apt => !!apt.id),
-          missingIds: validAppointments.filter(apt => !apt.id)
+          hasIds: validAppointments.every(apt => !!apt.id)
         });
       }
 
@@ -431,7 +479,7 @@ const AvailabilityManager = ({
       }
       parts.push(practitionerInfo);
     }
-    if (appointment.title) parts.push(`Type: ${appointment.title}`);
+    if (appointment.title || appointment.patientName) parts.push(`Type: ${appointment.title || appointment.patientName}`);
     if (appointment.startTime && appointment.endTime) {
       parts.push(`Horaire: ${appointment.startTime} - ${appointment.endTime}`);
       // Ajouter les créneaux supplémentaires s'ils existent
@@ -648,9 +696,9 @@ const AvailabilityManager = ({
         <div className="text-center">
           <h3 className="text-lg font-semibold text-gray-900">
             {viewMode === 'week' ? (
-              `Semaine du ${getWeekDays()[0].toLocaleDateString('fr-FR')} au ${getWeekDays()[6].toLocaleDateString('fr-FR')}`
+              `Semaine du ${getWeekDays()[0].toLocaleDateString(locale)} au ${getWeekDays()[6].toLocaleDateString(locale)}`
             ) : (
-              currentDate.toLocaleDateString('fr-FR', {
+              currentDate.toLocaleDateString(locale, {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -726,8 +774,12 @@ const AvailabilityManager = ({
                 sunday: 'Dimanche'
               }[dayName];
 
+              const isClinicClosed = isClinicClosedOnDayName(dayName);
+
               return (
-                <div key={dayName} className="border border-gray-200 rounded-lg p-4">
+                <div key={dayName} className={`border rounded-lg p-4 ${
+                  isClinicClosed ? 'border-gray-300 bg-gray-100 opacity-75' : 'border-gray-200'
+                }`}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <input
@@ -735,10 +787,19 @@ const AvailabilityManager = ({
                         checked={dayConfig.enabled}
                         onChange={(e) => updateDayAvailability(dayName, e.target.checked)}
                         className="w-4 h-4 text-blue-600"
+                        disabled={isClinicClosed}
                       />
-                      <h4 className="font-medium text-gray-900">{dayNameFr}</h4>
+                      <h4 className={`font-medium ${isClinicClosed ? 'text-gray-500' : 'text-gray-900'}`}>
+                        {dayNameFr}
+                      </h4>
+                      {isClinicClosed && (
+                        <span className="text-xs text-red-600 font-medium flex items-center gap-1 bg-red-50 px-2 py-1 rounded">
+                          <Ban className="h-3 w-3" />
+                          {t('appointments.messages.clinicClosed')}
+                        </span>
+                      )}
                     </div>
-                    {dayConfig.enabled && (
+                    {dayConfig.enabled && !isClinicClosed && (
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => copyWeekTemplate(dayName)}
@@ -758,7 +819,11 @@ const AvailabilityManager = ({
                     )}
                   </div>
 
-                  {dayConfig.enabled && (
+                  {isClinicClosed ? (
+                    <div className="text-sm text-gray-500 italic">
+                      {t('appointments.clinicClosedNoAvailability', 'La clinique est fermée ce jour. Aucune disponibilité ne peut être configurée.')}
+                    </div>
+                  ) : dayConfig.enabled && (
                     <div className="space-y-2">
                       {dayConfig.slots.map((slot, slotIndex) => (
                         <div key={slotIndex} className="flex items-center space-x-2">
@@ -805,18 +870,30 @@ const AvailabilityManager = ({
             <div className="p-4 text-sm font-medium text-gray-500">Heure</div>
             {getWeekDays().map((day, index) => {
               const isToday = day.toDateString() === new Date().toDateString();
+              const isClosed = isClinicClosedOnDay(day);
               const appointmentsCount = getAppointmentsForDate(day).length;
               const availableSlotsCount = getAvailableSlotsForDate(day).filter(slot => slot.available).length;
 
               return (
-                <div key={index} className={`p-4 text-center border-l border-gray-200 ${isToday ? 'bg-blue-50' : ''}`}>
-                  <div className="font-medium text-gray-900">{getDayNameFr(day)}</div>
-                  <div className={`text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                <div key={index} className={`p-4 text-center border-l border-gray-200 ${
+                  isClosed ? 'bg-gray-200' : isToday ? 'bg-blue-50' : ''
+                }`}>
+                  <div className={`font-medium ${isClosed ? 'text-gray-500' : 'text-gray-900'}`}>{getDayNameFr(day)}</div>
+                  <div className={`text-2xl font-bold ${
+                    isClosed ? 'text-gray-400' : isToday ? 'text-blue-600' : 'text-gray-900'
+                  }`}>
                     {day.getDate()}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {appointmentsCount} RDV / {availableSlotsCount} libres
-                  </div>
+                  {isClosed ? (
+                    <div className="text-xs text-red-600 mt-1 font-medium flex items-center justify-center gap-1">
+                      <Ban className="h-3 w-3" />
+                      {t('appointments.messages.clinicClosed')}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {appointmentsCount} RDV / {availableSlotsCount} libres
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -829,30 +906,41 @@ const AvailabilityManager = ({
                   {time}
                 </div>
                 {getWeekDays().map((day, dayIndex) => {
+                  const isClosed = isClinicClosedOnDay(day);
                   const daySlots = getAvailableSlotsForDate(day);
                   const timeSlot = daySlots.find(slot => slot.start === time);
                   const dayAppointments = getAppointmentsForDate(day);
                   const dateStr = day.toISOString().split('T')[0];
-                  // IMPORTANT: Obtenir TOUS les appointments qui chevauchent ce créneau (pas juste le premier)
+                  // IMPORTANT: Obtenir TOUS les appointments qui chevauchent ce créneau
+                  // Un RDV chevauche si: il commence avant la fin du slot ET il finit après le début du slot
+                  const slotStartTime = new Date(`${dateStr}T${time}`);
+                  const slotEndTime = new Date(slotStartTime.getTime() + 30 * 60000); // Slot de 30min
                   const appointmentsAtTime = dayAppointments.filter(apt => {
                     const apptStart = new Date(`${dateStr}T${apt.startTime}`);
                     const apptEnd = new Date(`${dateStr}T${apt.endTime}`);
-                    const slotStart = new Date(`${dateStr}T${time}`);
-                    const slotEnd = new Date(`${dateStr}T${daySlots.find(s => s.start === time)?.end || time}`);
-                    return apptStart <= slotStart && apptEnd > slotStart;
+                    // Chevauchement: apptStart < slotEnd ET apptEnd > slotStart
+                    return apptStart < slotEndTime && apptEnd > slotStartTime;
                   });
                   // Pour compatibilité, garder le premier appointment pour la logique existante
                   const appointmentAtTime = appointmentsAtTime[0];
-                  // Calculer la hauteur en fonction du nombre de RDV
-                  // Chaque RDV fait ~22px (y compris le praticien si visible)
-                  // Limiter à max 6 RDV visibles (132px) pour éviter une cellule trop haute
-                  const maxVisibleAppointments = 6;
-                  const appointmentsToShow = appointmentsAtTime.slice(0, maxVisibleAppointments);
-                  const hiddenAppointmentsCount = Math.max(0, appointmentsAtTime.length - maxVisibleAppointments);
-                  const cellHeight = Math.max(
-                    48,
-                    appointmentsToShow.length * 22 + 8
-                  );
+                  const appointmentsToShow = appointmentsAtTime;
+                  // Hauteur fixe pour toutes les cellules
+                  const cellHeight = 48;
+
+                  // Si la clinique est fermée ce jour-là, afficher une cellule grisée
+                  if (isClosed) {
+                    return (
+                      <div
+                        key={dayIndex}
+                        className="p-1 border-l border-gray-200 relative bg-gray-200"
+                        style={{ minHeight: `${cellHeight}px` }}
+                      >
+                        <div className="h-full flex items-center justify-center">
+                          <span className="text-xs text-gray-400">-</span>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div
@@ -861,35 +949,30 @@ const AvailabilityManager = ({
                       style={{ minHeight: `${cellHeight}px` }}
                     >
                       {appointmentsAtTime.length > 0 ? (
-                        <div className="space-y-0.5 h-full">
-                          {appointmentsToShow.map((appointment, idx) => (
-                            <div
-                              key={idx}
-                              className={`text-xs p-0.5 rounded cursor-pointer transition-colors ${
-                                appointment.title === 'RDV privé'
-                                  ? 'bg-gray-100 text-gray-600 border border-gray-300'
-                                  : getAppointmentColor(appointment.status)
-                              }`}
-                              title={getAppointmentTooltip(appointment)}
-                              onClick={() => handleAppointmentClick(appointment)}
-                            >
-                              <div className="font-medium truncate text-xs leading-tight">
-                                {appointment.patientName || appointment.title}
+                        <div
+                          className={`h-full rounded cursor-pointer transition-colors flex flex-col justify-center ${
+                            appointmentsToShow[0]?.title === 'RDV privé'
+                              ? 'bg-gray-100 text-gray-600 border border-gray-300'
+                              : getAppointmentColor(appointmentsToShow[0]?.status)
+                          }`}
+                          title={getAppointmentTooltip(appointmentsToShow[0])}
+                          onClick={() => handleAppointmentClick(appointmentsToShow[0])}
+                        >
+                          <div className="p-1">
+                            <div className="font-medium truncate text-xs leading-tight">
+                              {appointmentsToShow[0]?.patientName || appointmentsToShow[0]?.title}
+                            </div>
+                            {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointmentsToShow[0]?.practitionerName && (
+                              <div className="text-xs opacity-75 truncate font-semibold leading-tight">
+                                {appointmentsToShow[0]?.practitionerName}
                               </div>
-                              {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointment.practitionerName && (
-                                <div className="text-xs opacity-75 truncate text-blue-600 font-semibold leading-tight">
-                                  {appointment.practitionerName}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                          {hiddenAppointmentsCount > 0 && (
-                            <div className="text-xs text-center text-white bg-gray-700 py-1 rounded font-semibold cursor-pointer hover:bg-gray-800 transition-colors"
-                              title={`${hiddenAppointmentsCount} rendez-vous supplémentaires cachés`}
-                            >
-                              +{hiddenAppointmentsCount} RDV
-                            </div>
-                          )}
+                            )}
+                            {appointmentsAtTime.length > 1 && (
+                              <div className="text-xs opacity-75 mt-0.5">
+                                +{appointmentsAtTime.length - 1} autre(s)
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ) : timeSlot ? (
                         <div
@@ -932,20 +1015,35 @@ const AvailabilityManager = ({
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-4 border-b border-gray-200">
             <h3 className="font-medium text-gray-900">
-              Créneaux pour le {currentDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              Créneaux pour le {currentDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
+              {isClinicClosedOnDay(currentDate) && (
+                <span className="ml-3 text-xs text-red-600 font-medium inline-flex items-center gap-1 bg-red-50 px-2 py-1 rounded">
+                  <Ban className="h-3 w-3" />
+                  {t('appointments.messages.clinicClosed')}
+                </span>
+              )}
             </h3>
           </div>
           <div className="p-4">
+            {isClinicClosedOnDay(currentDate) ? (
+              <div className="text-center py-8 bg-gray-100 rounded-lg">
+                <Ban className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 font-medium">{t('appointments.messages.clinicClosed')}</p>
+                <p className="text-sm text-gray-500 mt-1">{t('appointments.selectAnotherDate')}</p>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {getAvailableSlotsForDate(currentDate).map((slot, index) => {
                 const dayAppointments = getAppointmentsForDate(currentDate);
-                // IMPORTANT: Vérifier que l'appointment chevauche ce créneau horaire, pas juste commencer à cette heure
+                const dateStr = currentDate.toISOString().split('T')[0];
+                // IMPORTANT: Vérifier que l'appointment chevauche ce créneau horaire
+                // Chevauchement: apptStart < slotEnd ET apptEnd > slotStart
+                const slotStartTime = new Date(`${dateStr}T${slot.start}`);
+                const slotEndTime = new Date(`${dateStr}T${slot.end}`);
                 const appointmentAtTime = dayAppointments.find(apt => {
-                  const apptStart = new Date(`${currentDate.toISOString().split('T')[0]}T${apt.startTime}`);
-                  const apptEnd = new Date(`${currentDate.toISOString().split('T')[0]}T${apt.endTime}`);
-                  const slotStart = new Date(`${currentDate.toISOString().split('T')[0]}T${slot.start}`);
-                  const slotEnd = new Date(`${currentDate.toISOString().split('T')[0]}T${slot.end}`);
-                  return apptStart <= slotStart && apptEnd > slotStart;
+                  const apptStart = new Date(`${dateStr}T${apt.startTime}`);
+                  const apptEnd = new Date(`${dateStr}T${apt.endTime}`);
+                  return apptStart < slotEndTime && apptEnd > slotStartTime;
                 });
 
                 return (
@@ -1004,7 +1102,7 @@ const AvailabilityManager = ({
                           </div>
                         )}
                         <div className="text-xs text-gray-600 truncate">
-                          {appointmentAtTime.title}
+                          {appointmentAtTime.title || appointmentAtTime.patientName}
                         </div>
                         {appointmentAtTime.description && (
                           <div className="text-xs text-gray-500 mt-1 truncate">
@@ -1022,6 +1120,7 @@ const AvailabilityManager = ({
                 );
               })}
             </div>
+            )}
           </div>
         </div>
       )}
@@ -1029,7 +1128,7 @@ const AvailabilityManager = ({
       {/* Légende */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <h3 className="font-medium text-gray-900 mb-3">Légende</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           <div className="flex items-center space-x-2">
             <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
             <span>Créneau libre</span>
@@ -1045,6 +1144,12 @@ const AvailabilityManager = ({
           <div className="flex items-center space-x-2">
             <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
             <span>Non disponible</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+              <Ban className="h-3 w-3 text-gray-400" />
+            </div>
+            <span>{t('appointments.messages.clinicClosed')}</span>
           </div>
         </div>
       </div>

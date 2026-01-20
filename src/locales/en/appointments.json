@@ -58,7 +58,10 @@
     "checkup": "Checkup",
     "procedure": "Procedure",
     "emergency": "Emergency",
-    "telemedicine": "Telemedicine"
+    "telemedicine": "Telemedicine",
+    "specialist": "Specialist",
+    "vaccination": "Vaccination",
+    "surgery": "Surgery"
   },
   "messages": {
     "appointmentCreated": "Appointment created successfully",
@@ -67,7 +70,10 @@
     "appointmentConfirmed": "Appointment confirmed",
     "deleteConfirm": "Are you sure you want to delete this appointment?",
     "noAppointments": "No appointments at the moment",
-    "conflict": "Time slot already occupied"
+    "conflict": "Time slot already occupied",
+    "clinicClosed": "Clinic closed",
+    "selectAnotherDate": "Please select another date.",
+    "clinicClosedNoAvailability": "The clinic is closed this day. No availability can be configured."
   },
   "filters": {
     "filterByStatus": "Filter by Status",
