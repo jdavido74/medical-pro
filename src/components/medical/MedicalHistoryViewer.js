@@ -4,12 +4,13 @@ import {
   Calendar, Search, Eye, Edit2, FileText, Activity,
   Pill, AlertTriangle, User, Cigarette
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
 import { medicalRecordsApi } from '../../api/medicalRecordsApi';
 import SmokingAssessmentDisplay from './SmokingAssessmentDisplay';
 import AlcoholAssessmentDisplay from './AlcoholAssessmentDisplay';
+import { useLocale } from '../../contexts/LocaleContext';
 
 const MedicalHistoryViewer = ({
   patient,
@@ -21,6 +22,7 @@ const MedicalHistoryViewer = ({
 }) => {
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
+  const { locale } = useLocale();
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,7 +228,7 @@ const MedicalHistoryViewer = ({
     // Format de date
     const [year, month] = key.split('-');
     const date = new Date(year, month - 1);
-    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+    return date.toLocaleDateString(locale, { year: 'numeric', month: 'long' });
   };
 
   const handleViewRecord = async (record) => {
@@ -244,6 +246,9 @@ const MedicalHistoryViewer = ({
     // Access logging is handled by the backend
     try {
       const fullRecord = await medicalRecordsApi.getMedicalRecordById(record.id);
+      console.log('[MedicalHistoryViewer] handleEditRecord - fullRecord from API:', fullRecord);
+      console.log('[MedicalHistoryViewer] fullRecord.basicInfo:', fullRecord?.basicInfo);
+      console.log('[MedicalHistoryViewer] fullRecord.chiefComplaint:', fullRecord?.chiefComplaint);
       onEditRecord && onEditRecord(fullRecord);
     } catch (error) {
       console.error('Error fetching record:', error);
@@ -454,7 +459,7 @@ const MedicalHistoryViewer = ({
                             {getRecordTypeLabel(record.type)}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {new Date(record.createdAt).toLocaleDateString('es-ES')}
+                            {new Date(record.createdAt).toLocaleDateString(locale)}
                           </span>
                           <span className="text-sm text-gray-500">
                             Dr. {getPractitionerName(record.practitionerId)}
@@ -481,7 +486,7 @@ const MedicalHistoryViewer = ({
                           {record.treatmentPlan?.followUp && (
                             <div>
                               <span className="font-medium">Próximo control:</span>
-                              <p>{new Date(record.treatmentPlan.followUp).toLocaleDateString('es-ES')}</p>
+                              <p>{new Date(record.treatmentPlan.followUp).toLocaleDateString(locale)}</p>
                             </div>
                           )}
                         </div>

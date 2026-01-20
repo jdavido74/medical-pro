@@ -6,7 +6,7 @@ import {
   Pill, CheckCircle, Trash2, User, Search, Check, Loader2,
   FileSignature, Eye, Printer, Settings, Edit3
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { medicalRecordsApi } from '../../api/medicalRecordsApi';
 import { prescriptionsApi } from '../../api/prescriptionsApi';
 import PrescriptionPreview from './PrescriptionPreview';
@@ -65,7 +65,7 @@ const MedicalRecordForm = forwardRef(({
 
     return {
       patientId: data?.patientId || patient?.id || selectedPatientId || '',
-      practitionerId: data?.practitionerId || user?.id || '',
+      practitionerId: data?.practitionerId || user?.providerId || '',
       type: data?.type || 'consultation',
 
       // Antécédents - repris du dossier précédent si disponible
@@ -166,7 +166,7 @@ const MedicalRecordForm = forwardRef(({
 
   const [formData, setFormData] = useState(() => ensureFormDataStructure({
     patientId: patient?.id || '',
-    practitionerId: user?.id || '',
+    practitionerId: user?.providerId || '',
     type: 'consultation',
 
     // US 2.1 - Antécédents
@@ -289,7 +289,13 @@ const MedicalRecordForm = forwardRef(({
   // Cargar données existantes si modification
   useEffect(() => {
     if (existingRecord) {
-      setFormData(ensureFormDataStructure(existingRecord));
+      console.log('[MedicalRecordForm] existingRecord received:', existingRecord);
+      console.log('[MedicalRecordForm] basicInfo from existingRecord:', existingRecord.basicInfo);
+      console.log('[MedicalRecordForm] chiefComplaint from existingRecord.basicInfo:', existingRecord.basicInfo?.chiefComplaint);
+      const newFormData = ensureFormDataStructure(existingRecord);
+      console.log('[MedicalRecordForm] newFormData after ensureFormDataStructure:', newFormData);
+      console.log('[MedicalRecordForm] newFormData.basicInfo:', newFormData.basicInfo);
+      setFormData(newFormData);
     }
   }, [existingRecord]); // ensureFormDataStructure ne change pas car définie dans le composant
 
@@ -612,18 +618,13 @@ const MedicalRecordForm = forwardRef(({
   };
 
   const validateForm = () => {
+    console.log('[MedicalRecordForm] validateForm called with formData:', formData);
     const newErrors = {};
 
-    // Validation obligatoire
-    if (!formData.basicInfo?.chiefComplaint?.trim()) {
-      newErrors['basicInfo.chiefComplaint'] = 'El motivo de consulta es obligatorio';
-    }
+    // Pas de champs obligatoires - l'utilisateur peut sauvegarder à tout moment
+    // Seule validation : cohérence des données si renseignées
 
-    if (!formData.diagnosis?.primary?.trim()) {
-      newErrors['diagnosis.primary'] = 'El diagnóstico principal es obligatorio';
-    }
-
-    // Validation signos vitales
+    // Validation signos vitales (seulement si les deux valeurs sont renseignées)
     if (formData.vitalSigns?.bloodPressure?.systolic && formData.vitalSigns?.bloodPressure?.diastolic) {
       const systolic = parseInt(formData.vitalSigns.bloodPressure.systolic);
       const diastolic = parseInt(formData.vitalSigns.bloodPressure.diastolic);
@@ -653,7 +654,7 @@ const MedicalRecordForm = forwardRef(({
         ...formData,
         patientId, // Ensure patientId is set
         medicationWarnings,
-        providerId: user?.id
+        providerId: user?.providerId // Use clinic provider ID, not central user ID
       };
 
       let savedRecord;
@@ -682,10 +683,17 @@ const MedicalRecordForm = forwardRef(({
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    console.log('[MedicalRecordForm] handleSubmit called');
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+
+    console.log('[MedicalRecordForm] Validating form...');
     if (!validateForm()) {
+      console.log('[MedicalRecordForm] Validation failed. Errors:', errors);
       return;
     }
+    console.log('[MedicalRecordForm] Validation passed, calling handleSubmitInternal');
     await handleSubmitInternal();
   };
 
@@ -701,12 +709,15 @@ const MedicalRecordForm = forwardRef(({
     { id: 'prescription', label: t('medical:form.tabs.prescription'), icon: FileSignature }
   ];
 
-  const renderBasicTab = () => (
+  const renderBasicTab = () => {
+    console.log('[MedicalRecordForm] renderBasicTab - formData.basicInfo:', formData.basicInfo);
+    console.log('[MedicalRecordForm] renderBasicTab - chiefComplaint value:', formData.basicInfo?.chiefComplaint);
+    return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.chiefComplaint')} *
+            {t('medical:form.chiefComplaint')}
           </label>
           <textarea
             value={formData.basicInfo?.chiefComplaint || ''}
@@ -788,6 +799,7 @@ const MedicalRecordForm = forwardRef(({
       </div>
     </div>
   );
+  };
 
   const renderAntecedentsTab = () => (
     <div className="space-y-6">
@@ -1234,7 +1246,7 @@ const MedicalRecordForm = forwardRef(({
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t('medical:form.diagnosisTab.primaryDiagnosis')} *
+          {t('medical:form.diagnosisTab.primaryDiagnosis')}
         </label>
         <input
           type="text"
@@ -1359,7 +1371,7 @@ const MedicalRecordForm = forwardRef(({
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      {t('medical:form.currentMedicationsTab.medication')} *
+                      {t('medical:form.currentMedicationsTab.medication')}
                     </label>
                     <input
                       type="text"
@@ -1883,7 +1895,7 @@ const MedicalRecordForm = forwardRef(({
     const patientData = patient || {};
     return {
       patientId: getPatientId(),
-      providerId: user?.id,
+      providerId: user?.providerId, // Use clinic provider ID, not central user ID
       medicalRecordId: currentRecordId,
       medications: prescriptionData.medications,
       instructions: prescriptionData.instructions,
