@@ -138,8 +138,16 @@ async function createMedicalRecord(recordData) {
  */
 async function updateMedicalRecord(recordId, recordData) {
   try {
+    // IMPORTANT: Exclure patientId car non autorisé par le backend lors d'une mise à jour
+    const { patientId, patient_id, ...dataWithoutPatientId } = recordData;
+    console.log('[medicalRecordsApi] updateMedicalRecord - input (patientId removed):', dataWithoutPatientId);
+
     // Transform frontend data to backend format
-    const backendData = dataTransform.transformMedicalRecordToBackend(recordData);
+    const backendData = dataTransform.transformMedicalRecordToBackend(dataWithoutPatientId);
+
+    // Double vérification : supprimer patient_id du résultat transformé
+    delete backendData.patient_id;
+    console.log('[medicalRecordsApi] updateMedicalRecord - backendData (clean):', backendData);
 
     const response = await baseClient.put(`/medical-records/${recordId}`, backendData);
     const data = dataTransform.unwrapResponse(response);
