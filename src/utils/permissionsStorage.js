@@ -306,25 +306,28 @@ export const DEFAULT_ROLES = {
   practitioner: {
     id: 'practitioner',
     name: 'Praticien de santé',
-    description: 'Professionnel de santé (infirmier, kiné, etc.) - Accès limité aux données médicales nécessaires aux soins',
+    description: 'Professionnel de santé (infirmier, kiné, etc.) - Accès aux données patients et médicales',
     level: 50,
     isSystemRole: true,
     isHealthcareProfessional: true,
     permissions: [
-      // Patients - Données admin
-      PERMISSIONS.PATIENTS_VIEW, PERMISSIONS.PATIENTS_EDIT,
+      // Patients - Accès complet (Option B: clinic-wide)
+      PERMISSIONS.PATIENTS_VIEW, PERMISSIONS.PATIENTS_CREATE, PERMISSIONS.PATIENTS_EDIT,
+      PERMISSIONS.PATIENTS_VIEW_ALL,              // Voir tous les patients de la clinique
       // Rendez-vous
       PERMISSIONS.APPOINTMENTS_VIEW, PERMISSIONS.APPOINTMENTS_CREATE, PERMISSIONS.APPOINTMENTS_EDIT,
-      // DONNÉES MÉDICALES LIMITÉES (nécessaires aux soins)
-      PERMISSIONS.MEDICAL_RECORDS_VIEW,           // Lecture dossier médical
+      // DONNÉES MÉDICALES - Accès complet pour les soins
+      PERMISSIONS.MEDICAL_RECORDS_VIEW,           // Consulter les dossiers médicaux
+      PERMISSIONS.MEDICAL_RECORDS_CREATE,         // Créer des entrées médicales
+      PERMISSIONS.MEDICAL_RECORDS_EDIT,           // Modifier les dossiers médicaux
       PERMISSIONS.MEDICAL_NOTES_CREATE,           // Créer des notes (soins infirmiers)
       PERMISSIONS.MEDICAL_ALLERGIES_VIEW,         // CRITIQUE: allergies pour sécurité des soins
       PERMISSIONS.MEDICAL_VITALS_VIEW,            // Constantes vitales
       PERMISSIONS.MEDICAL_VITALS_EDIT,            // Saisie constantes vitales
       PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW,     // Voir les prescriptions à exécuter
-      // Consentements - Consultation (si équipe de soins)
+      // Consentements - Consultation
       PERMISSIONS.CONSENTS_VIEW,
-      PERMISSIONS.CONSENT_TEMPLATES_VIEW, // Lecture seule des templates
+      PERMISSIONS.CONSENT_TEMPLATES_VIEW,         // Lecture seule des templates
       // Paramètres
       PERMISSIONS.SETTINGS_VIEW
     ],
