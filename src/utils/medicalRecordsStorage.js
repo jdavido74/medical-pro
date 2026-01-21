@@ -1,7 +1,32 @@
 // utils/medicalRecordsStorage.js
 import { generateMedicalRecordId } from './idGenerator';
+import { getClientIPAsync } from '../hooks/useClientIP';
 
 const MEDICAL_RECORDS_STORAGE_KEY = 'medicalPro_medical_records';
+
+// IP caching to prevent excessive API calls (5-minute TTL)
+let cachedClientIP = null;
+let ipFetchTime = null;
+const IP_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedClientIP() {
+  const now = Date.now();
+
+  // Use cached IP if still valid
+  if (cachedClientIP && ipFetchTime && now - ipFetchTime < IP_CACHE_DURATION) {
+    return cachedClientIP;
+  }
+
+  try {
+    const ip = await getCachedClientIP();
+    cachedClientIP = ip;
+    ipFetchTime = now;
+    return ip;
+  } catch (error) {
+    console.warn('[MedicalRecordsStorage] Failed to get client IP:', error);
+    return 'unknown';
+  }
+}
 
 // Base de données des médicaments pour vérification des interactions
 const MEDICATIONS_DATABASE = {
@@ -60,6 +85,7 @@ export const medicalRecordsStorage = {
   create: (medicalData, userId = 'system') => {
     try {
       const records = medicalRecordsStorage.getAll();
+      const clientIP = 'unknown'; // Synchronous fallback
 
       const newRecord = {
         id: generateMedicalRecordId(),
@@ -73,7 +99,7 @@ export const medicalRecordsStorage = {
           action: 'create',
           userId: userId,
           timestamp: new Date().toISOString(),
-          ipAddress: 'localhost'
+          ipAddress: clientIP
         }],
 
         // Validation des interactions médicamenteuses
@@ -93,6 +119,7 @@ export const medicalRecordsStorage = {
   // Mettre à jour un dossier médical
   update: (id, medicalData, userId = 'system') => {
     try {
+      const clientIP = 'unknown'; // Synchronous fallback
       const records = medicalRecordsStorage.getAll();
       const index = records.findIndex(record => record.id === id);
 
@@ -111,7 +138,7 @@ export const medicalRecordsStorage = {
             action: 'update',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost',
+            ipAddress: clientIP,
             changes: Object.keys(medicalData)
           }
         ],
@@ -172,6 +199,7 @@ export const medicalRecordsStorage = {
   // Journaliser un accès au dossier médical - US 6.2
   logAccess: (recordId, action, userId = 'system', details = {}) => {
     try {
+      const clientIP = 'unknown'; // Fallback value
       const records = medicalRecordsStorage.getAll();
       const index = records.findIndex(record => record.id === recordId);
 
@@ -180,7 +208,7 @@ export const medicalRecordsStorage = {
           action,
           userId,
           timestamp: new Date().toISOString(),
-          ipAddress: 'localhost',
+          ipAddress: clientIP,
           details
         });
 
@@ -295,8 +323,9 @@ export const medicalRecordsStorage = {
   },
 
   // Supprimer un dossier médical (soft delete)
-  delete: (id, userId = 'system') => {
+  delete: async (id, userId = 'system') => {
     try {
+      const clientIP = 'unknown'; // Fallback value
       const records = medicalRecordsStorage.getAll();
       const index = records.findIndex(record => record.id === id);
 
@@ -315,7 +344,7 @@ export const medicalRecordsStorage = {
             action: 'delete',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost'
+            ipAddress: clientIP
           }
         ]
       };

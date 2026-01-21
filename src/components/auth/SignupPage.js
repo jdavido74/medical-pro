@@ -1,9 +1,8 @@
 // components/auth/SignupPage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
-import SocialAuth from './SocialAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { validateEmail, validateClinicName } from '../../utils/validation';
 import { useLocale } from '../../contexts/LocaleContext';
 import { useLocaleNavigation } from '../../hooks/useLocaleNavigation';
@@ -12,9 +11,10 @@ import PhoneInput from '../common/PhoneInput';
 const SignupPage = () => {
   const { register } = useAuth();
   const { t } = useTranslation('auth');
-  const { country: localeCountry } = useLocale();
+  const { locale, country: localeCountry } = useLocale();
   const { navigateToLogin, navigateToEmailVerification } = useLocaleNavigation();
   const [showPassword, setShowPassword] = useState(false);
+
   const [signupData, setSignupData] = useState({
     firstName: '',
     lastName: '',
@@ -23,11 +23,21 @@ const SignupPage = () => {
     clinicName: '',
     password: '',
     country: localeCountry, // Auto-detect country from locale (ES, FR, GB, etc.)
+    locale: locale, // Full locale code (fr-FR, es-ES, en-GB)
     acceptTerms: false
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [phoneValid, setPhoneValid] = useState(false);
+
+  // Update signup data when locale changes
+  useEffect(() => {
+    setSignupData(prev => ({
+      ...prev,
+      country: localeCountry,
+      locale: locale
+    }));
+  }, [locale, localeCountry]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -83,6 +93,7 @@ const SignupPage = () => {
         clinicName: signupData.clinicName,
         password: signupData.password,
         country: signupData.country,
+        locale: signupData.locale, // Send full locale (fr-FR, es-ES)
         acceptTerms: signupData.acceptTerms
       });
 
@@ -118,24 +129,6 @@ const SignupPage = () => {
             <Heart className="h-12 w-12 text-green-600 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-gray-900">{t('signupTitle')}</h1>
             <p className="text-gray-600 mt-2">{t('signupSubtitle')}</p>
-          </div>
-
-          {/* Authentification sociale */}
-          <SocialAuth
-            isLoading={isLoading}
-            setIsLoading={setIsLoading}
-            mode="signup"
-            medicalContext={true}
-          />
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">{t('orCreateAccount')}</span>
-            </div>
           </div>
 
           {/* Formulaire médical */}

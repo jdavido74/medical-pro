@@ -1,0 +1,3100 @@
+{
+  "hardcodedSpanish": [
+    {
+      "file": "src/components/dashboard/modules/MedicalRecordsModule.js",
+      "line": 430,
+      "text": "title=\"Editar historial\""
+    },
+    {
+      "file": "src/components/dashboard/modules/SettingsModule.js",
+      "line": 625,
+      "text": "title=\"Eliminar\""
+    },
+    {
+      "file": "src/components/medical/ModularMedicalRecord.js",
+      "line": 218,
+      "text": "onClick={() => console.log('Guardar dossier')}"
+    },
+    {
+      "file": "src/components/medical/modules/CardiologyModule.js",
+      "line": 375,
+      "text": "factor === 'familyHistory' ? 'Antecedentes familiares' :"
+    },
+    {
+      "file": "src/components/saas-admin/ClinicsManagementModule.js",
+      "line": 280,
+      "text": "title=\"Eliminar\""
+    }
+  ],
+  "hardcodedFrench": [
+    {
+      "file": "src/components/calendar/AvailabilityManager.js",
+      "line": 75,
+      "text": "name: 'Horaires standards',"
+    }
+  ],
+  "fallbackDefaults": [
+    {
+      "file": "src/components/saas-admin/ClinicsManagementModule.js",
+      "line": 111,
+      "text": "{t('admin.clinicsManagement', 'Gestión de Clínicas')}"
+    },
+    {
+      "file": "src/components/saas-admin/ClinicsManagementModule.js",
+      "line": 114,
+      "text": "{t('admin.manageClinicsDesc', 'Administrar todas las clínicas de la plataforma')"
+    },
+    {
+      "file": "src/components/saas-admin/ClinicsManagementModule.js",
+      "line": 119,
+      "text": "<span>{t('admin.addClinic', 'Nueva Clínica')}</span>"
+    },
+    {
+      "file": "src/components/saas-admin/ClinicsManagementModule.js",
+      "line": 187,
+      "text": "placeholder={t('admin.searchClinics', 'Buscar clínicas por nombre, ciudad o emai"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 35,
+      "text": "{t('admin.accessDenied', 'Acceso Denegado')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 38,
+      "text": "{t('admin.noPermissionSaas', 'No tienes permisos para acceder al panel de admini"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 65,
+      "text": "label: t('admin.overview', 'Vista General'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 71,
+      "text": "label: t('admin.clinics', 'Clínicas'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 77,
+      "text": "label: t('admin.allUsers', 'Todos los Usuarios'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 83,
+      "text": "label: t('admin.subscriptions', 'Suscripciones'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 89,
+      "text": "label: t('admin.specialties', 'Especialidades Globales'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 95,
+      "text": "label: t('admin.analytics', 'Analíticas'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 101,
+      "text": "label: t('admin.backup', 'Respaldos'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 107,
+      "text": "label: t('admin.globalSettings', 'Configuración Global'),"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 122,
+      "text": "<p className=\"text-sm text-gray-600\">{t('admin.totalClinics', 'Total Clínicas')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 125,
+      "text": "{saasStats.activeClinics} {t('admin.active', 'activas')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 137,
+      "text": "<p className=\"text-sm text-gray-600\">{t('admin.totalUsers', 'Total Usuarios')}</"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 139,
+      "text": "<p className=\"text-xs text-green-600 mt-1\">{saasStats.growthRate} {t('admin.this"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 150,
+      "text": "<p className=\"text-sm text-gray-600\">{t('admin.monthlyRevenue', 'Ingresos Mensua"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 165,
+      "text": "{t('admin.recentActivity', 'Actividad Reciente')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 194,
+      "text": "{t('admin.platformStatus', 'Estado de la Plataforma')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 199,
+      "text": "<span className=\"text-sm text-gray-700\">{t('admin.systemStatus', 'Sistema')}</sp"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 201,
+      "text": "{t('admin.operational', 'Operativo')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 205,
+      "text": "<span className=\"text-sm text-gray-700\">{t('admin.uptime', 'Uptime')}</span>"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 209,
+      "text": "<span className=\"text-sm text-gray-700\">{t('admin.version', 'Versión')}</span>"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 219,
+      "text": "{t('admin.specialtiesOverview', 'Especialidades')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 224,
+      "text": "<span className=\"text-sm text-gray-700\">{t('admin.activeSpecialties', 'Activas')"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 228,
+      "text": "<span className=\"text-sm text-gray-700\">{t('admin.mostUsed', 'Más usada')}</span"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 272,
+      "text": "{t('admin.saasAdminPanel', 'Panel de Administración SaaS')}"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 275,
+      "text": "{t('admin.globalPlatformManagement', 'Gestión global de la plataforma MedicalPro"
+    },
+    {
+      "file": "src/components/saas-admin/SaasAdminDashboard.js",
+      "line": 282,
+      "text": "<p className=\"text-xs text-blue-100\">{t('admin.superAdmin', 'Super Administrador"
+    }
+  ],
+  "missingKeys": [
+    {
+      "key": "Erreur lors de la suppression de la sauvegarde.",
+      "lang": "fr",
+      "namespace": "Erreur lors de la suppression de la sauvegarde"
+    },
+    {
+      "key": "Erreur lors de la suppression de la sauvegarde.",
+      "lang": "es",
+      "namespace": "Erreur lors de la suppression de la sauvegarde"
+    },
+    {
+      "key": "Erreur lors de la suppression de la sauvegarde.",
+      "lang": "en",
+      "namespace": "Erreur lors de la suppression de la sauvegarde"
+    },
+    {
+      "key": "emailVerification.error",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.error",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.error",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.noToken",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.noToken",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.noToken",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.successMessage",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.successMessage",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.successMessage",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.verifying",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.verifying",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.verifying",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.pleaseWait",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.pleaseWait",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.pleaseWait",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.success",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.success",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.success",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.redirecting",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.redirecting",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.redirecting",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.goToLogin",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.goToLogin",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.goToLogin",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.confirmationEmailNote",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.confirmationEmailNote",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.confirmationEmailNote",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resendLink",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resendLink",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resendLink",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.secure",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.secure",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.secure",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.secureNote",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.secureNote",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.secureNote",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.emailSent",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.emailSent",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.emailSent",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.errorSending",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.errorSending",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.errorSending",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.title",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.title",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.title",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.checkEmail",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.checkEmail",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.checkEmail",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.subtitle",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.subtitle",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.subtitle",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.instructions",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.instructions",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.instructions",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.noSpam",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.noSpam",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.noSpam",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resend",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resend",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resend",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resending",
+      "lang": "fr",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resending",
+      "lang": "es",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "emailVerification.resending",
+      "lang": "en",
+      "namespace": "emailVerification"
+    },
+    {
+      "key": "validation.required",
+      "lang": "fr",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.required",
+      "lang": "es",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.required",
+      "lang": "en",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.invalidEmail",
+      "lang": "fr",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.invalidEmail",
+      "lang": "es",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.invalidEmail",
+      "lang": "en",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.clinicNameRequired",
+      "lang": "fr",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.clinicNameRequired",
+      "lang": "es",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.clinicNameRequired",
+      "lang": "en",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.passwordTooShort",
+      "lang": "fr",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.passwordTooShort",
+      "lang": "es",
+      "namespace": "validation"
+    },
+    {
+      "key": "validation.passwordTooShort",
+      "lang": "en",
+      "namespace": "validation"
+    },
+    {
+      "key": "common.patientSearch.placeholder",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.placeholder",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.placeholder",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.resetSelection",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.resetSelection",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.resetSelection",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.incompleteRecord",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.incompleteRecord",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.incompleteRecord",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.noPatientFound",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.noPatientFound",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.noPatientFound",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.createNewPatient",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.createNewPatient",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.createNewPatient",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.startTyping",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.startTyping",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.startTyping",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.patientSelected",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.patientSelected",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.patientSelected",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.patientNumber",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.patientNumber",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.patientNumber",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.incompleteWarning",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.incompleteWarning",
+      "lang": "es",
+      "namespace": "common"
+    },
+    {
+      "key": "common.patientSearch.incompleteWarning",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "analytics.comingSoon",
+      "lang": "fr",
+      "namespace": "analytics"
+    },
+    {
+      "key": "analytics.comingSoon",
+      "lang": "en",
+      "namespace": "analytics"
+    },
+    {
+      "key": "modules.home.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.home.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.home.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.patients.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.patients.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.patients.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.appointments.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.appointments.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.appointments.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.medicalRecords.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.medicalRecords.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.medicalRecords.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consents.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consents.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consents.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consentTemplates.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consentTemplates.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consentTemplates.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.analytics.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.analytics.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.analytics.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.settings.title",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.settings.title",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.settings.title",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.home.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.home.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.home.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.patients.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.patients.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.patients.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.appointments.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.appointments.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.appointments.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.medicalRecords.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.medicalRecords.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.medicalRecords.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consents.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consents.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consents.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consentTemplates.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consentTemplates.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.consentTemplates.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.analytics.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.analytics.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.analytics.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.settings.description",
+      "lang": "fr",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.settings.description",
+      "lang": "es",
+      "namespace": "modules"
+    },
+    {
+      "key": "modules.settings.description",
+      "lang": "en",
+      "namespace": "modules"
+    },
+    {
+      "key": "nav.header.connectedVia",
+      "lang": "fr",
+      "namespace": "nav"
+    },
+    {
+      "key": "nav.header.connectedVia",
+      "lang": "es",
+      "namespace": "nav"
+    },
+    {
+      "key": "nav.header.connectedVia",
+      "lang": "en",
+      "namespace": "nav"
+    },
+    {
+      "key": "nav.header.demoMode",
+      "lang": "fr",
+      "namespace": "nav"
+    },
+    {
+      "key": "nav.header.demoMode",
+      "lang": "es",
+      "namespace": "nav"
+    },
+    {
+      "key": "nav.header.demoMode",
+      "lang": "en",
+      "namespace": "nav"
+    },
+    {
+      "key": "sidebar.home",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.home",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.home",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.patients",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.patients",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.patients",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.appointments",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.appointments",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.appointments",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.medicalRecords",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.medicalRecords",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.medicalRecords",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.consents",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.consents",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.consents",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.consentTemplates",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.consentTemplates",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.consentTemplates",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.quotes",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.quotes",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.quotes",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.invoices",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.invoices",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.invoices",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.analytics",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.analytics",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.analytics",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.admin",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.admin",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.admin",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.settings",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.settings",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.settings",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "common.premium",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.premium",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "common.free",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.free",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "sidebar.logout",
+      "lang": "fr",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.logout",
+      "lang": "es",
+      "namespace": "sidebar"
+    },
+    {
+      "key": "sidebar.logout",
+      "lang": "en",
+      "namespace": "sidebar"
+    },
+    {
+      "key": ".",
+      "lang": "fr",
+      "namespace": ""
+    },
+    {
+      "key": ".",
+      "lang": "es",
+      "namespace": ""
+    },
+    {
+      "key": ".",
+      "lang": "en",
+      "namespace": ""
+    },
+    {
+      "key": "placeholders.firstName",
+      "lang": "fr",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.firstName",
+      "lang": "es",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.firstName",
+      "lang": "en",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.contactName",
+      "lang": "fr",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.contactName",
+      "lang": "es",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.contactName",
+      "lang": "en",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.insuranceName",
+      "lang": "fr",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.insuranceName",
+      "lang": "es",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.insuranceName",
+      "lang": "en",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "appointments.statuses.scheduled",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.scheduled",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.scheduled",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.confirmed",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.confirmed",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.confirmed",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.in_progress",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.in_progress",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.in_progress",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.completed",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.completed",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.completed",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.cancelled",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.cancelled",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.cancelled",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.no_show",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.no_show",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.statuses.no_show",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.messages.deleteConfirm",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.messages.deleteConfirm",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.messages.deleteConfirm",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.tabs.appointments",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.tabs.appointments",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.tabs.appointments",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.tabs.availability",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.tabs.availability",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.tabs.availability",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.search",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.search",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.search",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.filters.allStatuses",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.filters.allStatuses",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.filters.allStatuses",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.today",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.today",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.today",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.confirmed",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.confirmed",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.confirmed",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.inProgress",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.inProgress",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.inProgress",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.avgDuration",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.avgDuration",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.stats.avgDuration",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.title",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.title",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.title",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.table.date",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.table.date",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.table.date",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.table.patient",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.table.patient",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.table.patient",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.priority.urgent",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.priority.urgent",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.priority.urgent",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.internalNotes",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.internalNotes",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.internalNotes",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.confirm",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.confirm",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.confirm",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.start",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.start",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.start",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.complete",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.complete",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.complete",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.edit",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.edit",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.edit",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.delete",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.delete",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.actions.delete",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.noAppointmentsFound",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.noAppointmentsFound",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.noAppointmentsFound",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.noAppointmentsScheduled",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.noAppointmentsScheduled",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.noAppointmentsScheduled",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.modifyFilters",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.modifyFilters",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.modifyFilters",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.firstAppointment",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.firstAppointment",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.list.firstAppointment",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "quickActions.addPatient",
+      "lang": "fr",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.addPatient",
+      "lang": "es",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.addPatient",
+      "lang": "en",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.planConsultation",
+      "lang": "fr",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.planConsultation",
+      "lang": "es",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.planConsultation",
+      "lang": "en",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.createRecord",
+      "lang": "fr",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.createRecord",
+      "lang": "es",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "quickActions.createRecord",
+      "lang": "en",
+      "namespace": "quickActions"
+    },
+    {
+      "key": "insights.noConsultations",
+      "lang": "fr",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.noConsultations",
+      "lang": "es",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.noConsultations",
+      "lang": "en",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.emptyWaitingRoom",
+      "lang": "fr",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.emptyWaitingRoom",
+      "lang": "es",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.emptyWaitingRoom",
+      "lang": "en",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.noAlerts",
+      "lang": "fr",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.noAlerts",
+      "lang": "es",
+      "namespace": "insights"
+    },
+    {
+      "key": "insights.noAlerts",
+      "lang": "en",
+      "namespace": "insights"
+    },
+    {
+      "key": "onboarding.clinicInfo",
+      "lang": "fr",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.clinicInfo",
+      "lang": "es",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.clinicInfo",
+      "lang": "en",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.addPatients",
+      "lang": "fr",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.addPatients",
+      "lang": "es",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.addPatients",
+      "lang": "en",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.planConsultations",
+      "lang": "fr",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.planConsultations",
+      "lang": "es",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.planConsultations",
+      "lang": "en",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.createRecord",
+      "lang": "fr",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.createRecord",
+      "lang": "es",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "onboarding.createRecord",
+      "lang": "en",
+      "namespace": "onboarding"
+    },
+    {
+      "key": "incompletePatients.title",
+      "lang": "fr",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.title",
+      "lang": "es",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.title",
+      "lang": "en",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.description",
+      "lang": "fr",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.description",
+      "lang": "es",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.description",
+      "lang": "en",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.seeMore",
+      "lang": "fr",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.seeMore",
+      "lang": "es",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "incompletePatients.seeMore",
+      "lang": "en",
+      "namespace": "incompletePatients"
+    },
+    {
+      "key": "compliance.medicalSecret",
+      "lang": "fr",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.medicalSecret",
+      "lang": "es",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.medicalSecret",
+      "lang": "en",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.gdpr",
+      "lang": "fr",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.gdpr",
+      "lang": "es",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.gdpr",
+      "lang": "en",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.auditTrail",
+      "lang": "fr",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.auditTrail",
+      "lang": "es",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.auditTrail",
+      "lang": "en",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.secureBackup",
+      "lang": "fr",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.secureBackup",
+      "lang": "es",
+      "namespace": "compliance"
+    },
+    {
+      "key": "compliance.secureBackup",
+      "lang": "en",
+      "namespace": "compliance"
+    },
+    {
+      "key": "confirmations.archivePatient",
+      "lang": "fr",
+      "namespace": "confirmations"
+    },
+    {
+      "key": "confirmations.archivePatient",
+      "lang": "es",
+      "namespace": "confirmations"
+    },
+    {
+      "key": "confirmations.archivePatient",
+      "lang": "en",
+      "namespace": "confirmations"
+    },
+    {
+      "key": "messagesLoading.loading",
+      "lang": "fr",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.loading",
+      "lang": "es",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.loading",
+      "lang": "en",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "labels.subtitle",
+      "lang": "fr",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.subtitle",
+      "lang": "es",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.subtitle",
+      "lang": "en",
+      "namespace": "labels"
+    },
+    {
+      "key": "buttons.newPatient",
+      "lang": "fr",
+      "namespace": "buttons"
+    },
+    {
+      "key": "buttons.newPatient",
+      "lang": "es",
+      "namespace": "buttons"
+    },
+    {
+      "key": "buttons.newPatient",
+      "lang": "en",
+      "namespace": "buttons"
+    },
+    {
+      "key": "stats.totalPatients",
+      "lang": "fr",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.totalPatients",
+      "lang": "es",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.totalPatients",
+      "lang": "en",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.active",
+      "lang": "fr",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.active",
+      "lang": "es",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.active",
+      "lang": "en",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.newMonth",
+      "lang": "fr",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.newMonth",
+      "lang": "es",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.newMonth",
+      "lang": "en",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.newYear",
+      "lang": "fr",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.newYear",
+      "lang": "es",
+      "namespace": "stats"
+    },
+    {
+      "key": "stats.newYear",
+      "lang": "en",
+      "namespace": "stats"
+    },
+    {
+      "key": "placeholders.search",
+      "lang": "fr",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.search",
+      "lang": "es",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "placeholders.search",
+      "lang": "en",
+      "namespace": "placeholders"
+    },
+    {
+      "key": "filters.all",
+      "lang": "fr",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.all",
+      "lang": "es",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.all",
+      "lang": "en",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.active",
+      "lang": "fr",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.active",
+      "lang": "es",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.active",
+      "lang": "en",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.inactive",
+      "lang": "fr",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.inactive",
+      "lang": "es",
+      "namespace": "filters"
+    },
+    {
+      "key": "filters.inactive",
+      "lang": "en",
+      "namespace": "filters"
+    },
+    {
+      "key": "messagesLoading.noSearchResults",
+      "lang": "fr",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.noSearchResults",
+      "lang": "es",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.noSearchResults",
+      "lang": "en",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.noPatients",
+      "lang": "fr",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.noPatients",
+      "lang": "es",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.noPatients",
+      "lang": "en",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.tryOtherSearchTerms",
+      "lang": "fr",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.tryOtherSearchTerms",
+      "lang": "es",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.tryOtherSearchTerms",
+      "lang": "en",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.createFirstPatient",
+      "lang": "fr",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.createFirstPatient",
+      "lang": "es",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "messagesLoading.createFirstPatient",
+      "lang": "en",
+      "namespace": "messagesLoading"
+    },
+    {
+      "key": "buttons.createFirstPatient",
+      "lang": "fr",
+      "namespace": "buttons"
+    },
+    {
+      "key": "buttons.createFirstPatient",
+      "lang": "es",
+      "namespace": "buttons"
+    },
+    {
+      "key": "buttons.createFirstPatient",
+      "lang": "en",
+      "namespace": "buttons"
+    },
+    {
+      "key": "tableHeaders.patient",
+      "lang": "fr",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.patient",
+      "lang": "es",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.patient",
+      "lang": "en",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.contact",
+      "lang": "fr",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.contact",
+      "lang": "es",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.contact",
+      "lang": "en",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.information",
+      "lang": "fr",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.information",
+      "lang": "es",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.information",
+      "lang": "en",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.status",
+      "lang": "fr",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.status",
+      "lang": "es",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.status",
+      "lang": "en",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.actions",
+      "lang": "fr",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.actions",
+      "lang": "es",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "tableHeaders.actions",
+      "lang": "en",
+      "namespace": "tableHeaders"
+    },
+    {
+      "key": "labels.birthDateShort",
+      "lang": "fr",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.birthDateShort",
+      "lang": "es",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.birthDateShort",
+      "lang": "en",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.idNumber",
+      "lang": "fr",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.idNumber",
+      "lang": "es",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.idNumber",
+      "lang": "en",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.insurance",
+      "lang": "fr",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.insurance",
+      "lang": "es",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.insurance",
+      "lang": "en",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.created",
+      "lang": "fr",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.created",
+      "lang": "es",
+      "namespace": "labels"
+    },
+    {
+      "key": "labels.created",
+      "lang": "en",
+      "namespace": "labels"
+    },
+    {
+      "key": "statuses.active",
+      "lang": "fr",
+      "namespace": "statuses"
+    },
+    {
+      "key": "statuses.active",
+      "lang": "es",
+      "namespace": "statuses"
+    },
+    {
+      "key": "statuses.active",
+      "lang": "en",
+      "namespace": "statuses"
+    },
+    {
+      "key": "statuses.inactive",
+      "lang": "fr",
+      "namespace": "statuses"
+    },
+    {
+      "key": "statuses.inactive",
+      "lang": "es",
+      "namespace": "statuses"
+    },
+    {
+      "key": "statuses.inactive",
+      "lang": "en",
+      "namespace": "statuses"
+    },
+    {
+      "key": "tooltips.viewDetails",
+      "lang": "fr",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.viewDetails",
+      "lang": "es",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.viewDetails",
+      "lang": "en",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.medicalHistory",
+      "lang": "fr",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.medicalHistory",
+      "lang": "es",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.medicalHistory",
+      "lang": "en",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.edit",
+      "lang": "fr",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.edit",
+      "lang": "es",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.edit",
+      "lang": "en",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.archive",
+      "lang": "fr",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.archive",
+      "lang": "es",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "tooltips.archive",
+      "lang": "en",
+      "namespace": "tooltips"
+    },
+    {
+      "key": "settings.tabs.profile",
+      "lang": "fr",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.profile",
+      "lang": "es",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.profile",
+      "lang": "en",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.company",
+      "lang": "fr",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.company",
+      "lang": "es",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.company",
+      "lang": "en",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.catalog",
+      "lang": "fr",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.catalog",
+      "lang": "es",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.catalog",
+      "lang": "en",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.security",
+      "lang": "fr",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.security",
+      "lang": "es",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.security",
+      "lang": "en",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.billing",
+      "lang": "fr",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.billing",
+      "lang": "es",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.billing",
+      "lang": "en",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.notifications",
+      "lang": "fr",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.notifications",
+      "lang": "es",
+      "namespace": "settings"
+    },
+    {
+      "key": "settings.tabs.notifications",
+      "lang": "en",
+      "namespace": "settings"
+    },
+    {
+      "key": "appointments.edit",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.edit",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.edit",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.new",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.new",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.new",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteTitle",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteTitle",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteTitle",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.save",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.save",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.save",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "common.saving",
+      "lang": "fr",
+      "namespace": "common"
+    },
+    {
+      "key": "common.saving",
+      "lang": "en",
+      "namespace": "common"
+    },
+    {
+      "key": "appointments.timeSlots",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.timeSlots",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.timeSlots",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deletionError",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deletionError",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deletionError",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.slotConflict",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.slotConflict",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.slotConflict",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteWithNotification",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteWithNotification",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteWithNotification",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.notifyPatient",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.notifyPatient",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.notifyPatient",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.notifyPractitioner",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.notifyPractitioner",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.notifyPractitioner",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteSilent",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteSilent",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.deleteSilent",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.noNotification",
+      "lang": "fr",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.noNotification",
+      "lang": "es",
+      "namespace": "appointments"
+    },
+    {
+      "key": "appointments.noNotification",
+      "lang": "en",
+      "namespace": "appointments"
+    },
+    {
+      "key": "admin.clinicsManagement",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.clinicsManagement",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.clinicsManagement",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.manageClinicsDesc",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.manageClinicsDesc",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.manageClinicsDesc",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.addClinic",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.addClinic",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.addClinic",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.searchClinics",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.searchClinics",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.searchClinics",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.noPermissionSaas",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.noPermissionSaas",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.noPermissionSaas",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.clinics",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.clinics",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.clinics",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.allUsers",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.allUsers",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.allUsers",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.subscriptions",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.subscriptions",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.subscriptions",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.specialties",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.specialties",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.specialties",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.analytics",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.analytics",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.analytics",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.backup",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.backup",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.backup",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.globalSettings",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.globalSettings",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.globalSettings",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.totalClinics",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.totalClinics",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.totalClinics",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.thisMonth",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.thisMonth",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.thisMonth",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.monthlyRevenue",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.monthlyRevenue",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.monthlyRevenue",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.platformStatus",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.platformStatus",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.platformStatus",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.systemStatus",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.systemStatus",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.systemStatus",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.operational",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.operational",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.operational",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.uptime",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.uptime",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.uptime",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.version",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.version",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.version",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.specialtiesOverview",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.specialtiesOverview",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.specialtiesOverview",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.activeSpecialties",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.activeSpecialties",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.activeSpecialties",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.mostUsed",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.mostUsed",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.mostUsed",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.saasAdminPanel",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.saasAdminPanel",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.saasAdminPanel",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.globalPlatformManagement",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.globalPlatformManagement",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.globalPlatformManagement",
+      "lang": "en",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.superAdmin",
+      "lang": "fr",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.superAdmin",
+      "lang": "es",
+      "namespace": "admin"
+    },
+    {
+      "key": "admin.superAdmin",
+      "lang": "en",
+      "namespace": "admin"
+    }
+  ]
+}

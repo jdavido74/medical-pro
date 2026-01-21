@@ -1,11 +1,14 @@
 // components/modals/ConsentFormModal.js
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Shield, AlertCircle, Clock, CheckCircle, User, Calendar, Signature } from 'lucide-react';
-import { consentsStorage, CONSENT_TYPES, COLLECTION_METHODS } from '../../utils/consentsStorage';
-import { consentTemplatesStorage, TEMPLATE_CATEGORIES } from '../../utils/consentTemplatesStorage';
+import { useTranslation } from 'react-i18next';
+import { X, FileText, Shield, AlertCircle, Clock, CheckCircle, User, Calendar, Signature, Eye } from 'lucide-react';
+import { consentsApi } from '../../api/consentsApi';
+import { patientsApi } from '../../api/patientsApi';
+import { consentTemplatesApi } from '../../api/consentTemplatesApi';
+import { CONSENT_TYPES, COLLECTION_METHODS, getConsentTypeName, filterTemplatesByType } from '../../utils/consentTypes';
 import { consentVariableMapper } from '../../utils/consentVariableMapper';
-import { patientsStorage } from '../../utils/patientsStorage';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import ConsentPreviewModal from './ConsentPreviewModal';
 
 const ConsentFormModal = ({
   isOpen,
@@ -15,6 +18,7 @@ const ConsentFormModal = ({
   editingConsent = null,
   preselectedType = null
 }) => {
+  const { t } = useTranslation(['common', 'admin']);
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     patientId: patientId || '',
@@ -47,55 +51,80 @@ const ConsentFormModal = ({
   const [prefilledContent, setPrefilledContent] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Charger les données initiales
   useEffect(() => {
-    if (isOpen) {
-      // Charger la liste des patients
-      setPatients(patientsStorage.getAll().filter(p => !p.deleted));
+    const loadInitialData = async () => {
+      if (!isOpen) return;
 
-      // Charger les modèles de consentements disponibles
-      setAvailableTemplates(consentTemplatesStorage.getAll().filter(t =>
-        !t.deleted && t.status === 'active'
-      ));
+      setLoadingData(true);
+      try {
+        // Charger la liste des patients et des modèles en parallèle
+        const [patientsResponse, templatesResponse] = await Promise.all([
+          patientsApi.getPatients(),
+          consentTemplatesApi.getActiveTemplates()
+        ]);
 
-      // Si on édite un consentement existant
-      if (editingConsent) {
-        setFormData({
-          ...editingConsent,
-          expiresAt: editingConsent.expiresAt ? editingConsent.expiresAt.split('T')[0] : '',
-          witness: editingConsent.witness || { name: '', role: '', signature: '' },
-          specificDetails: editingConsent.specificDetails || {
-            procedure: '',
-            risks: '',
-            alternatives: '',
-            expectedResults: ''
+        const allPatients = patientsResponse.patients || [];
+        setPatients(allPatients);
+        setAvailableTemplates(templatesResponse || []);
+
+        // Si on édite un consentement existant
+        if (editingConsent) {
+          setFormData({
+            ...editingConsent,
+            expiresAt: editingConsent.expiresAt ? editingConsent.expiresAt.split('T')[0] : '',
+            witness: editingConsent.witness || { name: '', role: '', signature: '' },
+            specificDetails: editingConsent.specificDetails || {
+              procedure: '',
+              risks: '',
+              alternatives: '',
+              expectedResults: ''
+            }
+          });
+
+          if (editingConsent.patientId) {
+            const patient = allPatients.find(p => p.id === editingConsent.patientId);
+            setSelectedPatient(patient || null);
           }
-        });
-
-        if (editingConsent.patientId) {
-          const patient = patientsStorage.getById(editingConsent.patientId);
-          setSelectedPatient(patient);
         }
-      }
 
-      // Charger les consentements existants pour le patient
-      if (patientId) {
-        setExistingConsents(consentsStorage.getByPatient(patientId));
-        const patient = patientsStorage.getById(patientId);
-        setSelectedPatient(patient);
+        // Charger les consentements existants pour le patient
+        if (patientId) {
+          const { consents } = await consentsApi.getConsentsByPatient(patientId);
+          setExistingConsents(consents || []);
+          const patient = allPatients.find(p => p.id === patientId);
+          setSelectedPatient(patient || null);
+        }
+      } catch (error) {
+        console.error('[ConsentFormModal] Error loading data:', error);
+      } finally {
+        setLoadingData(false);
       }
-    }
+    };
+
+    loadInitialData();
   }, [isOpen, editingConsent, patientId]);
 
   // Mettre à jour les consentements existants quand le patient change
   useEffect(() => {
-    if (formData.patientId) {
-      setExistingConsents(consentsStorage.getByPatient(formData.patientId));
-      const patient = patientsStorage.getById(formData.patientId);
-      setSelectedPatient(patient);
-    }
-  }, [formData.patientId]);
+    const loadPatientConsents = async () => {
+      if (formData.patientId && patients.length > 0) {
+        try {
+          const { consents } = await consentsApi.getConsentsByPatient(formData.patientId);
+          setExistingConsents(consents || []);
+          const patient = patients.find(p => p.id === formData.patientId);
+          setSelectedPatient(patient || null);
+        } catch (error) {
+          console.error('[ConsentFormModal] Error loading patient consents:', error);
+        }
+      }
+    };
+
+    loadPatientConsents();
+  }, [formData.patientId, patients]);
 
   // Mettre à jour le titre et la description selon le type
   useEffect(() => {
@@ -123,19 +152,19 @@ const ConsentFormModal = ({
       return;
     }
 
-    const template = consentTemplatesStorage.getById(templateId);
+    // Trouver le template dans les templates déjà chargés
+    const template = availableTemplates.find(t => t.id === templateId);
     if (!template) return;
 
     // Préremplir les données du formulaire avec le modèle
     setFormData(prev => ({
       ...prev,
-      type: template.type || prev.type,
+      type: template.consentType || prev.type,
       title: template.title,
-      description: template.description,
-      category: template.category
+      description: template.description || template.terms
     }));
 
-    // Préremplir le contenu avec les variables du patient
+    // Préparer les données additionnelles
     const additionalData = {
       procedureDescription: formData.specificDetails?.procedure || '',
       specificRisks: formData.specificDetails?.risks || '',
@@ -143,18 +172,30 @@ const ConsentFormModal = ({
       alternatives: formData.specificDetails?.alternatives || ''
     };
 
+    // Préparer les données du praticien depuis le user connecté
+    const practitionerData = user ? {
+      firstName: user.firstName || user.first_name || '',
+      lastName: user.lastName || user.last_name || '',
+      role: user.role || 'doctor',
+      specialty: user.specialty || 'Médecine générale',
+      facility: user.companyName || user.clinicName || 'Cabinet Médical',
+      facilityAddress: user.companyAddress || '',
+      facilityPhone: user.companyPhone || '',
+      rppsNumber: user.rppsNumber || '',
+      adeliNumber: user.adeliNumber || ''
+    } : null;
+
+    const templateContent = template.content || template.terms || '';
+    // Passer l'objet patient directement (selectedPatient), pas l'ID
     const filledContent = consentVariableMapper.fillTemplateVariables(
-      template.content,
-      formData.patientId,
-      user?.id,
+      templateContent,
+      selectedPatient, // Objet patient complet
+      practitionerData, // Objet praticien
       additionalData
     );
 
     setPrefilledContent(filledContent);
     setSelectedTemplate(templateId);
-
-    // Enregistrer l'utilisation du modèle
-    consentTemplatesStorage.recordUsage(templateId, formData.patientId);
   };
 
   // Refaire le préremplissage quand le patient change
@@ -182,28 +223,24 @@ const ConsentFormModal = ({
         ...formData,
         // Utiliser le contenu pré-rempli si un modèle est sélectionné
         description: selectedTemplate && prefilledContent ? prefilledContent : formData.description,
+        terms: selectedTemplate && prefilledContent ? prefilledContent : formData.description,
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt + 'T23:59:59').toISOString() : null,
         witness: formData.collectionMethod === 'verbal' ? formData.witness : null,
-        // Metadata sur le modèle utilisé
-        templateUsed: selectedTemplate ? {
-          templateId: selectedTemplate,
-          appliedAt: new Date().toISOString(),
-          variables: consentVariableMapper.getUnfilledVariables(prefilledContent || '')
-        } : null
+        consentTemplateId: selectedTemplate || null
       };
 
       let result;
       if (editingConsent) {
-        result = consentsStorage.update(editingConsent.id, consentData, user?.id);
+        result = await consentsApi.updateConsent(editingConsent.id, consentData);
       } else {
-        result = consentsStorage.create(consentData, user?.id);
+        result = await consentsApi.createConsent(consentData);
       }
 
       onSave(result);
       handleClose();
     } catch (error) {
-      console.error('Erreur sauvegarde consentement:', error);
-      setValidationErrors({ general: error.message });
+      console.error('[ConsentFormModal] Error saving consent:', error);
+      setValidationErrors({ general: error.message || 'Erreur lors de la sauvegarde' });
     } finally {
       setIsSubmitting(false);
     }
@@ -367,23 +404,28 @@ const ConsentFormModal = ({
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="">Saisie manuelle - Aucun modèle</option>
-                    {availableTemplates
-                      .filter(template =>
-                        !formData.type ||
-                        template.type === formData.type ||
-                        template.category === 'general'
-                      )
+                    {filterTemplatesByType(availableTemplates, formData.type)
                       .map(template => (
                       <option key={template.id} value={template.id}>
-                        📄 {template.title} ({template.category})
+                        📄 {template.title} ({getConsentTypeName(template.consentType)})
                       </option>
                     ))}
                   </select>
                   {selectedTemplate && (
                     <div className="mt-3 p-3 bg-white border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-700 mb-2">
-                        ✅ Modèle sélectionné - Les données patient seront automatiquement pré-remplies
-                      </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-green-700">
+                          ✅ Modèle sélectionné - Les données patient seront automatiquement pré-remplies
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowPreview(true)}
+                          className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 flex items-center gap-1"
+                        >
+                          <Eye className="w-4 h-4" />
+                          {t('admin:consents.preview')}
+                        </button>
+                      </div>
                       {prefilledContent && (
                         <div className="text-xs text-gray-600">
                           <strong>Aperçu:</strong>
@@ -754,6 +796,26 @@ const ConsentFormModal = ({
           )}
         </div>
       </div>
+
+      {/* Modal de prévisualisation */}
+      <ConsentPreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        template={availableTemplates.find(t => t.id === selectedTemplate)}
+        patient={selectedPatient}
+        additionalData={{
+          procedureDescription: formData.specificDetails?.procedure,
+          specificRisks: formData.specificDetails?.risks,
+          expectedBenefits: formData.specificDetails?.expectedResults,
+          alternatives: formData.specificDetails?.alternatives
+        }}
+        onSignatureStarted={(data, workflow) => {
+          setShowPreview(false);
+          // Optionnel: fermer la modale principale ou afficher un message de succès
+          onSave?.(data);
+          handleClose();
+        }}
+      />
     </div>
   );
 };

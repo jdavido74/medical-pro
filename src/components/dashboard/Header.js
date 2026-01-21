@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Globe } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import NotificationCenter from '../notifications/NotificationCenter';
 import { useLocale } from '../../contexts/LocaleContext';

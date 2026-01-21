@@ -1,18 +1,89 @@
 // utils/consentVariableMapper.js
-import { patientsStorage } from './patientsStorage';
+// Note: patientsStorage n'est plus utilisé - les patients viennent de l'API
+import i18n from '../i18n';
+
+// Helper to get current locale from i18n
+const getCurrentLocale = () => {
+  const lang = i18n.language || 'fr';
+  // Map language code to locale code (fr -> fr-FR, es -> es-ES)
+  const localeMap = {
+    'fr': 'fr-FR',
+    'es': 'es-ES',
+    'en': 'en-GB'
+  };
+  return localeMap[lang] || 'fr-FR';
+};
+
+// Normaliser les données patient (API vs localStorage)
+const normalizePatient = (patient) => {
+  if (!patient) return null;
+
+  return {
+    firstName: patient.firstName || patient.first_name || '',
+    lastName: patient.lastName || patient.last_name || '',
+    birthDate: patient.birthDate || patient.birth_date || patient.dateOfBirth,
+    gender: patient.gender || patient.sex,
+    patientNumber: patient.patientNumber || patient.patient_number || patient.id?.substring(0, 8),
+    // Email et téléphone peuvent être à la racine ou dans contact
+    email: patient.email || patient.contact?.email || '',
+    phone: patient.phone || patient.contact?.phone || patient.phoneNumber || '',
+    // Adresse
+    address: patient.address || {
+      street: patient.street || patient.addressLine1,
+      city: patient.city,
+      postalCode: patient.postalCode || patient.zipCode,
+      country: patient.country
+    },
+    nationality: patient.nationality,
+    idNumber: patient.idNumber || patient.nationalId || patient.socialSecurityNumber,
+    // Assurance
+    insurance: patient.insurance || {
+      provider: patient.insuranceProvider,
+      number: patient.insuranceNumber,
+      type: patient.insuranceType
+    },
+    // Contact d'urgence
+    emergencyContact: patient.emergencyContact || patient.contact?.emergencyContact || {
+      name: patient.emergencyContactName,
+      phone: patient.emergencyContactPhone,
+      relationship: patient.emergencyContactRelationship
+    }
+  };
+};
 
 // Service de mapping automatique des variables dans les consentements
 export const consentVariableMapper = {
-  // Mapper les variables d'un modèle avec les données patient
-  fillTemplateVariables: (templateContent, patientId, practitionerId, additionalData = {}) => {
+  /**
+   * Mapper les variables d'un modèle avec les données patient
+   * @param {string} templateContent - Le contenu du template avec variables
+   * @param {string|object} patientOrId - L'objet patient OU l'ID du patient (deprecated)
+   * @param {string|object} practitionerOrId - L'objet praticien OU l'ID du praticien
+   * @param {object} additionalData - Données additionnelles (intervention, risques, etc.)
+   * @returns {string} Le contenu avec les variables remplacées
+   */
+  fillTemplateVariables: (templateContent, patientOrId, practitionerOrId, additionalData = {}) => {
     if (!templateContent) return '';
 
-    // Récupérer les données du patient
-    const patient = patientId ? patientsStorage.getById(patientId) : null;
+    // Récupérer les données du patient - accepte un objet ou un ID
+    let patient = null;
+    if (typeof patientOrId === 'object' && patientOrId !== null) {
+      // Patient passé directement comme objet
+      patient = normalizePatient(patientOrId);
+    } else if (typeof patientOrId === 'string') {
+      // ID passé - utiliser additionalData.patient si disponible
+      patient = additionalData.patient ? normalizePatient(additionalData.patient) : null;
+    }
+
+    // Récupérer les données du praticien - accepte un objet ou un ID
+    let practitioner = null;
+    if (typeof practitionerOrId === 'object' && practitionerOrId !== null) {
+      practitioner = practitionerOrId;
+    } else if (typeof practitionerOrId === 'string') {
+      practitioner = additionalData.practitioner || getUserById(practitionerOrId);
+    }
 
     // Données par défaut et additionnelles
     const currentDate = new Date();
-    const practitioner = practitionerId ? getUserById(practitionerId) : null;
 
     // Mapping des variables
     const variableMap = {
@@ -24,8 +95,8 @@ export const consentVariableMapper = {
       'AGE_PATIENT': patient?.birthDate ? calculateAge(patient.birthDate) : '[AGE_PATIENT]',
       'SEXE_PATIENT': getGenderText(patient?.gender) || '[SEXE_PATIENT]',
       'NUMERO_PATIENT': patient?.patientNumber || '[NUMERO_PATIENT]',
-      'EMAIL_PATIENT': patient?.contact?.email || '[EMAIL_PATIENT]',
-      'TELEPHONE_PATIENT': patient?.contact?.phone || '[TELEPHONE_PATIENT]',
+      'EMAIL_PATIENT': patient?.email || '[EMAIL_PATIENT]',
+      'TELEPHONE_PATIENT': patient?.phone || '[TELEPHONE_PATIENT]',
       'ADRESSE_PATIENT': formatAddress(patient?.address) || '[ADRESSE_PATIENT]',
       'NATIONALITE_PATIENT': patient?.nationality || '[NATIONALITE_PATIENT]',
       'NUMERO_ID_PATIENT': patient?.idNumber || '[NUMERO_ID_PATIENT]',
@@ -36,9 +107,9 @@ export const consentVariableMapper = {
       'TYPE_ASSURANCE': patient?.insurance?.type || '[TYPE_ASSURANCE]',
 
       // Contact d'urgence
-      'CONTACT_URGENCE_NOM': patient?.contact?.emergencyContact?.name || '[CONTACT_URGENCE_NOM]',
-      'CONTACT_URGENCE_TELEPHONE': patient?.contact?.emergencyContact?.phone || '[CONTACT_URGENCE_TELEPHONE]',
-      'CONTACT_URGENCE_RELATION': patient?.contact?.emergencyContact?.relationship || '[CONTACT_URGENCE_RELATION]',
+      'CONTACT_URGENCE_NOM': patient?.emergencyContact?.name || '[CONTACT_URGENCE_NOM]',
+      'CONTACT_URGENCE_TELEPHONE': patient?.emergencyContact?.phone || '[CONTACT_URGENCE_TELEPHONE]',
+      'CONTACT_URGENCE_RELATION': patient?.emergencyContact?.relationship || '[CONTACT_URGENCE_RELATION]',
 
       // Variables praticien
       'NOM_PRATICIEN': practitioner?.lastName || '[NOM_PRATICIEN]',
@@ -111,9 +182,16 @@ export const consentVariableMapper = {
     return [...new Set(matches.map(match => match[1]))];
   },
 
-  // Mapper les données patient pour un formulaire de consentement
-  getPatientDataForForm: (patientId) => {
-    const patient = patientId ? patientsStorage.getById(patientId) : null;
+  /**
+   * Mapper les données patient pour un formulaire de consentement
+   * @param {string|object} patientOrId - L'objet patient OU l'ID du patient
+   * @returns {object} Les données patient normalisées
+   */
+  getPatientDataForForm: (patientOrId) => {
+    let patient = null;
+    if (typeof patientOrId === 'object' && patientOrId !== null) {
+      patient = normalizePatient(patientOrId);
+    }
     if (!patient) return {};
 
     return {
@@ -122,11 +200,11 @@ export const consentVariableMapper = {
       birthDate: patient.birthDate,
       age: patient.birthDate ? calculateAge(patient.birthDate) : null,
       gender: patient.gender,
-      email: patient.contact?.email,
-      phone: patient.contact?.phone,
+      email: patient.email,
+      phone: patient.phone,
       address: formatAddress(patient.address),
       insurance: patient.insurance,
-      emergencyContact: patient.contact?.emergencyContact,
+      emergencyContact: patient.emergencyContact,
       nationality: patient.nationality,
       idNumber: patient.idNumber
     };
@@ -154,7 +232,7 @@ const getUserById = (userId) => {
     'demo': {
       firstName: 'Dr. Jean',
       lastName: 'Dupont',
-      role: 'doctor',
+      role: 'physician',
       specialty: 'Médecine générale',
       facility: 'Cabinet Médical Dupont',
       facilityAddress: '123 Avenue de la Santé, 75001 Paris',
@@ -167,7 +245,7 @@ const getUserById = (userId) => {
   return mockUsers[userId] || {
     firstName: 'Dr.',
     lastName: '[NOM_PRATICIEN]',
-    role: 'doctor',
+    role: 'physician',
     specialty: '[SPÉCIALITÉ_PRATICIEN]'
   };
 };
@@ -175,13 +253,13 @@ const getUserById = (userId) => {
 const formatDate = (date) => {
   if (!date) return '';
   if (typeof date === 'string') date = new Date(date);
-  return date.toLocaleDateString('fr-FR');
+  return date.toLocaleDateString(getCurrentLocale());
 };
 
 const formatLongDate = (date) => {
   if (!date) return '';
   if (typeof date === 'string') date = new Date(date);
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(getCurrentLocale(), {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -192,7 +270,7 @@ const formatLongDate = (date) => {
 const formatTime = (date) => {
   if (!date) return '';
   if (typeof date === 'string') date = new Date(date);
-  return date.toLocaleTimeString('fr-FR', {
+  return date.toLocaleTimeString(getCurrentLocale(), {
     hour: '2-digit',
     minute: '2-digit'
   });

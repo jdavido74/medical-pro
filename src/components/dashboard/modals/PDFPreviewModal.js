@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Download, Eye, FileText, Printer } from 'lucide-react';
 import { useCountryConfig } from '../../../config/ConfigManager';
+import { useLocale } from '../../../contexts/LocaleContext';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
   const { config } = useCountryConfig();
+  const { locale } = useLocale();
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
 
@@ -163,7 +165,7 @@ const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
     pdf.text(`Page ${currentPage} sur ${totalPages}`, pdfWidth / 2, footerY, { align: 'center' });
 
     // Date de génération à droite
-    const generationDate = new Date().toLocaleDateString('fr-FR', {
+    const generationDate = new Date().toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -416,11 +418,11 @@ const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
         <div class="dates-grid">
           <div class="date-item">
             <div class="date-label">${dateLabel} :</div>
-            <div class="date-value">${dateValue ? new Date(dateValue).toLocaleDateString('fr-FR') : 'N/A'}</div>
+            <div class="date-value">${dateValue ? new Date(dateValue).toLocaleDateString(locale) : 'N/A'}</div>
           </div>
           <div class="date-item">
             <div class="date-label">${endLabel} :</div>
-            <div class="date-value">${endValue ? new Date(endValue).toLocaleDateString('fr-FR') : 'N/A'}</div>
+            <div class="date-value">${endValue ? new Date(endValue).toLocaleDateString(locale) : 'N/A'}</div>
           </div>
           ${data.purchaseOrderNumber ? `
             <div class="date-item">
@@ -629,10 +631,10 @@ const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
               <span>Pays: {config?.country?.name || 'France'}</span>
             </div>
             <div>
-              Généré le {new Date().toLocaleDateString('fr-FR', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
+              Généré le {new Date().toLocaleDateString(locale, {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
               })}
             </div>
           </div>

@@ -5,7 +5,7 @@ import {
   CalendarPlus, ArrowRight, Activity, Stethoscope,
   Clipboard, Clock, AlertCircle, Edit2, CheckCircle2
 } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { patientsStorage } from '../../../utils/patientsStorage';
 

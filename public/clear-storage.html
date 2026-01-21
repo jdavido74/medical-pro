@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Storage - MedicalPro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .info {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            border-radius: 8px;
+        }
+
+        .info-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .storage-item {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #555;
+            word-break: break-all;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 18px;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .count {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="emoji">🗑️</span>
+        <h1>Clear LocalStorage</h1>
+        <p style="color: #666; margin-bottom: 30px;">
+            Cette page permet de vider complètement le localStorage de MedicalPro
+        </p>
+
+        <div class="info">
+            <div class="info-title">📊 Contenu actuel du localStorage <span class="count" id="itemCount">0</span></div>
+            <div id="storageContent"></div>
+        </div>
+
+        <button class="btn" onclick="clearStorage()">
+            🗑️ Vider le localStorage
+        </button>
+
+        <button class="btn btn-secondary" onclick="location.href='/'">
+            🏠 Retour à l'accueil
+        </button>
+
+        <div class="success" id="successMessage">
+            ✅ localStorage vidé avec succès !
+        </div>
+    </div>
+
+    <script>
+        function displayStorageContent() {
+            const contentDiv = document.getElementById('storageContent');
+            const countSpan = document.getElementById('itemCount');
+
+            const items = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                items.push({ key, value });
+            }
+
+            countSpan.textContent = items.length;
+
+            if (items.length === 0) {
+                contentDiv.innerHTML = '<div style="color: #999; font-style: italic; padding: 20px;">localStorage est vide</div>';
+            } else {
+                contentDiv.innerHTML = items.map(item => {
+                    let displayValue = item.value;
+                    if (displayValue.length > 100) {
+                        displayValue = displayValue.substring(0, 100) + '...';
+                    }
+                    return `<div class="storage-item"><strong>${item.key}:</strong> ${displayValue}</div>`;
+                }).join('');
+            }
+        }
+
+        function clearStorage() {
+            const itemCount = localStorage.length;
+
+            if (itemCount === 0) {
+                alert('Le localStorage est déjà vide !');
+                return;
+            }
+
+            if (confirm(`Voulez-vous vraiment supprimer ${itemCount} élément(s) du localStorage ?`)) {
+                localStorage.clear();
+                displayStorageContent();
+
+                const successMsg = document.getElementById('successMessage');
+                successMsg.classList.add('show');
+
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 3000);
+
+                console.log('✅ localStorage vidé avec succès !');
+            }
+        }
+
+        // Afficher le contenu au chargement
+        displayStorageContent();
+
+        // Mettre à jour toutes les 2 secondes
+        setInterval(displayStorageContent, 2000);
+    </script>
+</body>
+</html>

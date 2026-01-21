@@ -27,16 +27,22 @@ async function getAppointments(options = {}) {
       }
     });
 
-    const data = dataTransform.unwrapResponse(response);
+    // Backend returns: { success: true, data: [...], pagination: {...} }
+    // unwrapResponse returns response.data if it exists
+    const unwrapped = dataTransform.unwrapResponse(response);
+
+    // Handle both cases: unwrapped is the array OR unwrapped is { data: [...], pagination: {...} }
+    const appointmentsData = Array.isArray(unwrapped) ? unwrapped : (unwrapped.data || []);
+    const pagination = Array.isArray(unwrapped) ? response.pagination : unwrapped.pagination;
 
     // Transform appointments from backend format
-    const appointments = (data.data || []).map(transformAppointmentFromBackend);
+    const appointments = appointmentsData.map(transformAppointmentFromBackend);
 
     return {
       appointments,
-      total: data.total,
-      page: data.page,
-      limit: data.limit
+      total: pagination?.total || response.pagination?.total || appointments.length,
+      page: pagination?.page || response.pagination?.page || 1,
+      limit: pagination?.limit || response.pagination?.limit || 100
     };
   } catch (error) {
     console.error('[appointmentsApi] Error fetching appointments:', error);
@@ -156,84 +162,147 @@ async function generateQuote(appointmentId) {
 
 /**
  * Transform backend appointment response to frontend format
- * Backend: { id, company_id, patient_id, practitioner_id, start_time, end_time, status, ... }
- * Frontend: { id, patientId, practitionerId, date, startTime, endTime, status, ... }
+ * Backend: { id, facility_id, patient_id, provider_id, appointment_date, start_time (TIME), end_time (TIME), type, ... }
+ * Frontend: { id, patientId, practitionerId, date, startTime, endTime, type, title, ... }
  */
 function transformAppointmentFromBackend(appointment) {
   if (!appointment) return null;
 
-  // Parse date and time from ISO strings
-  const startDate = new Date(appointment.start_time);
-  const endDate = new Date(appointment.end_time);
-  const dateString = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+  // Format time from HH:MM:SS to HH:MM for frontend
+  const formatTimeForFrontend = (time) => {
+    if (!time) return '';
+    // If already in HH:MM format, return as is
+    if (/^\d{2}:\d{2}$/.test(time)) return time;
+    // If in HH:MM:SS format, remove seconds
+    if (/^\d{2}:\d{2}:\d{2}$/.test(time)) return time.substring(0, 5);
+    return time;
+  };
 
   return {
     // Basic info
     id: appointment.id,
     patientId: appointment.patient_id,
-    practitionerId: appointment.practitioner_id,
+    practitionerId: appointment.provider_id,  // IMPORTANT: provider_id from DB
+    facilityId: appointment.facility_id,
     companyId: appointment.company_id,
 
-    // Date and time
-    date: dateString,
-    startTime: startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-    endTime: endDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-    start_time: appointment.start_time, // Keep original for backend sync
-    end_time: appointment.end_time,
+    // Date and time (SEPARATE fields from DB)
+    date: appointment.appointment_date,       // Already in YYYY-MM-DD format
+    startTime: formatTimeForFrontend(appointment.start_time),  // HH:MM
+    endTime: formatTimeForFrontend(appointment.end_time),      // HH:MM
+    duration: appointment.duration_minutes,
+
+    // Type
+    type: appointment.type,
 
     // Details
+    title: appointment.title || appointment.reason,  // Use title if available, fallback to reason
     reason: appointment.reason,
-    notes: appointment.notes || {},
+    description: appointment.description || '',
+    notes: appointment.notes || '',
+
+    // Priority
+    priority: appointment.priority || 'normal',
+
+    // Location
+    location: appointment.location || '',
+
+    // Status
     status: appointment.status || 'scheduled',
+
+    // Reminders configuration
+    reminders: appointment.reminders || {
+      patient: { enabled: true, beforeMinutes: 1440 },
+      practitioner: { enabled: true, beforeMinutes: 30 }
+    },
+
+    // Additional fields
+    isTeleconsultation: appointment.is_teleconsultation || false,
+    meetingLink: appointment.meeting_link,
+    consultationFee: appointment.consultation_fee,
+    insuranceCovered: appointment.insurance_covered,
+
+    // Reminder info
+    reminderSent: appointment.reminder_sent,
+    reminderSentAt: appointment.reminder_sent_at,
+
+    // Confirmation info
+    confirmationRequired: appointment.confirmation_required,
+    confirmedAt: appointment.confirmed_at,
+    confirmedBy: appointment.confirmed_by,
 
     // Related data
     patient: appointment.patient,
-    practitioner: appointment.practitioner,
+    practitioner: appointment.healthcare_provider || appointment.provider,  // Handle both field names
     items: appointment.items || [],
     quote: appointment.quote,
 
     // Timestamps
     createdAt: appointment.created_at,
-    updatedAt: appointment.updated_at,
-    deletedAt: appointment.deleted_at
+    updatedAt: appointment.updated_at
   };
 }
 
 /**
  * Transform frontend appointment data to backend format for API
+ * Frontend: { patientId, practitionerId, date, startTime, endTime, type, title, ... }
+ * Backend: { patient_id, provider_id, appointment_date, start_time (TIME), end_time (TIME), type, reason, ... }
  */
 function transformAppointmentToBackend(appointment) {
   if (!appointment) return null;
 
-  // Reconstruct ISO datetime strings from date and time
-  let startTime, endTime;
-
-  if (appointment.start_time && appointment.end_time) {
-    // Already in ISO format
-    startTime = appointment.start_time;
-    endTime = appointment.end_time;
-  } else if (appointment.date && appointment.startTime && appointment.endTime) {
-    // Need to combine date with time
-    const [startHour, startMin] = appointment.startTime.split(':');
-    const [endHour, endMin] = appointment.endTime.split(':');
-
-    startTime = new Date(`${appointment.date}T${startHour}:${startMin}:00`).toISOString();
-    endTime = new Date(`${appointment.date}T${endHour}:${endMin}:00`).toISOString();
-  }
+  // Format time to HH:MM:SS if needed
+  const formatTime = (time) => {
+    if (!time) return null;
+    // If already in HH:MM:SS format, return as is
+    if (/^\d{2}:\d{2}:\d{2}$/.test(time)) return time;
+    // If in HH:MM format, add :00
+    if (/^\d{2}:\d{2}$/.test(time)) return `${time}:00`;
+    return time;
+  };
 
   return {
-    // IDs
-    patient_id: appointment.patientId,
-    practitioner_id: appointment.practitionerId,
+    // Facility ID - let backend determine from clinic database if not provided
+    ...(appointment.facilityId && { facility_id: appointment.facilityId }),
 
-    // Date and time
-    start_time: startTime,
-    end_time: endTime,
+    // IDs (IMPORTANT: provider_id NOT practitioner_id!)
+    patient_id: appointment.patientId,
+    provider_id: appointment.practitionerId,  // Maps to healthcare_providers table
+
+    // Date and time (SEPARATE fields, not ISO timestamp!)
+    appointment_date: appointment.date,       // DATEONLY: YYYY-MM-DD
+    start_time: formatTime(appointment.startTime),  // TIME: HH:MM:SS
+    end_time: formatTime(appointment.endTime),      // TIME: HH:MM:SS
+
+    // Duration
+    duration_minutes: appointment.duration || appointment.duration_minutes,
+
+    // Type (REQUIRED in DB)
+    type: appointment.type || 'consultation',
 
     // Details
-    reason: appointment.reason,
-    notes: appointment.notes || {},
-    status: appointment.status || 'scheduled'
+    title: appointment.title,
+    reason: appointment.reason || appointment.title,  // Fallback to title if no reason
+    description: appointment.description,
+    notes: typeof appointment.notes === 'string' ? appointment.notes : '',       // TEXT, not object!
+
+    // Priority
+    priority: appointment.priority || 'normal',
+
+    // Location
+    location: appointment.location,
+
+    // Status
+    status: appointment.status || 'scheduled',
+
+    // Reminders configuration (JSONB)
+    reminders: appointment.reminders,
+
+    // Additional fields if provided
+    is_teleconsultation: appointment.isTeleconsultation || false,
+    meeting_link: appointment.meetingLink,
+    consultation_fee: appointment.consultationFee,
+    insurance_covered: appointment.insuranceCovered !== undefined ? appointment.insuranceCovered : true
   };
 }
 

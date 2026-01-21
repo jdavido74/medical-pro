@@ -1,9 +1,12 @@
 {
   "save": "Enregistrer",
+  "saving": "Sauvegarde...",
   "cancel": "Annuler",
   "delete": "Supprimer",
   "edit": "Modifier",
   "add": "Ajouter",
+  "create": "Créer",
+  "update": "Mettre à jour",
   "search": "Rechercher",
   "loading": "Chargement...",
   "error": "Erreur",
@@ -12,7 +15,7 @@
   "optional": "Optionnel",
   "dashboard": "Tableau de bord",
   "yes": "Oui",
-  "no": "Non",
+  "no": "No",
   "close": "Fermer",
   "confirm": "Confirmer",
   "export": "Exporter",
@@ -21,6 +24,8 @@
   "download": "Télécharger",
   "upload": "Téléverser",
   "view": "Voir",
+  "show": "Afficher",
+  "hide": "Masquer",
   "back": "Retour",
   "next": "Suivant",
   "previous": "Précédent",
@@ -33,13 +38,110 @@
   "name": "Nom",
   "description": "Description",
   "notes": "Notes",
+  "reset": "Réinitialiser",
+  "apply": "Appliquer",
+  "select": "Sélectionner",
+  "selectAll": "Tout sélectionner",
+  "deselectAll": "Tout désélectionner",
+  "none": "Aucun",
+  "all": "Tous",
+  "active": "Actif",
+  "inactive": "Inactif",
+  "enabled": "Activé",
+  "disabled": "Désactivé",
+  "premium": "Premium",
+  "free": "Gratuit",
+  "firstName": "Prénom",
+  "lastName": "Nom",
+  "email": "Email",
+  "phone": "Téléphone",
+  "mobile": "Mobile",
+  "address": "Adresse",
+  "city": "Ville",
+  "postalCode": "Code postal",
+  "country": "Pays",
+  "password": "Mot de passe",
+  "confirmPassword": "Confirmer le mot de passe",
+  "newPassword": "Nouveau mot de passe",
+  "currentPassword": "Mot de passe actuel",
+  "profession": "Profession",
+  "specialty": "Spécialité",
+  "title": "Titre",
+  "role": "Rôle",
+  "permissions": "Permissions",
+  "dayNames": {
+    "monday": "Lundi",
+    "tuesday": "Mardi",
+    "wednesday": "Mercredi",
+    "thursday": "Jeudi",
+    "friday": "Vendredi",
+    "saturday": "Samedi",
+    "sunday": "Dimanche"
+  },
+  "dayNamesShort": {
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mer",
+    "thu": "Jeu",
+    "fri": "Ven",
+    "sat": "Sam",
+    "sun": "Dim"
+  },
+  "months": {
+    "january": "Janvier",
+    "february": "Février",
+    "march": "Mars",
+    "april": "Avril",
+    "may": "Mai",
+    "june": "Juin",
+    "july": "Juillet",
+    "august": "Août",
+    "september": "Septembre",
+    "october": "Octobre",
+    "november": "Novembre",
+    "december": "Décembre"
+  },
+  "confirmations": {
+    "delete": "Êtes-vous sûr de vouloir supprimer cet élément ?",
+    "deleteWithName": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ?",
+    "cancel": "Êtes-vous sûr de vouloir annuler ? Les modifications non enregistrées seront perdues.",
+    "reset": "Êtes-vous sûr de vouloir réinitialiser ?",
+    "unsavedChanges": "Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?"
+  },
+  "messages": {
+    "saveSuccess": "Enregistré avec succès",
+    "saveError": "Erreur lors de l'enregistrement",
+    "deleteSuccess": "Supprimé avec succès",
+    "deleteError": "Erreur lors de la suppression",
+    "loadError": "Erreur lors du chargement des données",
+    "updateSuccess": "Mis à jour avec succès",
+    "updateError": "Erreur lors de la mise à jour",
+    "networkError": "Erreur de connexion au serveur",
+    "serverError": "Erreur serveur",
+    "timeout": "Délai d'attente dépassé",
+    "noData": "Aucune donnée disponible",
+    "noResults": "Aucun résultat trouvé"
+  },
   "validation": {
     "required": "{{field}} est requis",
     "invalidEmail": "Email invalide",
     "invalidPhone": "Numéro de téléphone invalide",
     "invalidMedicalNumber": "Numéro ADELI (9 chiffres) ou RPPS (11 chiffres) invalide",
     "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
-    "clinicNameRequired": "Nom du cabinet requis"
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "clinicNameRequired": "Nom du cabinet requis",
+    "emailRequired": "Email requis",
+    "firstNameRequired": "Prénom requis",
+    "lastNameRequired": "Nom requis",
+    "phoneInvalid": "Format de téléphone invalide",
+    "passwordRequired": "Mot de passe requis",
+    "fieldRequired": "Ce champ est requis"
+  },
+  "placeholders": {
+    "search": "Rechercher...",
+    "selectOption": "Sélectionner une option",
+    "enterValue": "Entrer une valeur",
+    "noOptions": "Aucune option disponible"
   },
   "patientSearch": {
     "placeholder": "Rechercher un patient...",
@@ -51,5 +153,39 @@
     "patientSelected": "Patient sélectionné",
     "patientNumber": "Numéro patient:",
     "incompleteWarning": "Fiche incomplète - Sera complétée depuis la page Patients"
-  }
+  },
+  "clinicStatus": {
+    "suspended": {
+      "title": "Compte suspendu",
+      "message": "Votre compte clinique est actuellement suspendu.",
+      "details": "Veuillez contacter le support pour plus d'informations.",
+      "contactSupport": "Contacter le support"
+    },
+    "deleted": {
+      "title": "Compte supprimé",
+      "message": "Ce compte clinique a été définitivement supprimé.",
+      "details": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support."
+    },
+    "inactive": {
+      "title": "Accès non autorisé",
+      "message": "L'accès à cette clinique n'est pas autorisé.",
+      "redirecting": "Redirection vers la page d'accueil..."
+    }
+  },
+  "statuses": {
+    "active": "Actif",
+    "inactive": "Inactif",
+    "pending": "En attente",
+    "approved": "Approuvé",
+    "rejected": "Rejeté",
+    "draft": "Brouillon",
+    "sent": "Envoyé",
+    "paid": "Payé",
+    "cancelled": "Annulé",
+    "completed": "Terminé",
+    "expired": "Expiré",
+    "revoked": "Révoqué"
+  },
+  "years": "ans",
+  "minutes": "min"
 }

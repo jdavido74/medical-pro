@@ -1,11 +1,14 @@
 // components/auth/EmailVerificationCallback.js
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import baseClient from '../../utils/baseClient';
 
-const EmailVerificationCallback = ({ token, setCurrentPage }) => {
+const EmailVerificationCallback = () => {
   const { t } = useTranslation('auth');
+  const { token } = useParams();
+  const navigate = useNavigate();
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const [message, setMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState('');
@@ -42,7 +45,7 @@ const EmailVerificationCallback = ({ token, setCurrentPage }) => {
               if (prev <= 1) {
                 clearInterval(timer);
                 console.log('[EmailVerificationCallback] Redirecting to login');
-                setCurrentPage('login');
+                navigate('/login');
                 return 0;
               }
               return prev - 1;
@@ -67,7 +70,7 @@ const EmailVerificationCallback = ({ token, setCurrentPage }) => {
     };
 
     verifyEmail();
-  }, [token, t, setCurrentPage]);
+  }, [token, t, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
@@ -130,7 +133,7 @@ const EmailVerificationCallback = ({ token, setCurrentPage }) => {
             </div>
 
             <button
-              onClick={() => setCurrentPage('login')}
+              onClick={() => navigate('/login')}
               className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
             >
               {t('emailVerification.goToLogin') || 'Go to Login Now'}
@@ -164,13 +167,13 @@ const EmailVerificationCallback = ({ token, setCurrentPage }) => {
 
             <div className="space-y-3">
               <button
-                onClick={() => setCurrentPage('email-verification')}
+                onClick={() => navigate('/email-verification')}
                 className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
               >
                 {t('emailVerification.resendLink') || 'Request New Link'}
               </button>
               <button
-                onClick={() => setCurrentPage('login')}
+                onClick={() => navigate('/login')}
                 className="w-full bg-gray-200 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
               >
                 {t('emailVerification.goToLogin') || 'Go to Login'}

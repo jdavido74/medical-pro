@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, Clock, AlertTriangle, CheckCircle, Info, Calendar } from 'lucide-react';
 import { appointmentsStorage } from '../../utils/appointmentsStorage';
+import { useLocale } from '../../contexts/LocaleContext';
 
 const NotificationCenter = ({ onNotificationClick }) => {
+  const { locale } = useLocale();
   const [notifications, setNotifications] = useState([]);
   const [pendingReminders, setPendingReminders] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -173,7 +175,7 @@ const NotificationCenter = ({ onNotificationClick }) => {
                               {reminder.patientName} - {reminder.title}
                             </p>
                             <p className="text-xs text-blue-600 mt-1">
-                              {new Date(reminder.appointmentDate).toLocaleDateString('fr-FR')} à {reminder.appointmentTime}
+                              {new Date(reminder.appointmentDate).toLocaleDateString(locale)} à {reminder.appointmentTime}
                             </p>
                           </div>
                         </div>

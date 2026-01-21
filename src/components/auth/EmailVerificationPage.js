@@ -1,12 +1,16 @@
 // components/auth/EmailVerificationPage.js
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import baseClient from '../../utils/baseClient';
 
-const EmailVerificationPage = ({ email, setCurrentPage }) => {
+const EmailVerificationPage = () => {
   const { t } = useTranslation('auth');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const email = location.state?.email;
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
   const [resendError, setResendError] = useState('');
@@ -147,7 +151,7 @@ const EmailVerificationPage = ({ email, setCurrentPage }) => {
             {t('emailVerification.goToLogin')}
           </p>
           <button
-            onClick={() => setCurrentPage('login')}
+            onClick={() => navigate('/login')}
             className="text-green-600 hover:text-green-700 font-medium text-sm"
           >
             ← {t('login')}

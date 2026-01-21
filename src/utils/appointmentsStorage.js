@@ -1,8 +1,33 @@
 // utils/appointmentsStorage.js
 import { generateAppointmentId } from './idGenerator';
+import { getClientIPAsync } from '../hooks/useClientIP';
 
 const APPOINTMENTS_STORAGE_KEY = 'medicalPro_appointments';
 const AVAILABILITY_STORAGE_KEY = 'medicalPro_availability';
+
+// IP caching to prevent excessive API calls (5-minute TTL)
+let cachedClientIP = null;
+let ipFetchTime = null;
+const IP_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedClientIP() {
+  const now = Date.now();
+
+  // Use cached IP if still valid
+  if (cachedClientIP && ipFetchTime && now - ipFetchTime < IP_CACHE_DURATION) {
+    return cachedClientIP;
+  }
+
+  try {
+    const ip = await getCachedClientIP();
+    cachedClientIP = ip;
+    ipFetchTime = now;
+    return ip;
+  } catch (error) {
+    console.warn('[AppointmentsStorage] Failed to get client IP:', error);
+    return 'unknown';
+  }
+}
 
 // Types de rendez-vous
 export const APPOINTMENT_TYPES = {
@@ -164,7 +189,7 @@ export const appointmentsStorage = {
   },
 
   // Créer un nouveau rendez-vous - US 3.1
-  create: (appointmentData, userId = 'system') => {
+  create: async (appointmentData, userId = 'system') => {
     try {
       const appointments = appointmentsStorage.getAll();
 
@@ -194,6 +219,7 @@ export const appointmentsStorage = {
         throw new Error('Conflit de créneaux détecté avec un autre rendez-vous');
       }
 
+      const clientIP = await getCachedClientIP();
       const newAppointment = {
         ...appointmentData,
         // IMPORTANT: Générer un nouvel ID (ne pas utiliser appointmentData.id qui peut être undefined)
@@ -209,7 +235,7 @@ export const appointmentsStorage = {
           action: 'create',
           userId: userId,
           timestamp: new Date().toISOString(),
-          ipAddress: 'localhost'
+          ipAddress: clientIP
         }],
 
         // Rappels automatiques
@@ -229,7 +255,7 @@ export const appointmentsStorage = {
   },
 
   // Mettre à jour un rendez-vous
-  update: (id, appointmentData, userId = 'system') => {
+  update: async (id, appointmentData, userId = 'system') => {
     try {
       if (!id) {
         throw new Error('ID du rendez-vous requis pour la mise à jour');
@@ -289,6 +315,7 @@ export const appointmentsStorage = {
       }
 
       const currentAppointment = appointments[index];
+      const clientIP = await getCachedClientIP();
       const updatedAppointment = {
         ...currentAppointment,
         ...appointmentData,
@@ -299,7 +326,7 @@ export const appointmentsStorage = {
             action: 'update',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost',
+            ipAddress: clientIP,
             changes: Object.keys(appointmentData)
           }
         ]
@@ -607,7 +634,7 @@ export const appointmentsStorage = {
   },
 
   // Supprimer un rendez-vous (soft delete)
-  delete: (id, userId = 'system') => {
+  delete: async (id, userId = 'system') => {
     try {
       const appointments = appointmentsStorage.getAll();
       const index = appointments.findIndex(appointment => appointment.id === id);
@@ -616,6 +643,7 @@ export const appointmentsStorage = {
         throw new Error('Rendez-vous non trouvé');
       }
 
+      const clientIP = await getCachedClientIP();
       appointments[index] = {
         ...appointments[index],
         deleted: true,
@@ -627,7 +655,7 @@ export const appointmentsStorage = {
             action: 'delete',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost'
+            ipAddress: clientIP
           }
         ]
       };
@@ -641,17 +669,18 @@ export const appointmentsStorage = {
   },
 
   // Journaliser un accès
-  logAccess: (appointmentId, action, userId = 'system', details = {}) => {
+  logAccess: async (appointmentId, action, userId = 'system', details = {}) => {
     try {
       const appointments = appointmentsStorage.getAll();
       const index = appointments.findIndex(appointment => appointment.id === appointmentId);
 
       if (index !== -1) {
+        const clientIP = await getCachedClientIP();
         appointments[index].accessLog.push({
           action,
           userId,
           timestamp: new Date().toISOString(),
-          ipAddress: 'localhost',
+          ipAddress: clientIP,
           details
         });
 

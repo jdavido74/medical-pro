@@ -2,18 +2,28 @@
 import React, { useState, useEffect } from 'react';
 import {
   User, Building, Shield, CreditCard, Bell, Save,
-  Upload, Eye, EyeOff, CheckCircle, Package, Plus, Edit2, Trash2
+  Upload, Eye, EyeOff, CheckCircle, Package, Plus, Edit2, Trash2,
+  X, AlertCircle, Clock
 } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { catalogStorage, productsStorage, servicesStorage } from '../../../utils/productsStorage';
+import { facilitiesApi } from '../../../api/facilitiesApi';
+import { profileApi } from '../../../api/profileApi';
+import PractitionerAvailabilityWeekly from '../../calendar/PractitionerAvailabilityWeekly';
 
 const SettingsModule = () => {
-  const { user, company, updateUser } = useAuth();
+  const { user, company, updateUser, updateCompany } = useAuth();
   const { t } = useTranslation('admin');
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [facility, setFacility] = useState(null);
+  const [error, setError] = useState(null);
+
+  // État pour les notifications
+  const [notification, setNotification] = useState(null);
 
   // États pour les formulaires
   const [profileData, setProfileData] = useState({
@@ -45,22 +55,49 @@ const SettingsModule = () => {
     type: 'product' // product, service, bundle
   });
 
-  // Synchroniser profileData avec le contexte utilisateur et entreprise
+  // Charger les données de l'établissement depuis l'API
   useEffect(() => {
-    if (user || company) {
+    loadFacilityData();
+  }, []);
+
+  const loadFacilityData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const facilityData = await facilitiesApi.getCurrentFacility();
+      setFacility(facilityData);
+
+      // Mettre à jour profileData avec les données de l'API
       setProfileData(prev => ({
         ...prev,
         name: user?.name || prev.name,
         email: user?.email || prev.email,
-        companyName: user?.companyName || prev.companyName,
+        companyName: facilityData?.name || company?.name || prev.companyName,
+        phone: facilityData?.phone || company?.phone || prev.phone,
+        address: facilityData?.address || company?.address || prev.address,
+        postalCode: facilityData?.postalCode || company?.postalCode || prev.postalCode,
+        city: facilityData?.city || company?.city || prev.city,
+        country: facilityData?.country || company?.country || prev.country || 'FR'
+      }));
+    } catch (error) {
+      console.error('[SettingsModule] Error loading facility data:', error);
+      setError(t('settings.messages.loadError'));
+      // Fallback sur les données du contexte
+      setProfileData(prev => ({
+        ...prev,
+        name: user?.name || prev.name,
+        email: user?.email || prev.email,
+        companyName: user?.companyName || company?.name || prev.companyName,
         phone: company?.phone || prev.phone,
         address: company?.address || prev.address,
         postalCode: company?.postalCode || prev.postalCode,
         city: company?.city || prev.city,
         country: company?.country || prev.country || 'France'
       }));
+    } finally {
+      setIsLoading(false);
     }
-  }, [user, company]);
+  };
 
   // Charger le catalogue au montage
   useEffect(() => {
@@ -72,8 +109,24 @@ const SettingsModule = () => {
     setCatalogItems(items);
   };
 
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Fonction pour afficher une notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+  };
+
   const tabs = [
     { id: 'profile', label: t('settings.tabs.profile'), icon: User },
+    { id: 'availability', label: t('availability.myAvailability', 'Mes disponibilités'), icon: Clock },
     { id: 'company', label: t('settings.tabs.company'), icon: Building },
     { id: 'catalog', label: t('settings.tabs.catalog'), icon: Package },
     { id: 'security', label: t('settings.tabs.security'), icon: Shield },
@@ -91,20 +144,66 @@ const SettingsModule = () => {
 
   const handleSave = async (section) => {
     setIsSaving(true);
+    setError(null);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (section === 'profile') {
+        // Mise à jour du profil utilisateur dans les DEUX bases de données (central + clinic)
+        // Le backend met à jour : users (central) ET healthcare_providers (clinic)
+
+        // Extraire firstName et lastName depuis le nom complet
+        const nameParts = profileData.name.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const profileUpdate = {
+          firstName,
+          lastName,
+          email: profileData.email
+        };
+
+        console.log('[SettingsModule] Updating profile in both databases:', profileUpdate);
+        const updatedProfile = await profileApi.updateProfile(profileUpdate);
+
+        // Synchroniser le contexte AuthContext avec les données mises à jour
         updateUser({
           name: profileData.name,
-          email: profileData.email,
-          companyName: profileData.companyName
+          email: updatedProfile.central.email,
+          firstName: updatedProfile.central.first_name,
+          lastName: updatedProfile.central.last_name
         });
+
+        showNotification(t('settings.messages.profileSaved'), 'success');
+      } else if (section === 'company') {
+        // Mise à jour de l'établissement via l'API
+        const facilityUpdate = {
+          name: profileData.companyName,
+          phone: profileData.phone,
+          address: profileData.address,
+          addressLine1: profileData.address,
+          postalCode: profileData.postalCode,
+          city: profileData.city,
+          country: profileData.country
+        };
+
+        console.log('[SettingsModule] Updating facility with:', facilityUpdate);
+        const updatedFacility = await facilitiesApi.updateCurrentFacility(facilityUpdate);
+        setFacility(updatedFacility);
+
+        // Mettre à jour le contexte AuthContext pour synchroniser le header
+        updateCompany({
+          name: updatedFacility.name,
+          phone: updatedFacility.phone,
+          address: updatedFacility.address
+        });
+
+        showNotification(t('settings.messages.companySaved'), 'success');
       }
-      
-      alert('✅ Paramètres sauvegardés avec succès !');
     } catch (error) {
-      alert('❌ Erreur lors de la sauvegarde');
+      console.error('[SettingsModule] Error saving:', error);
+      const errorMessage = error.message || t('settings.messages.saveError');
+      setError(errorMessage);
+      showNotification(errorMessage, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -126,7 +225,7 @@ const SettingsModule = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email
@@ -137,34 +236,6 @@ const SettingsModule = () => {
               onChange={(e) => handleInputChange('profile', 'email', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Téléphone
-            </label>
-            <input
-              type="tel"
-              value={profileData.phone}
-              onChange={(e) => handleInputChange('profile', 'phone', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="+33 1 23 45 67 89"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pays
-            </label>
-            <select
-              value={profileData.country}
-              onChange={(e) => handleInputChange('profile', 'country', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="France">France</option>
-              <option value="Belgique">Belgique</option>
-              <option value="Suisse">Suisse</option>
-            </select>
           </div>
         </div>
       </div>
@@ -249,6 +320,36 @@ const SettingsModule = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Paris"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Téléphone
+            </label>
+            <input
+              type="tel"
+              value={profileData.phone}
+              onChange={(e) => handleInputChange('profile', 'phone', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="+33 1 23 45 67 89"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pays
+            </label>
+            <select
+              value={profileData.country}
+              onChange={(e) => handleInputChange('profile', 'country', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="FR">France</option>
+              <option value="BE">Belgique</option>
+              <option value="CH">Suisse</option>
+              <option value="ES">Espagne</option>
+              <option value="CA">Canada</option>
+            </select>
           </div>
         </div>
       </div>
@@ -673,10 +774,36 @@ const SettingsModule = () => {
     </div>
   );
 
+  const renderAvailabilityTab = () => {
+    // Get the current user's healthcare provider ID (not central user ID)
+    const providerId = user?.providerId;
+
+    if (!providerId) {
+      return (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-center text-gray-500">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {t('availability.noProviderSelected', 'Impossible de charger vos disponibilités')}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <PractitionerAvailabilityWeekly
+        providerId={providerId}
+        providerName={user?.firstName ? `${user.firstName} ${user.lastName || ''}` : user?.name}
+        canEdit={true}
+      />
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'profile':
         return renderProfileTab();
+      case 'availability':
+        return renderAvailabilityTab();
       case 'company':
         return renderCompanyTab();
       case 'catalog':
@@ -693,9 +820,42 @@ const SettingsModule = () => {
   };
 
   return (
-    <div className="flex gap-8">
-      {/* Navigation des onglets */}
-      <div className="w-64 flex-shrink-0">
+    <>
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-4 flex items-center space-x-3 min-w-[320px] max-w-md ${
+            notification.type === 'success'
+              ? 'bg-green-50 border-l-4 border-green-500'
+              : 'bg-red-50 border-l-4 border-red-500'
+          }`}>
+            {notification.type === 'success' ? (
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+            )}
+            <p className={`flex-1 text-sm font-medium ${
+              notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {notification.message}
+            </p>
+            <button
+              onClick={() => setNotification(null)}
+              className={`flex-shrink-0 ${
+                notification.type === 'success'
+                  ? 'text-green-600 hover:text-green-800'
+                  : 'text-red-600 hover:text-red-800'
+              }`}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-8">
+        {/* Navigation des onglets */}
+        <div className="w-64 flex-shrink-0">
         <nav className="space-y-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -722,6 +882,7 @@ const SettingsModule = () => {
         {renderTabContent()}
       </div>
     </div>
+    </>
   );
 };
 

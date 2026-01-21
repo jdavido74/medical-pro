@@ -1,15 +1,16 @@
 // components/dashboard/modules/AppointmentsModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Plus, Search, Calendar, Filter, Edit2, Trash2, Clock,
   User, Phone, ChevronUp, ChevronDown, MapPin, AlertCircle,
   Check, X, Bell, MoreVertical
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../../contexts/AuthContext';
-import { appointmentsStorage } from '../../../utils/appointmentsStorage';
+import { useAuth } from '../../../hooks/useAuth';
+import AppointmentContext from '../../../contexts/AppointmentContext';
 import { patientsStorage } from '../../../utils/patientsStorage';
 import { loadPractitioners } from '../../../utils/practitionersLoader';
+import { isPractitionerRole } from '../../../utils/userRoles';
 import { usePermissions } from '../../auth/PermissionGuard';
 import AppointmentFormModal from '../../modals/AppointmentFormModal';
 import AvailabilityManager from '../../calendar/AvailabilityManager';
@@ -20,11 +21,18 @@ import {
   shouldShowPractitionerFilter
 } from '../../../utils/appointmentPermissions';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
+import { useLocale } from '../../../contexts/LocaleContext';
 
 const AppointmentsModule = ({ navigateToPatient }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
+  const { locale } = useLocale();
+
+  // Use AppointmentContext for API-based appointments
+  const appointmentContext = useContext(AppointmentContext);
+  const contextAppointments = appointmentContext?.appointments || [];
+
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,24 +62,26 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   const [preselectedPractitioner, setPreselectedPractitioner] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0); // Pour forcer le rafraîchissement du calendrier
 
-  // Charger les données
+  // Charger les données - recharger quand le contexte change (nouveaux RDV)
   useEffect(() => {
     loadData();
     // Initialiser le praticien sélectionné seulement si l'utilisateur EST un praticien
-    if (user && !selectedPractitioner && (user.role === 'doctor' || user.role === 'specialist')) {
+    if (user && !selectedPractitioner && isPractitionerRole(user.role)) {
       setSelectedPractitioner(user);
     }
-  }, []);
+  }, [contextAppointments]);
 
   useEffect(() => {
-    // Pour les praticiens (doctor/specialist), initialiser le filtre sur leurs propres RDV
-    if (user && (user.role === 'doctor' || user.role === 'specialist')) {
+    // Pour les praticiens, initialiser le filtre sur leurs propres RDV
+    // Utiliser providerId (healthcare_provider.id) et non user.id (central user id)
+    if (user && isPractitionerRole(user.role)) {
       if (!selectedPractitioner) {
         setSelectedPractitioner(user);
       }
       // Si l'utilisateur ne peut pas voir tous les RDV, forcer le filtre sur ses RDV
-      if (!canViewAllAppointments && filterPractitioner !== user.id) {
-        setFilterPractitioner(user.id);
+      const practitionerFilterId = user.providerId || user.id;
+      if (!canViewAllAppointments && filterPractitioner !== practitionerFilterId) {
+        setFilterPractitioner(practitionerFilterId);
       }
     }
     // Pour les secrétaires et admins, initialiser avec 'all'
@@ -90,20 +100,17 @@ const AppointmentsModule = ({ navigateToPatient }) => {
       console.log('Praticiens chargés:', allPractitioners.length, allPractitioners);
       setPractitioners(allPractitioners);
 
-      // Charger les rendez-vous
-      let allAppointments = appointmentsStorage.getAll();
+      // Charger les rendez-vous depuis le contexte API (plus localStorage)
+      let allAppointments = [...contextAppointments];
+      console.log('[AppointmentsModule] Rendez-vous depuis contexte API:', allAppointments.length);
 
       // Filtrer les RDV supprimés
       allAppointments = allAppointments.filter(apt => !apt.deleted);
 
-      // Filtrer les RDV avec des praticiens inexistants
-      allAppointments = allAppointments.filter(appointment => {
-        const practitionerExists = allPractitioners.some(p => p.id === appointment.practitionerId);
-        if (!practitionerExists) {
-          console.warn(`Rendez-vous ${appointment.id} ignoré: praticien ${appointment.practitionerId} inexistant`);
-        }
-        return practitionerExists;
-      });
+      // Note: Ne pas filtrer par praticien - les données viennent de l'API qui a déjà validé
+      // Extraire les praticiens uniques des rendez-vous pour le filtre
+      const practitionerIdsFromAppointments = [...new Set(allAppointments.map(apt => apt.practitionerId).filter(Boolean))];
+      console.log('[AppointmentsModule] Praticiens dans les RDV:', practitionerIdsFromAppointments);
 
       // FILTRER selon les permissions: voir tous les RDV ou seulement les siens
       const filteredByPermissions = filterAppointmentsByPermissions(allAppointments, user, hasPermission);
@@ -296,8 +303,9 @@ const AppointmentsModule = ({ navigateToPatient }) => {
   const handleDeleteAppointment = async (appointmentId) => {
     if (window.confirm(t('appointments.messages.deleteConfirm'))) {
       try {
-        appointmentsStorage.delete(appointmentId);
-        loadData();
+        if (appointmentContext?.deleteAppointment) {
+          await appointmentContext.deleteAppointment(appointmentId);
+        }
         setRefreshKey(prev => prev + 1); // Force le rafraîchissement du calendrier
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
@@ -305,14 +313,12 @@ const AppointmentsModule = ({ navigateToPatient }) => {
     }
   };
 
-  const handleStatusChange = (appointmentId, newStatus) => {
+  const handleStatusChange = async (appointmentId, newStatus) => {
     try {
-      const appointment = appointments.find(apt => apt.id === appointmentId);
-      if (appointment) {
-        appointmentsStorage.update(appointmentId, { ...appointment, status: newStatus });
-        loadData();
-        setRefreshKey(prev => prev + 1); // Force le rafraîchissement du calendrier
+      if (appointmentContext?.updateAppointment) {
+        await appointmentContext.updateAppointment(appointmentId, { status: newStatus });
       }
+      setRefreshKey(prev => prev + 1); // Force le rafraîchissement du calendrier
     } catch (error) {
       console.error('Erreur lors du changement de statut:', error);
     }
@@ -563,7 +569,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                     <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
                       <span className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(appointment.date).toLocaleDateString('fr-FR')} à {appointment.startTime}
+                        {new Date(appointment.date).toLocaleDateString(locale)} à {appointment.startTime}
                         {appointment.additionalSlots && appointment.additionalSlots.length > 0 && (
                           <span className="ml-2 text-blue-600 font-medium">
                             +{appointment.additionalSlots.length} slot(s)
@@ -595,7 +601,16 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                       )}
                     </div>
                     <div className="text-sm">
-                      <p className="text-gray-900 font-medium">{appointment.title}</p>
+                      {/* Afficher le type de rendez-vous (traduit) - utiliser namespace:key */}
+                      {appointment.type && (
+                        <p className="text-gray-900 font-medium">
+                          {t(`appointments:types.${appointment.type}`, { defaultValue: appointment.type })}
+                        </p>
+                      )}
+                      {/* Afficher le titre seulement s'il est différent du nom du patient */}
+                      {appointment.title && appointment.title !== appointment.patientName && (
+                        <p className="text-gray-600 mt-1">{appointment.title}</p>
+                      )}
                       {appointment.description && (
                         <p className="text-gray-600 mt-1">{appointment.description}</p>
                       )}
@@ -700,6 +715,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
           refreshKey={refreshKey}
           filterPractitioner={filterPractitioner}
           onFilterPractitionerChange={setFilterPractitioner}
+          contextAppointments={contextAppointments}
         />
       )}
 

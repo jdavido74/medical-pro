@@ -1,5 +1,6 @@
 // utils/consentTemplatesStorage.js
 import { generateId } from './idGenerator';
+import { CONSENT_TYPES as _CONSENT_TYPES } from './consentTypes';
 
 const CONSENT_TEMPLATES_STORAGE_KEY = 'medicalPro_consentTemplates';
 
@@ -413,59 +414,11 @@ export const consentTemplatesStorage = {
   }
 };
 
-// Catégories prédéfinies pour les modèles
-export const TEMPLATE_CATEGORIES = {
-  MEDICAL: {
-    id: 'medical',
-    name: 'Soins médicaux',
-    description: 'Consentements pour interventions et soins médicaux'
-  },
-  SURGICAL: {
-    id: 'surgical',
-    name: 'Chirurgie',
-    description: 'Consentements pour interventions chirurgicales'
-  },
-  RESEARCH: {
-    id: 'research',
-    name: 'Recherche',
-    description: 'Consentements pour participation à la recherche'
-  },
-  DIAGNOSTIC: {
-    id: 'diagnostic',
-    name: 'Diagnostic',
-    description: 'Consentements pour examens et diagnostics'
-  },
-  TELEMEDICINE: {
-    id: 'telemedicine',
-    name: 'Télémédecine',
-    description: 'Consentements pour consultations à distance'
-  },
-  PREVENTION: {
-    id: 'prevention',
-    name: 'Prévention',
-    description: 'Consentements pour vaccinations et dépistages'
-  },
-  DENTAL: {
-    id: 'dental',
-    name: 'Dentaire',
-    description: 'Consentements pour soins dentaires'
-  },
-  MENTAL_HEALTH: {
-    id: 'mental_health',
-    name: 'Santé mentale',
-    description: 'Consentements pour soins psychologiques et psychiatriques'
-  },
-  IMPORTED: {
-    id: 'imported',
-    name: 'Importés',
-    description: 'Modèles importés depuis des fichiers'
-  },
-  CUSTOM: {
-    id: 'custom',
-    name: 'Personnalisés',
-    description: 'Modèles créés sur mesure'
-  }
-};
+// Réexporter depuis consentTypes.js - SOURCE UNIQUE DE VÉRITÉ
+export const CONSENT_TYPES = _CONSENT_TYPES;
+
+// Alias pour rétrocompatibilité avec l'ancienne interface
+export const TEMPLATE_CATEGORIES = _CONSENT_TYPES;
 
 // Spécialités médicales
 export const MEDICAL_SPECIALITIES = {

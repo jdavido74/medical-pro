@@ -1,19 +1,18 @@
 // components/dashboard/modules/ConsentTemplatesModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   FileText, Plus, Search, Filter, Eye, Edit2, Copy, Trash2, Download,
   Upload, Settings, BarChart3, Tag, Clock, CheckCircle, XCircle,
   AlertTriangle, Users, Calendar, Star, TrendingUp, RefreshCw,
-  BookOpen, Database, Code, Globe, Zap, X
+  BookOpen, Database, Code, Globe, Zap, X, Loader
 } from 'lucide-react';
+import { consentTemplatesApi } from '../../../api/consentTemplatesApi';
 import {
-  consentTemplatesStorage,
   TEMPLATE_CATEGORIES,
-  MEDICAL_SPECIALITIES,
-  initializeSampleTemplates
+  MEDICAL_SPECIALITIES
 } from '../../../utils/consentTemplatesStorage';
 import ConsentTemplateEditorModal from '../../modals/ConsentTemplateEditorModal';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 
 const ConsentTemplatesModule = () => {
   const { user } = useAuth();
@@ -37,6 +36,10 @@ const ConsentTemplatesModule = () => {
   // Statistics
   const [statistics, setStatistics] = useState({});
 
+  // Loading and error states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // Charger les données
   useEffect(() => {
     loadData();
@@ -47,16 +50,57 @@ const ConsentTemplatesModule = () => {
     filterAndSortTemplates();
   }, [templates, searchTerm, selectedCategory, selectedSpeciality, selectedStatus, sortBy, sortOrder]);
 
-  const loadData = () => {
-    // Initialiser les modèles de démonstration si nécessaire
-    initializeSampleTemplates();
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const allTemplates = consentTemplatesStorage.getAll().filter(t => !t.deleted);
-    const stats = consentTemplatesStorage.getStatistics();
+      const response = await consentTemplatesApi.getConsentTemplates();
+      const allTemplates = response.templates || [];
 
-    setTemplates(allTemplates);
-    setStatistics(stats);
-  };
+      // Calculate statistics from fetched data
+      const now = new Date();
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const stats = {
+        total: allTemplates.length,
+        active: allTemplates.filter(t => t.status === 'active' || !t.status).length,
+        draft: allTemplates.filter(t => t.status === 'draft').length,
+        inactive: allTemplates.filter(t => t.status === 'inactive').length,
+        createdThisMonth: allTemplates.filter(t => new Date(t.createdAt) >= thisMonth).length,
+        totalUsage: allTemplates.reduce((sum, t) => sum + (t.usage?.timesUsed || 0), 0),
+        byCategory: {},
+        bySpeciality: {},
+        mostUsed: [...allTemplates].sort((a, b) => (b.usage?.timesUsed || 0) - (a.usage?.timesUsed || 0))
+      };
+
+      // Group by category
+      allTemplates.forEach(template => {
+        const category = template.category || template.consentType || 'unknown';
+        if (!stats.byCategory[category]) {
+          stats.byCategory[category] = { count: 0, active: 0 };
+        }
+        stats.byCategory[category].count++;
+        if (template.status === 'active' || !template.status) {
+          stats.byCategory[category].active++;
+        }
+
+        const speciality = template.speciality || 'general';
+        if (!stats.bySpeciality[speciality]) {
+          stats.bySpeciality[speciality] = { count: 0 };
+        }
+        stats.bySpeciality[speciality].count++;
+      });
+
+      setTemplates(allTemplates);
+      setStatistics(stats);
+    } catch (err) {
+      console.error('[ConsentTemplatesModule] Error loading data:', err);
+      setError('Erreur lors du chargement des modèles');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const filterAndSortTemplates = () => {
     let filtered = [...templates];
@@ -149,10 +193,12 @@ const ConsentTemplatesModule = () => {
 
   const handleToggleStatus = async (templateId) => {
     try {
-      await consentTemplatesStorage.toggleStatus(templateId, user?.id);
+      const template = templates.find(t => t.id === templateId);
+      const newStatus = template?.status === 'active' ? 'inactive' : 'active';
+      await consentTemplatesApi.updateConsentTemplate(templateId, { status: newStatus });
       loadData();
-    } catch (error) {
-      console.error('Erreur changement statut:', error);
+    } catch (err) {
+      console.error('[ConsentTemplatesModule] Error toggling status:', err);
       alert('Erreur lors du changement de statut');
     }
   };
@@ -160,10 +206,10 @@ const ConsentTemplatesModule = () => {
   const handleDeleteTemplate = async (templateId) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce modèle ?')) {
       try {
-        await consentTemplatesStorage.delete(templateId, user?.id);
+        await consentTemplatesApi.deleteConsentTemplate(templateId);
         loadData();
-      } catch (error) {
-        console.error('Erreur suppression modèle:', error);
+      } catch (err) {
+        console.error('[ConsentTemplatesModule] Error deleting template:', err);
         alert('Erreur lors de la suppression');
       }
     }
@@ -171,16 +217,26 @@ const ConsentTemplatesModule = () => {
 
   const handleExportTemplate = (template) => {
     try {
-      const exported = consentTemplatesStorage.export(template.id, 'html');
-      const blob = new Blob([exported.content], { type: exported.mimeType });
+      // Export as JSON
+      const exportData = {
+        title: template.title,
+        description: template.description,
+        terms: template.terms || template.content,
+        consentType: template.consentType || template.type,
+        category: template.category,
+        version: template.version,
+        exportedAt: new Date().toISOString()
+      };
+      const jsonData = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = exported.filename;
+      a.download = `template_${template.code || template.id}_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Erreur export:', error);
+    } catch (err) {
+      console.error('[ConsentTemplatesModule] Error exporting template:', err);
       alert('Erreur lors de l\'export');
     }
   };
@@ -238,8 +294,51 @@ const ConsentTemplatesModule = () => {
     </div>
   );
 
+  // Loading state
+  if (loading && templates.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Chargement des modèles...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && templates.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+            <p className="text-red-700">{error}</p>
+          </div>
+          <button onClick={loadData} className="text-red-700 hover:text-red-900">
+            <RefreshCw className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       {/* Header avec statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -372,9 +471,10 @@ const ConsentTemplatesModule = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={loadData}
-                    className="px-3 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    disabled={loading}
+                    className="px-3 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                   >
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   </button>
                   <button
                     onClick={handleCreateTemplate}

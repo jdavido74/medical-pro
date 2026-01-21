@@ -13,6 +13,7 @@
 
 import React, { forwardRef, useRef } from 'react';
 import { X, Printer, Download, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useLocale } from '../../contexts/LocaleContext';
 
 const PrescriptionPreview = forwardRef(({
   prescription,
@@ -25,12 +26,13 @@ const PrescriptionPreview = forwardRef(({
   isFinalized = false
 }, ref) => {
   const printRef = useRef(null);
+  const { locale } = useLocale();
 
   // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale, {
       day: '2-digit',
       month: 'long',
       year: 'numeric'

@@ -5,7 +5,7 @@ import { clinicSettingsApi } from '../../api/clinicSettingsApi';
 import { useTranslation } from 'react-i18next';
 
 const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['admin', 'common']);
   const [config, setConfig] = useState(null);
   const [activeTab, setActiveTab] = useState('schedule');
   const [newClosedDate, setNewClosedDate] = useState({ date: '', reason: '', type: 'holiday' });
@@ -34,7 +34,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
       setConfig(clinicSettings);
     } catch (error) {
       console.error('[ClinicConfigModal] Error loading config:', error);
-      setNotification({ type: 'error', message: 'Erreur lors du chargement de la configuration' });
+      setNotification({ type: 'error', message: t('admin:clinicConfiguration.messages.loadError') });
     }
   };
 
@@ -49,11 +49,11 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
       setConfig(savedConfig);
       onSave?.(savedConfig);
 
-      setNotification({ type: 'success', message: 'Configuration enregistrée avec succès' });
+      setNotification({ type: 'success', message: t('admin:clinicConfiguration.messages.saveSuccess') });
       // Ne pas fermer le modal - rester sur l'onglet actif
     } catch (error) {
       console.error('[ClinicConfigModal] Error saving config:', error);
-      const errorMessage = error.details || error.message || 'Erreur lors de la sauvegarde';
+      const errorMessage = error.details || error.message || t('admin:clinicConfiguration.messages.saveError');
       setNotification({ type: 'error', message: errorMessage });
     } finally {
       setIsSaving(false);
@@ -148,10 +148,10 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
       await clinicSettingsApi.addClosedDate(newClosedDate.date, newClosedDate.reason, newClosedDate.type);
       await loadConfig();
       setNewClosedDate({ date: '', reason: '', type: 'holiday' });
-      setNotification({ type: 'success', message: 'Jour de fermeture ajouté' });
+      setNotification({ type: 'success', message: t('admin:clinicConfiguration.messages.closedAdded') });
     } catch (error) {
       console.error('[ClinicConfigModal] Error adding closed date:', error);
-      setNotification({ type: 'error', message: 'Erreur lors de l\'ajout du jour de fermeture' });
+      setNotification({ type: 'error', message: t('admin:clinicConfiguration.messages.closedAddError') });
     }
   };
 
@@ -159,10 +159,10 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
     try {
       await clinicSettingsApi.removeClosedDate(dateId);
       await loadConfig();
-      setNotification({ type: 'success', message: 'Jour de fermeture supprimé' });
+      setNotification({ type: 'success', message: t('admin:clinicConfiguration.messages.closedRemoved') });
     } catch (error) {
       console.error('[ClinicConfigModal] Error removing closed date:', error);
-      setNotification({ type: 'error', message: 'Erreur lors de la suppression' });
+      setNotification({ type: 'error', message: t('admin:clinicConfiguration.messages.closedRemoveError') });
     }
   };
 
@@ -180,15 +180,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
 
   if (!isOpen || !config) return null;
 
-  const dayNames = {
-    monday: 'Lundi',
-    tuesday: 'Mardi',
-    wednesday: 'Mercredi',
-    thursday: 'Jeudi',
-    friday: 'Vendredi',
-    saturday: 'Samedi',
-    sunday: 'Dimanche'
-  };
+  const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
   const dayNumbers = {
     sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
@@ -234,7 +226,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700">
           <div className="flex items-center space-x-3">
             <Settings className="h-6 w-6 text-white" />
-            <h2 className="text-xl font-semibold text-white">Configuration de la Clinique</h2>
+            <h2 className="text-xl font-semibold text-white">{t('admin:clinicConfiguration.title')}</h2>
           </div>
           <button onClick={onClose} className="text-white hover:text-gray-200 transition-colors">
             <X className="h-6 w-6" />
@@ -253,7 +245,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
               }`}
             >
               <Clock className="h-4 w-4 inline mr-2" />
-              Horaires d'ouverture
+              {t('admin:clinicConfiguration.tabs.schedule')}
             </button>
             <button
               onClick={() => setActiveTab('slots')}
@@ -264,7 +256,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
               }`}
             >
               <Settings className="h-4 w-4 inline mr-2" />
-              Créneaux
+              {t('admin:clinicConfiguration.tabs.slots')}
             </button>
             <button
               onClick={() => setActiveTab('closed')}
@@ -275,7 +267,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
               }`}
             >
               <Calendar className="h-4 w-4 inline mr-2" />
-              Jours de fermeture
+              {t('admin:clinicConfiguration.tabs.closed')}
             </button>
           </div>
         </div>
@@ -285,9 +277,9 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
           {activeTab === 'schedule' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Jours d'ouverture</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">{t('admin:clinicConfiguration.schedule.openingDays')}</h3>
                 <div className="grid grid-cols-7 gap-3">
-                  {Object.entries(dayNames).map(([key, name]) => {
+                  {dayKeys.map((key) => {
                     const dayNumber = dayNumbers[key];
                     const isOpen = config.operatingDays?.includes(dayNumber) ?? false;
                     return (
@@ -300,7 +292,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                             : 'bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-gray-200'
                         }`}
                       >
-                        {name}
+                        {t(`common:dayNames.${key}`)}
                       </button>
                     );
                   })}
@@ -308,9 +300,9 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Horaires par jour</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">{t('admin:clinicConfiguration.schedule.hoursPerDay')}</h3>
                 <div className="space-y-4">
-                  {Object.entries(dayNames).map(([key, name]) => {
+                  {dayKeys.map((key) => {
                     const dayNumber = dayNumbers[key];
                     const isDayOpen = config.operatingDays?.includes(dayNumber) ?? false;
 
@@ -318,8 +310,8 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                     if (!isDayOpen) {
                       return (
                         <div key={key} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                          <div className="w-24 font-medium text-gray-500">{name}</div>
-                          <span className="text-sm text-gray-500 italic">Jour fermé</span>
+                          <div className="w-24 font-medium text-gray-500">{t(`common:dayNames.${key}`)}</div>
+                          <span className="text-sm text-gray-500 italic">{t('admin:clinicConfiguration.schedule.dayClosed')}</span>
                         </div>
                       );
                     }
@@ -330,7 +322,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                     return (
                       <div key={key} className="p-4 border border-gray-200 rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
-                          <div className="w-24 font-medium text-gray-700">{name}</div>
+                          <div className="w-24 font-medium text-gray-700">{t(`common:dayNames.${key}`)}</div>
                           <label className="flex items-center space-x-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -338,7 +330,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                               onChange={(e) => updateOperatingHours(key, 'hasLunchBreak', e.target.checked)}
                               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="text-sm text-gray-600">Pause du midi</span>
+                            <span className="text-sm text-gray-600">{t('admin:clinicConfiguration.schedule.lunchBreak')}</span>
                           </label>
                         </div>
 
@@ -346,9 +338,9 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                           // Deux tranches horaires : matin et après-midi
                           <div className="space-y-2 pl-6">
                             <div className="flex items-center space-x-4">
-                              <span className="text-xs font-medium text-gray-500 w-20">Matin:</span>
+                              <span className="text-xs font-medium text-gray-500 w-20">{t('admin:clinicConfiguration.schedule.morning')}:</span>
                               <div className="flex items-center space-x-2">
-                                <label className="text-sm text-gray-600">De:</label>
+                                <label className="text-sm text-gray-600">{t('admin:clinicConfiguration.schedule.from')}:</label>
                                 <input
                                   type="time"
                                   value={dayHours.morning?.start || '08:00'}
@@ -357,7 +349,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                                 />
                               </div>
                               <div className="flex items-center space-x-2">
-                                <label className="text-sm text-gray-600">À:</label>
+                                <label className="text-sm text-gray-600">{t('admin:clinicConfiguration.schedule.to')}:</label>
                                 <input
                                   type="time"
                                   value={dayHours.morning?.end || '12:00'}
@@ -367,9 +359,9 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                               </div>
                             </div>
                             <div className="flex items-center space-x-4">
-                              <span className="text-xs font-medium text-gray-500 w-20">Après-midi:</span>
+                              <span className="text-xs font-medium text-gray-500 w-20">{t('admin:clinicConfiguration.schedule.afternoon')}:</span>
                               <div className="flex items-center space-x-2">
-                                <label className="text-sm text-gray-600">De:</label>
+                                <label className="text-sm text-gray-600">{t('admin:clinicConfiguration.schedule.from')}:</label>
                                 <input
                                   type="time"
                                   value={dayHours.afternoon?.start || '14:00'}
@@ -378,7 +370,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                                 />
                               </div>
                               <div className="flex items-center space-x-2">
-                                <label className="text-sm text-gray-600">À:</label>
+                                <label className="text-sm text-gray-600">{t('admin:clinicConfiguration.schedule.to')}:</label>
                                 <input
                                   type="time"
                                   value={dayHours.afternoon?.end || '18:00'}
@@ -392,7 +384,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                           // Une seule tranche horaire
                           <div className="flex items-center space-x-4 pl-6">
                             <div className="flex items-center space-x-2">
-                              <label className="text-sm text-gray-600">De:</label>
+                              <label className="text-sm text-gray-600">{t('admin:clinicConfiguration.schedule.from')}:</label>
                               <input
                                 type="time"
                                 value={dayHours.start || '08:00'}
@@ -401,7 +393,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                               />
                             </div>
                             <div className="flex items-center space-x-2">
-                              <label className="text-sm text-gray-600">À:</label>
+                              <label className="text-sm text-gray-600">{t('admin:clinicConfiguration.schedule.to')}:</label>
                               <input
                                 type="time"
                                 value={dayHours.end || '18:00'}
@@ -422,11 +414,11 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
           {activeTab === 'slots' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Configuration des créneaux</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">{t('admin:clinicConfiguration.slots.title')}</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Durée par défaut (minutes)
+                      {t('admin:clinicConfiguration.slots.defaultDuration')}
                     </label>
                     <select
                       value={config.slotSettings?.defaultDuration || 30}
@@ -434,14 +426,14 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       {(config.slotSettings?.availableDurations || [15, 20, 30, 45, 60, 90, 120]).map(duration => (
-                        <option key={duration} value={duration}>{duration} minutes</option>
+                        <option key={duration} value={duration}>{duration} {t('admin:clinicConfiguration.slots.minutes')}</option>
                       ))}
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Temps de battement (minutes)
+                      {t('admin:clinicConfiguration.slots.bufferTime')}
                     </label>
                     <input
                       type="number"
@@ -455,7 +447,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Réservation max à l'avance (jours)
+                      {t('admin:clinicConfiguration.slots.maxAdvanceBooking')}
                     </label>
                     <input
                       type="number"
@@ -469,7 +461,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Réservation min à l'avance (heures)
+                      {t('admin:clinicConfiguration.slots.minAdvanceBooking')}
                     </label>
                     <input
                       type="number"
@@ -490,7 +482,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       onChange={(e) => updateSlotSettings('allowWeekendBooking', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-700">Autoriser les réservations le weekend</span>
+                    <span className="text-sm text-gray-700">{t('admin:clinicConfiguration.slots.allowWeekendBooking')}</span>
                   </label>
                 </div>
               </div>
@@ -500,14 +492,14 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
           {activeTab === 'closed' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Jours de fermeture exceptionnelle</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">{t('admin:clinicConfiguration.closedDates.title')}</h3>
 
                 {/* Ajouter une fermeture */}
                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <h4 className="font-medium text-gray-900 mb-3">Ajouter une fermeture</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('admin:clinicConfiguration.closedDates.addClosure')}</h4>
                   <div className="grid grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin:clinicConfiguration.closedDates.date')}</label>
                       <input
                         type="date"
                         value={newClosedDate.date}
@@ -516,24 +508,24 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin:clinicConfiguration.closedDates.type')}</label>
                       <select
                         value={newClosedDate.type}
                         onChange={(e) => setNewClosedDate(prev => ({ ...prev, type: e.target.value }))}
                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="holiday">Jour férié</option>
-                        <option value="maintenance">Maintenance</option>
-                        <option value="other">Autre</option>
+                        <option value="holiday">{t('admin:clinicConfiguration.closedDates.holiday')}</option>
+                        <option value="maintenance">{t('admin:clinicConfiguration.closedDates.maintenance')}</option>
+                        <option value="other">{t('admin:clinicConfiguration.closedDates.other')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Raison</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin:clinicConfiguration.closedDates.reason')}</label>
                       <input
                         type="text"
                         value={newClosedDate.reason}
                         onChange={(e) => setNewClosedDate(prev => ({ ...prev, reason: e.target.value }))}
-                        placeholder="Motif de fermeture"
+                        placeholder={t('admin:clinicConfiguration.closedDates.reasonPlaceholder')}
                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
@@ -543,7 +535,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                         className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Ajouter
+                        {t('admin:clinicConfiguration.buttons.add')}
                       </button>
                     </div>
                   </div>
@@ -561,8 +553,8 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                             closedDate.type === 'maintenance' ? 'bg-orange-100 text-orange-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {closedDate.type === 'holiday' ? 'Jour férié' :
-                             closedDate.type === 'maintenance' ? 'Maintenance' : 'Autre'}
+                            {closedDate.type === 'holiday' ? t('admin:clinicConfiguration.closedDates.holiday') :
+                             closedDate.type === 'maintenance' ? t('admin:clinicConfiguration.closedDates.maintenance') : t('admin:clinicConfiguration.closedDates.other')}
                           </span>
                           <span className="text-gray-600">{closedDate.reason}</span>
                         </div>
@@ -575,7 +567,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-500 text-center py-8">Aucun jour de fermeture configuré</p>
+                    <p className="text-gray-500 text-center py-8">{t('admin:clinicConfiguration.closedDates.noClosed')}</p>
                   )}
                 </div>
               </div>
@@ -590,7 +582,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
             disabled={isSaving}
             className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Fermer
+            {t('admin:clinicConfiguration.buttons.close')}
           </button>
           <button
             onClick={handleSave}
@@ -603,10 +595,10 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Enregistrement...
+                {t('admin:clinicConfiguration.buttons.saving')}
               </>
             ) : (
-              'Sauvegarder'
+              t('admin:clinicConfiguration.buttons.save')
             )}
           </button>
         </div>

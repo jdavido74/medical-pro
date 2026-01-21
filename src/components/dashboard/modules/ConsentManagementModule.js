@@ -1,10 +1,9 @@
 // components/dashboard/modules/ConsentManagementModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Shield,
   Plus,
   Search,
-  Filter,
   FileText,
   Clock,
   CheckCircle,
@@ -18,18 +17,36 @@ import {
   Download,
   RefreshCw,
   Signature,
-  Users
+  Loader
 } from 'lucide-react';
-import { consentsStorage, CONSENT_TYPES, COLLECTION_METHODS } from '../../../utils/consentsStorage';
-import { patientsStorage } from '../../../utils/patientsStorage';
+import { useConsents } from '../../../contexts/ConsentContext';
+import { usePatients } from '../../../contexts/PatientContext';
+import { consentSigningApi } from '../../../api/consentSigningApi';
+import { CONSENT_TYPES, COLLECTION_METHODS } from '../../../utils/consentsStorage';
 import ConsentFormModal from '../../modals/ConsentFormModal';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 
 const ConsentManagementModule = () => {
   const { user } = useAuth();
-  const [consents, setConsents] = useState([]);
-  const [patients, setPatients] = useState([]);
-  const [filteredConsents, setFilteredConsents] = useState([]);
+
+  // Utiliser les contextes au lieu des appels API directs
+  const {
+    consents: contextConsents,
+    isLoading: consentsLoading,
+    error: consentsError,
+    revokeConsent,
+    deleteConsent,
+    refreshConsents
+  } = useConsents();
+
+  const { patients } = usePatients();
+
+  // État local pour les données combinées (consents + signing requests)
+  const [combinedConsents, setCombinedConsents] = useState([]);
+  const [signingRequests, setSigningRequests] = useState([]);
+  const [signingLoading, setSigningLoading] = useState(false);
+
+  // État local UI uniquement
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedPatient, setSelectedPatient] = useState('');
@@ -44,34 +61,110 @@ const ConsentManagementModule = () => {
   const [selectedConsentDetails, setSelectedConsentDetails] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  // Statistics
-  const [statistics, setStatistics] = useState({});
-  const [expiringConsents, setExpiringConsents] = useState([]);
+  // État de chargement combiné
+  const loading = consentsLoading || signingLoading;
+  const error = consentsError;
 
-  // Charger les données
-  useEffect(() => {
-    loadData();
+  // Charger les demandes de signature (séparé du contexte)
+  const loadSigningRequests = useCallback(async () => {
+    try {
+      setSigningLoading(true);
+      const signingRequestsResponse = await consentSigningApi.getRequests().catch(() => ({ data: [] }));
+      const requests = signingRequestsResponse.data || signingRequestsResponse.requests || [];
+      setSigningRequests(requests);
+    } catch (err) {
+      console.error('[ConsentManagementModule] Error loading signing requests:', err);
+    } finally {
+      setSigningLoading(false);
+    }
   }, []);
 
-  // Filtrer et trier les consentements
+  // Charger les demandes de signature au démarrage
   useEffect(() => {
-    filterAndSortConsents();
-  }, [consents, searchTerm, selectedFilter, selectedPatient, selectedType, sortBy, sortOrder]);
+    loadSigningRequests();
+  }, [loadSigningRequests]);
 
-  const loadData = () => {
-    const allConsents = consentsStorage.getAll().filter(c => !c.deleted);
-    const allPatients = patientsStorage.getAll().filter(p => !p.deleted);
-    const stats = consentsStorage.getStatistics();
-    const expiring = consentsStorage.getExpiringConsents(30);
+  // Combiner les consentements du contexte avec les demandes de signature
+  useEffect(() => {
+    const pendingSignatures = signingRequests
+      .filter(req => req.status === 'pending')
+      .map(req => ({
+        id: `signing-${req.id}`,
+        signingRequestId: req.id,
+        patientId: req.patient_id || req.patientId,
+        consentType: req.template?.consentType || req.consent_type || 'general',
+        title: req.template?.title || 'Consentement en attente',
+        status: 'pending_signature',
+        createdAt: req.created_at || req.createdAt,
+        expiresAt: req.expires_at || req.expiresAt,
+        sentVia: req.sent_via || req.sentVia,
+        isPendingSignature: true
+      }));
 
-    setConsents(allConsents);
-    setPatients(allPatients);
-    setStatistics(stats);
-    setExpiringConsents(expiring);
-  };
+    setCombinedConsents([...contextConsents, ...pendingSignatures]);
+  }, [contextConsents, signingRequests]);
 
-  const filterAndSortConsents = () => {
-    let filtered = [...consents];
+  // Calculer les statistiques à partir des données du contexte
+  const statistics = useMemo(() => {
+    const now = new Date();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const stats = {
+      total: contextConsents.length,
+      active: contextConsents.filter(c => c.status === 'granted' || c.status === 'accepted').length,
+      revoked: contextConsents.filter(c => c.status === 'revoked' || c.status === 'rejected').length,
+      expired: contextConsents.filter(c => c.expiresAt && new Date(c.expiresAt) <= now).length,
+      createdThisMonth: contextConsents.filter(c => new Date(c.createdAt) >= thisMonth).length,
+      pendingSignatures: signingRequests.filter(r => r.status === 'pending').length,
+      byType: {},
+      byCollectionMethod: {}
+    };
+
+    contextConsents.forEach(consent => {
+      const type = consent.type || 'unknown';
+      if (!stats.byType[type]) {
+        stats.byType[type] = { total: 0, active: 0, revoked: 0 };
+      }
+      stats.byType[type].total++;
+      if (consent.status === 'granted' || consent.status === 'accepted') stats.byType[type].active++;
+      if (consent.status === 'revoked' || consent.status === 'rejected') stats.byType[type].revoked++;
+
+      const method = consent.collectionMethod || 'unknown';
+      if (!stats.byCollectionMethod[method]) {
+        stats.byCollectionMethod[method] = 0;
+      }
+      stats.byCollectionMethod[method]++;
+    });
+
+    return stats;
+  }, [contextConsents, signingRequests]);
+
+  // Calculer les consentements qui expirent bientôt
+  const expiringConsents = useMemo(() => {
+    const now = new Date();
+    const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    return contextConsents
+      .filter(consent =>
+        (consent.status === 'granted' || consent.status === 'accepted') &&
+        consent.expiresAt &&
+        new Date(consent.expiresAt) <= in30Days &&
+        new Date(consent.expiresAt) > now
+      )
+      .sort((a, b) => new Date(a.expiresAt) - new Date(b.expiresAt));
+  }, [contextConsents]);
+
+  // Rafraîchir toutes les données
+  const loadData = useCallback(async () => {
+    await Promise.all([
+      refreshConsents(),
+      loadSigningRequests()
+    ]);
+  }, [refreshConsents, loadSigningRequests]);
+
+  // Filtrer et trier les consentements avec useMemo
+  const filteredConsents = useMemo(() => {
+    let filtered = [...combinedConsents];
 
     // Filtre de recherche
     if (searchTerm) {
@@ -107,6 +200,8 @@ const ConsentManagementModule = () => {
                    consent.expiresAt &&
                    new Date(consent.expiresAt) > new Date() &&
                    new Date(consent.expiresAt) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          case 'pending_signature':
+            return consent.status === 'pending_signature' || consent.isPendingSignature;
           case 'required':
             return consent.isRequired;
           default:
@@ -158,8 +253,8 @@ const ConsentManagementModule = () => {
       return 0;
     });
 
-    setFilteredConsents(filtered);
-  };
+    return filtered;
+  }, [combinedConsents, patients, searchTerm, selectedFilter, selectedPatient, selectedType, sortBy, sortOrder]);
 
   const handleCreateConsent = () => {
     setEditingConsent(null);
@@ -178,10 +273,12 @@ const ConsentManagementModule = () => {
 
   const handleRevokeConsent = async (consentId, reason = 'patient_request') => {
     try {
-      await consentsStorage.revoke(consentId, user?.id, reason);
-      loadData();
-    } catch (error) {
-      console.error('Erreur révocation consentement:', error);
+      // Utiliser la méthode du contexte (optimistic update inclus)
+      await revokeConsent(consentId, reason);
+      // Recharger aussi les demandes de signature
+      await loadSigningRequests();
+    } catch (err) {
+      console.error('[ConsentManagementModule] Error revoking consent:', err);
       alert('Erreur lors de la révocation du consentement');
     }
   };
@@ -189,31 +286,71 @@ const ConsentManagementModule = () => {
   const handleDeleteConsent = async (consentId) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce consentement ?')) {
       try {
-        await consentsStorage.delete(consentId, user?.id);
-        loadData();
-      } catch (error) {
-        console.error('Erreur suppression consentement:', error);
+        // Utiliser la méthode du contexte (optimistic update inclus)
+        await deleteConsent(consentId);
+      } catch (err) {
+        console.error('[ConsentManagementModule] Error deleting consent:', err);
         alert('Erreur lors de la suppression du consentement');
       }
     }
   };
 
-  const handleSaveConsent = (consent) => {
-    loadData();
+  const handleSaveConsent = () => {
+    // Le contexte se met à jour automatiquement via refreshConsents
+    refreshConsents();
+    loadSigningRequests();
     setIsConsentModalOpen(false);
   };
 
-  const generatePatientReport = (patientId) => {
-    const report = consentsStorage.generatePatientReport(patientId);
-    // En production, on pourrait générer un PDF ou exporter en JSON
-    const jsonData = JSON.stringify(report, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rapport_consentements_${report.patientId}_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const generatePatientReport = async (patientId) => {
+    try {
+      // Utiliser les consentements du contexte filtrés par patient
+      const patientConsents = contextConsents.filter(c => c.patientId === patientId);
+      const patient = patients.find(p => p.id === patientId);
+
+      const report = {
+        patientId,
+        patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown',
+        generatedAt: new Date().toISOString(),
+        totalConsents: patientConsents.length,
+        activeConsents: patientConsents.filter(c => c.status === 'granted').length,
+        revokedConsents: patientConsents.filter(c => c.status === 'revoked').length,
+        consentsByType: {},
+        detailedConsents: patientConsents.map(consent => ({
+          id: consent.id,
+          type: consent.type,
+          purpose: consent.purpose,
+          status: consent.status,
+          createdAt: consent.createdAt,
+          revokedAt: consent.revokedAt,
+          expiresAt: consent.expiresAt,
+          collectionMethod: consent.collectionMethod
+        }))
+      };
+
+      // Group by type
+      patientConsents.forEach(consent => {
+        if (!report.consentsByType[consent.type]) {
+          report.consentsByType[consent.type] = { active: 0, revoked: 0, total: 0 };
+        }
+        report.consentsByType[consent.type].total++;
+        if (consent.status === 'granted') report.consentsByType[consent.type].active++;
+        if (consent.status === 'revoked') report.consentsByType[consent.type].revoked++;
+      });
+
+      // Download as JSON
+      const jsonData = JSON.stringify(report, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport_consentements_${patientId}_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[ConsentManagementModule] Error generating report:', err);
+      alert('Erreur lors de la génération du rapport');
+    }
   };
 
   const getStatusBadge = (consent) => {
@@ -221,6 +358,14 @@ const ConsentManagementModule = () => {
     const isExpiring = consent.expiresAt &&
                       new Date(consent.expiresAt) > new Date() &&
                       new Date(consent.expiresAt) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // Status for pending signature requests
+    if (consent.status === 'pending_signature' || consent.isPendingSignature) {
+      return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+        <Clock className="h-3 w-3 mr-1 animate-pulse" />
+        En attente de signature
+      </span>;
+    }
 
     if (consent.status === 'revoked') {
       return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
@@ -279,8 +424,51 @@ const ConsentManagementModule = () => {
     </div>
   );
 
+  // Loading state
+  if (loading && combinedConsents.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Chargement des consentements...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && combinedConsents.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+            <p className="text-red-700">{error}</p>
+          </div>
+          <button onClick={loadData} className="text-red-700 hover:text-red-900">
+            <RefreshCw className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       {/* Header avec statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -379,6 +567,7 @@ const ConsentManagementModule = () => {
                     >
                       <option value="all">Tous les statuts</option>
                       <option value="active">Actifs</option>
+                      <option value="pending_signature">En attente de signature</option>
                       <option value="revoked">Révoqués</option>
                       <option value="expired">Expirés</option>
                       <option value="expiring">Expirant bientôt</option>
@@ -416,9 +605,10 @@ const ConsentManagementModule = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={loadData}
-                    className="px-3 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    disabled={loading}
+                    className="px-3 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                   >
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   </button>
                   <button
                     onClick={handleCreateConsent}

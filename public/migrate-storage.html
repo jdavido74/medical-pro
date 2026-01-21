@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migration Storage - Medical Pro</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(to bottom right, #f0fdf4, #d1fae5);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-center;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 500px;
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    h1 {
+      color: #059669;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .status {
+      margin: 20px 0;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .log {
+      text-align: left;
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+    .log div {
+      margin: 4px 0;
+    }
+    .log .removed {
+      color: #dc2626;
+    }
+    .log .kept {
+      color: #059669;
+    }
+    button {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background: #047857;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 Migration du localStorage</h1>
+
+    <div id="status" class="status info">
+      Analyse en cours...
+    </div>
+
+    <div id="log" class="log"></div>
+
+    <button id="continueBtn" style="display:none;" onclick="redirectToLogin()">
+      Continuer vers la connexion
+    </button>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+    const continueBtn = document.getElementById('continueBtn');
+
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = type;
+      div.textContent = message;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateStatus(message, type = 'info') {
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+    }
+
+    function migrateStorage() {
+      log('🔍 Analyse du localStorage...', 'info');
+
+      // Clés à supprimer (ancien système)
+      const oldKeys = [
+        'clinicmanager_auth',
+        'clinicmanager_user',
+        'clinicmanager_company',
+        'clinicmanager_permissions',
+        'clinicmanager_session_info',
+        'clinicmanager_remember_me',
+        'clinic_roles'
+      ];
+
+      // Clés à conserver (nouveau système)
+      const keepKeys = [
+        'clinicmanager_token',
+        'clinicmanager_remember_email'
+      ];
+
+      let removedCount = 0;
+      let keptCount = 0;
+
+      // Vérifier quelles clés existent
+      log('', 'info');
+      log('📋 Clés trouvées:', 'info');
+
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('clinicmanager') || key.startsWith('clinic_')) {
+          if (oldKeys.includes(key)) {
+            log(`  ❌ ${key} (à supprimer)`, 'removed');
+          } else if (keepKeys.includes(key)) {
+            log(`  ✅ ${key} (à conserver)`, 'kept');
+          } else {
+            log(`  ⚠️  ${key} (inconnu)`, 'warning');
+          }
+        }
+      });
+
+      log('', 'info');
+      log('🧹 Nettoyage en cours...', 'info');
+
+      // Supprimer les anciennes clés
+      oldKeys.forEach(key => {
+        if (localStorage.getItem(key) !== null) {
+          localStorage.removeItem(key);
+          removedCount++;
+          log(`  ✅ Supprimé: ${key}`, 'removed');
+        }
+      });
+
+      // Compter les clés conservées
+      keepKeys.forEach(key => {
+        if (localStorage.getItem(key) !== null) {
+          keptCount++;
+          log(`  ✅ Conservé: ${key}`, 'kept');
+        }
+      });
+
+      log('', 'info');
+      log('📊 Résumé:', 'info');
+      log(`  • Clés supprimées: ${removedCount}`, 'removed');
+      log(`  • Clés conservées: ${keptCount}`, 'kept');
+
+      // Mise à jour du statut
+      if (removedCount > 0 || keptCount > 0) {
+        updateStatus('✅ Migration terminée avec succès !', 'success');
+        log('', 'info');
+        log('✨ Votre localStorage a été migré vers la nouvelle architecture.', 'success');
+        log('🔐 Plus sûr, plus rapide, plus stable !', 'success');
+      } else {
+        updateStatus('ℹ️ Aucune migration nécessaire', 'info');
+        log('', 'info');
+        log('Votre localStorage est déjà à jour.', 'info');
+      }
+
+      // Afficher le bouton pour continuer
+      continueBtn.style.display = 'block';
+    }
+
+    function redirectToLogin() {
+      // Détecter la locale depuis l'URL actuelle ou utiliser fr-FR par défaut
+      const path = window.location.pathname;
+      const localeMatch = path.match(/\/([a-z]{2}-[A-Z]{2})\//);
+      const locale = localeMatch ? localeMatch[1] : 'fr-FR';
+
+      window.location.href = `/${locale}/login`;
+    }
+
+    // Lancer la migration au chargement de la page
+    setTimeout(migrateStorage, 500);
+  </script>
+</body>
+</html>

@@ -7,9 +7,11 @@ import {
 } from 'lucide-react';
 import { clientStorage, settingsStorage } from '../../../utils/storage';
 import { useCountryConfig, countryValidation } from '../../../config/ConfigManager';
+import { useLocale } from '../../../contexts/LocaleContext';
 
 const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, preSelectedPatient = null }) => {
   const { config } = useCountryConfig();
+  const { locale } = useLocale();
   
   const [formData, setFormData] = useState({
     clientId: '',
@@ -790,7 +792,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, pre
                   </span>
                 )}
                 <span className="ml-2 text-blue-600">
-                  • Valable jusqu'au {formData.validUntil ? new Date(formData.validUntil).toLocaleDateString('fr-FR') : '-'}
+                  • Valable jusqu'au {formData.validUntil ? new Date(formData.validUntil).toLocaleDateString(locale) : '-'}
                 </span>
               </div>
               <div className="flex space-x-6 text-sm">

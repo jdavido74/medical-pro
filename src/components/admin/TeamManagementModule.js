@@ -1,19 +1,22 @@
 // components/admin/TeamManagementModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Users, UserPlus, UserCheck, Calendar, Clock, Shield, Search,
   Plus, Edit, Trash2, Eye, Download, RefreshCw, Filter,
   Building, Award, Activity, AlertCircle, CheckCircle, XCircle,
   UserMinus, ArrowRight, Bell, Settings
 } from 'lucide-react';
-import { teamsStorage } from '../../utils/teamsStorage';
+import { teamsApi } from '../../api/teamsApi';
+import { teamsStorage } from '../../utils/teamsStorage'; // Fallback for delegations
 import { usersStorage } from '../../utils/usersStorage';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
 import TeamFormModal from '../modals/TeamFormModal';
 import DelegationFormModal from '../modals/DelegationFormModal';
 
 const TeamManagementModule = () => {
+  const { t, i18n } = useTranslation('admin');
   const { user: currentUser } = useAuth();
   const { hasPermission } = usePermissions();
 
@@ -65,31 +68,81 @@ const TeamManagementModule = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Initialiser les données par défaut
-      teamsStorage.initializeDefaultTeams();
+      // Charger les équipes depuis l'API backend
+      let teamsData = [];
+      try {
+        const result = await teamsApi.getTeams({ limit: 100 });
+        teamsData = result.teams || [];
+        console.log('[TeamManagement] Loaded teams from API:', teamsData.length);
+      } catch (apiError) {
+        console.warn('[TeamManagement] API unavailable, falling back to localStorage:', apiError.message);
+        // Fallback to localStorage if API fails
+        teamsStorage.initializeDefaultTeams();
+        teamsData = teamsStorage.getAllTeams();
+      }
 
-      // Charger les données
-      const teamsData = teamsStorage.getAllTeams();
+      // Delegations remain in localStorage for now (no backend API yet)
       const delegationsData = teamsStorage.getAllDelegations();
-      const stats = teamsStorage.getStatistics();
+
+      // Calculate statistics
+      const stats = {
+        totalTeams: teamsData.length,
+        activeTeams: teamsData.filter(t => t.isActive !== false).length,
+        totalDelegations: delegationsData.length,
+        activeDelegations: delegationsData.filter(d => d.isActive).length
+      };
 
       setTeams(teamsData);
       setDelegations(delegationsData);
       setStatistics(stats);
     } catch (error) {
-      console.error('Erreur chargement données équipes:', error);
+      console.error(t('teamManagement.messages.loadError'), error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const applyTeamFilters = () => {
-    let filtered = teamsStorage.searchTeams(searchQuery, teamFilters);
+    // Guard: ensure teams is defined
+    if (!teams || !Array.isArray(teams)) {
+      setFilteredTeams([]);
+      return;
+    }
+
+    let filtered = [...teams];
+
+    // Apply search filter
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      filtered = filtered.filter(team =>
+        team.name?.toLowerCase().includes(search) ||
+        team.description?.toLowerCase().includes(search) ||
+        team.department?.toLowerCase().includes(search)
+      );
+    }
+
+    // Apply department filter
+    if (teamFilters.department) {
+      filtered = filtered.filter(team => team.department === teamFilters.department);
+    }
+
+    // Apply active status filter
+    if (teamFilters.isActive !== '' && teamFilters.isActive !== undefined) {
+      const isActiveValue = teamFilters.isActive === 'true' || teamFilters.isActive === true;
+      filtered = filtered.filter(team => team.isActive === isActiveValue);
+    }
+
     setFilteredTeams(filtered);
     setCurrentPage(1);
   };
 
   const applyDelegationFilters = () => {
+    // Guard: ensure delegations is defined
+    if (!delegations || !Array.isArray(delegations)) {
+      setFilteredDelegations([]);
+      return;
+    }
+
     let filtered = delegations.filter(delegation => !delegation.isDeleted);
 
     // Recherche textuelle
@@ -101,12 +154,12 @@ const TeamManagementModule = () => {
         const fromUser = users.find(u => u.id === delegation.fromUserId);
         const toUser = users.find(u => u.id === delegation.toUserId);
 
-        return delegation.reason.toLowerCase().includes(searchTerm) ||
-               fromUser?.firstName.toLowerCase().includes(searchTerm) ||
-               fromUser?.lastName.toLowerCase().includes(searchTerm) ||
-               toUser?.firstName.toLowerCase().includes(searchTerm) ||
-               toUser?.lastName.toLowerCase().includes(searchTerm) ||
-               delegation.permissions.some(p => p.toLowerCase().includes(searchTerm));
+        return (delegation.reason || '').toLowerCase().includes(searchTerm) ||
+               fromUser?.firstName?.toLowerCase().includes(searchTerm) ||
+               fromUser?.lastName?.toLowerCase().includes(searchTerm) ||
+               toUser?.firstName?.toLowerCase().includes(searchTerm) ||
+               toUser?.lastName?.toLowerCase().includes(searchTerm) ||
+               (delegation.permissions || []).some(p => p.toLowerCase().includes(searchTerm));
       });
     }
 
@@ -159,28 +212,35 @@ const TeamManagementModule = () => {
   const handleSaveTeam = async (teamData) => {
     try {
       if (editingTeam) {
-        await teamsStorage.updateTeam(editingTeam.id, teamData, currentUser.id);
+        // Update via API
+        await teamsApi.updateTeam(editingTeam.id, teamData);
+        console.log('[TeamManagement] Team updated via API:', editingTeam.id);
       } else {
-        await teamsStorage.createTeam(teamData, currentUser.id);
+        // Create via API
+        await teamsApi.createTeam(teamData);
+        console.log('[TeamManagement] Team created via API');
       }
 
       await loadData();
       setShowTeamModal(false);
     } catch (error) {
+      console.error('[TeamManagement] Error saving team:', error);
       throw error;
     }
   };
 
   const handleDeleteTeam = async (teamId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette équipe ?')) {
+    if (!window.confirm(t('teamManagement.messages.confirmDeleteTeam'))) {
       return;
     }
 
     try {
-      await teamsStorage.deleteTeam(teamId, currentUser.id);
+      await teamsApi.deleteTeam(teamId);
+      console.log('[TeamManagement] Team deleted via API:', teamId);
       await loadData();
     } catch (error) {
-      alert('Erreur lors de la suppression: ' + error.message);
+      console.error('[TeamManagement] Error deleting team:', error);
+      alert(t('teamManagement.messages.deleteError', { error: error.message }));
     }
   };
 
@@ -198,7 +258,7 @@ const TeamManagementModule = () => {
     try {
       if (editingDelegation) {
         // Pour la modification, nous devrons implémenter updateDelegation
-        throw new Error('Modification des délégations non encore implémentée');
+        throw new Error(t('teamManagement.messages.modificationNotImplemented'));
       } else {
         await teamsStorage.createDelegation(delegationData, currentUser.id);
       }
@@ -215,12 +275,12 @@ const TeamManagementModule = () => {
       await teamsStorage.approveDelegation(delegationId, currentUser.id);
       await loadData();
     } catch (error) {
-      alert('Erreur lors de l\'approbation: ' + error.message);
+      alert(t('teamManagement.messages.approvalError', { error: error.message }));
     }
   };
 
   const handleRevokeDelegation = async (delegationId, reason = '') => {
-    if (!window.confirm('Êtes-vous sûr de vouloir révoquer cette délégation ?')) {
+    if (!window.confirm(t('teamManagement.messages.confirmRevoke'))) {
       return;
     }
 
@@ -228,7 +288,7 @@ const TeamManagementModule = () => {
       await teamsStorage.revokeDelegation(delegationId, currentUser.id, reason);
       await loadData();
     } catch (error) {
-      alert('Erreur lors de la révocation: ' + error.message);
+      alert(t('teamManagement.messages.revokeError', { error: error.message }));
     }
   };
 
@@ -245,7 +305,7 @@ const TeamManagementModule = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      alert('Erreur lors de l\'export: ' + error.message);
+      alert(t('teamManagement.messages.exportError', { error: error.message }));
     }
   };
 
@@ -260,15 +320,16 @@ const TeamManagementModule = () => {
     const startDate = new Date(delegation.startDate);
     const endDate = new Date(delegation.endDate);
 
-    if (!delegation.isActive) return { status: 'inactive', label: 'Inactive', color: 'bg-gray-100 text-gray-800' };
-    if (!delegation.approvedBy) return { status: 'pending_approval', label: 'En attente d\'approbation', color: 'bg-yellow-100 text-yellow-800' };
-    if (now < startDate) return { status: 'pending', label: 'En attente', color: 'bg-blue-100 text-blue-800' };
-    if (now > endDate) return { status: 'expired', label: 'Expirée', color: 'bg-red-100 text-red-800' };
-    return { status: 'active', label: 'Active', color: 'bg-green-100 text-green-800' };
+    if (!delegation.isActive) return { status: 'inactive', label: t('teamManagement.status.inactive'), color: 'bg-gray-100 text-gray-800' };
+    if (!delegation.approvedBy) return { status: 'pending_approval', label: t('teamManagement.status.pendingApproval'), color: 'bg-yellow-100 text-yellow-800' };
+    if (now < startDate) return { status: 'pending', label: t('teamManagement.status.pending'), color: 'bg-blue-100 text-blue-800' };
+    if (now > endDate) return { status: 'expired', label: t('teamManagement.status.expired'), color: 'bg-red-100 text-red-800' };
+    return { status: 'active', label: t('teamManagement.status.active'), color: 'bg-green-100 text-green-800' };
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('fr-FR');
+    const locale = i18n.language === 'fr' ? 'fr-FR' : i18n.language === 'es' ? 'es-ES' : 'en-US';
+    return new Date(dateString).toLocaleDateString(locale);
   };
 
   const formatTime = (timeString) => {
@@ -276,21 +337,23 @@ const TeamManagementModule = () => {
     return timeString;
   };
 
-  // Pagination
-  const currentData = activeTab === 'teams' ? filteredTeams : filteredDelegations;
+  // Pagination - with guards for undefined arrays
+  const currentData = activeTab === 'teams'
+    ? (filteredTeams || [])
+    : (filteredDelegations || []);
   const paginatedData = currentData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const totalPages = Math.ceil(currentData.length / itemsPerPage);
+  const totalPages = Math.ceil(currentData.length / itemsPerPage) || 1;
 
   if (!hasPermission('teams.read')) {
     return (
       <div className="p-6 bg-white rounded-lg shadow">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Accès non autorisé</h3>
-          <p className="text-gray-600">Vous n'avez pas les permissions pour accéder à la gestion des équipes.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('teamManagement.accessDenied')}</h3>
+          <p className="text-gray-600">{t('teamManagement.noPermission')}</p>
         </div>
       </div>
     );
@@ -304,16 +367,16 @@ const TeamManagementModule = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-600" />
-              Gestion des équipes et délégations
+              {t('teamManagement.title')}
             </h1>
-            <p className="text-gray-600 mt-1">Gérez les équipes de travail et les délégations de permissions</p>
+            <p className="text-gray-600 mt-1">{t('teamManagement.subtitle')}</p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => loadData()}
               className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Actualiser"
+              title={t('teamManagement.refresh')}
             >
               <RefreshCw className="h-5 w-5" />
             </button>
@@ -324,7 +387,7 @@ const TeamManagementModule = () => {
                 className="px-4 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
-                Exporter
+                {t('teamManagement.export')}
               </button>
             )}
 
@@ -334,7 +397,7 @@ const TeamManagementModule = () => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Nouvelle équipe
+                {t('teamManagement.newTeam')}
               </button>
             )}
 
@@ -344,7 +407,7 @@ const TeamManagementModule = () => {
                 className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2"
               >
                 <UserCheck className="h-4 w-4" />
-                Nouvelle délégation
+                {t('teamManagement.newDelegation')}
               </button>
             )}
           </div>
@@ -356,7 +419,7 @@ const TeamManagementModule = () => {
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-sm text-blue-600">Équipes totales</p>
+                <p className="text-sm text-blue-600">{t('teamManagement.stats.totalTeams')}</p>
                 <p className="text-2xl font-bold text-blue-900">{statistics.totalTeams || 0}</p>
               </div>
             </div>
@@ -366,7 +429,7 @@ const TeamManagementModule = () => {
             <div className="flex items-center gap-3">
               <UserPlus className="h-8 w-8 text-green-600" />
               <div>
-                <p className="text-sm text-green-600">Membres totaux</p>
+                <p className="text-sm text-green-600">{t('teamManagement.stats.totalMembers')}</p>
                 <p className="text-2xl font-bold text-green-900">{statistics.totalMembers || 0}</p>
               </div>
             </div>
@@ -376,7 +439,7 @@ const TeamManagementModule = () => {
             <div className="flex items-center gap-3">
               <UserCheck className="h-8 w-8 text-orange-600" />
               <div>
-                <p className="text-sm text-orange-600">Délégations actives</p>
+                <p className="text-sm text-orange-600">{t('teamManagement.stats.activeDelegations')}</p>
                 <p className="text-2xl font-bold text-orange-900">{statistics.activeDelegations || 0}</p>
               </div>
             </div>
@@ -386,7 +449,7 @@ const TeamManagementModule = () => {
             <div className="flex items-center gap-3">
               <Clock className="h-8 w-8 text-purple-600" />
               <div>
-                <p className="text-sm text-purple-600">En attente d'approbation</p>
+                <p className="text-sm text-purple-600">{t('teamManagement.stats.pendingApprovals')}</p>
                 <p className="text-2xl font-bold text-purple-900">{statistics.pendingApprovals || 0}</p>
               </div>
             </div>
@@ -405,7 +468,7 @@ const TeamManagementModule = () => {
               }`}
             >
               <Users className="inline h-4 w-4 mr-2" />
-              Équipes ({filteredTeams.length})
+              {t('teamManagement.tabs.teams')} ({filteredTeams.length})
             </button>
 
             <button
@@ -417,7 +480,7 @@ const TeamManagementModule = () => {
               }`}
             >
               <UserCheck className="inline h-4 w-4 mr-2" />
-              Délégations ({filteredDelegations.length})
+              {t('teamManagement.tabs.delegations')} ({filteredDelegations.length})
             </button>
           </nav>
         </div>
@@ -432,7 +495,7 @@ const TeamManagementModule = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder={activeTab === 'teams' ? "Rechercher par nom, département..." : "Rechercher par utilisateur, raison..."}
+                placeholder={activeTab === 'teams' ? t('teamManagement.filters.searchTeams') : t('teamManagement.filters.searchDelegations')}
                 value={activeTab === 'teams' ? searchQuery : delegationSearchQuery}
                 onChange={(e) => activeTab === 'teams' ? setSearchQuery(e.target.value) : setDelegationSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -446,7 +509,7 @@ const TeamManagementModule = () => {
                   onChange={(e) => setTeamFilters(prev => ({ ...prev, department: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Tous les départements</option>
+                  <option value="">{t('teamManagement.filters.allDepartments')}</option>
                   {[...new Set(teams.map(team => team.department))].filter(Boolean).map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
@@ -457,9 +520,9 @@ const TeamManagementModule = () => {
                   onChange={(e) => setTeamFilters(prev => ({ ...prev, isActive: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Tous les statuts</option>
-                  <option value="true">Actives seulement</option>
-                  <option value="false">Inactives seulement</option>
+                  <option value="">{t('teamManagement.filters.allStatuses')}</option>
+                  <option value="true">{t('teamManagement.filters.activeOnly')}</option>
+                  <option value="false">{t('teamManagement.filters.inactiveOnly')}</option>
                 </select>
               </div>
             ) : (
@@ -469,12 +532,12 @@ const TeamManagementModule = () => {
                   onChange={(e) => setDelegationFilters(prev => ({ ...prev, status: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Tous les statuts</option>
-                  <option value="active">Actives</option>
-                  <option value="pending">En attente</option>
-                  <option value="expired">Expirées</option>
-                  <option value="awaiting_approval">En attente d'approbation</option>
-                  <option value="inactive">Inactives</option>
+                  <option value="">{t('teamManagement.filters.allStatuses')}</option>
+                  <option value="active">{t('teamManagement.filters.active')}</option>
+                  <option value="pending">{t('teamManagement.filters.pending')}</option>
+                  <option value="expired">{t('teamManagement.filters.expired')}</option>
+                  <option value="awaiting_approval">{t('teamManagement.filters.awaitingApproval')}</option>
+                  <option value="inactive">{t('teamManagement.filters.inactive')}</option>
                 </select>
               </div>
             )}
@@ -485,7 +548,7 @@ const TeamManagementModule = () => {
         {isLoading ? (
           <div className="p-8 text-center">
             <RefreshCw className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-600">Chargement...</p>
+            <p className="text-gray-600">{t('teamManagement.loading')}</p>
           </div>
         ) : activeTab === 'teams' ? (
           /* Table des équipes */
@@ -494,22 +557,22 @@ const TeamManagementModule = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Équipe
+                    {t('teamManagement.teamsTable.team')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Chef d'équipe
+                    {t('teamManagement.teamsTable.teamLeader')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Membres
+                    {t('teamManagement.teamsTable.members')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Département
+                    {t('teamManagement.teamsTable.department')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Statut
+                    {t('teamManagement.teamsTable.status')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('teamManagement.teamsTable.actions')}
                   </th>
                 </tr>
               </thead>
@@ -520,7 +583,7 @@ const TeamManagementModule = () => {
                       <div>
                         <div className="text-sm font-medium text-gray-900">{team.name}</div>
                         <div className="text-sm text-gray-500">{team.description}</div>
-                        {team.specialties.length > 0 && (
+                        {(team.specialties?.length > 0) && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {team.specialties.slice(0, 2).map(specialty => (
                               <span key={specialty} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -538,10 +601,10 @@ const TeamManagementModule = () => {
                       <div className="text-sm text-gray-900">{getUserDisplayName(team.leaderId)}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{team.members.length} membre(s)</div>
+                      <div className="text-sm text-gray-900">{t('teamManagement.teamsTable.memberCount', { count: team.members?.length || 0 })}</div>
                       <div className="text-sm text-gray-500">
-                        {team.members.slice(0, 3).map(memberId => getUserDisplayName(memberId).split(' ')[0]).join(', ')}
-                        {team.members.length > 3 && ` +${team.members.length - 3}`}
+                        {(team.members || []).slice(0, 3).map(memberId => getUserDisplayName(memberId).split(' ')[0]).join(', ')}
+                        {(team.members?.length || 0) > 3 && ` +${team.members.length - 3}`}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -557,12 +620,12 @@ const TeamManagementModule = () => {
                         {team.isActive ? (
                           <>
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Active
+                            {t('teamManagement.status.active')}
                           </>
                         ) : (
                           <>
                             <XCircle className="h-3 w-3 mr-1" />
-                            Inactive
+                            {t('teamManagement.status.inactive')}
                           </>
                         )}
                       </span>
@@ -573,7 +636,7 @@ const TeamManagementModule = () => {
                           <button
                             onClick={() => handleEditTeam(team)}
                             className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
-                            title="Modifier"
+                            title={t('teamManagement.actions.edit')}
                           >
                             <Edit className="h-4 w-4" />
                           </button>
@@ -583,7 +646,7 @@ const TeamManagementModule = () => {
                           <button
                             onClick={() => handleDeleteTeam(team.id)}
                             className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                            title="Supprimer"
+                            title={t('teamManagement.actions.delete')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -602,19 +665,19 @@ const TeamManagementModule = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Délégation
+                    {t('teamManagement.delegationsTable.delegation')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Période
+                    {t('teamManagement.delegationsTable.period')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Permissions
+                    {t('teamManagement.delegationsTable.permissions')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Statut
+                    {t('teamManagement.delegationsTable.status')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('teamManagement.delegationsTable.actions')}
                   </th>
                 </tr>
               </thead>
@@ -644,11 +707,11 @@ const TeamManagementModule = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {delegation.permissions.length} permission(s)
+                          {t('teamManagement.delegationsTable.permissionCount', { count: delegation.permissions?.length || 0 })}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {delegation.permissions.slice(0, 2).join(', ')}
-                          {delegation.permissions.length > 2 && ` +${delegation.permissions.length - 2}`}
+                          {(delegation.permissions || []).slice(0, 2).join(', ')}
+                          {(delegation.permissions?.length || 0) > 2 && ` +${delegation.permissions.length - 2}`}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -657,7 +720,7 @@ const TeamManagementModule = () => {
                         </span>
                         {delegation.approvedBy && (
                           <div className="text-xs text-gray-500 mt-1">
-                            Approuvé par {getUserDisplayName(delegation.approvedBy)}
+                            {t('teamManagement.delegationsTable.approvedBy', { name: getUserDisplayName(delegation.approvedBy) })}
                           </div>
                         )}
                       </td>
@@ -667,7 +730,7 @@ const TeamManagementModule = () => {
                             <button
                               onClick={() => handleApproveDelegation(delegation.id)}
                               className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
-                              title="Approuver"
+                              title={t('teamManagement.actions.approve')}
                             >
                               <CheckCircle className="h-4 w-4" />
                             </button>
@@ -677,7 +740,7 @@ const TeamManagementModule = () => {
                             <button
                               onClick={() => handleRevokeDelegation(delegation.id)}
                               className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                              title="Révoquer"
+                              title={t('teamManagement.actions.revoke')}
                             >
                               <UserMinus className="h-4 w-4" />
                             </button>
@@ -697,9 +760,11 @@ const TeamManagementModule = () => {
           <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700">
-                Affichage de {(currentPage - 1) * itemsPerPage + 1} à{' '}
-                {Math.min(currentPage * itemsPerPage, currentData.length)} sur{' '}
-                {currentData.length} résultats
+                {t('teamManagement.pagination.showing', {
+                  from: (currentPage - 1) * itemsPerPage + 1,
+                  to: Math.min(currentPage * itemsPerPage, currentData.length),
+                  total: currentData.length
+                })}
               </span>
               <select
                 value={itemsPerPage}
@@ -718,7 +783,7 @@ const TeamManagementModule = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
               >
-                Précédent
+                {t('teamManagement.pagination.previous')}
               </button>
 
               <div className="flex gap-1">
@@ -748,7 +813,7 @@ const TeamManagementModule = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
               >
-                Suivant
+                {t('teamManagement.pagination.next')}
               </button>
             </div>
           </div>

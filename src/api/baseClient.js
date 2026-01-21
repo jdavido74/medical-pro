@@ -7,8 +7,11 @@
  * - Multi-tenancy support
  */
 
+import { redirectToLogin } from '../utils/localeRedirect';
+
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api/v1';
 const API_TIMEOUT = parseInt(process.env.REACT_APP_API_TIMEOUT) || 30000;
+const DEBUG = process.env.NODE_ENV === 'development';
 
 /**
  * Get JWT token from localStorage
@@ -90,6 +93,11 @@ async function request(endpoint, options = {}) {
     const token = getAuthToken();
     if (token) {
       requestHeaders['Authorization'] = `Bearer ${token}`;
+      if (DEBUG) {
+        console.log('📡 [baseClient] API Request:', { method, endpoint, hasToken: true });
+      }
+    } else if (DEBUG) {
+      console.log('📡 [baseClient] API Request (no auth):', { method, endpoint });
     }
 
     // Create abort controller for timeout
@@ -118,11 +126,30 @@ async function request(endpoint, options = {}) {
 
     // Check for errors
     if (!response.ok) {
+      console.error('❌ [baseClient] API Error:', {
+        endpoint,
+        status: response.status,
+        message: data?.error?.message || data?.message,
+        errorCode: data?.error?.code
+      });
+
+      // Check for clinic status errors and emit event
+      if (data?.error?.code && ['CLINIC_SUSPENDED', 'CLINIC_DELETED', 'CLINIC_NOT_FOUND'].includes(data.error.code)) {
+        // Emit custom event for ClinicStatusGuard to handle
+        window.dispatchEvent(new CustomEvent('clinicStatusError', {
+          detail: { errorCode: data.error.code, data }
+        }));
+      }
+
       throw {
         status: response.status,
         message: data?.error?.message || data?.message || 'API Error',
         data: data
       };
+    }
+
+    if (DEBUG) {
+      console.log('✅ [baseClient] API Success:', { endpoint, status: response.status });
     }
 
     return data;
@@ -136,9 +163,16 @@ async function request(endpoint, options = {}) {
     }
 
     if (error.status === 401) {
-      // Handle unauthorized - clear auth and redirect to login
-      localStorage.removeItem('clinicmanager_auth');
-      window.location.href = '/login';
+      // Only redirect to login for authenticated requests, NOT for login/register attempts
+      const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
+
+      if (!isAuthEndpoint) {
+        if (DEBUG) {
+          console.log('🔒 [baseClient] 401 - Redirecting to login');
+        }
+        localStorage.removeItem('clinicmanager_token');
+        redirectToLogin();
+      }
     }
 
     throw error;

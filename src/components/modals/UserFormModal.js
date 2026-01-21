@@ -13,6 +13,11 @@ import {
   ADMINISTRATIVE_ROLE_LABELS,
   ADMINISTRATIVE_ROLE_DESCRIPTIONS
 } from '../../utils/userRoles';
+import {
+  DEPARTMENT_KEYS,
+  SPECIALTIES_BY_DEPARTMENT,
+  getSpecialtiesForDepartment
+} from '../../utils/medicalConstants';
 
 const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) => {
   const { t } = useTranslation(['admin', 'common']);
@@ -47,44 +52,6 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
   const [showPassword, setShowPassword] = useState(false);
   const [availableRoles, setAvailableRoles] = useState([]);
   const [phoneValid, setPhoneValid] = useState(true); // Phone is optional
-
-  // Départements prédéfinis (clés de traduction)
-  const departmentKeys = [
-    'direction',
-    'administration',
-    'generalMedicine',
-    'cardiology',
-    'dermatology',
-    'gynecology',
-    'pediatrics',
-    'radiology',
-    'surgery',
-    'nursing',
-    'reception',
-    'pharmacy',
-    'laboratory',
-    'physiotherapy',
-    'audit'
-  ];
-
-  // Spécialités par département (valeurs non traduites car spécifiques au domaine médical)
-  const specialitiesByDepartment = {
-    'direction': ['Gestion', 'Stratégie', 'Qualité'],
-    'administration': ['Ressources Humaines', 'Comptabilité', 'Informatique'],
-    'generalMedicine': ['Médecine Générale', 'Médecine Préventive'],
-    'cardiology': ['Cardiologie Interventionnelle', 'Rythmologie', 'Insuffisance Cardiaque'],
-    'dermatology': ['Dermatologie Générale', 'Dermatologie Esthétique', 'Dermatopathologie'],
-    'gynecology': ['Gynécologie Médicale', 'Obstétrique', 'PMA'],
-    'pediatrics': ['Pédiatrie Générale', 'Néonatologie', 'Pédopsychiatrie'],
-    'radiology': ['Radiologie Conventionnelle', 'Scanner', 'IRM', 'Échographie'],
-    'surgery': ['Chirurgie Générale', 'Chirurgie Orthopédique', 'Chirurgie Esthétique'],
-    'nursing': ['Soins Généraux', 'Soins Intensifs', 'Bloc Opératoire'],
-    'reception': ['Administration', 'Secrétariat Médical', 'Facturation'],
-    'pharmacy': ['Pharmacie Clinique', 'Stérilisation'],
-    'laboratory': ['Biologie Médicale', 'Anatomopathologie'],
-    'physiotherapy': ['Kinésithérapie Générale', 'Kinésithérapie Sportive'],
-    'audit': ['Consultation', 'Contrôle Qualité']
-  };
 
   useEffect(() => {
     if (isOpen) {
@@ -182,6 +149,12 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
       }
     }
 
+    // En mode édition: si mot de passe fourni, vérifier la longueur minimale
+    if (user && formData.password && formData.password.trim().length > 0 && formData.password.trim().length < 6) {
+      setFieldError('password', t('admin:usersManagement.password.minLength', 'Le mot de passe doit contenir au moins 6 caractères'));
+      isValid = false;
+    }
+
     // Rôle requis
     if (!formData.role) {
       setFieldError('role', t('admin:usersManagement.validation.roleRequired'));
@@ -220,7 +193,7 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
   };
 
   const getAvailableSpecialities = () => {
-    return specialitiesByDepartment[formData.department] || [];
+    return getSpecialtiesForDepartment(formData.department);
   };
 
   const getRoleColor = (roleId) => {
@@ -376,6 +349,46 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
               </div>
             )}
 
+            {/* Mode édition: Changement de mot de passe optionnel */}
+            {user && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="h-5 w-5 text-amber-600" />
+                  <span className="font-medium text-amber-800">
+                    {t('admin:usersManagement.password.changeTitle', 'Modifier le mot de passe')}
+                  </span>
+                </div>
+                <p className="text-sm text-amber-700 mb-3">
+                  {t('admin:usersManagement.password.changeNote', 'Laissez vide pour conserver le mot de passe actuel')}
+                </p>
+                <div className="relative">
+                  <TextField
+                    label={t('admin:usersManagement.password.newPassword', 'Nouveau mot de passe')}
+                    name="new_password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password || ''}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    error={getFieldError('password')}
+                    placeholder={t('admin:usersManagement.password.placeholder', 'Entrez un nouveau mot de passe (optionnel)')}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 transition-colors"
+                    title={showPassword ? t('common:hide') : t('common:show')}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {formData.password && formData.password.length > 0 && formData.password.length < 6 && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {t('admin:usersManagement.password.minLength', 'Le mot de passe doit contenir au moins 6 caractères')}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Rôle et permissions */}
             <div className="space-y-4">
               <div>
@@ -443,7 +456,7 @@ const UserFormModal = ({ isOpen, onClose, onSave, user = null, currentUser }) =>
                 }}
                 icon={Building}
                 placeholder={t('admin:usersManagement.department.placeholder')}
-                options={departmentKeys.map(key => ({
+                options={DEPARTMENT_KEYS.map(key => ({
                   value: key,
                   label: t(`admin:departments.${key}`)
                 }))}

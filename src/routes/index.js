@@ -23,6 +23,8 @@ import LoginPage from '../components/auth/LoginPage';
 import SignupPage from '../components/auth/SignupPage';
 import EmailVerificationPage from '../components/auth/EmailVerificationPage';
 import EmailVerificationCallback from '../components/auth/EmailVerificationCallback';
+import ClinicProvisioningPage from '../components/auth/ClinicProvisioningPage';
+import SetPasswordPage from '../components/auth/SetPasswordPage';
 import ConsentSigningPage from '../pages/public/ConsentSigningPage';
 
 // Modules Dashboard
@@ -50,6 +52,11 @@ import AdminOverview from '../pages/admin/AdminOverview';
 import ProtectedRoute from '../components/routing/ProtectedRoute';
 import PublicRoute from '../components/routing/PublicRoute';
 import AdminRoute from '../components/routing/AdminRoute';
+import PermissionRoute from '../components/routing/PermissionRoute';
+import OnboardingGuard from '../components/routing/OnboardingGuard';
+
+// Onboarding
+import OnboardingWizard from '../components/onboarding/OnboardingWizard';
 
 // Locale components
 import LocaleRedirect, { LegacyRouteRedirect } from '../components/routing/LocaleRedirect';
@@ -57,40 +64,148 @@ import LocaleGuard from '../components/routing/LocaleGuard';
 
 /**
  * Routes protégées du dashboard (réutilisables)
+ * Chaque route peut avoir des restrictions de permissions:
+ * - permission: Permission requise pour accéder
+ * - medicalOnly: Réservé aux professionnels de santé (secret médical)
  */
 const dashboardRoutes = [
-  // Dashboard principal
+  // Dashboard principal - accessible à tous les utilisateurs authentifiés
   { path: 'dashboard', element: <HomeModule /> },
   { path: 'home', element: <Navigate to="../dashboard" replace /> },
 
-  // Patients
-  { path: 'patients', element: <PatientsModule /> },
-  { path: 'patients/:id', element: <PatientsModule /> },
+  // Patients - nécessite la permission patients.view
+  {
+    path: 'patients',
+    element: (
+      <PermissionRoute permission="patients.view">
+        <PatientsModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'patients/:id',
+    element: (
+      <PermissionRoute permission="patients.view">
+        <PatientsModule />
+      </PermissionRoute>
+    )
+  },
 
-  // Dossiers médicaux
-  { path: 'medical-records', element: <MedicalRecordsModule /> },
-  { path: 'medical-records/:patientId', element: <MedicalRecordsModule /> },
+  // Dossiers médicaux - SECRET MÉDICAL: réservé aux professionnels de santé
+  {
+    path: 'medical-records',
+    element: (
+      <PermissionRoute permission="medical_records.view" medicalOnly>
+        <MedicalRecordsModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'medical-records/:patientId',
+    element: (
+      <PermissionRoute permission="medical_records.view" medicalOnly>
+        <MedicalRecordsModule />
+      </PermissionRoute>
+    )
+  },
 
-  // Rendez-vous
-  { path: 'appointments', element: <AppointmentsModule /> },
-  { path: 'appointments/new', element: <AppointmentsModule /> },
-  { path: 'appointments/:id', element: <AppointmentsModule /> },
+  // Rendez-vous - nécessite la permission appointments.view
+  {
+    path: 'appointments',
+    element: (
+      <PermissionRoute permission="appointments.view">
+        <AppointmentsModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'appointments/new',
+    element: (
+      <PermissionRoute permission="appointments.create">
+        <AppointmentsModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'appointments/:id',
+    element: (
+      <PermissionRoute permission="appointments.view">
+        <AppointmentsModule />
+      </PermissionRoute>
+    )
+  },
 
-  // Devis
-  { path: 'quotes', element: <QuotesModule /> },
-  { path: 'quotes/new', element: <QuotesModule /> },
-  { path: 'quotes/:id', element: <QuotesModule /> },
+  // Devis - nécessite la permission quotes.view
+  {
+    path: 'quotes',
+    element: (
+      <PermissionRoute permission="quotes.view">
+        <QuotesModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'quotes/new',
+    element: (
+      <PermissionRoute permission="quotes.create">
+        <QuotesModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'quotes/:id',
+    element: (
+      <PermissionRoute permission="quotes.view">
+        <QuotesModule />
+      </PermissionRoute>
+    )
+  },
 
-  // Factures
-  { path: 'invoices', element: <InvoicesModule /> },
-  { path: 'invoices/new', element: <InvoicesModule /> },
-  { path: 'invoices/:id', element: <InvoicesModule /> },
+  // Factures - nécessite la permission invoices.view
+  {
+    path: 'invoices',
+    element: (
+      <PermissionRoute permission="invoices.view">
+        <InvoicesModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'invoices/new',
+    element: (
+      <PermissionRoute permission="invoices.create">
+        <InvoicesModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'invoices/:id',
+    element: (
+      <PermissionRoute permission="invoices.view">
+        <InvoicesModule />
+      </PermissionRoute>
+    )
+  },
 
   // Consentements
-  { path: 'consents', element: <ConsentManagementModule /> },
-  { path: 'consent-templates', element: <ConsentTemplatesModule /> },
+  {
+    path: 'consents',
+    element: (
+      <PermissionRoute permission="consents.view">
+        <ConsentManagementModule />
+      </PermissionRoute>
+    )
+  },
+  {
+    path: 'consent-templates',
+    element: (
+      <PermissionRoute permission="consent_templates.view">
+        <ConsentTemplatesModule />
+      </PermissionRoute>
+    )
+  },
 
-  // Paramètres
+  // Paramètres - accessible à tous les utilisateurs authentifiés
   { path: 'settings', element: <SettingsModule /> }
 ];
 
@@ -146,19 +261,39 @@ export const routes = [
           { path: 'login', element: <LoginPage /> },
           { path: 'signup', element: <SignupPage /> },
           { path: 'email-verification', element: <EmailVerificationPage /> },
-          { path: 'auth/verify-email/:token', element: <EmailVerificationCallback /> }
+          { path: 'auth/verify-email/:token', element: <EmailVerificationCallback /> },
+          { path: 'auth/provisioning', element: <ClinicProvisioningPage /> },
+          { path: 'set-password', element: <SetPasswordPage /> }
         ]
       },
 
-      // Routes protégées (authentification requise)
+      // Route d'onboarding (authentification requise, sans OnboardingGuard)
       {
-        element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
+        path: 'onboarding',
+        element: <ProtectedRoute><OnboardingWizard /></ProtectedRoute>
+      },
+
+      // Routes protégées (authentification requise + vérification setup)
+      {
+        element: (
+          <ProtectedRoute>
+            <OnboardingGuard>
+              <DashboardLayout />
+            </OnboardingGuard>
+          </ProtectedRoute>
+        ),
         children: dashboardRoutes
       },
 
-      // Routes d'administration (rôle admin requis)
+      // Routes d'administration (rôle admin requis + vérification setup)
       {
-        element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute>
+            <OnboardingGuard>
+              <DashboardLayout />
+            </OnboardingGuard>
+          </ProtectedRoute>
+        ),
         children: [
           {
             path: 'admin',
@@ -180,6 +315,7 @@ export const routes = [
   { path: '/signup', element: <LegacyRouteRedirect /> },
   { path: '/email-verification', element: <LegacyRouteRedirect /> },
   { path: '/auth/verify-email/:token', element: <LegacyRouteRedirect /> },
+  { path: '/onboarding', element: <LegacyRouteRedirect /> },
 
   // Legacy dashboard routes
   { path: '/dashboard', element: <LegacyRouteRedirect /> },

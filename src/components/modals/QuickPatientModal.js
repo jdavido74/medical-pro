@@ -1,19 +1,29 @@
 // components/modals/QuickPatientModal.js
 import React, { useState, useEffect, useContext } from 'react';
 import { X, Save, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 import { PatientContext } from '../../contexts/PatientContext';
 import PhoneInput from '../common/PhoneInput';
 import { useLocale } from '../../contexts/LocaleContext';
+import { useTranslation } from 'react-i18next';
+import { useFormErrors } from '../../hooks/useFormErrors';
 
 const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' }) => {
-  const { user } = useAuth();
   const patientContext = useContext(PatientContext);
   const { country: localeCountry } = useLocale();
+  const { t } = useTranslation(['patients', 'common']);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [phoneValid, setPhoneValid] = useState(true); // Optional field
+
+  // Use standardized error handling
+  const {
+    generalError,
+    setFieldError,
+    clearFieldError,
+    clearErrors,
+    handleBackendError,
+    getFieldError
+  } = useFormErrors();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -22,74 +32,129 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
     phone: ''
   });
 
-  // Pré-remplir le nom et prénom si présent
+  // Réinitialiser le formulaire et les erreurs à l'ouverture/fermeture
   useEffect(() => {
-    if (initialSearchQuery && isOpen) {
-      // Essayer de diviser la recherche en nom et prénom
-      const parts = initialSearchQuery.trim().split(' ');
-      if (parts.length === 1) {
-        setFormData(prev => ({
-          ...prev,
-          firstName: parts[0],
-          lastName: ''
-        }));
-      } else if (parts.length >= 2) {
-        setFormData(prev => ({
-          ...prev,
-          firstName: parts[0],
-          lastName: parts.slice(1).join(' ')
-        }));
+    if (isOpen) {
+      // Reset form when opening
+      clearErrors();
+      setDuplicateWarning(null);
+
+      // Pré-remplir le nom et prénom si présent
+      if (initialSearchQuery) {
+        const parts = initialSearchQuery.trim().split(' ');
+        if (parts.length === 1) {
+          setFormData({
+            firstName: parts[0],
+            lastName: '',
+            email: '',
+            phone: ''
+          });
+        } else if (parts.length >= 2) {
+          setFormData({
+            firstName: parts[0],
+            lastName: parts.slice(1).join(' '),
+            email: '',
+            phone: ''
+          });
+        } else {
+          setFormData({
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: ''
+          });
+        }
+      } else {
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: ''
+        });
       }
     }
-  }, [initialSearchQuery, isOpen]);
+  }, [isOpen, initialSearchQuery, clearErrors]);
 
   // Vérifier les doublons en temps réel (email + nom)
+  // Ne vérifier que lorsque les champs ont des valeurs significatives
   useEffect(() => {
     if (!patientContext) return;
 
-    if (formData.firstName || formData.lastName || formData.email) {
+    const firstName = formData.firstName?.trim();
+    const lastName = formData.lastName?.trim();
+    const email = formData.email?.trim();
+
+    // Ne vérifier que si on a assez d'information (nom complet ou email valide)
+    const hasFullName = firstName && firstName.length >= 2 && lastName && lastName.length >= 2;
+    const hasValidEmail = email && email.includes('@') && email.includes('.');
+
+    if (hasFullName || hasValidEmail) {
       // Use PatientContext's checkDuplicate method (local search in loaded patients)
       const duplicate = patientContext.checkDuplicate(
-        formData.firstName,
-        formData.lastName,
-        formData.email
+        firstName,
+        lastName,
+        email
       );
 
       if (duplicate) {
+        // Déterminer le type de correspondance
+        const emailMatch = hasValidEmail && duplicate.contact?.email?.toLowerCase() === email.toLowerCase();
+        const nameMatch = hasFullName &&
+          duplicate.firstName?.toLowerCase() === firstName.toLowerCase() &&
+          duplicate.lastName?.toLowerCase() === lastName.toLowerCase();
+
         setDuplicateWarning({
-          message: `Un patient avec ce nom ou email existe déjà`,
+          message: emailMatch && nameMatch
+            ? 'Un patient avec ce nom et cet email existe déjà'
+            : emailMatch
+              ? 'Un patient avec cet email existe déjà'
+              : 'Un patient avec ce nom existe déjà',
           patientNumber: duplicate.patientNumber,
-          type: 'warning',
+          type: emailMatch ? 'email' : 'name',
           patient: duplicate
         });
       } else {
         setDuplicateWarning(null);
       }
+    } else {
+      setDuplicateWarning(null);
     }
   }, [formData.firstName, formData.lastName, formData.email, patientContext]);
 
-  // Validation du formulaire
+  // Validation du formulaire - Using useFormErrors
   const validateForm = () => {
-    const newErrors = {};
+    clearErrors();
+    let isValid = true;
 
     if (!formData.firstName?.trim()) {
-      newErrors.firstName = 'Le prénom est requis';
+      setFieldError('firstName', t('patients:validation.firstNameRequired', 'Le prénom est requis'));
+      isValid = false;
     }
 
     if (!formData.lastName?.trim()) {
-      newErrors.lastName = 'Le nom est requis';
+      setFieldError('lastName', t('patients:validation.lastNameRequired', 'Le nom est requis'));
+      isValid = false;
     }
 
-    if (formData.email && !formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      newErrors.email = 'Email invalide';
+    // Email est obligatoire
+    if (!formData.email?.trim()) {
+      setFieldError('email', t('patients:validation.emailRequired', 'L\'email est requis'));
+      isValid = false;
+    } else if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setFieldError('email', t('patients:validation.emailInvalid', 'Email invalide'));
+      isValid = false;
     }
 
-    if (formData.phone && !phoneValid) {
-      newErrors.phone = 'Format de téléphone invalide';
+    // Téléphone est obligatoire
+    if (!formData.phone?.trim()) {
+      setFieldError('phone', t('patients:validation.phoneRequired', 'Le téléphone est requis'));
+      isValid = false;
+    } else if (!phoneValid) {
+      setFieldError('phone', t('patients:validation.phoneInvalid', 'Format de téléphone invalide'));
+      isValid = false;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   // Sauvegarder le nouveau patient
@@ -136,7 +201,7 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
       onClose();
     } catch (error) {
       console.error('Erreur lors de la création du patient:', error);
-      setErrors({ general: error.message || 'Erreur lors de la création du patient' });
+      handleBackendError(error);
     } finally {
       setIsLoading(false);
     }
@@ -203,83 +268,95 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
           )}
 
           {/* Erreur générale */}
-          {errors.general && (
+          {(getFieldError('general') || generalError) && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-700">{errors.general}</p>
+              <p className="text-sm text-red-700">{getFieldError('general') || generalError?.message}</p>
             </div>
           )}
 
           {/* Prénom */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Prénom *
+              {t('patients:fields.firstName', 'Prénom')} *
             </label>
             <input
               type="text"
               value={formData.firstName}
-              onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, firstName: e.target.value }));
+                clearFieldError('firstName');
+              }}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                errors.firstName ? 'border-red-500' : 'border-gray-300'
+                getFieldError('firstName') ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Jean"
               disabled={isLoading}
             />
-            {errors.firstName && (
-              <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+            {getFieldError('firstName') && (
+              <p className="text-red-500 text-xs mt-1">{getFieldError('firstName')}</p>
             )}
           </div>
 
           {/* Nom */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nom *
+              {t('patients:fields.lastName', 'Nom')} *
             </label>
             <input
               type="text"
               value={formData.lastName}
-              onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, lastName: e.target.value }));
+                clearFieldError('lastName');
+              }}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                errors.lastName ? 'border-red-500' : 'border-gray-300'
+                getFieldError('lastName') ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Dupont"
               disabled={isLoading}
             />
-            {errors.lastName && (
-              <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+            {getFieldError('lastName') && (
+              <p className="text-red-500 text-xs mt-1">{getFieldError('lastName')}</p>
             )}
           </div>
 
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              {t('patients:fields.email', 'Email')} *
             </label>
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, email: e.target.value }));
+                clearFieldError('email');
+              }}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
+                getFieldError('email') ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="jean.dupont@email.com"
               disabled={isLoading}
             />
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            {getFieldError('email') && (
+              <p className="text-red-500 text-xs mt-1">{getFieldError('email')}</p>
             )}
           </div>
 
           {/* Téléphone */}
           <PhoneInput
             value={formData.phone}
-            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, phone: e.target.value }));
+              clearFieldError('phone');
+            }}
             onValidationChange={(isValid) => setPhoneValid(isValid)}
             defaultCountry={localeCountry}
             name="phone"
-            label="Téléphone"
-            required={false}
+            label={t('patients:fields.phone', 'Téléphone')}
+            required={true}
             disabled={isLoading}
-            error={errors.phone}
+            error={getFieldError('phone')}
             showValidation
             compact
           />
@@ -287,7 +364,7 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
           {/* Info */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-xs text-blue-700">
-              💡 <span className="font-medium">Astuce :</span> Vous pourrez compléter le profil (date de naissance, adresse, assurance, etc.) ultérieurement depuis la page Patients.
+              💡 <span className="font-medium">Champs obligatoires :</span> Prénom, nom, email et téléphone sont requis. Vous pourrez compléter le reste du profil (date de naissance, adresse, assurance, etc.) ultérieurement.
             </p>
           </div>
         </div>

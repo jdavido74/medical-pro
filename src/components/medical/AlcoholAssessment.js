@@ -252,6 +252,7 @@ const AlcoholAssessment = ({
   };
 
   const showAssessment = alcoholData.status !== 'never';
+  const showFullQuestionnaire = alcoholData.auditC.frequency > 0;
 
   return (
     <div className="space-y-4">
@@ -313,51 +314,57 @@ const AlcoholAssessment = ({
             </select>
           </div>
 
-          {/* Question 2: Quantity */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('medical:form.habits.alcoholAssessment.auditC.quantity')}
-            </label>
-            <select
-              value={alcoholData.auditC.quantity}
-              onChange={(e) => handleAuditCChange('quantity', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value={0}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks1_2')}</option>
-              <option value={1}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks3_4')}</option>
-              <option value={2}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks5_6')}</option>
-              <option value={3}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks7_9')}</option>
-              <option value={4}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks10plus')}</option>
-            </select>
-          </div>
+          {/* Question 2: Quantity - only show if frequency > 0 */}
+          {showFullQuestionnaire && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('medical:form.habits.alcoholAssessment.auditC.quantity')}
+              </label>
+              <select
+                value={alcoholData.auditC.quantity}
+                onChange={(e) => handleAuditCChange('quantity', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value={0}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks1_2')}</option>
+                <option value={1}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks3_4')}</option>
+                <option value={2}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks5_6')}</option>
+                <option value={3}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks7_9')}</option>
+                <option value={4}>{t('medical:form.habits.alcoholAssessment.auditC.quantityOptions.drinks10plus')}</option>
+              </select>
+            </div>
+          )}
 
-          {/* Question 3: Binge drinking */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('medical:form.habits.alcoholAssessment.auditC.binge')}
-            </label>
-            <select
-              value={alcoholData.auditC.binge}
-              onChange={(e) => handleAuditCChange('binge', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value={0}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.never')}</option>
-              <option value={1}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.lessMonthly')}</option>
-              <option value={2}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.monthly')}</option>
-              <option value={3}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.weekly')}</option>
-              <option value={4}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.daily')}</option>
-            </select>
-          </div>
+          {/* Question 3: Binge drinking - only show if frequency > 0 */}
+          {showFullQuestionnaire && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('medical:form.habits.alcoholAssessment.auditC.binge')}
+              </label>
+              <select
+                value={alcoholData.auditC.binge}
+                onChange={(e) => handleAuditCChange('binge', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value={0}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.never')}</option>
+                <option value={1}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.lessMonthly')}</option>
+                <option value={2}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.monthly')}</option>
+                <option value={3}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.weekly')}</option>
+                <option value={4}>{t('medical:form.habits.alcoholAssessment.auditC.bingeOptions.daily')}</option>
+              </select>
+            </div>
+          )}
 
-          {/* Standard drink info */}
-          <p className="text-xs text-blue-600 italic">
-            {t('medical:form.habits.alcoholAssessment.standardDrink')}
-          </p>
+          {/* Standard drink info - only show if frequency > 0 */}
+          {showFullQuestionnaire && (
+            <p className="text-xs text-blue-600 italic">
+              {t('medical:form.habits.alcoholAssessment.standardDrink')}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Optional: Manual drinks per week override */}
-      {showAssessment && (
+      {/* Optional: Manual drinks per week override - only show if frequency > 0 */}
+      {showAssessment && showFullQuestionnaire && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -379,8 +386,8 @@ const AlcoholAssessment = ({
         </div>
       )}
 
-      {/* Calculated Results */}
-      {showAssessment && calculatedData.auditCScore > 0 && (
+      {/* Calculated Results - only show if frequency > 0 */}
+      {showAssessment && showFullQuestionnaire && calculatedData.auditCScore > 0 && (
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
           {/* Score and risk level */}
           <div className="flex flex-wrap items-center gap-4">

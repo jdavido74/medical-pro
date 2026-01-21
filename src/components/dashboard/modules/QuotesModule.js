@@ -7,6 +7,7 @@ import {
 import { getStatistics } from '../../../utils/storage';
 import QuoteFormModal from '../modals/QuoteFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
+import { useLocale } from '../../../contexts/LocaleContext';
 
 // Import des fonctions utilitaires
 const generateInvoiceNumber = () => {
@@ -19,6 +20,7 @@ const generateInvoiceNumber = () => {
 };
 
 const QuotesModule = ({ navigateToClient }) => {
+  const { locale } = useLocale();
   const [quotes, setQuotes] = useState([]);
   const [filteredQuotes, setFilteredQuotes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -702,13 +704,13 @@ const QuotesModule = ({ navigateToClient }) => {
                         </td>
                         <td className="p-4">
                           <span className="text-gray-900">
-                            {quote.quoteDate ? new Date(quote.quoteDate).toLocaleDateString('fr-FR') : 'N/A'}
+                            {quote.quoteDate ? new Date(quote.quoteDate).toLocaleDateString(locale) : 'N/A'}
                           </span>
                         </td>
                         <td className="p-4 hidden sm:table-cell">
                           <div className="flex items-center space-x-2">
                             <span className={`text-sm ${isExpired ? 'text-red-600' : 'text-gray-900'}`}>
-                              {quote.validUntil ? new Date(quote.validUntil).toLocaleDateString('fr-FR') : 'N/A'}
+                              {quote.validUntil ? new Date(quote.validUntil).toLocaleDateString(locale) : 'N/A'}
                             </span>
                             {isExpired && (
                               <span className="text-xs bg-red-100 text-red-600 px-1 py-0.5 rounded">

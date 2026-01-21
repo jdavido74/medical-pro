@@ -13,30 +13,53 @@
  */
 
 import React, { createContext, useCallback, useEffect, useState } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { appointmentsApi } from '../api';
 
 export const AppointmentContext = createContext();
 
 export const AppointmentProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Log on mount
+  console.log('[AppointmentProvider] Mounted/Rendered - user:', user?.email || 'null', 'authLoading:', authLoading, 'isAuthenticated:', isAuthenticated);
+
   /**
    * Charger les rendez-vous au démarrage depuis l'API
+   * Attendre que l'authentification soit terminée avant de charger
    */
   useEffect(() => {
+    // Log immédiat pour vérifier que useEffect est déclenché
+    console.log('[AppointmentContext] useEffect triggered - authLoading:', authLoading, 'isAuthenticated:', isAuthenticated, 'user:', user?.email || 'null');
+
+    // Attendre que l'authentification soit terminée
+    if (authLoading) {
+      console.log('[AppointmentContext] Auth still loading, waiting...');
+      return;
+    }
+
     const loadAppointments = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        if (user) {
-          const result = await appointmentsApi.getAppointments({ page: 1, limit: 100 });
-          setAppointments(result.appointments || []);
+        if (user && isAuthenticated) {
+          console.log('[AppointmentContext] Loading appointments for user:', user.email);
+          try {
+            const result = await appointmentsApi.getAppointments({ page: 1, limit: 100 });
+            console.log('[AppointmentContext] API response:', result);
+            console.log('[AppointmentContext] Loaded appointments:', result.appointments?.length || 0);
+            setAppointments(result.appointments || []);
+          } catch (apiError) {
+            console.error('[AppointmentContext] API call failed:', apiError);
+            throw apiError;
+          }
+        } else {
+          console.log('[AppointmentContext] No user or not authenticated, skipping appointment load');
         }
         setIsInitialized(true);
       } catch (error) {
@@ -49,7 +72,7 @@ export const AppointmentProvider = ({ children }) => {
     };
 
     loadAppointments();
-  }, [user]);
+  }, [user, authLoading, isAuthenticated]);
 
   /**
    * Créer un rendez-vous avec optimistic update

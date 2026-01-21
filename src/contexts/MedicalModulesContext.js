@@ -1,6 +1,6 @@
 // contexts/MedicalModulesContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useDynamicTranslations } from './DynamicTranslationsContext';
 
 const MedicalModulesContext = createContext();
@@ -138,7 +138,7 @@ const MEDICAL_MODULES = {
   }
 };
 
-// Rôles et permissions
+// Rôles et permissions - Standardisés
 const USER_ROLES = {
   super_admin: {
     name: 'Super Administrateur',
@@ -152,20 +152,14 @@ const USER_ROLES = {
     specialties: ['*'],
     modules: ['*']
   },
-  doctor: {
+  physician: {
     name: 'Médecin',
     permissions: ['read', 'write'],
     specialties: [], // À définir selon le praticien
     modules: [] // À définir selon les spécialités
   },
-  specialist: {
-    name: 'Spécialiste',
-    permissions: ['read', 'write'],
-    specialties: [], // Spécialité spécifique
-    modules: [] // Modules de la spécialité
-  },
-  nurse: {
-    name: 'Infirmier/ère',
+  practitioner: {
+    name: 'Praticien de santé',
     permissions: ['read', 'write_limited'],
     specialties: [],
     modules: ['base', 'preventive']
@@ -250,7 +244,7 @@ export const MedicalModulesProvider = ({ children }) => {
     const specialties = user.specialties || [];
 
     // Si pas de spécialité définie, utiliser médecine générale par défaut
-    if (specialties.length === 0 && user.role === 'doctor') {
+    if (specialties.length === 0 && user.role === 'physician') {
       return ['general'];
     }
 
@@ -258,7 +252,7 @@ export const MedicalModulesProvider = ({ children }) => {
   };
 
   const getAvailableModules = (user, specialties) => {
-    const userRole = USER_ROLES[user.role] || USER_ROLES.doctor;
+    const userRole = USER_ROLES[user.role] || USER_ROLES.physician;
     const availableModules = [];
 
     // Toujours ajouter le module de base

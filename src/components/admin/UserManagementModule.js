@@ -1,31 +1,51 @@
 // components/admin/UserManagementModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Users, UserPlus, Search, Filter, MoreVertical, Trash2, Edit,
-  Eye, UserCheck, UserX, Download, RefreshCw, Calendar,
-  Shield, Phone, Mail, Building, Award, Clock, Activity,
-  AlertCircle, CheckCircle, XCircle, Pause, X, Stethoscope
+  Users, UserPlus, Search, Trash2, Edit,
+  UserCheck, UserX, Download, RefreshCw,
+  Shield, Phone, Mail, Building, Award, Clock,
+  AlertCircle, CheckCircle, XCircle, Pause, X, Stethoscope, Briefcase,
+  Send
 } from 'lucide-react';
-import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
+import { useUsers } from '../../contexts/UserContext';
 import { permissionsStorage } from '../../utils/permissionsStorage';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import {
+  getUserStats,
+  getAdministrativeRoleLabel,
+  hasAdministrativeRole
+} from '../../utils/userRoles';
 import UserFormModal from '../modals/UserFormModal';
 import { usePermissions } from '../auth/PermissionGuard';
 import { useTranslation } from 'react-i18next';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 
 const UserManagementModule = () => {
   const { t } = useTranslation('admin');
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, company } = useAuth();
   const { hasPermission } = usePermissions();
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [statistics, setStatistics] = useState({});
+
+  // Utiliser le contexte utilisateurs au lieu de l'état local
+  const {
+    users,
+    isLoading,
+    error: contextError,
+    createUser,
+    updateUser,
+    deleteUser,
+    toggleUserStatus,
+    refreshUsers,
+    getUserStatistics
+  } = useUsers();
+
+  // État local UI uniquement
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     role: '',
     department: '',
     isActive: '',
-    lastLoginDays: ''
+    lastLoginDays: '',
+    accountStatus: '' // Nouveau filtre pour le statut du compte
   });
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -34,61 +54,91 @@ const UserManagementModule = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('users');
   const [notification, setNotification] = useState(null);
 
-  useEffect(() => {
-    loadData();
+  // État pour les praticiens en attente (pending)
+  const [pendingProviders, setPendingProviders] = useState([]);
+  const [isLoadingPending, setIsLoadingPending] = useState(false);
+
+  // Charger les praticiens en attente
+  const loadPendingProviders = useCallback(async () => {
+    try {
+      setIsLoadingPending(true);
+      const result = await healthcareProvidersApi.getHealthcareProviders();
+      // Filtrer uniquement les praticiens en attente
+      const pending = (result.providers || []).filter(p => p.accountStatus === 'pending');
+      setPendingProviders(pending);
+    } catch (error) {
+      console.error('[UserManagementModule] Error loading pending providers:', error);
+    } finally {
+      setIsLoadingPending(false);
+    }
   }, []);
 
+  // Charger les praticiens en attente au démarrage
   useEffect(() => {
-    applyFiltersAndSort();
-  }, [users, searchQuery, filters, sortField, sortDirection]);
+    loadPendingProviders();
+  }, [loadPendingProviders]);
 
-  // Auto-hide notification after 5 seconds
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => {
-        setNotification(null);
-      }, 5000);
-      return () => clearTimeout(timer);
+  // Renvoyer une invitation
+  const handleResendInvitation = async (provider) => {
+    if (!window.confirm(t('userManagement.messages.resendConfirm', { email: provider.email }))) {
+      return;
     }
-  }, [notification]);
-
-  // Fonction pour afficher une notification
-  const showNotification = (message, type = 'success') => {
-    setNotification({ message, type });
-  };
-
-  const loadData = async () => {
-    setIsLoading(true);
     try {
-      // Charger les healthcare providers (utilisateurs de la clinique)
-      const data = await healthcareProvidersApi.getHealthcareProviders({ limit: 100 });
-      const usersData = data.providers || [];
-
-      setUsers(usersData);
-
-      // Calculer les statistiques
-      const stats = {
-        total: usersData.length,
-        active: usersData.filter(u => u.isActive).length,
-        inactive: usersData.filter(u => !u.isActive).length,
-        admins: usersData.filter(u => u.role === 'admin').length,
-        practitioners: usersData.filter(u => u.role === 'practitioner').length
-      };
-      setStatistics(stats);
+      await healthcareProvidersApi.resendInvitation(provider.id, company?.id);
+      showNotification(t('userManagement.messages.resendSuccess', 'Invitation renvoyée avec succès'), 'success');
     } catch (error) {
-      console.error('[UserManagementModule] Error loading data:', error);
-      showNotification(t('users.messages.loadError') || 'Erreur lors du chargement des données', 'error');
-    } finally {
-      setIsLoading(false);
+      console.error('[UserManagementModule] Error resending invitation:', error);
+      showNotification(t('userManagement.messages.resendError', 'Erreur lors de l\'envoi'), 'error');
     }
   };
 
-  const applyFiltersAndSort = () => {
-    let filtered = [...users];
+  // Convertir les praticiens pending au format utilisateur pour l'affichage unifié
+  const pendingAsUsers = useMemo(() => {
+    return pendingProviders.map(provider => ({
+      id: provider.id,
+      email: provider.email,
+      firstName: provider.firstName,
+      lastName: provider.lastName,
+      role: provider.role || 'practitioner',
+      phone: provider.phone,
+      isActive: false, // Pending = pas encore actif
+      accountStatus: 'pending',
+      isPendingProvider: true, // Flag pour identifier les praticiens pending
+      createdAt: provider.createdAt,
+      updatedAt: provider.updatedAt,
+      speciality: provider.speciality
+    }));
+  }, [pendingProviders]);
+
+  // Calculer les statistiques à partir du contexte + pending
+  const statistics = useMemo(() => {
+    const userStats = getUserStats(users);
+    return {
+      total: userStats.total + pendingProviders.length,
+      active: userStats.active,
+      inactive: userStats.inactive,
+      pending: pendingProviders.length,
+      admins: userStats.administrative?.total || 0,
+      practitioners: userStats.practitioners?.total || 0
+    };
+  }, [users, pendingProviders]);
+
+  // Fusionner utilisateurs actifs et praticiens pending
+  const allUsers = useMemo(() => {
+    // Marquer les utilisateurs actifs avec accountStatus: 'active'
+    const activeUsers = users.map(u => ({
+      ...u,
+      accountStatus: u.accountStatus || 'active',
+      isPendingProvider: false
+    }));
+    return [...activeUsers, ...pendingAsUsers];
+  }, [users, pendingAsUsers]);
+
+  // Filtrage et tri appliqués avec useMemo pour performance
+  const filteredUsers = useMemo(() => {
+    let filtered = [...allUsers];
 
     // Filtrage par recherche
     if (searchQuery) {
@@ -115,6 +165,11 @@ const UserManagementModule = () => {
       filtered = filtered.filter(user => user.isActive === isActiveFilter);
     }
 
+    // Filtrage par statut du compte (active/pending)
+    if (filters.accountStatus) {
+      filtered = filtered.filter(user => user.accountStatus === filters.accountStatus);
+    }
+
     // Tri
     filtered.sort((a, b) => {
       let aValue = a[sortField];
@@ -137,9 +192,35 @@ const UserManagementModule = () => {
       return 0;
     });
 
-    setFilteredUsers(filtered);
+    return filtered;
+  }, [allUsers, searchQuery, filters, sortField, sortDirection]);
+
+  // Reset page quand les filtres changent
+  useEffect(() => {
     setCurrentPage(1);
+  }, [searchQuery, filters, sortField, sortDirection]);
+
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Fonction pour afficher une notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
   };
+
+  // Afficher l'erreur du contexte si présente
+  useEffect(() => {
+    if (contextError) {
+      showNotification(contextError, 'error');
+    }
+  }, [contextError]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -163,16 +244,15 @@ const UserManagementModule = () => {
   const handleSaveUser = async (userData) => {
     try {
       if (editingUser) {
-        // Modification
-        await healthcareProvidersApi.updateHealthcareProvider(editingUser.id, userData);
+        // Modification via contexte (optimistic update inclus)
+        await updateUser(editingUser.id, userData);
         showNotification(t('users.messages.updateSuccess') || 'Utilisateur mis à jour avec succès', 'success');
       } else {
-        // Création
-        await healthcareProvidersApi.createHealthcareProvider(userData);
+        // Création via contexte (optimistic update inclus)
+        await createUser(userData);
         showNotification(t('users.messages.createSuccess') || 'Utilisateur créé avec succès', 'success');
       }
 
-      await loadData();
       setShowUserModal(false);
     } catch (error) {
       showNotification(error.message || t('users.messages.saveError') || 'Erreur lors de la sauvegarde', 'error');
@@ -186,9 +266,8 @@ const UserManagementModule = () => {
     }
 
     try {
-      await healthcareProvidersApi.deleteHealthcareProvider(userId);
+      await deleteUser(userId);
       showNotification(t('users.messages.deleteSuccess') || 'Utilisateur supprimé avec succès', 'success');
-      await loadData();
     } catch (error) {
       showNotification(error.message || t('users.messages.deleteError') || 'Erreur lors de la suppression', 'error');
     }
@@ -196,12 +275,8 @@ const UserManagementModule = () => {
 
   const handleToggleUserStatus = async (userId) => {
     try {
-      const user = users.find(u => u.id === userId);
-      if (user) {
-        await healthcareProvidersApi.updateHealthcareProvider(userId, { isActive: !user.isActive });
-        showNotification(t('users.messages.statusUpdated') || 'Statut mis à jour', 'success');
-        await loadData();
-      }
+      await toggleUserStatus(userId);
+      showNotification(t('users.messages.statusUpdated') || 'Statut mis à jour', 'success');
     } catch (error) {
       showNotification(error.message || t('users.messages.updateError') || 'Erreur lors de la modification', 'error');
     }
@@ -217,17 +292,16 @@ const UserManagementModule = () => {
     try {
       for (const userId of selectedUsers) {
         if (action === 'activate') {
-          await healthcareProvidersApi.updateHealthcareProvider(userId, { isActive: true });
+          await updateUser(userId, { isActive: true });
         } else if (action === 'deactivate') {
-          await healthcareProvidersApi.updateHealthcareProvider(userId, { isActive: false });
+          await updateUser(userId, { isActive: false });
         } else if (action === 'delete') {
-          await healthcareProvidersApi.deleteHealthcareProvider(userId);
+          await deleteUser(userId);
         }
       }
 
       setSelectedUsers([]);
       showNotification(t('users.messages.bulkSuccess') || 'Action groupée effectuée avec succès', 'success');
-      await loadData();
     } catch (error) {
       showNotification(error.message || t('users.messages.bulkError') || 'Erreur lors de l\'action groupée', 'error');
     }
@@ -236,7 +310,7 @@ const UserManagementModule = () => {
   const handleExport = () => {
     try {
       // Créer le CSV à partir des utilisateurs filtrés
-      const headers = ['ID', 'Prénom', 'Nom', 'Email', 'Téléphone', 'Rôle', 'Profession', 'Statut', 'Créé le'];
+      const headers = ['ID', 'Prénom', 'Nom', 'Email', 'Téléphone', 'Rôle métier', 'Fonction administrative', 'Profession', 'Statut', 'Créé le'];
       const rows = filteredUsers.map(user => [
         user.id,
         user.firstName || '',
@@ -244,6 +318,7 @@ const UserManagementModule = () => {
         user.email || '',
         user.phone || '',
         user.role || '',
+        getAdministrativeRoleLabel(user.administrativeRole) || '',
         user.profession || '',
         user.isActive ? 'Actif' : 'Inactif',
         user.createdAt ? new Date(user.createdAt).toLocaleDateString() : ''
@@ -292,15 +367,15 @@ const UserManagementModule = () => {
   };
 
   const formatLastLogin = (lastLogin) => {
-    if (!lastLogin) return 'Jamais connecté';
+    if (!lastLogin) return t('usersManagement.lastLogin.never');
 
     const date = new Date(lastLogin);
     const now = new Date();
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
 
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
-    if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)} h`;
-    return `Il y a ${Math.floor(diffInMinutes / 1440)} j`;
+    if (diffInMinutes < 60) return t('usersManagement.lastLogin.minutes', { count: diffInMinutes });
+    if (diffInMinutes < 1440) return t('usersManagement.lastLogin.hours', { count: Math.floor(diffInMinutes / 60) });
+    return t('usersManagement.lastLogin.days', { count: Math.floor(diffInMinutes / 1440) });
   };
 
   const paginatedUsers = filteredUsers.slice(
@@ -315,8 +390,8 @@ const UserManagementModule = () => {
       <div className="p-6 bg-white rounded-lg shadow">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Accès non autorisé</h3>
-          <p className="text-gray-600">Vous n'avez pas les permissions pour accéder à la gestion des utilisateurs.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('usersManagement.accessDenied')}</h3>
+          <p className="text-gray-600">{t('usersManagement.noPermission')}</p>
         </div>
       </div>
     );
@@ -330,18 +405,18 @@ const UserManagementModule = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-600" />
-              Gestion des utilisateurs
+              {t('usersManagement.title')}
             </h1>
-            <p className="text-gray-600 mt-1">Administrez les comptes utilisateurs et leurs permissions</p>
+            <p className="text-gray-600 mt-1">{t('usersManagement.subtitle')}</p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => loadData()}
+              onClick={() => refreshUsers()}
               className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Actualiser"
+              title={t('usersManagement.refresh')}
             >
-              <RefreshCw className="h-5 w-5" />
+              <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
 
             {hasPermission('users.export') && (
@@ -350,7 +425,7 @@ const UserManagementModule = () => {
                 className="px-4 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
-                Exporter
+                {t('usersManagement.export')}
               </button>
             )}
 
@@ -360,19 +435,19 @@ const UserManagementModule = () => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <UserPlus className="h-4 w-4" />
-                Nouvel utilisateur
+                {t('usersManagement.newUserBtn')}
               </button>
             )}
           </div>
         </div>
 
         {/* Statistiques */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
           <div className="p-4 bg-blue-50 rounded-lg">
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-sm text-blue-600">Total</p>
+                <p className="text-sm text-blue-600">{t('usersManagement.stats.total')}</p>
                 <p className="text-2xl font-bold text-blue-900">{statistics.total || 0}</p>
               </div>
             </div>
@@ -382,17 +457,27 @@ const UserManagementModule = () => {
             <div className="flex items-center gap-3">
               <UserCheck className="h-8 w-8 text-green-600" />
               <div>
-                <p className="text-sm text-green-600">Actifs</p>
+                <p className="text-sm text-green-600">{t('usersManagement.stats.active')}</p>
                 <p className="text-2xl font-bold text-green-900">{statistics.active || 0}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-yellow-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Clock className="h-8 w-8 text-yellow-600" />
+              <div>
+                <p className="text-sm text-yellow-600">{t('usersManagement.stats.pending', 'En attente')}</p>
+                <p className="text-2xl font-bold text-yellow-900">{statistics.pending || 0}</p>
               </div>
             </div>
           </div>
 
           <div className="p-4 bg-purple-50 rounded-lg">
             <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-purple-600" />
+              <Briefcase className="h-8 w-8 text-purple-600" />
               <div>
-                <p className="text-sm text-purple-600">Admins</p>
+                <p className="text-sm text-purple-600">{t('usersManagement.stats.adminFunctions')}</p>
                 <p className="text-2xl font-bold text-purple-900">{statistics.admins || 0}</p>
               </div>
             </div>
@@ -402,7 +487,7 @@ const UserManagementModule = () => {
             <div className="flex items-center gap-3">
               <Stethoscope className="h-8 w-8 text-orange-600" />
               <div>
-                <p className="text-sm text-orange-600">Praticiens</p>
+                <p className="text-sm text-orange-600">{t('usersManagement.stats.practitioners')}</p>
                 <p className="text-2xl font-bold text-orange-900">{statistics.practitioners || 0}</p>
               </div>
             </div>
@@ -415,7 +500,7 @@ const UserManagementModule = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
-              placeholder="Rechercher par nom, email, département..."
+              placeholder={t('usersManagement.filters.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -428,7 +513,7 @@ const UserManagementModule = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, role: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Tous les rôles</option>
+              <option value="">{t('usersManagement.filters.allRoles')}</option>
               {permissionsStorage.getAllRoles().map(role => (
                 <option key={role.id} value={role.id}>{role.name}</option>
               ))}
@@ -439,9 +524,19 @@ const UserManagementModule = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, isActive: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Tous les statuts</option>
-              <option value="true">Actifs seulement</option>
-              <option value="false">Inactifs seulement</option>
+              <option value="">{t('usersManagement.filters.allStatuses')}</option>
+              <option value="true">{t('usersManagement.filters.activeOnly')}</option>
+              <option value="false">{t('usersManagement.filters.inactiveOnly')}</option>
+            </select>
+
+            <select
+              value={filters.accountStatus}
+              onChange={(e) => setFilters(prev => ({ ...prev, accountStatus: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">{t('usersManagement.filters.allAccountStatuses', 'Tous les comptes')}</option>
+              <option value="active">{t('usersManagement.filters.activatedAccounts', 'Comptes activés')}</option>
+              <option value="pending">{t('usersManagement.filters.pendingAccounts', 'En attente d\'activation')}</option>
             </select>
 
             <select
@@ -449,10 +544,10 @@ const UserManagementModule = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, lastLoginDays: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Toutes les connexions</option>
-              <option value="1">Connectés aujourd'hui</option>
-              <option value="7">Connectés cette semaine</option>
-              <option value="30">Connectés ce mois</option>
+              <option value="">{t('usersManagement.filters.allConnections')}</option>
+              <option value="1">{t('usersManagement.filters.connectedToday')}</option>
+              <option value="7">{t('usersManagement.filters.connectedThisWeek')}</option>
+              <option value="30">{t('usersManagement.filters.connectedThisMonth')}</option>
             </select>
           </div>
         </div>
@@ -461,27 +556,27 @@ const UserManagementModule = () => {
         {selectedUsers.length > 0 && hasPermission('users.update') && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg flex items-center justify-between">
             <span className="text-sm text-gray-600">
-              {selectedUsers.length} utilisateur(s) sélectionné(s)
+              {t('usersManagement.bulk.selected', { count: selectedUsers.length })}
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => handleBulkAction('activate')}
                 className="px-3 py-1 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded"
               >
-                Activer
+                {t('usersManagement.bulk.activate')}
               </button>
               <button
                 onClick={() => handleBulkAction('deactivate')}
                 className="px-3 py-1 text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded"
               >
-                Désactiver
+                {t('usersManagement.bulk.deactivate')}
               </button>
               {hasPermission('users.delete') && (
                 <button
                   onClick={() => handleBulkAction('delete')}
                   className="px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded"
                 >
-                  Supprimer
+                  {t('usersManagement.bulk.delete')}
                 </button>
               )}
             </div>
@@ -494,7 +589,7 @@ const UserManagementModule = () => {
         {isLoading ? (
           <div className="p-8 text-center">
             <RefreshCw className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-600">Chargement des utilisateurs...</p>
+            <p className="text-gray-600">{t('usersManagement.loading')}</p>
           </div>
         ) : (
           <>
@@ -520,34 +615,36 @@ const UserManagementModule = () => {
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('firstName')}
                     >
-                      Utilisateur
+                      {t('usersManagement.table.user')}
                     </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('role')}
                     >
-                      Rôle
+                      {t('usersManagement.table.role')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Département
+                      {t('usersManagement.table.department')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Statut
+                      {t('usersManagement.table.status')}
                     </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('lastLogin')}
                     >
-                      Dernière connexion
+                      {t('usersManagement.table.lastConnection')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('usersManagement.table.actions')}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedUsers.map((user) => {
-                    const isOnline = user.sessionInfo?.currentSessions > 0;
+                    // Marquer l'utilisateur connecté comme "en ligne"
+                    // Note: sessionInfo n'est pas fourni par l'API pour l'instant
+                    const isOnline = user.id === currentUser?.id || user.sessionInfo?.currentSessions > 0;
                     return (
                       <tr key={user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
@@ -595,6 +692,14 @@ const UserManagementModule = () => {
                             <Shield className="h-3 w-3 mr-1" />
                             {permissionsStorage.getRoleById(user.role)?.name || user.role}
                           </span>
+                          {hasAdministrativeRole(user) && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                <Briefcase className="h-3 w-3 mr-1" />
+                                {getAdministrativeRoleLabel(user.administrativeRole)}
+                              </span>
+                            </div>
+                          )}
                           {user.licenseNumber && (
                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                               <Award className="h-3 w-3" />
@@ -612,32 +717,52 @@ const UserManagementModule = () => {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.isActive, isOnline)}`}>
-                            {getStatusIcon(user.isActive, isOnline)}
-                            <span className="ml-1">
-                              {!user.isActive ? 'Inactif' : isOnline ? 'En ligne' : 'Hors ligne'}
+                          {user.accountStatus === 'pending' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {t('usersManagement.status.pending', 'En attente')}
                             </span>
-                          </span>
+                          ) : (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.isActive, isOnline)}`}>
+                              {getStatusIcon(user.isActive, isOnline)}
+                              <span className="ml-1">
+                                {!user.isActive ? t('usersManagement.status.inactive') : isOnline ? t('usersManagement.status.online') : t('usersManagement.status.offline')}
+                              </span>
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatLastLogin(user.lastLogin)}
+                            {user.id === currentUser?.id ? t('usersManagement.status.nowConnected') : formatLastLogin(user.lastLogin)}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {hasPermission('users.update') && (
+                            {/* Bouton de renvoi d'invitation pour les utilisateurs pending */}
+                            {user.isPendingProvider && (
+                              <button
+                                onClick={() => handleResendInvitation(user)}
+                                className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded"
+                                title={t('usersManagement.actions.resendInvitation', 'Renvoyer l\'invitation')}
+                              >
+                                <Send className="h-4 w-4" />
+                              </button>
+                            )}
+
+                            {/* Bouton d'édition - désactivé pour les pending */}
+                            {hasPermission('users.update') && !user.isPendingProvider && (
                               <button
                                 onClick={() => handleEditUser(user)}
                                 className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
-                                title="Modifier"
+                                title={t('usersManagement.actions.edit')}
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
                             )}
 
-                            {hasPermission('users.update') && (
+                            {/* Bouton activer/désactiver - pas pour les pending */}
+                            {hasPermission('users.update') && !user.isPendingProvider && (
                               <button
                                 onClick={() => handleToggleUserStatus(user.id)}
                                 className={`p-1 rounded ${
@@ -645,7 +770,7 @@ const UserManagementModule = () => {
                                     ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50'
                                     : 'text-green-600 hover:text-green-700 hover:bg-green-50'
                                 }`}
-                                title={user.isActive ? 'Désactiver' : 'Activer'}
+                                title={user.isActive ? t('usersManagement.actions.deactivate') : t('usersManagement.actions.activate')}
                               >
                                 {user.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                               </button>
@@ -655,7 +780,7 @@ const UserManagementModule = () => {
                               <button
                                 onClick={() => handleDeleteUser(user.id)}
                                 className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                                title="Supprimer"
+                                title={t('usersManagement.actions.delete')}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -674,9 +799,11 @@ const UserManagementModule = () => {
               <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-700">
-                    Affichage de {(currentPage - 1) * itemsPerPage + 1} à{' '}
-                    {Math.min(currentPage * itemsPerPage, filteredUsers.length)} sur{' '}
-                    {filteredUsers.length} résultats
+                    {t('usersManagement.pagination.showing', {
+                      from: (currentPage - 1) * itemsPerPage + 1,
+                      to: Math.min(currentPage * itemsPerPage, filteredUsers.length),
+                      total: filteredUsers.length
+                    })}
                   </span>
                   <select
                     value={itemsPerPage}
@@ -695,7 +822,7 @@ const UserManagementModule = () => {
                     disabled={currentPage === 1}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Précédent
+                    {t('usersManagement.pagination.previous')}
                   </button>
 
                   <div className="flex gap-1">
@@ -725,7 +852,7 @@ const UserManagementModule = () => {
                     disabled={currentPage === totalPages}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Suivant
+                    {t('usersManagement.pagination.next')}
                   </button>
                 </div>
               </div>

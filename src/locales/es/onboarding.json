@@ -1,0 +1,161 @@
+{
+  "onboarding": {
+    "title": "Configuración de su clínica",
+    "subtitle": "¡Bienvenido! Configuremos {{clinicName}} juntos",
+    "loggedInAs": "Conectado como",
+    "loading": "Cargando configuración...",
+    "helpText": "¿Necesita ayuda? Contacte nuestro soporte técnico.",
+
+    "buttons": {
+      "back": "Volver",
+      "next": "Continuar",
+      "finish": "Completar configuración",
+      "skip": "Omitir este paso"
+    },
+
+    "errors": {
+      "title": "Se produjo un error",
+      "loadFailed": "No se pudo cargar el estado de la configuración.",
+      "completeFailed": "No se pudo completar la configuración."
+    },
+
+    "steps": {
+      "clinic": {
+        "title": "Configuración de la clínica",
+        "description": "Configure la información básica de su establecimiento",
+        "fields": {
+          "name": "Nombre de la clínica",
+          "email": "Email de contacto",
+          "phone": "Teléfono",
+          "address": "Dirección"
+        },
+        "placeholders": {
+          "name": "Ej: Clínica San Miguel",
+          "email": "contacto@clinica.com",
+          "phone": "+34 91 234 56 78",
+          "street": "Calle y número",
+          "city": "Ciudad",
+          "postalCode": "Código postal"
+        },
+        "errors": {
+          "nameRequired": "El nombre de la clínica es obligatorio",
+          "emailRequired": "El email de contacto es obligatorio",
+          "saveFailed": "No se pudo guardar la información"
+        }
+      },
+
+      "schedule": {
+        "title": "Horario de apertura",
+        "description": "Configure los días y horarios de apertura de su clínica",
+        "intro": "Estos horarios definen los horarios disponibles para las citas. Puede modificarlos más tarde en la configuración de la clínica.",
+        "days": {
+          "monday": "Lunes",
+          "tuesday": "Martes",
+          "wednesday": "Miércoles",
+          "thursday": "Jueves",
+          "friday": "Viernes",
+          "saturday": "Sábado",
+          "sunday": "Domingo"
+        },
+        "morning": "Mañana",
+        "afternoon": "Tarde",
+        "lunchBreak": "Pausa almuerzo",
+        "applyToAllWeekdays": "Aplicar a todos los días de semana",
+        "errors": {
+          "noDayEnabled": "Por favor active al menos un día de apertura",
+          "saveFailed": "No se pudo guardar el horario"
+        }
+      },
+
+      "team": {
+        "title": "Creación de un equipo",
+        "description": "Cree su primer equipo de trabajo",
+        "intro": "Los equipos permiten organizar sus profesionales por servicio o especialidad.",
+        "fields": {
+          "name": "Nombre del equipo",
+          "description": "Descripción",
+          "department": "Departamento"
+        },
+        "placeholders": {
+          "name": "Ej: Equipo Medicina General",
+          "description": "Describa brevemente este equipo",
+          "department": "Ej: Medicina General"
+        },
+        "departments": {
+          "general": "Medicina General",
+          "cardiology": "Cardiología",
+          "dermatology": "Dermatología",
+          "pediatrics": "Pediatría",
+          "gynecology": "Ginecología",
+          "orthopedics": "Ortopedia",
+          "ophthalmology": "Oftalmología",
+          "dentistry": "Odontología",
+          "other": "Otro"
+        },
+        "errors": {
+          "nameRequired": "El nombre del equipo es obligatorio",
+          "departmentRequired": "El departamento es obligatorio",
+          "saveFailed": "No se pudo crear el equipo"
+        },
+        "success": "Equipo creado con éxito"
+      },
+
+      "practitioner": {
+        "title": "Agregar un profesional",
+        "description": "Agregue su primer profesional de salud",
+        "intro": "Agregue al menos un profesional para poder gestionar las citas.",
+        "fields": {
+          "firstName": "Nombre",
+          "lastName": "Apellido",
+          "email": "Email profesional",
+          "phone": "Teléfono",
+          "role": "Rol",
+          "specialty": "Especialidad",
+          "licenseNumber": "Número de colegiado",
+          "team": "Equipo"
+        },
+        "placeholders": {
+          "firstName": "Ej: Juan",
+          "lastName": "Ej: García",
+          "email": "juan.garcia@clinica.com",
+          "phone": "+34 600 123 456",
+          "licenseNumber": "12345678"
+        },
+        "roles": {
+          "doctor": "Médico",
+          "specialist": "Especialista",
+          "nurse": "Enfermero/a",
+          "dentist": "Dentista",
+          "physiotherapist": "Fisioterapeuta"
+        },
+        "specialties": {
+          "general_medicine": "Medicina General",
+          "cardiology": "Cardiología",
+          "dermatology": "Dermatología",
+          "pediatrics": "Pediatría",
+          "gynecology": "Ginecología",
+          "orthopedics": "Ortopedia",
+          "ophthalmology": "Oftalmología",
+          "dentistry": "Odontología",
+          "nursing": "Enfermería",
+          "physiotherapy": "Fisioterapia"
+        },
+        "errors": {
+          "firstNameRequired": "El nombre es obligatorio",
+          "lastNameRequired": "El apellido es obligatorio",
+          "emailRequired": "El email es obligatorio",
+          "emailInvalid": "El email no es válido",
+          "roleRequired": "El rol es obligatorio",
+          "saveFailed": "No se pudo agregar el profesional"
+        },
+        "success": "Profesional agregado con éxito"
+      }
+    },
+
+    "completion": {
+      "title": "¡Configuración completada!",
+      "message": "Su clínica está ahora configurada. Puede comenzar a usar la aplicación.",
+      "redirecting": "Redirigiendo al panel..."
+    }
+  }
+}

@@ -1,14 +1,20 @@
 // components/admin/PractitionerManagementModal.js - Gestion des praticiens
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Edit2, Trash2, User, Mail, Phone, Stethoscope, Calendar, Check, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, UserPlus, Edit2, Trash2, User, Mail, Phone, Stethoscope, Check, CheckCircle, AlertCircle, Clock, Send, RefreshCw, Shield } from 'lucide-react';
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { useTranslation } from 'react-i18next';
 import PhoneInput, { PhoneDisplay } from '../common/PhoneInput';
 import { useLocale } from '../../contexts/LocaleContext';
+import { useFormErrors } from '../../hooks/useFormErrors';
+import { useAuth } from '../../contexts/SecureAuthContext';
+import {
+  ONBOARDING_PRACTITIONER_ROLES
+} from '../../utils/medicalConstants';
 
 const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
   const { t } = useTranslation(['admin', 'common']);
   const { country: localeCountry } = useLocale();
+  const { user, company } = useAuth();
   const [practitioners, setPractitioners] = useState([]);
   const [activeTab, setActiveTab] = useState('list');
   const [editingPractitioner, setEditingPractitioner] = useState(null);
@@ -20,7 +26,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
     speciality: '',
     license: '',
     isActive: true,
-    type: 'doctor',
+    role: 'physician',
     color: 'blue'
   });
 
@@ -28,6 +34,16 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState(null);
+
+  // Hook for standardized form error handling
+  const {
+    generalError,
+    setFieldError,
+    clearFieldError,
+    clearErrors,
+    handleBackendError,
+    getFieldError
+  } = useFormErrors();
 
   useEffect(() => {
     if (isOpen) {
@@ -78,7 +94,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
       speciality: '',
       license: '',
       isActive: true,
-      type: 'doctor',
+      role: 'physician',
       color: 'blue'
     });
     setActiveTab('form');
@@ -94,7 +110,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
       speciality: practitioner.speciality || '',
       license: practitioner.license || '',
       isActive: practitioner.isActive !== false,
-      type: practitioner.type || 'doctor',
+      role: practitioner.role || practitioner.type || 'physician',
       color: practitioner.color || 'blue'
     });
     setActiveTab('form');
@@ -118,28 +134,131 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
     }
   };
 
+  // Resend invitation email
+  const handleResendInvitation = async (practitioner) => {
+    if (!window.confirm(t('admin:practitionersManagement.messages.resendConfirm', 'Renvoyer l\'invitation à {{email}} ?', { email: practitioner.email }))) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await healthcareProvidersApi.resendInvitation(practitioner.id, company?.id);
+      showNotification(t('admin:practitionersManagement.messages.resendSuccess', 'Invitation renvoyée avec succès'), 'success');
+    } catch (error) {
+      console.error('[PractitionerManagementModal] Error resending invitation:', error);
+      showNotification(t('admin:practitionersManagement.messages.resendError', 'Erreur lors de l\'envoi de l\'invitation'), 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Activate account manually (only works if password exists)
+  const handleActivate = async (practitioner) => {
+    if (!window.confirm(t('admin:practitionersManagement.messages.activateConfirm', 'Activer le compte de {{name}} ?', { name: `${practitioner.firstName} ${practitioner.lastName}` }))) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await healthcareProvidersApi.activateProvider(practitioner.id);
+      showNotification(t('admin:practitionersManagement.messages.activateSuccess', 'Compte activé avec succès'), 'success');
+      await loadPractitioners();
+    } catch (error) {
+      console.error('[PractitionerManagementModal] Error activating provider:', error);
+      showNotification(t('admin:practitionersManagement.messages.activateError', 'Erreur lors de l\'activation du compte'), 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Get status badge for practitioner
+  const getStatusBadge = (practitioner) => {
+    if (practitioner.accountStatus === 'pending') {
+      return (
+        <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {t('common:statuses.pending', 'En attente')}
+        </span>
+      );
+    }
+    if (practitioner.isActive && practitioner.accountStatus === 'active') {
+      return (
+        <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" />
+          {t('common:statuses.active', 'Actif')}
+        </span>
+      );
+    }
+    return (
+      <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+        {t('common:statuses.inactive', 'Inactif')}
+      </span>
+    );
+  };
+
+  // Validation du formulaire
+  const validateForm = () => {
+    clearErrors();
+    let isValid = true;
+
+    if (!formData.firstName?.trim()) {
+      setFieldError('firstName', t('common:validation.required', 'Ce champ est requis'));
+      isValid = false;
+    }
+
+    if (!formData.lastName?.trim()) {
+      setFieldError('lastName', t('common:validation.required', 'Ce champ est requis'));
+      isValid = false;
+    }
+
+    if (!formData.email?.trim()) {
+      setFieldError('email', t('common:validation.required', 'Ce champ est requis'));
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setFieldError('email', t('common:validation.emailInvalid', 'Email invalide'));
+      isValid = false;
+    }
+
+    if (!formData.speciality?.trim()) {
+      setFieldError('speciality', t('common:validation.required', 'Ce champ est requis'));
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) return;
 
     try {
       setIsSaving(true);
 
+      // Add profession based on role (required by backend)
+      const dataToSend = {
+        ...formData,
+        profession: formData.role === 'physician' ? 'Médecin' : 'Praticien de santé'
+      };
+
       if (editingPractitioner) {
         // Mise à jour d'un praticien existant
-        await healthcareProvidersApi.updateHealthcareProvider(editingPractitioner.id, formData);
+        await healthcareProvidersApi.updateHealthcareProvider(editingPractitioner.id, dataToSend);
         showNotification(t('practitioners.messages.updateSuccess') || 'Praticien mis à jour avec succès', 'success');
       } else {
         // Création d'un nouveau praticien
-        await healthcareProvidersApi.createHealthcareProvider(formData);
+        await healthcareProvidersApi.createHealthcareProvider(dataToSend);
         showNotification(t('practitioners.messages.createSuccess') || 'Praticien créé avec succès', 'success');
       }
 
       await loadPractitioners();
       setActiveTab('list');
       setEditingPractitioner(null);
+      clearErrors();
       onSave?.();
     } catch (error) {
       console.error('[PractitionerManagementModal] Error saving practitioner:', error);
+      handleBackendError(error);
       const errorMessage = error.message || (editingPractitioner
         ? t('practitioners.messages.updateError')
         : t('practitioners.messages.createError'))
@@ -150,12 +269,12 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
     }
   };
 
-  const practitionerTypes = [
-    { value: 'doctor', label: t('admin:practitionersManagement.types.doctor'), icon: Stethoscope },
-    { value: 'nurse', label: t('admin:practitionersManagement.types.nurse'), icon: User },
-    { value: 'specialist', label: t('admin:practitionersManagement.types.specialist'), icon: User },
-    { value: 'therapist', label: t('admin:practitionersManagement.types.therapist'), icon: User }
-  ];
+  // Rôles standardisés depuis les constantes partagées
+  const practitionerTypes = ONBOARDING_PRACTITIONER_ROLES.map(role => ({
+    value: role,
+    label: t(`admin:practitionersManagement.types.${role}`) || (role === 'physician' ? 'Médecin' : 'Praticien de santé'),
+    icon: role === 'physician' ? Stethoscope : User
+  }));
 
   const colorOptions = [
     { value: 'blue', label: t('admin:practitionersManagement.colors.blue'), className: 'bg-blue-500' },
@@ -277,16 +396,7 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                               <h4 className="font-medium text-gray-900">
                                 {practitioner.firstName} {practitioner.lastName}
                               </h4>
-                              {practitioner.isActive && (
-                                <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                                  {t('common:statuses.active')}
-                                </span>
-                              )}
-                              {!practitioner.isActive && (
-                                <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-                                  {t('common:statuses.inactive')}
-                                </span>
-                              )}
+                              {getStatusBadge(practitioner)}
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
                               <div className="flex items-center space-x-4">
@@ -307,12 +417,12 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                               </div>
                               <div className="mt-1">
                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  practitioner.type === 'doctor' ? 'bg-blue-100 text-blue-800' :
-                                  practitioner.type === 'nurse' ? 'bg-green-100 text-green-800' :
-                                  practitioner.type === 'specialist' ? 'bg-purple-100 text-purple-800' :
+                                  practitioner.role === 'physician' ? 'bg-blue-100 text-blue-800' :
+                                  practitioner.role === 'practitioner' ? 'bg-green-100 text-green-800' :
+                                  practitioner.role === 'admin' ? 'bg-purple-100 text-purple-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {practitionerTypes.find(t => t.value === practitioner.type)?.label || practitioner.type}
+                                  {practitionerTypes.find(t => t.value === practitioner.role)?.label || practitioner.role}
                                 </span>
                                 {practitioner.license && (
                                   <span className="ml-2 text-xs text-gray-500">
@@ -324,6 +434,28 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
+                          {/* Resend invitation button - only for pending accounts */}
+                          {practitioner.accountStatus === 'pending' && (
+                            <button
+                              onClick={() => handleResendInvitation(practitioner)}
+                              disabled={isSaving}
+                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
+                              title={t('admin:practitionersManagement.actions.resendInvitation', 'Renvoyer l\'invitation')}
+                            >
+                              <Send className="h-4 w-4" />
+                            </button>
+                          )}
+                          {/* Activate button - only for pending accounts */}
+                          {practitioner.accountStatus === 'pending' && (
+                            <button
+                              onClick={() => handleActivate(practitioner)}
+                              disabled={isSaving}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                              title={t('admin:practitionersManagement.actions.activate', 'Activer le compte')}
+                            >
+                              <Shield className="h-4 w-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEdit(practitioner)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -366,6 +498,13 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
 
               <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
                 <div className="flex-1 overflow-y-auto space-y-6">
+                {/* General error display */}
+                {(getFieldError('general') || generalError) && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
+                    <p className="text-sm text-red-700">{getFieldError('general') || generalError?.message}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -375,10 +514,18 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       type="text"
                       required
                       value={formData.firstName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, firstName: e.target.value }));
+                        clearFieldError('firstName');
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                        getFieldError('firstName') ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder={t('admin:practitionersManagement.placeholders.firstName')}
                     />
+                    {getFieldError('firstName') && (
+                      <p className="text-red-500 text-xs mt-1">{getFieldError('firstName')}</p>
+                    )}
                   </div>
 
                   <div>
@@ -389,10 +536,18 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       type="text"
                       required
                       value={formData.lastName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, lastName: e.target.value }));
+                        clearFieldError('lastName');
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                        getFieldError('lastName') ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder={t('admin:practitionersManagement.placeholders.lastName')}
                     />
+                    {getFieldError('lastName') && (
+                      <p className="text-red-500 text-xs mt-1">{getFieldError('lastName')}</p>
+                    )}
                   </div>
 
                   <div>
@@ -403,20 +558,32 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       type="email"
                       required
                       value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, email: e.target.value }));
+                        clearFieldError('email');
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                        getFieldError('email') ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="email@example.com"
                     />
+                    {getFieldError('email') && (
+                      <p className="text-red-500 text-xs mt-1">{getFieldError('email')}</p>
+                    )}
                   </div>
 
                   <div>
                     <PhoneInput
                       value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, phone: e.target.value }));
+                        clearFieldError('phone');
+                      }}
                       defaultCountry={localeCountry}
                       name="practitionerPhone"
                       label={t('common:phone')}
                       required={false}
+                      error={getFieldError('phone')}
                       showValidation
                     />
                   </div>
@@ -429,10 +596,18 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                       type="text"
                       required
                       value={formData.speciality}
-                      onChange={(e) => setFormData(prev => ({ ...prev, speciality: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, speciality: e.target.value }));
+                        clearFieldError('speciality');
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                        getFieldError('speciality') ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder={t('admin:practitionersManagement.placeholders.specialty')}
                     />
+                    {getFieldError('speciality') && (
+                      <p className="text-red-500 text-xs mt-1">{getFieldError('speciality')}</p>
+                    )}
                   </div>
 
                   <div>
@@ -454,8 +629,8 @@ const PractitionerManagementModal = ({ isOpen, onClose, onSave }) => {
                     </label>
                     <select
                       required
-                      value={formData.type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                      value={formData.role}
+                      onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       {practitionerTypes.map(type => (

@@ -6,11 +6,13 @@ import {
   Trash2, RotateCcw, Archive, Activity, ChevronDown, ChevronRight,
   Info, AlertTriangle, Plus, Eye, ExternalLink
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import backupStorage from '../../utils/backupStorage';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
 
 const BackupManagementModule = () => {
+  const { t, i18n } = useTranslation('admin');
   const { user: currentUser } = useAuth();
   const { hasPermission } = usePermissions();
 
@@ -56,7 +58,7 @@ const BackupManagementModule = () => {
       setBackups(allBackups);
       setStatistics(stats);
     } catch (error) {
-      console.error('Erreur lors du chargement des sauvegardes:', error);
+      console.error(t('backupManagement.messages.loadError'), error);
     } finally {
       setIsLoading(false);
     }
@@ -88,10 +90,10 @@ const BackupManagementModule = () => {
       });
 
       await loadBackupData();
-      alert('Sauvegarde créée avec succès !');
+      alert(t('backupManagement.messages.createSuccess'));
     } catch (error) {
-      console.error('Erreur lors de la création de la sauvegarde:', error);
-      alert('Erreur lors de la création de la sauvegarde: ' + error.message);
+      console.error(t('backupManagement.messages.createError', { error: error.message }));
+      alert(t('backupManagement.messages.createError', { error: error.message }));
     } finally {
       setIsCreatingBackup(false);
     }
@@ -101,9 +103,9 @@ const BackupManagementModule = () => {
     if (isRestoring) return;
 
     const confirmation = window.confirm(
-      'Êtes-vous sûr de vouloir restaurer cette sauvegarde ? ' +
-      (restoreOptions.overwriteExisting ? 'Les données existantes seront écrasées.' : '') +
-      (restoreOptions.createBackupBeforeRestore ? ' Une sauvegarde automatique sera créée avant la restauration.' : '')
+      t('backupManagement.messages.restoreConfirm') +
+      (restoreOptions.overwriteExisting ? t('backupManagement.messages.dataOverwrite') : '') +
+      (restoreOptions.createBackupBeforeRestore ? t('backupManagement.messages.autoBackup') : '')
     );
 
     if (!confirmation) return;
@@ -115,32 +117,32 @@ const BackupManagementModule = () => {
       await loadBackupData();
 
       // Afficher le rapport de restauration
-      const message = `Restauration terminée !\n\n` +
-        `Types de données restaurés: ${report.restoredDataTypes.length}\n` +
-        `Types de données ignorés: ${report.skippedDataTypes.length}\n` +
-        `Erreurs: ${report.errors.length}`;
+      const message = t('backupManagement.messages.restoreComplete') + '\n\n' +
+        t('backupManagement.messages.restoredTypes', { count: report.restoredDataTypes.length }) + '\n' +
+        t('backupManagement.messages.skippedTypes', { count: report.skippedDataTypes.length }) + '\n' +
+        t('backupManagement.messages.errors', { count: report.errors.length });
 
       if (report.errors.length > 0) {
-        console.error('Erreurs lors de la restauration:', report.errors);
-        alert(message + '\n\nVoir la console pour les détails des erreurs.');
+        console.error(t('backupManagement.messages.restoreError', { error: '' }), report.errors);
+        alert(message + '\n\n' + t('backupManagement.messages.seeConsole'));
       } else {
         alert(message);
       }
 
       // Demander à l'utilisateur de recharger la page pour appliquer les changements
-      if (window.confirm('Voulez-vous recharger la page pour appliquer les changements ?')) {
+      if (window.confirm(t('backupManagement.messages.reloadPage'))) {
         window.location.reload();
       }
     } catch (error) {
-      console.error('Erreur lors de la restauration:', error);
-      alert('Erreur lors de la restauration: ' + error.message);
+      console.error(t('backupManagement.messages.restoreError', { error: error.message }));
+      alert(t('backupManagement.messages.restoreError', { error: error.message }));
     } finally {
       setIsRestoring(false);
     }
   };
 
   const handleDeleteBackup = async (backupId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette sauvegarde ?')) {
+    if (!window.confirm(t('backupManagement.messages.deleteConfirm'))) {
       return;
     }
 
@@ -148,13 +150,13 @@ const BackupManagementModule = () => {
       const success = backupStorage.deleteBackup(backupId);
       if (success) {
         await loadBackupData();
-        alert('Sauvegarde supprimée avec succès !');
+        alert(t('backupManagement.messages.deleteSuccess'));
       } else {
-        alert('Erreur lors de la suppression de la sauvegarde.');
+        alert(t('backupManagement.messages.deleteError'));
       }
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
-      alert('Erreur lors de la suppression: ' + error.message);
+      console.error(t('backupManagement.messages.deleteError'), error);
+      alert(t('backupManagement.messages.deleteError') + ': ' + error.message);
     }
   };
 
@@ -162,8 +164,8 @@ const BackupManagementModule = () => {
     try {
       backupStorage.exportBackup(backupId, format);
     } catch (error) {
-      console.error('Erreur lors de l\'export:', error);
-      alert('Erreur lors de l\'export: ' + error.message);
+      console.error(t('backupManagement.messages.exportError', { error: error.message }));
+      alert(t('backupManagement.messages.exportError', { error: error.message }));
     }
   };
 
@@ -174,10 +176,10 @@ const BackupManagementModule = () => {
     try {
       const backup = await backupStorage.importBackup(file);
       await loadBackupData();
-      alert(`Sauvegarde "${backup.description}" importée avec succès !`);
+      alert(t('backupManagement.messages.importSuccess', { description: backup.description }));
     } catch (error) {
-      console.error('Erreur lors de l\'import:', error);
-      alert('Erreur lors de l\'import: ' + error.message);
+      console.error(t('backupManagement.messages.importError', { error: error.message }));
+      alert(t('backupManagement.messages.importError', { error: error.message }));
     }
 
     // Reset input
@@ -185,17 +187,17 @@ const BackupManagementModule = () => {
   };
 
   const handleCleanupOldBackups = async () => {
-    if (!window.confirm('Supprimer les sauvegardes de plus de 30 jours (sauf les sauvegardes complètes) ?')) {
+    if (!window.confirm(t('backupManagement.messages.cleanupConfirm'))) {
       return;
     }
 
     try {
       const removedCount = backupStorage.cleanupOldBackups(30);
       await loadBackupData();
-      alert(`${removedCount} sauvegarde(s) supprimée(s).`);
+      alert(t('backupManagement.messages.cleanupSuccess', { count: removedCount }));
     } catch (error) {
-      console.error('Erreur lors du nettoyage:', error);
-      alert('Erreur lors du nettoyage: ' + error.message);
+      console.error(t('backupManagement.messages.cleanupError', { error: error.message }));
+      alert(t('backupManagement.messages.cleanupError', { error: error.message }));
     }
   };
 
@@ -222,23 +224,25 @@ const BackupManagementModule = () => {
   };
 
   const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString('fr-FR');
+    const locale = i18n.language === 'fr' ? 'fr-FR' : i18n.language === 'es' ? 'es-ES' : 'en-US';
+    return new Date(timestamp).toLocaleString(locale);
   };
 
-  const availableDataTypes = [
-    { key: 'patients', label: 'Patients' },
-    { key: 'appointments', label: 'Rendez-vous' },
-    { key: 'medicalRecords', label: 'Dossiers médicaux' },
-    { key: 'consents', label: 'Consentements' },
-    { key: 'consentTemplates', label: 'Modèles de consentements' },
-    { key: 'users', label: 'Utilisateurs' },
-    { key: 'teams', label: 'Équipes' },
-    { key: 'roles', label: 'Rôles et permissions' },
-    { key: 'invoices', label: 'Factures' },
-    { key: 'quotes', label: 'Devis' },
-    { key: 'products', label: 'Produits et services' },
-    { key: 'settings', label: 'Paramètres' }
+  const getAvailableDataTypes = () => [
+    { key: 'patients', label: t('backupManagement.dataTypes.patients') },
+    { key: 'appointments', label: t('backupManagement.dataTypes.appointments') },
+    { key: 'medicalRecords', label: t('backupManagement.dataTypes.medicalRecords') },
+    { key: 'consents', label: t('backupManagement.dataTypes.consents') },
+    { key: 'consentTemplates', label: t('backupManagement.dataTypes.consentTemplates') },
+    { key: 'users', label: t('backupManagement.dataTypes.users') },
+    { key: 'teams', label: t('backupManagement.dataTypes.teams') },
+    { key: 'roles', label: t('backupManagement.dataTypes.roles') },
+    { key: 'invoices', label: t('backupManagement.dataTypes.invoices') },
+    { key: 'quotes', label: t('backupManagement.dataTypes.quotes') },
+    { key: 'products', label: t('backupManagement.dataTypes.products') },
+    { key: 'settings', label: t('backupManagement.dataTypes.settings') }
   ];
+  const availableDataTypes = getAvailableDataTypes();
 
   // Pagination
   const paginatedBackups = backups.slice(
@@ -253,8 +257,8 @@ const BackupManagementModule = () => {
       <div className="p-6 bg-white rounded-lg shadow">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Accès non autorisé</h3>
-          <p className="text-gray-600">Vous n'avez pas les permissions pour accéder à la gestion des sauvegardes.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('backupManagement.accessDenied')}</h3>
+          <p className="text-gray-600">{t('backupManagement.noPermission')}</p>
         </div>
       </div>
     );
@@ -268,23 +272,23 @@ const BackupManagementModule = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               <HardDrive className="h-8 w-8 text-blue-600" />
-              Gestion des sauvegardes
+              {t('backupManagement.title')}
             </h1>
-            <p className="text-gray-600 mt-1">Sauvegarde et restauration des données de l'application</p>
+            <p className="text-gray-600 mt-1">{t('backupManagement.subtitle')}</p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => loadBackupData()}
               className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Actualiser"
+              title={t('backupManagement.refresh')}
             >
               <RefreshCw className="h-5 w-5" />
             </button>
 
             <label className="px-4 py-2 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors flex items-center gap-2 cursor-pointer">
               <Upload className="h-4 w-4" />
-              Importer
+              {t('backupManagement.import')}
               <input
                 type="file"
                 accept=".json,.backup"
@@ -298,7 +302,7 @@ const BackupManagementModule = () => {
               className="px-4 py-2 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors flex items-center gap-2"
             >
               <Trash2 className="h-4 w-4" />
-              Nettoyer
+              {t('backupManagement.cleanup')}
             </button>
           </div>
         </div>
@@ -309,7 +313,7 @@ const BackupManagementModule = () => {
             <div className="flex items-center gap-3">
               <Archive className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-sm text-blue-600">Sauvegardes totales</p>
+                <p className="text-sm text-blue-600">{t('backupManagement.stats.totalBackups')}</p>
                 <p className="text-2xl font-bold text-blue-900">{statistics.totalBackups || 0}</p>
               </div>
             </div>
@@ -319,7 +323,7 @@ const BackupManagementModule = () => {
             <div className="flex items-center gap-3">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div>
-                <p className="text-sm text-green-600">Réussies</p>
+                <p className="text-sm text-green-600">{t('backupManagement.stats.successful')}</p>
                 <p className="text-2xl font-bold text-green-900">{statistics.successfulBackups || 0}</p>
               </div>
             </div>
@@ -329,7 +333,7 @@ const BackupManagementModule = () => {
             <div className="flex items-center gap-3">
               <HardDrive className="h-8 w-8 text-orange-600" />
               <div>
-                <p className="text-sm text-orange-600">Taille totale</p>
+                <p className="text-sm text-orange-600">{t('backupManagement.stats.totalSize')}</p>
                 <p className="text-2xl font-bold text-orange-900">
                   {backupStorage.formatSize(statistics.totalSize || 0)}
                 </p>
@@ -341,11 +345,11 @@ const BackupManagementModule = () => {
             <div className="flex items-center gap-3">
               <Calendar className="h-8 w-8 text-purple-600" />
               <div>
-                <p className="text-sm text-purple-600">Dernière sauvegarde</p>
+                <p className="text-sm text-purple-600">{t('backupManagement.stats.lastBackup')}</p>
                 <p className="text-sm font-bold text-purple-900">
                   {statistics.newestBackup
-                    ? new Date(statistics.newestBackup.timestamp).toLocaleDateString('fr-FR')
-                    : 'Aucune'
+                    ? new Date(statistics.newestBackup.timestamp).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : i18n.language === 'es' ? 'es-ES' : 'en-US')
+                    : t('backupManagement.stats.none')
                   }
                 </p>
               </div>
@@ -365,7 +369,7 @@ const BackupManagementModule = () => {
               }`}
             >
               <Archive className="inline h-4 w-4 mr-2" />
-              Sauvegardes ({backups.length})
+              {t('backupManagement.tabs.backups')} ({backups.length})
             </button>
 
             <button
@@ -377,7 +381,7 @@ const BackupManagementModule = () => {
               }`}
             >
               <Plus className="inline h-4 w-4 mr-2" />
-              Créer une sauvegarde
+              {t('backupManagement.tabs.create')}
             </button>
 
             <button
@@ -389,7 +393,7 @@ const BackupManagementModule = () => {
               }`}
             >
               <Settings className="inline h-4 w-4 mr-2" />
-              Paramètres
+              {t('backupManagement.tabs.settings')}
             </button>
           </nav>
         </div>
@@ -402,18 +406,18 @@ const BackupManagementModule = () => {
           {isLoading ? (
             <div className="p-8 text-center">
               <RefreshCw className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
-              <p className="text-gray-600">Chargement des sauvegardes...</p>
+              <p className="text-gray-600">{t('backupManagement.loading')}</p>
             </div>
           ) : backups.length === 0 ? (
             <div className="p-8 text-center">
               <Archive className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune sauvegarde</h3>
-              <p className="text-gray-600 mb-4">Créez votre première sauvegarde pour sécuriser vos données.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">{t('backupManagement.empty.title')}</h3>
+              <p className="text-gray-600 mb-4">{t('backupManagement.empty.description')}</p>
               <button
                 onClick={() => setActiveTab('create')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Créer une sauvegarde
+                {t('backupManagement.empty.createButton')}
               </button>
             </div>
           ) : (
@@ -423,19 +427,19 @@ const BackupManagementModule = () => {
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sauvegarde
+                        {t('backupManagement.table.backup')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
+                        {t('backupManagement.table.type')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Taille
+                        {t('backupManagement.table.size')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Statut
+                        {t('backupManagement.table.status')}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        {t('backupManagement.table.actions')}
                       </th>
                     </tr>
                   </thead>
@@ -454,7 +458,7 @@ const BackupManagementModule = () => {
                               </div>
                               {backup.imported && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                  Importée
+                                  {t('backupManagement.table.imported')}
                                 </span>
                               )}
                             </div>
@@ -463,7 +467,7 @@ const BackupManagementModule = () => {
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               backup.type === 'full' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
                             }`}>
-                              {backup.type === 'full' ? 'Complète' : 'Partielle'}
+                              {backup.type === 'full' ? t('backupManagement.types.full') : t('backupManagement.types.partial')}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -485,7 +489,7 @@ const BackupManagementModule = () => {
                                   setShowBackupDetails(true);
                                 }}
                                 className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
-                                title="Voir les détails"
+                                title={t('backupManagement.actions.viewDetails')}
                               >
                                 <Eye className="h-4 w-4" />
                               </button>
@@ -496,7 +500,7 @@ const BackupManagementModule = () => {
                                     onClick={() => handleRestoreBackup(backup.id)}
                                     disabled={isRestoring}
                                     className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded disabled:opacity-50"
-                                    title="Restaurer"
+                                    title={t('backupManagement.actions.restore')}
                                   >
                                     <RotateCcw className="h-4 w-4" />
                                   </button>
@@ -504,7 +508,7 @@ const BackupManagementModule = () => {
                                   <button
                                     onClick={() => handleExportBackup(backup.id)}
                                     className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded"
-                                    title="Exporter"
+                                    title={t('backupManagement.actions.export')}
                                   >
                                     <Download className="h-4 w-4" />
                                   </button>
@@ -514,7 +518,7 @@ const BackupManagementModule = () => {
                               <button
                                 onClick={() => handleDeleteBackup(backup.id)}
                                 className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                                title="Supprimer"
+                                title={t('backupManagement.actions.delete')}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -532,9 +536,11 @@ const BackupManagementModule = () => {
                 <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-700">
-                      Affichage de {(currentPage - 1) * itemsPerPage + 1} à{' '}
-                      {Math.min(currentPage * itemsPerPage, backups.length)} sur{' '}
-                      {backups.length} sauvegardes
+                      {t('backupManagement.pagination.showing', {
+                        from: (currentPage - 1) * itemsPerPage + 1,
+                        to: Math.min(currentPage * itemsPerPage, backups.length),
+                        total: backups.length
+                      })}
                     </span>
                   </div>
 
@@ -544,11 +550,11 @@ const BackupManagementModule = () => {
                       disabled={currentPage === 1}
                       className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
                     >
-                      Précédent
+                      {t('backupManagement.pagination.previous')}
                     </button>
 
                     <span className="text-sm text-gray-600">
-                      Page {currentPage} sur {totalPages}
+                      {t('backupManagement.pagination.pageOf', { current: currentPage, total: totalPages })}
                     </span>
 
                     <button
@@ -556,7 +562,7 @@ const BackupManagementModule = () => {
                       disabled={currentPage === totalPages}
                       className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
                     >
-                      Suivant
+                      {t('backupManagement.pagination.next')}
                     </button>
                   </div>
                 </div>
@@ -568,12 +574,12 @@ const BackupManagementModule = () => {
 
       {activeTab === 'create' && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Créer une nouvelle sauvegarde</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-6">{t('backupManagement.create.title')}</h2>
 
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type de sauvegarde
+                {t('backupManagement.create.typeLabel')}
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -590,8 +596,8 @@ const BackupManagementModule = () => {
                   <div className="flex items-center gap-3">
                     <Database className="h-8 w-8 text-purple-600" />
                     <div>
-                      <h3 className="font-medium text-gray-900">Sauvegarde complète</h3>
-                      <p className="text-sm text-gray-600">Toutes les données de l'application</p>
+                      <h3 className="font-medium text-gray-900">{t('backupManagement.create.fullBackup')}</h3>
+                      <p className="text-sm text-gray-600">{t('backupManagement.create.fullDescription')}</p>
                     </div>
                   </div>
                 </label>
@@ -610,8 +616,8 @@ const BackupManagementModule = () => {
                   <div className="flex items-center gap-3">
                     <FileText className="h-8 w-8 text-blue-600" />
                     <div>
-                      <h3 className="font-medium text-gray-900">Sauvegarde partielle</h3>
-                      <p className="text-sm text-gray-600">Types de données sélectionnés</p>
+                      <h3 className="font-medium text-gray-900">{t('backupManagement.create.partialBackup')}</h3>
+                      <p className="text-sm text-gray-600">{t('backupManagement.create.partialDescription')}</p>
                     </div>
                   </div>
                 </label>
@@ -621,7 +627,7 @@ const BackupManagementModule = () => {
             {newBackupData.type === 'partial' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Types de données à sauvegarder
+                  {t('backupManagement.create.dataTypesLabel')}
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {availableDataTypes.map(dataType => (
@@ -646,13 +652,13 @@ const BackupManagementModule = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description (optionnelle)
+                {t('backupManagement.create.descriptionLabel')}
               </label>
               <input
                 type="text"
                 value={newBackupData.description}
                 onChange={(e) => setNewBackupData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Description de la sauvegarde..."
+                placeholder={t('backupManagement.create.descriptionPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -667,7 +673,7 @@ const BackupManagementModule = () => {
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <label htmlFor="includeAuditLogs" className="text-sm text-gray-700">
-                  Inclure les logs d'audit
+                  {t('backupManagement.create.includeAuditLogs')}
                 </label>
               </div>
             )}
@@ -677,7 +683,7 @@ const BackupManagementModule = () => {
                 onClick={() => setActiveTab('backups')}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Annuler
+                {t('backupManagement.create.cancel')}
               </button>
               <button
                 onClick={handleCreateBackup}
@@ -687,12 +693,12 @@ const BackupManagementModule = () => {
                 {isCreatingBackup ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    Création en cours...
+                    {t('backupManagement.create.creating')}
                   </>
                 ) : (
                   <>
                     <Plus className="h-4 w-4" />
-                    Créer la sauvegarde
+                    {t('backupManagement.create.createButton')}
                   </>
                 )}
               </button>
@@ -707,7 +713,7 @@ const BackupManagementModule = () => {
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full m-4 max-h-[90vh] overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">Détails de la sauvegarde</h3>
+                <h3 className="text-lg font-medium text-gray-900">{t('backupManagement.details.title')}</h3>
                 <button
                   onClick={() => setShowBackupDetails(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -720,26 +726,26 @@ const BackupManagementModule = () => {
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-4">Informations générales</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">{t('backupManagement.details.generalInfo')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-600">ID</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.id')}</label>
                       <div className="text-sm text-gray-900 font-mono">{selectedBackup.id}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Description</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.description')}</label>
                       <div className="text-sm text-gray-900">{selectedBackup.description}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Type</label>
-                      <div className="text-sm text-gray-900">{selectedBackup.type}</div>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.type')}</label>
+                      <div className="text-sm text-gray-900">{selectedBackup.type === 'full' ? t('backupManagement.types.full') : t('backupManagement.types.partial')}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Taille</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.size')}</label>
                       <div className="text-sm text-gray-900">{backupStorage.formatSize(selectedBackup.size || 0)}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Statut</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.status')}</label>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedBackup.status)}`}>
                         {selectedBackup.status}
                       </span>
@@ -748,22 +754,22 @@ const BackupManagementModule = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-4">Métadonnées</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">{t('backupManagement.details.metadata')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Créé le</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.createdAt')}</label>
                       <div className="text-sm text-gray-900">{formatTimestamp(selectedBackup.timestamp)}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Version</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.version')}</label>
                       <div className="text-sm text-gray-900">{selectedBackup.metadata?.version || 'N/A'}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Créé par</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.createdBy')}</label>
                       <div className="text-sm text-gray-900">{selectedBackup.metadata?.createdBy || 'N/A'}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Checksum</label>
+                      <label className="text-sm font-medium text-gray-600">{t('backupManagement.details.checksum')}</label>
                       <div className="text-sm text-gray-900 font-mono">{selectedBackup.checksum}</div>
                     </div>
                   </div>
@@ -771,11 +777,11 @@ const BackupManagementModule = () => {
               </div>
 
               <div className="mt-6">
-                <h4 className="font-medium text-gray-900 mb-4">Types de données inclus</h4>
+                <h4 className="font-medium text-gray-900 mb-4">{t('backupManagement.details.dataTypesIncluded')}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {selectedBackup.metadata?.dataTypes?.map(dataType => (
                     <span key={dataType} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {dataType}
+                      {t(`backupManagement.dataTypes.${dataType}`, { defaultValue: dataType })}
                     </span>
                   ))}
                 </div>
@@ -783,9 +789,9 @@ const BackupManagementModule = () => {
 
               {selectedBackup.imported && (
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Sauvegarde importée</h4>
+                  <h4 className="font-medium text-blue-900 mb-2">{t('backupManagement.details.importedBackup')}</h4>
                   <p className="text-sm text-blue-700">
-                    Cette sauvegarde a été importée le {formatTimestamp(selectedBackup.importedAt)}
+                    {t('backupManagement.details.importedAt', { date: formatTimestamp(selectedBackup.importedAt) })}
                   </p>
                 </div>
               )}
@@ -799,7 +805,7 @@ const BackupManagementModule = () => {
                     className="px-4 py-2 text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors flex items-center gap-2"
                   >
                     <Download className="h-4 w-4" />
-                    Exporter
+                    {t('backupManagement.details.export')}
                   </button>
                   <button
                     onClick={() => {
@@ -810,7 +816,7 @@ const BackupManagementModule = () => {
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    Restaurer
+                    {t('backupManagement.details.restore')}
                   </button>
                 </>
               )}
@@ -818,7 +824,7 @@ const BackupManagementModule = () => {
                 onClick={() => setShowBackupDetails(false)}
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
-                Fermer
+                {t('backupManagement.details.close')}
               </button>
             </div>
           </div>

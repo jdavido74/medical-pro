@@ -1,13 +1,15 @@
 // components/public/HomePage.js
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Heart, Users, Calendar, FileText, Shield, Check, ArrowRight,
   Stethoscope, Activity, UserCheck, ClipboardList, Lock, Zap
 } from 'lucide-react';
 
-const HomePage = ({ setCurrentPage }) => {
+const HomePage = () => {
   const { t } = useTranslation('public');
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100">
       {/* Header */}
@@ -20,13 +22,13 @@ const HomePage = ({ setCurrentPage }) => {
             </div>
             <div className="flex space-x-4">
               <button
-                onClick={() => setCurrentPage('login')}
+                onClick={() => navigate('/login')}
                 className="text-gray-600 hover:text-green-600 transition-colors"
               >
                 {t('loginButton')}
               </button>
               <button
-                onClick={() => setCurrentPage('signup')}
+                onClick={() => navigate('/signup')}
                 className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
                 {t('trialButton')}
@@ -49,7 +51,7 @@ const HomePage = ({ setCurrentPage }) => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <button
-              onClick={() => setCurrentPage('signup')}
+              onClick={() => navigate('/signup')}
               className="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center"
             >
               {t('startFree')}
@@ -185,7 +187,7 @@ const HomePage = ({ setCurrentPage }) => {
               {t('ctaDescription')}
             </p>
             <button
-              onClick={() => setCurrentPage('signup')}
+              onClick={() => navigate('/signup')}
               className="bg-green-600 text-white px-12 py-4 rounded-lg text-xl font-semibold hover:bg-green-700 transition-colors inline-flex items-center"
             >
               {t('ctaButton')}

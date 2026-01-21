@@ -110,42 +110,63 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
   }, [patient]);
 
   // Contrôle des doublons en temps réel - US 1.1
+  // Ne vérifier que si on a assez d'information significative
   useEffect(() => {
-    if (formData.firstName && formData.lastName && formData.birthDate) {
-      checkDuplicates();
-    } else {
+    if (!patientContext) {
       setDuplicateWarning(null);
+      return;
     }
-  }, [formData.firstName, formData.lastName, formData.birthDate]);
 
-  const checkDuplicates = () => {
-    if (!patientContext) return;
+    const firstName = formData.firstName?.trim();
+    const lastName = formData.lastName?.trim();
+    const email = formData.contact?.email?.trim();
+
+    // Ne vérifier que si on a assez d'information (nom complet ou email valide)
+    const hasFullName = firstName && firstName.length >= 2 && lastName && lastName.length >= 2;
+    const hasValidEmail = email && email.includes('@') && email.includes('.');
+
+    if (!hasFullName && !hasValidEmail) {
+      setDuplicateWarning(null);
+      return;
+    }
 
     setIsDuplicateChecking(true);
     try {
       // Use PatientContext's checkDuplicate method (local search in loaded patients)
-      // This performs local duplicate detection without API call
-      const duplicate = patientContext.checkDuplicate(
-        formData.firstName,
-        formData.lastName,
-        formData.contact?.email
-      );
+      const duplicate = patientContext.checkDuplicate(firstName, lastName, email);
 
+      // Ignorer si c'est le patient en cours d'édition
       if (duplicate && duplicate.id !== patient?.id) {
-        setDuplicateWarning({
-          message: `Ya existe un paciente con el mismo nombre`,
-          patientNumber: duplicate.patientNumber,
-          patientName: `${duplicate.firstName} ${duplicate.lastName}`
-        });
+        // Déterminer le type de correspondance
+        const emailMatch = hasValidEmail && duplicate.contact?.email?.toLowerCase() === email?.toLowerCase();
+        const nameMatch = hasFullName &&
+          duplicate.firstName?.toLowerCase() === firstName?.toLowerCase() &&
+          duplicate.lastName?.toLowerCase() === lastName?.toLowerCase();
+
+        if (emailMatch || nameMatch) {
+          setDuplicateWarning({
+            message: emailMatch && nameMatch
+              ? 'Un patient avec ce nom et cet email existe déjà'
+              : emailMatch
+                ? 'Un patient avec cet email existe déjà'
+                : 'Un patient avec ce nom existe déjà',
+            patientNumber: duplicate.patientNumber,
+            patientName: `${duplicate.firstName} ${duplicate.lastName}`,
+            type: emailMatch ? 'email' : 'name'
+          });
+        } else {
+          setDuplicateWarning(null);
+        }
       } else {
         setDuplicateWarning(null);
       }
     } catch (error) {
       console.error('Error checking duplicates:', error);
+      setDuplicateWarning(null);
     } finally {
       setIsDuplicateChecking(false);
     }
-  };
+  }, [formData.firstName, formData.lastName, formData.contact?.email, patient?.id, patientContext]);
 
   const validateForm = () => {
     const newErrors = {};

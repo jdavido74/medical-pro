@@ -1,9 +1,12 @@
 {
   "save": "Save",
+  "saving": "Saving...",
   "cancel": "Cancel",
   "delete": "Delete",
   "edit": "Edit",
   "add": "Add",
+  "create": "Create",
+  "update": "Update",
   "search": "Search",
   "loading": "Loading...",
   "error": "Error",
@@ -21,6 +24,8 @@
   "download": "Download",
   "upload": "Upload",
   "view": "View",
+  "show": "Show",
+  "hide": "Hide",
   "back": "Back",
   "next": "Next",
   "previous": "Previous",
@@ -33,13 +38,110 @@
   "name": "Name",
   "description": "Description",
   "notes": "Notes",
+  "reset": "Reset",
+  "apply": "Apply",
+  "select": "Select",
+  "selectAll": "Select all",
+  "deselectAll": "Deselect all",
+  "none": "None",
+  "all": "All",
+  "active": "Active",
+  "inactive": "Inactive",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "premium": "Premium",
+  "free": "Free",
+  "firstName": "First name",
+  "lastName": "Last name",
+  "email": "Email",
+  "phone": "Phone",
+  "mobile": "Mobile",
+  "address": "Address",
+  "city": "City",
+  "postalCode": "Postal code",
+  "country": "Country",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "newPassword": "New password",
+  "currentPassword": "Current password",
+  "profession": "Profession",
+  "specialty": "Specialty",
+  "title": "Title",
+  "role": "Role",
+  "permissions": "Permissions",
+  "dayNames": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
+  "dayNamesShort": {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
+  },
+  "months": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  },
+  "confirmations": {
+    "delete": "Are you sure you want to delete this item?",
+    "deleteWithName": "Are you sure you want to delete \"{{name}}\"?",
+    "cancel": "Are you sure you want to cancel? Unsaved changes will be lost.",
+    "reset": "Are you sure you want to reset?",
+    "unsavedChanges": "You have unsaved changes. Do you really want to leave?"
+  },
+  "messages": {
+    "saveSuccess": "Saved successfully",
+    "saveError": "Error while saving",
+    "deleteSuccess": "Deleted successfully",
+    "deleteError": "Error while deleting",
+    "loadError": "Error loading data",
+    "updateSuccess": "Updated successfully",
+    "updateError": "Error while updating",
+    "networkError": "Server connection error",
+    "serverError": "Server error",
+    "timeout": "Request timeout",
+    "noData": "No data available",
+    "noResults": "No results found"
+  },
   "validation": {
     "required": "{{field}} is required",
     "invalidEmail": "Invalid email",
     "invalidPhone": "Invalid phone number",
     "invalidMedicalNumber": "Invalid ADELI (9 digits) or RPPS (11 digits) number",
     "passwordTooShort": "Password must contain at least 8 characters",
-    "clinicNameRequired": "Practice name required"
+    "passwordMismatch": "Passwords do not match",
+    "clinicNameRequired": "Practice name required",
+    "emailRequired": "Email required",
+    "firstNameRequired": "First name required",
+    "lastNameRequired": "Last name required",
+    "phoneInvalid": "Invalid phone format",
+    "passwordRequired": "Password required",
+    "fieldRequired": "This field is required"
+  },
+  "placeholders": {
+    "search": "Search...",
+    "selectOption": "Select an option",
+    "enterValue": "Enter a value",
+    "noOptions": "No options available"
   },
   "patientSearch": {
     "placeholder": "Search for a patient...",
@@ -51,5 +153,39 @@
     "patientSelected": "Patient selected",
     "patientNumber": "Patient number:",
     "incompleteWarning": "Incomplete record - Will be completed from Patients page"
-  }
+  },
+  "clinicStatus": {
+    "suspended": {
+      "title": "Account Suspended",
+      "message": "Your clinic account is currently suspended.",
+      "details": "Please contact support for more information.",
+      "contactSupport": "Contact Support"
+    },
+    "deleted": {
+      "title": "Account Deleted",
+      "message": "This clinic account has been permanently deleted.",
+      "details": "If you believe this is an error, please contact support."
+    },
+    "inactive": {
+      "title": "Access Denied",
+      "message": "Access to this clinic is not authorized.",
+      "redirecting": "Redirecting to home page..."
+    }
+  },
+  "statuses": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "draft": "Draft",
+    "sent": "Sent",
+    "paid": "Paid",
+    "cancelled": "Cancelled",
+    "completed": "Completed",
+    "expired": "Expired",
+    "revoked": "Revoked"
+  },
+  "years": "years",
+  "minutes": "min"
 }

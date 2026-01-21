@@ -1,16 +1,16 @@
 // components/auth/LoginPage.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
-import SocialAuth from './SocialAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { validateEmail } from '../../utils/validation';
-import { baseClient } from '../../api/baseClient';
 import { useLocaleNavigation } from '../../hooks/useLocaleNavigation';
 
 const LoginPage = () => {
   const { login } = useAuth();
   const { t } = useTranslation('auth');
+  const navigate = useNavigate();
   const { navigateToSignup, navigateToHome, buildPath } = useLocaleNavigation();
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({
@@ -69,98 +69,92 @@ const LoginPage = () => {
     try {
       console.log('[LoginPage] 🔑 Tentative de connexion avec:', loginData.email);
 
-      // Call backend /auth/login endpoint with email and password
-      const response = await baseClient.post('/auth/login', {
-        email: loginData.email,
-        password: loginData.password
-      });
-
-      console.log('[LoginPage] 📥 Réponse backend complète:', response);
-
-      // Check if login was successful
-      if (response.success && response.data?.user) {
-        console.log('[LoginPage] ✅ Connexion réussie pour:', response.data.user.email);
-
-        const userData = {
-          id: response.data.user.id,
-          email: response.data.user.email,
-          firstName: response.data.user.firstName,
-          lastName: response.data.user.lastName,
-          name: response.data.user.name || `${response.data.user.firstName} ${response.data.user.lastName}`,
-          companyId: response.data.user.companyId,
-          companyName: response.data.company?.name || response.data.user.companyName,
-          role: response.data.user.role,
-          provider: 'classic',
-          isEmailVerified: response.data.user.isEmailVerified || false
-        };
-
-        // Extract company data from response
-        const companyData = response.data.company || null;
-
-        // Store token separately in localStorage for API requests
-        const token = response.data.tokens?.accessToken;
-        if (token) {
-          localStorage.setItem('clinicmanager_token', token);
-        }
-
-        // Store remember me preference if checked
-        if (loginData.rememberMe) {
-          localStorage.setItem('clinicmanager_remember_me', 'true');
-        } else {
-          localStorage.removeItem('clinicmanager_remember_me');
-        }
-
-        // Update auth context with both user and company data
-        login(userData, companyData);
-
-        // Redirect to dashboard with locale
-        console.log('[LoginPage] ⏭️ Redirection vers le dashboard');
-        window.location.href = buildPath('/dashboard');
-      } else if (response.data?.requiresEmailVerification) {
-        console.log('[LoginPage] ⚠️ Email non vérifié');
-        // User exists but email not verified
-        setErrors({
-          submit: '❌ Votre email n\'a pas encore été vérifié. Veuillez vérifier votre boîte de réception.'
-        });
+      // Store remember me preference if checked
+      if (loginData.rememberMe) {
+        localStorage.setItem('clinicmanager_remember_email', loginData.email);
       } else {
-        console.log('[LoginPage] ❌ Identifiants invalides');
-        // Invalid credentials
-        setErrors({
-          submit: '❌ Email ou mot de passe incorrect. Veuillez réessayer.'
-        });
+        localStorage.removeItem('clinicmanager_remember_email');
       }
+
+      // Appeler login() du contexte
+      // Backend retourne user + company + subscription + permissions + token
+      // OU requiresProvisioning si la clinic DB n'est pas encore créée
+      const result = await login(loginData.email, loginData.password);
+
+      // ============ DEFERRED PROVISIONING ============
+      // If clinic needs provisioning, redirect to provisioning page
+      if (result.requiresProvisioning) {
+        console.log('[LoginPage] 🔧 Provisioning requis, redirection...');
+        navigate(buildPath('/auth/provisioning'), {
+          replace: true,
+          state: {
+            provisioningData: {
+              provisioningToken: result.provisioningToken,
+              user: result.user,
+              company: result.company
+            }
+          }
+        });
+        return;
+      }
+
+      // Multi-clinic selection required?
+      if (result.requiresClinicSelection) {
+        console.log('[LoginPage] 🏥 Sélection de clinique requise');
+        // TODO: Afficher UI de sélection de clinique
+        // Pour l'instant, prendre la première clinique
+        const firstClinic = result.clinics[0];
+        console.log('[LoginPage] Sélection automatique de:', firstClinic.name);
+
+        // Re-login avec clinicId
+        const retryResult = await login(loginData.email, loginData.password, firstClinic.id);
+
+        // Check if selected clinic needs provisioning
+        if (retryResult.requiresProvisioning) {
+          console.log('[LoginPage] 🔧 Provisioning requis après sélection, redirection...');
+          navigate(buildPath('/auth/provisioning'), {
+            replace: true,
+            state: {
+              provisioningData: {
+                provisioningToken: retryResult.provisioningToken,
+                user: retryResult.user,
+                company: retryResult.company
+              }
+            }
+          });
+          return;
+        }
+
+        if (!retryResult.success) {
+          throw new Error('Login failed after clinic selection');
+        }
+      }
+
+      console.log('[LoginPage] ✅ Connexion réussie, redirection vers dashboard');
+
+      // Redirect to dashboard with locale
+      navigate(buildPath('/dashboard'), { replace: true });
     } catch (error) {
       console.error('[LoginPage] ❌ Erreur de connexion:', error);
-      console.error('[LoginPage] 📊 Détails erreur:', {
-        message: error.message,
-        status: error.status,
-        response: error.response,
-        isTimeout: error.isTimeout
-      });
 
       // Handle different error types with clear messages
       if (error.status === 401) {
-        console.log('[LoginPage] 🚫 Erreur 401 - Identifiants incorrects');
         setErrors({
           submit: '❌ Email ou mot de passe incorrect. Veuillez vérifier vos identifiants.'
         });
       } else if (error.status === 403) {
-        console.log('[LoginPage] 🚫 Erreur 403 - Compte désactivé');
         setErrors({
-          submit: '❌ Votre compte est désactivé. Veuillez contacter l\'administrateur.'
+          submit: '❌ Votre compte est désactivé ou votre email n\'est pas vérifié. Veuillez vérifier votre boîte de réception ou contacter l\'administrateur.'
         });
       } else if (error.isTimeout) {
-        console.log('[LoginPage] ⏱️ Timeout');
         setErrors({
           submit: '❌ Délai d\'attente dépassé. Veuillez réessayer.'
         });
       } else if (error.message && error.message.includes('Network Error')) {
-        console.log('[LoginPage] 🌐 Erreur réseau');
         setErrors({
           submit: '❌ Impossible de se connecter au serveur. Vérifiez votre connexion internet.'
         });
       } else {
-        console.log('[LoginPage] ❓ Erreur inconnue');
         setErrors({
           submit: `❌ Erreur de connexion: ${error.message || 'Erreur inconnue'}. Veuillez réessayer.`
         });
@@ -179,20 +173,6 @@ const LoginPage = () => {
             <Heart className="h-12 w-12 text-green-600 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-gray-900">{t('loginTitle')}</h1>
             <p className="text-gray-600 mt-2">{t('loginSubtitle')}</p>
-          </div>
-
-          {/* Authentification sociale */}
-          <SocialAuth 
-            isLoading={isLoading} 
-            setIsLoading={setIsLoading} 
-            mode="login" 
-          />
-
-          {/* Séparateur */}
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-sm text-gray-500">{t('orEmail')}</span>
-            <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
           {/* Connexion classique */}
@@ -299,12 +279,6 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Info démo */}
-          <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-xs text-blue-800 text-center">
-              <strong>🧪 {t('demoMode')}</strong> {t('demoCredentials')}
-            </p>
-          </div>
         </div>
       </div>
     </div>

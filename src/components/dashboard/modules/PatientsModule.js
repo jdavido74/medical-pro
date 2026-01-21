@@ -3,10 +3,11 @@ import React, { useState, useEffect, useContext } from 'react';
 import {
   Users, Search, Edit2, Eye, UserPlus,
   Phone, Mail, MapPin, Calendar, AlertCircle,
-  Heart, Shield, Activity, Archive, Stethoscope
+  Heart, Shield, Activity, Archive, Stethoscope,
+  ClipboardCheck
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 import { PatientContext } from '../../../contexts/PatientContext';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
@@ -31,6 +32,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const [editingPatient, setEditingPatient] = useState(null);
   const [viewingPatient, setViewingPatient] = useState(null);
   const [viewingMedicalHistory, setViewingMedicalHistory] = useState(null);
+  const [initialTab, setInitialTab] = useState('general');
 
   // Permissions basées sur les permissions système - US nouvelles
   const canViewMedicalData = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW);
@@ -39,10 +41,10 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const canDeletePatients = hasPermission(PERMISSIONS.PATIENTS_DELETE);
   const canViewAllData = hasPermission(PERMISSIONS.PATIENTS_VIEW_ALL);
 
-  useEffect(() => {
-    // Initialiser les données de démonstration si c'est la première visite
-    initializeSamplePatients();
-  }, []);
+  // DEMO DATA REMOVED - No longer initialize sample patients
+  // useEffect(() => {
+  //   initializeSamplePatients();
+  // }, []);
 
   useEffect(() => {
     if (selectedPatientId && patientContext?.patients?.length > 0) {
@@ -85,6 +87,8 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
 
   const handleCreatePatient = () => {
     setEditingPatient(null);
+    // Effacer toute erreur précédente avant d'ouvrir la modal
+    patientContext?.clearError?.();
     setIsFormModalOpen(true);
   };
 
@@ -95,19 +99,32 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
       timestamp: new Date().toISOString()
     });
 
+    // Effacer toute erreur précédente avant d'ouvrir la modal
+    patientContext?.clearError?.();
     setEditingPatient(patient);
     setIsFormModalOpen(true);
   };
 
-  const handleViewPatient = (patient) => {
+  const handleViewPatient = (patient, tab = 'general') => {
     // Journaliser l'accès - US 6.2
     patientsStorage.logAccess(patient.id, 'view_access', user?.id || 'unknown', {
       userRole: user?.role,
       timestamp: new Date().toISOString()
     });
 
+    setInitialTab(tab);
     setViewingPatient(patient);
     setIsDetailModalOpen(true);
+  };
+
+  const handleViewConsents = (patient) => {
+    // Journaliser l'accès aux consentements
+    patientsStorage.logAccess(patient.id, 'consents_access', user?.id || 'unknown', {
+      userRole: user?.role,
+      timestamp: new Date().toISOString()
+    });
+
+    handleViewPatient(patient, 'consents');
   };
 
   const handleViewMedicalHistory = (patient) => {
@@ -201,10 +218,13 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Afficher les erreurs si présentes */}
-      {patientContext?.error && (
+      {/* Afficher les erreurs si présentes (seulement si aucune modale n'est ouverte) */}
+      {patientContext?.error && !isFormModalOpen && !isDetailModalOpen && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm">{patientContext.error}</p>
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+            <p className="text-red-700 text-sm">{patientContext.error}</p>
+          </div>
         </div>
       )}
 
@@ -427,6 +447,14 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                           </button>
                         )}
 
+                        <button
+                          onClick={() => handleViewConsents(patient)}
+                          className="p-2 text-gray-400 hover:text-teal-600 transition-colors"
+                          title={t('tooltips.consents')}
+                        >
+                          <ClipboardCheck className="h-4 w-4" />
+                        </button>
+
                         {canEditPatients && (
                           <button
                             onClick={() => handleEditPatient(patient)}
@@ -464,6 +492,8 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           onClose={() => {
             setIsFormModalOpen(false);
             setEditingPatient(null);
+            // Effacer l'erreur du contexte à la fermeture de la modal
+            patientContext?.clearError?.();
           }}
           onSave={handleSavePatient}
         />
@@ -476,6 +506,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           onClose={() => {
             setIsDetailModalOpen(false);
             setViewingPatient(null);
+            setInitialTab('general');
           }}
           onEdit={canEditPatients ? () => {
             setIsDetailModalOpen(false);
@@ -483,6 +514,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           } : null}
           canViewMedicalData={canViewMedicalData}
           canViewAllData={canViewAllData}
+          initialTab={initialTab}
         />
       )}
 

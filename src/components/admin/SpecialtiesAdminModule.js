@@ -7,7 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 const SpecialtiesAdminModule = () => {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation('admin');
   const currentLanguage = i18n.language;
   const [specialties, setSpecialties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,16 +123,18 @@ const SpecialtiesAdminModule = () => {
     'yellow', 'indigo', 'gray', 'teal', 'cyan', 'lime'
   ];
 
-  const availableModules = [
-    { id: 'base', name: 'Módulo Base', required: true },
-    { id: 'cardiac', name: 'Módulo Cardiológico', required: false },
-    { id: 'pediatric', name: 'Módulo Pediátrico', required: false },
-    { id: 'preventive', name: 'Medicina Preventiva', required: false },
-    { id: 'chronic', name: 'Enfermedades Crónicas', required: false },
-    { id: 'surgery', name: 'Cirugía', required: false },
-    { id: 'radiology', name: 'Radiología', required: false },
-    { id: 'laboratory', name: 'Laboratorio', required: false }
+  const getAvailableModules = () => [
+    { id: 'base', name: t('specialtiesManagement.availableModules.base'), required: true },
+    { id: 'cardiac', name: t('specialtiesManagement.availableModules.cardiac'), required: false },
+    { id: 'pediatric', name: t('specialtiesManagement.availableModules.pediatric'), required: false },
+    { id: 'preventive', name: t('specialtiesManagement.availableModules.preventive'), required: false },
+    { id: 'chronic', name: t('specialtiesManagement.availableModules.chronic'), required: false },
+    { id: 'surgery', name: t('specialtiesManagement.availableModules.surgery'), required: false },
+    { id: 'radiology', name: t('specialtiesManagement.availableModules.radiology'), required: false },
+    { id: 'laboratory', name: t('specialtiesManagement.availableModules.laboratory'), required: false }
   ];
+
+  const availableModules = getAvailableModules();
 
   useEffect(() => {
     loadSpecialties();
@@ -194,7 +196,7 @@ const SpecialtiesAdminModule = () => {
   };
 
   const handleDeleteSpecialty = async (specialtyId) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta especialidad?')) {
+    if (window.confirm(t('specialtiesManagement.deleteConfirm'))) {
       try {
         setMockSpecialties(prev => prev.filter(s => s.id !== specialtyId));
         setSpecialties(prev => prev.filter(s => s.id !== specialtyId));
@@ -231,7 +233,7 @@ const SpecialtiesAdminModule = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando especialidades...</p>
+          <p className="text-gray-600">{t('specialtiesManagement.loading')}</p>
         </div>
       </div>
     );
@@ -244,10 +246,10 @@ const SpecialtiesAdminModule = () => {
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Administración de Especialidades Médicas
+              {t('specialtiesManagement.title')}
             </h2>
             <p className="text-gray-600">
-              Configure las especialidades disponibles para las clínicas en el SaaS
+              {t('specialtiesManagement.subtitle')}
             </p>
           </div>
           <button
@@ -255,7 +257,7 @@ const SpecialtiesAdminModule = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
           >
             <Plus className="h-5 w-5" />
-            <span>Nueva Especialidad</span>
+            <span>{t('createSpecialty')}</span>
           </button>
         </div>
 
@@ -269,7 +271,7 @@ const SpecialtiesAdminModule = () => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Lista de Especialidades
+            {t('specialtiesManagement.tabs.list')}
           </button>
           <button
             onClick={() => setCurrentTab('translations')}
@@ -280,7 +282,7 @@ const SpecialtiesAdminModule = () => {
             }`}
           >
             <Globe className="h-4 w-4 inline mr-1" />
-            Traducciones
+            {t('specialtiesManagement.tabs.translations')}
           </button>
           <button
             onClick={() => setCurrentTab('modules')}
@@ -291,7 +293,7 @@ const SpecialtiesAdminModule = () => {
             }`}
           >
             <Settings className="h-4 w-4 inline mr-1" />
-            Configuración Módulos
+            {t('specialtiesManagement.tabs.modules')}
           </button>
         </div>
       </div>
@@ -300,9 +302,9 @@ const SpecialtiesAdminModule = () => {
       {currentTab === 'list' && (
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-4 border-b">
-            <h3 className="font-semibold text-gray-900">Especialidades Configuradas</h3>
+            <h3 className="font-semibold text-gray-900">{t('specialtiesManagement.configuredSpecialties')}</h3>
             <p className="text-sm text-gray-600">
-              {specialties.length} especialidades • {specialties.filter(s => s.isActive).length} activas
+              {t('specialtiesManagement.specialtiesCount', { count: specialties.length })} • {t('specialtiesManagement.activeCount', { count: specialties.filter(s => s.isActive).length })}
             </p>
           </div>
 
@@ -328,7 +330,7 @@ const SpecialtiesAdminModule = () => {
                         </span>
                         {specialty.isCore && (
                           <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                            Sistema
+                            {t('specialtiesManagement.system')}
                           </span>
                         )}
                         <span className={`text-xs px-2 py-1 rounded-full ${
@@ -336,16 +338,16 @@ const SpecialtiesAdminModule = () => {
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {specialty.isActive ? 'Activa' : 'Inactiva'}
+                          {specialty.isActive ? t('specialtiesManagement.active') : t('specialtiesManagement.inactive')}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
                         {specialty.translations[currentLanguage]?.description || specialty.translations.es.description}
                       </p>
                       <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span>Módulos: {specialty.modules.length}</span>
-                        <span>Creado: {new Date(specialty.createdAt).toLocaleDateString()}</span>
-                        <span>Actualizado: {new Date(specialty.updatedAt).toLocaleDateString()}</span>
+                        <span>{t('specialtiesManagement.modules')}: {specialty.modules.length}</span>
+                        <span>{t('specialtiesManagement.created')}: {new Date(specialty.createdAt).toLocaleDateString()}</span>
+                        <span>{t('specialtiesManagement.updated')}: {new Date(specialty.updatedAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -358,7 +360,7 @@ const SpecialtiesAdminModule = () => {
                           ? 'text-green-600 hover:bg-green-50'
                           : 'text-gray-400 hover:bg-gray-50'
                       }`}
-                      title={specialty.isActive ? 'Desactivar' : 'Activar'}
+                      title={specialty.isActive ? t('specialtiesManagement.deactivate') : t('specialtiesManagement.activate')}
                     >
                       {specialty.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
@@ -366,7 +368,7 @@ const SpecialtiesAdminModule = () => {
                     <button
                       onClick={() => handleEditSpecialty(specialty)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                      title="Editar"
+                      title={t('specialtiesManagement.edit')}
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
@@ -375,7 +377,7 @@ const SpecialtiesAdminModule = () => {
                       <button
                         onClick={() => handleDeleteSpecialty(specialty.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        title="Eliminar"
+                        title={t('delete')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -395,7 +397,7 @@ const SpecialtiesAdminModule = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-900">
-                  {isCreating ? 'Nueva Especialidad' : 'Editar Especialidad'}
+                  {isCreating ? t('createSpecialty') : t('editSpecialty')}
                 </h3>
                 <button
                   onClick={() => setEditingSpecialty(null)}
@@ -408,11 +410,11 @@ const SpecialtiesAdminModule = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Información básica */}
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Información Básica</h4>
+                  <h4 className="font-medium text-gray-900">{t('specialtiesManagement.basicInfo')}</h4>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Código de Especialidad
+                      {t('specialtiesManagement.specialtyCode')}
                     </label>
                     <input
                       type="text"
@@ -426,7 +428,7 @@ const SpecialtiesAdminModule = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Color
+                      {t('specialtiesManagement.color')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {availableColors.map(color => (
@@ -443,7 +445,7 @@ const SpecialtiesAdminModule = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Estado
+                      {t('specialtiesManagement.status')}
                     </label>
                     <label className="flex items-center">
                       <input
@@ -452,14 +454,14 @@ const SpecialtiesAdminModule = () => {
                         onChange={(e) => updateEditingSpecialty('isActive', e.target.checked)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Especialidad activa</span>
+                      <span className="ml-2 text-sm text-gray-700">{t('specialtiesManagement.specialtyActive')}</span>
                     </label>
                   </div>
                 </div>
 
                 {/* Traducciones */}
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Traducciones</h4>
+                  <h4 className="font-medium text-gray-900">{t('specialtiesManagement.translations')}</h4>
 
                   {['es', 'fr', 'en'].map(lang => (
                     <div key={lang} className="border rounded-lg p-3">
@@ -473,13 +475,13 @@ const SpecialtiesAdminModule = () => {
                           type="text"
                           value={editingSpecialty.translations[lang]?.name || ''}
                           onChange={(e) => updateTranslation(lang, 'name', e.target.value)}
-                          placeholder="Nombre de la especialidad"
+                          placeholder={t('specialtiesManagement.specialtyName')}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                         />
                         <textarea
                           value={editingSpecialty.translations[lang]?.description || ''}
                           onChange={(e) => updateTranslation(lang, 'description', e.target.value)}
-                          placeholder="Descripción de la especialidad"
+                          placeholder={t('specialtiesManagement.specialtyDescription')}
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                         />
@@ -491,7 +493,7 @@ const SpecialtiesAdminModule = () => {
 
               {/* Módulos */}
               <div className="mt-6">
-                <h4 className="font-medium text-gray-900 mb-3">Módulos Asociados</h4>
+                <h4 className="font-medium text-gray-900 mb-3">{t('specialtiesManagement.associatedModules')}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {availableModules.map(module => (
                     <label key={module.id} className="flex items-center space-x-2">
@@ -510,7 +512,7 @@ const SpecialtiesAdminModule = () => {
                       />
                       <span className={`text-sm ${module.required ? 'text-gray-500' : 'text-gray-700'}`}>
                         {module.name}
-                        {module.required && <span className="text-xs ml-1">(Obligatorio)</span>}
+                        {module.required && <span className="text-xs ml-1">({t('specialtiesManagement.required')})</span>}
                       </span>
                     </label>
                   ))}
@@ -523,14 +525,14 @@ const SpecialtiesAdminModule = () => {
                   onClick={() => setEditingSpecialty(null)}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
-                  Cancelar
+                  {t('specialtiesManagement.cancel')}
                 </button>
                 <button
                   onClick={handleSaveSpecialty}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
                 >
                   <Save className="h-4 w-4" />
-                  <span>{isCreating ? 'Crear Especialidad' : 'Guardar Cambios'}</span>
+                  <span>{isCreating ? t('createSpecialty') : t('saveChanges')}</span>
                 </button>
               </div>
             </div>

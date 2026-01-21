@@ -1,6 +1,6 @@
 // components/auth/SocialAuth.js
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const SocialAuth = ({ isLoading, setIsLoading, mode = 'login' }) => {
   const { login } = useAuth();

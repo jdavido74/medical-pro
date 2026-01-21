@@ -13,8 +13,9 @@ import ConsentTemplatesModule from './modules/ConsentTemplatesModule';
 import SettingsModule from './modules/SettingsModule';
 import AdminDashboard from '../admin/AdminDashboard';
 import SaasAdminDashboard from '../saas-admin/SaasAdminDashboard';
+import UserInfoDebug from '../common/UserInfoDebug';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const Dashboard = ({ setCurrentPage }) => {
   const { t } = useTranslation();
@@ -75,17 +76,20 @@ const Dashboard = ({ setCurrentPage }) => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} setCurrentPage={setCurrentPage} />
-      
+
       {/* Contenu principal */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <Header activeModule={activeModule} />
-        
+
         {/* Contenu */}
         <main className="flex-1 p-6">
           {renderModule()}
         </main>
       </div>
+
+      {/* Composant de débogage - Affiche les infos du compte */}
+      <UserInfoDebug />
     </div>
   );
 };

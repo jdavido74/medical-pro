@@ -1,16 +1,19 @@
 // components/dashboard/Sidebar.js
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, Users, Calendar, FileText, BarChart3, Settings,
   LogOut, Heart, Shield
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import { usePermissions } from '../auth/PermissionGuard';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '../../contexts/LocaleContext';
+import { isPractitionerRole, canAccessAdministration } from '../../utils/userRoles';
 
 const Sidebar = () => {
-  const { user, company, logout } = useAuth();
+  const { user, company, subscription, logout } = useAuth();
+  const { hasPermission } = usePermissions();
   const { t } = useTranslation('nav');
   const { locale, buildUrl } = useLocale();
 
@@ -21,22 +24,81 @@ const Sidebar = () => {
     logout(shouldRememberEmail);
   };
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  /**
+   * Menu configuration with permission requirements
+   * Conforme à la matrice des droits:
+   *
+   * - Admin clinique: clinique + employés + consentements modèles + devis/factures + patients (admin)
+   * - Secrétaire: patients (admin) + RDV + consentements (assign) + devis/factures
+   * - Médecin/Praticien/Infirmier: dossier médical (si équipe soins) + RDV + consentements (consultation)
+   *
+   * Propriétés:
+   * - permission: Permission requise (null = visible à tous)
+   * - medicalOnly: Réservé aux professionnels de santé (secret médical)
+   * - adminOnly: Réservé aux admins (admin, super_admin, ou rôle administratif)
+   */
+  const menuConfig = [
+    // Accessible à tous
+    { id: 'home', path: '/dashboard', icon: Home, permission: null },
 
-  // Build locale-aware menu items
-  const menuItems = [
-    { id: 'home', path: buildUrl('/dashboard'), label: t('sidebar.home'), icon: Home },
-    { id: 'patients', path: buildUrl('/patients'), label: t('sidebar.patients'), icon: Users },
-    { id: 'appointments', path: buildUrl('/appointments'), label: t('sidebar.appointments'), icon: Calendar },
-    { id: 'medical-records', path: buildUrl('/medical-records'), label: t('sidebar.medicalRecords'), icon: FileText },
-    { id: 'consents', path: buildUrl('/consents'), label: t('sidebar.consents'), icon: Shield },
-    { id: 'consent-templates', path: buildUrl('/consent-templates'), label: t('sidebar.consentTemplates'), icon: FileText },
-    { id: 'quotes', path: buildUrl('/quotes'), label: t('sidebar.quotes'), icon: FileText },
-    { id: 'invoices', path: buildUrl('/invoices'), label: t('sidebar.invoices'), icon: FileText },
-    { id: 'analytics', path: buildUrl('/analytics'), label: t('sidebar.analytics'), icon: BarChart3 },
-    ...(isAdmin ? [{ id: 'admin', path: buildUrl('/admin'), label: t('sidebar.admin'), icon: Shield }] : []),
-    { id: 'settings', path: buildUrl('/settings'), label: t('sidebar.settings'), icon: Settings }
+    // Patients - Données admin (secrétaire, admin, soignants)
+    { id: 'patients', path: '/patients', icon: Users, permission: 'patients.view' },
+
+    // Rendez-vous (secrétaire, admin, soignants)
+    { id: 'appointments', path: '/appointments', icon: Calendar, permission: 'appointments.view' },
+
+    // Dossiers médicaux - SECRET MÉDICAL (médecin, praticien, infirmier uniquement)
+    { id: 'medical-records', path: '/medical-records', icon: FileText, permission: 'medical_records.view', medicalOnly: true },
+
+    // Consentements patients (secrétaire assign, soignants consultation)
+    { id: 'consents', path: '/consents', icon: Shield, permission: 'consents.view' },
+
+    // Templates de consentements (admin clinique gestion complète, autres consultation)
+    { id: 'consent-templates', path: '/consent-templates', icon: FileText, permission: 'consent_templates.view' },
+
+    // Devis (secrétaire, admin, médecin peut initier)
+    { id: 'quotes', path: '/quotes', icon: FileText, permission: 'quotes.view' },
+
+    // Factures (secrétaire, admin - pas les soignants sauf besoin)
+    { id: 'invoices', path: '/invoices', icon: FileText, permission: 'invoices.view' },
+
+    // Statistiques (admin, direction)
+    { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.view' },
+
+    // Administration clinique (admin, super_admin, direction, clinic_admin)
+    { id: 'admin', path: '/admin', icon: Shield, permission: null, adminOnly: true },
+
+    // Paramètres personnels (tous)
+    { id: 'settings', path: '/settings', icon: Settings, permission: null }
   ];
+
+  // Filter menu items based on user permissions and role
+  const menuItems = useMemo(() => {
+    return menuConfig
+      .filter(item => {
+        // Check medical-only restriction (only healthcare professionals)
+        if (item.medicalOnly && !isPractitionerRole(user?.role)) {
+          return false;
+        }
+
+        // Check admin-only restriction
+        if (item.adminOnly && !canAccessAdministration(user)) {
+          return false;
+        }
+
+        // Check specific permission
+        if (item.permission && !hasPermission(item.permission)) {
+          return false;
+        }
+
+        return true;
+      })
+      .map(item => ({
+        ...item,
+        path: buildUrl(item.path),
+        label: t(`sidebar.${item.id}`)
+      }));
+  }, [user, hasPermission, buildUrl, t]);
 
   return (
     <div className="w-64 bg-white shadow-sm border-r flex flex-col">
@@ -48,20 +110,29 @@ const Sidebar = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          <div className="text-2xl">{user?.avatar}</div>
+          <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <span className="text-lg font-semibold text-green-700">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </span>
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.companyName}</p>
-            {company?.phone && (
-              <p className="text-xs text-gray-500 truncate">{company.phone}</p>
+            <p className="text-xs text-gray-500 truncate">
+              <span className="font-medium">{user?.role}</span> • {company?.name}
+            </p>
+            {subscription?.plan && (
+              <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 ${
+                subscription.plan === 'enterprise'
+                  ? 'bg-purple-100 text-purple-800'
+                  : subscription.plan === 'professional'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {subscription.plan === 'enterprise' ? '🏢 Enterprise' :
+                 subscription.plan === 'professional' ? '💼 Professional' :
+                 '🆓 Free'}
+              </span>
             )}
-            <span className={`inline-block text-xs px-2 py-1 rounded-full mt-1 ${
-              user?.plan === 'premium'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-green-100 text-green-800'
-            }`}>
-              {user?.plan === 'premium' ? `👑 ${t('common.premium')}` : `🆓 ${t('common.free')}`}
-            </span>
           </div>
         </div>
       </div>

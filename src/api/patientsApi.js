@@ -24,16 +24,19 @@ async function getPatients(options = {}) {
       }
     });
 
-    const data = dataTransform.unwrapResponse(response);
+    // Backend returns: { success: true, data: [...patients...], pagination: {...} }
+    // Don't unwrap to keep access to pagination
+    const patientsData = response.data || [];
+    const pagination = response.pagination || {};
 
     // Transform list of patients from backend format to frontend format
-    const patients = dataTransform.transformPatientListFromBackend(data.data || []);
+    const patients = dataTransform.transformPatientListFromBackend(patientsData);
 
     return {
       patients,
-      total: data.total,
-      page: data.page,
-      limit: data.limit
+      total: pagination.total || 0,
+      page: pagination.page || 1,
+      limit: pagination.limit || 100
     };
   } catch (error) {
     console.error('[patientsApi] Error fetching patients:', error);

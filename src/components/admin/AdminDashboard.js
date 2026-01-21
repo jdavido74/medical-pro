@@ -7,8 +7,9 @@ import {
   Stethoscope, Activity, Calendar, UserCheck
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useDynamicTranslations } from '../../contexts/DynamicTranslationsContext';
+import { canAccessAdministration } from '../../utils/userRoles';
 
 import UserManagementModule from './UserManagementModule';
 import RoleManagementModule from './RoleManagementModule';
@@ -19,6 +20,7 @@ import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { appointmentsStorage } from '../../utils/appointmentsStorage';
 import auditStorage from '../../utils/auditStorage';
+import { getUserStats } from '../../utils/userRoles';
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -36,8 +38,8 @@ const AdminDashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
-  // Vérifier si l'utilisateur est admin clinique uniquement
-  const isClinicAdmin = user?.role === 'admin';
+  // Vérifier si l'utilisateur a un accès administration
+  const isClinicAdmin = canAccessAdministration(user);
 
   // Charger les statistiques réelles depuis la base de données
   const loadDashboardStats = async () => {
@@ -69,11 +71,12 @@ const AdminDashboard = () => {
         time: formatTimeAgo(log.timestamp)
       }));
 
-      // Calculer les statistiques
+      // Calculer les statistiques avec l'utilitaire centralisé
+      const userStats = getUserStats(users);
       setDashboardStats({
-        totalUsers: users.length,
-        activeUsers: users.filter(u => u.isActive).length,
-        practitioners: users.filter(u => u.role === 'practitioner').length,
+        totalUsers: userStats.total,
+        activeUsers: userStats.active,
+        practitioners: userStats.practitioners.total,
         totalPatients: patients.length,
         appointmentsThisMonth: appointments.length,
         activeSpecialties: getAvailableSpecialties().length
@@ -382,11 +385,10 @@ const AdminDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{tab.label}</span>

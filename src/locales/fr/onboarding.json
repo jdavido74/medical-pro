@@ -1,0 +1,161 @@
+{
+  "onboarding": {
+    "title": "Configuration de votre clinique",
+    "subtitle": "Bienvenue ! Configurons {{clinicName}} ensemble",
+    "loggedInAs": "Connecté en tant que",
+    "loading": "Chargement de la configuration...",
+    "helpText": "Besoin d'aide ? Contactez notre support technique.",
+
+    "buttons": {
+      "back": "Retour",
+      "next": "Continuer",
+      "finish": "Terminer la configuration",
+      "skip": "Passer cette étape"
+    },
+
+    "errors": {
+      "title": "Une erreur s'est produite",
+      "loadFailed": "Impossible de charger l'état de la configuration.",
+      "completeFailed": "Impossible de finaliser la configuration."
+    },
+
+    "steps": {
+      "clinic": {
+        "title": "Configuration de la clinique",
+        "description": "Configurez les informations de base de votre établissement",
+        "fields": {
+          "name": "Nom de la clinique",
+          "email": "Email de contact",
+          "phone": "Téléphone",
+          "address": "Adresse"
+        },
+        "placeholders": {
+          "name": "Ex: Clinique Saint-Michel",
+          "email": "contact@clinique.com",
+          "phone": "+33 1 23 45 67 89",
+          "street": "Numéro et rue",
+          "city": "Ville",
+          "postalCode": "Code postal"
+        },
+        "errors": {
+          "nameRequired": "Le nom de la clinique est requis",
+          "emailRequired": "L'email de contact est requis",
+          "saveFailed": "Impossible de sauvegarder les informations"
+        }
+      },
+
+      "schedule": {
+        "title": "Horaires d'ouverture",
+        "description": "Configurez les jours et horaires d'ouverture de votre clinique",
+        "intro": "Ces horaires définissent les créneaux disponibles pour la prise de rendez-vous. Vous pourrez les modifier ultérieurement dans les paramètres de la clinique.",
+        "days": {
+          "monday": "Lundi",
+          "tuesday": "Mardi",
+          "wednesday": "Mercredi",
+          "thursday": "Jeudi",
+          "friday": "Vendredi",
+          "saturday": "Samedi",
+          "sunday": "Dimanche"
+        },
+        "morning": "Matin",
+        "afternoon": "Après-midi",
+        "lunchBreak": "Pause déjeuner",
+        "applyToAllWeekdays": "Appliquer à tous les jours de semaine",
+        "errors": {
+          "noDayEnabled": "Veuillez activer au moins un jour d'ouverture",
+          "saveFailed": "Impossible de sauvegarder les horaires"
+        }
+      },
+
+      "team": {
+        "title": "Création d'une équipe",
+        "description": "Créez votre première équipe de travail",
+        "intro": "Les équipes permettent d'organiser vos praticiens par service ou spécialité.",
+        "fields": {
+          "name": "Nom de l'équipe",
+          "description": "Description",
+          "department": "Service/Département"
+        },
+        "placeholders": {
+          "name": "Ex: Équipe Médecine Générale",
+          "description": "Décrivez brièvement cette équipe",
+          "department": "Ex: Médecine Générale"
+        },
+        "departments": {
+          "general": "Médecine Générale",
+          "cardiology": "Cardiologie",
+          "dermatology": "Dermatologie",
+          "pediatrics": "Pédiatrie",
+          "gynecology": "Gynécologie",
+          "orthopedics": "Orthopédie",
+          "ophthalmology": "Ophtalmologie",
+          "dentistry": "Dentisterie",
+          "other": "Autre"
+        },
+        "errors": {
+          "nameRequired": "Le nom de l'équipe est requis",
+          "departmentRequired": "Le service est requis",
+          "saveFailed": "Impossible de créer l'équipe"
+        },
+        "success": "Équipe créée avec succès"
+      },
+
+      "practitioner": {
+        "title": "Ajout d'un praticien",
+        "description": "Ajoutez votre premier professionnel de santé",
+        "intro": "Ajoutez au moins un praticien pour pouvoir gérer les rendez-vous.",
+        "fields": {
+          "firstName": "Prénom",
+          "lastName": "Nom",
+          "email": "Email professionnel",
+          "phone": "Téléphone",
+          "role": "Rôle",
+          "specialty": "Spécialité",
+          "licenseNumber": "Numéro RPPS/ADELI",
+          "team": "Équipe"
+        },
+        "placeholders": {
+          "firstName": "Ex: Jean",
+          "lastName": "Ex: Dupont",
+          "email": "jean.dupont@clinique.com",
+          "phone": "+33 6 12 34 56 78",
+          "licenseNumber": "10101234567"
+        },
+        "roles": {
+          "doctor": "Médecin",
+          "specialist": "Spécialiste",
+          "nurse": "Infirmier(e)",
+          "dentist": "Dentiste",
+          "physiotherapist": "Kinésithérapeute"
+        },
+        "specialties": {
+          "general_medicine": "Médecine Générale",
+          "cardiology": "Cardiologie",
+          "dermatology": "Dermatologie",
+          "pediatrics": "Pédiatrie",
+          "gynecology": "Gynécologie",
+          "orthopedics": "Orthopédie",
+          "ophthalmology": "Ophtalmologie",
+          "dentistry": "Dentisterie",
+          "nursing": "Soins Infirmiers",
+          "physiotherapy": "Kinésithérapie"
+        },
+        "errors": {
+          "firstNameRequired": "Le prénom est requis",
+          "lastNameRequired": "Le nom est requis",
+          "emailRequired": "L'email est requis",
+          "emailInvalid": "L'email n'est pas valide",
+          "roleRequired": "Le rôle est requis",
+          "saveFailed": "Impossible d'ajouter le praticien"
+        },
+        "success": "Praticien ajouté avec succès"
+      }
+    },
+
+    "completion": {
+      "title": "Configuration terminée !",
+      "message": "Votre clinique est maintenant configurée. Vous pouvez commencer à utiliser l'application.",
+      "redirecting": "Redirection vers le tableau de bord..."
+    }
+  }
+}

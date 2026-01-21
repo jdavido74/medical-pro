@@ -1,16 +1,23 @@
 // components/modals/ConsentTemplateEditorModal.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, Save, FileText, Upload, Download, Eye, Copy, AlertCircle,
   Plus, Minus, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
-  List, ListOrdered, Quote, Code, Link, Image, Undo, Redo, Type
+  List, ListOrdered, Quote, Code, Link, Image, Undo, Redo, Type,
+  CheckSquare, Mail, User, Calendar, Phone, MapPin, Stethoscope
 } from 'lucide-react';
+import { consentTemplatesApi } from '../../api/consentTemplatesApi';
 import {
-  consentTemplatesStorage,
-  TEMPLATE_CATEGORIES,
+  CONSENT_TYPES,
   MEDICAL_SPECIALITIES
 } from '../../utils/consentTemplatesStorage';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+
+// Helper function to find consent type name by id
+const getConsentTypeName = (typeId) => {
+  const type = Object.values(CONSENT_TYPES).find(t => t.id === typeId);
+  return type?.name || typeId;
+};
 
 const ConsentTemplateEditorModal = ({
   isOpen,
@@ -26,7 +33,7 @@ const ConsentTemplateEditorModal = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'custom',
+    consentType: 'medical_treatment',
     speciality: 'general',
     content: '',
     status: 'draft',
@@ -40,33 +47,43 @@ const ConsentTemplateEditorModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [importedFileName, setImportedFileName] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false); // Track if form was initialized
 
   // Variables dynamiques détectées automatiquement
   const [detectedVariables, setDetectedVariables] = useState([]);
 
-  // Charger les données initiales
+  // Charger les données initiales - seulement quand le modal s'ouvre
   useEffect(() => {
-    if (isOpen && editingTemplate) {
-      setFormData({
-        ...editingTemplate,
-        variables: editingTemplate.variables || [],
-        requiredFields: editingTemplate.requiredFields || [],
-        tags: editingTemplate.tags || []
-      });
-    } else if (isOpen && mode === 'create') {
-      setFormData({
-        title: '',
-        description: '',
-        category: 'custom',
-        speciality: 'general',
-        content: '',
-        status: 'draft',
-        variables: [],
-        requiredFields: [],
-        tags: []
-      });
+    if (isOpen && !isInitialized) {
+      if (editingTemplate) {
+        setFormData({
+          ...editingTemplate,
+          // Map backend consent_type to frontend consentType
+          consentType: editingTemplate.consentType || editingTemplate.consent_type || 'medical_treatment',
+          variables: editingTemplate.variables || [],
+          requiredFields: editingTemplate.requiredFields || [],
+          tags: editingTemplate.tags || []
+        });
+      } else if (mode === 'create') {
+        setFormData({
+          title: '',
+          description: '',
+          consentType: 'medical_treatment',
+          speciality: 'general',
+          content: '',
+          status: 'draft',
+          variables: [],
+          requiredFields: [],
+          tags: []
+        });
+      }
+      setIsInitialized(true);
     }
-  }, [isOpen, editingTemplate, mode]);
+    // Reset initialization flag when modal closes
+    if (!isOpen) {
+      setIsInitialized(false);
+    }
+  }, [isOpen, editingTemplate, mode, isInitialized]);
 
   // Détecter automatiquement les variables dans le contenu
   useEffect(() => {
@@ -96,26 +113,36 @@ const ConsentTemplateEditorModal = ({
         updatedVariables: detectedVariables
       };
 
+      // Transform template data for backend API - utilise consentType directement
+      const apiData = {
+        code: formData.code || formData.title.toLowerCase().replace(/\s+/g, '_').substring(0, 50),
+        title: formData.title,
+        description: formData.description,
+        terms: formData.content,
+        version: formData.version || '1.0',
+        consentType: formData.consentType,
+        isMandatory: formData.isMandatory || false,
+        autoSend: formData.autoSend || false,
+        validFrom: formData.validFrom || new Date().toISOString()
+      };
+
       let result;
       if (editingTemplate && mode === 'edit') {
-        result = consentTemplatesStorage.update(editingTemplate.id, templateData, user?.id);
+        result = await consentTemplatesApi.updateConsentTemplate(editingTemplate.id, apiData);
       } else if (mode === 'duplicate') {
-        result = consentTemplatesStorage.duplicate(
-          editingTemplate.id,
-          formData.title,
-          user?.id
-        );
-        // Mettre à jour avec les nouvelles données
-        result = consentTemplatesStorage.update(result.id, templateData, user?.id);
+        // For duplicate, create a new template with modified title
+        apiData.title = `${formData.title} (copie)`;
+        apiData.code = `${apiData.code}_copy_${Date.now()}`;
+        result = await consentTemplatesApi.createConsentTemplate(apiData);
       } else {
-        result = consentTemplatesStorage.create(templateData, user?.id);
+        result = await consentTemplatesApi.createConsentTemplate(apiData);
       }
 
       onSave(result);
       handleClose();
     } catch (error) {
-      console.error('Erreur sauvegarde modèle:', error);
-      setValidationErrors({ general: error.message });
+      console.error('[ConsentTemplateEditorModal] Error saving template:', error);
+      setValidationErrors({ general: error.message || 'Erreur lors de la sauvegarde' });
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +154,7 @@ const ConsentTemplateEditorModal = ({
     if (!formData.title?.trim()) errors.title = 'Titre requis';
     if (!formData.description?.trim()) errors.description = 'Description requise';
     if (!formData.content?.trim()) errors.content = 'Contenu requis';
-    if (!formData.category) errors.category = 'Catégorie requise';
+    if (!formData.consentType) errors.consentType = 'Type de consentement requis';
     if (!formData.speciality) errors.speciality = 'Spécialité requise';
 
     return errors;
@@ -137,7 +164,7 @@ const ConsentTemplateEditorModal = ({
     setFormData({
       title: '',
       description: '',
-      category: 'custom',
+      consentType: 'medical_treatment',
       speciality: 'general',
       content: '',
       status: 'draft',
@@ -150,6 +177,7 @@ const ConsentTemplateEditorModal = ({
     setShowPreview(false);
     setImportedFileName('');
     setDetectedVariables([]);
+    setIsInitialized(false); // Reset so next open re-initializes
     onClose();
   };
 
@@ -214,7 +242,7 @@ const ConsentTemplateEditorModal = ({
         <p>${formData.description}</p>
     </div>
     <div class="template-meta">
-        <p><strong>Catégorie:</strong> ${TEMPLATE_CATEGORIES[formData.category.toUpperCase()]?.name || formData.category}</p>
+        <p><strong>Type:</strong> ${getConsentTypeName(formData.consentType)}</p>
         <p><strong>Spécialité:</strong> ${MEDICAL_SPECIALITIES[formData.speciality.toUpperCase()]?.name || formData.speciality}</p>
         <p><strong>Variables détectées:</strong> ${detectedVariables.join(', ')}</p>
     </div>
@@ -241,10 +269,14 @@ const ConsentTemplateEditorModal = ({
     }
   };
 
-  // Insertion de variables prédéfinies
-  const insertVariable = (variable) => {
+  // Insertion de variables prédéfinies - préserve la position de scroll
+  const insertVariable = useCallback((variable) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
+
+    // Sauvegarder la position de scroll actuelle
+    const scrollTop = textarea.scrollTop;
+    const scrollLeft = textarea.scrollLeft;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -252,24 +284,83 @@ const ConsentTemplateEditorModal = ({
     const before = text.substring(0, start);
     const after = text.substring(end);
     const newContent = before + `[${variable}]` + after;
+    const newCursorPos = start + variable.length + 2;
 
     setFormData(prev => ({ ...prev, content: newContent }));
 
-    // Repositionner le curseur
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + variable.length + 2, start + variable.length + 2);
-    }, 0);
+    // Restaurer le curseur et le scroll après mise à jour
+    requestAnimationFrame(() => {
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        // Restaurer la position de scroll
+        textarea.scrollTop = scrollTop;
+        textarea.scrollLeft = scrollLeft;
+      }
+    });
+  }, [formData.content]);
+
+  // Variables prédéfinies organisées par catégorie
+  const variableCategories = {
+    patient: {
+      label: 'Patient',
+      icon: User,
+      variables: [
+        { name: 'NOM_PATIENT', label: 'Nom' },
+        { name: 'PRÉNOM_PATIENT', label: 'Prénom' },
+        { name: 'EMAIL_PATIENT', label: 'Email' },
+        { name: 'TÉLÉPHONE_PATIENT', label: 'Téléphone' },
+        { name: 'DATE_NAISSANCE', label: 'Date de naissance' },
+        { name: 'ADRESSE_PATIENT', label: 'Adresse' },
+        { name: 'NUMÉRO_SÉCU', label: 'N° Sécurité sociale' }
+      ]
+    },
+    praticien: {
+      label: 'Praticien',
+      icon: Stethoscope,
+      variables: [
+        { name: 'NOM_PRATICIEN', label: 'Nom' },
+        { name: 'SPÉCIALITÉ_PRATICIEN', label: 'Spécialité' },
+        { name: 'ÉTABLISSEMENT', label: 'Établissement' },
+        { name: 'SIGNATURE_PRATICIEN', label: 'Signature praticien' }
+      ]
+    },
+    intervention: {
+      label: 'Intervention',
+      icon: FileText,
+      variables: [
+        { name: 'DESCRIPTION_INTERVENTION', label: 'Description' },
+        { name: 'RISQUES_SPÉCIFIQUES', label: 'Risques' },
+        { name: 'BÉNÉFICES_ATTENDUS', label: 'Bénéfices' },
+        { name: 'ALTERNATIVES_DISPONIBLES', label: 'Alternatives' },
+        { name: 'TRAITEMENT', label: 'Traitement' },
+        { name: 'PRODUIT_SERVICE', label: 'Produit/Service' }
+      ]
+    },
+    dates: {
+      label: 'Dates',
+      icon: Calendar,
+      variables: [
+        { name: 'DATE', label: 'Date actuelle' },
+        { name: 'DATE_HEURE', label: 'Date et heure' },
+        { name: 'DURÉE', label: 'Durée' },
+        { name: 'SIGNATURE_PATIENT', label: 'Signature patient' }
+      ]
+    },
+    checkbox: {
+      label: 'Cases à cocher',
+      icon: CheckSquare,
+      variables: [
+        { name: 'CASE_À_COCHER', label: '☐ Case à cocher' },
+        { name: 'CASE_OUI_NON', label: '☐ Oui / ☐ Non' },
+        { name: 'INITIALES', label: 'Initiales: ____' }
+      ]
+    }
   };
 
-  // Variables prédéfinies communes
-  const commonVariables = [
-    'NOM_PATIENT', 'PRÉNOM_PATIENT', 'DATE_NAISSANCE', 'DATE',
-    'NOM_PRATICIEN', 'SPÉCIALITÉ_PRATICIEN', 'ÉTABLISSEMENT',
-    'DESCRIPTION_INTERVENTION', 'RISQUES_SPÉCIFIQUES', 'BÉNÉFICES_ATTENDUS',
-    'ALTERNATIVES_DISPONIBLES', 'SIGNATURE_PATIENT', 'SIGNATURE_PRATICIEN',
-    'DATE_HEURE', 'DURÉE', 'LIEU'
-  ];
+  // Liste simple pour rétrocompatibilité
+  const commonVariables = Object.values(variableCategories)
+    .flatMap(cat => cat.variables.map(v => v.name));
 
   const getModalTitle = () => {
     switch (mode) {
@@ -355,19 +446,24 @@ const ConsentTemplateEditorModal = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Catégorie *
+                      Type de consentement *
                     </label>
                     <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={formData.consentType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, consentType: e.target.value }))}
+                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        validationErrors.consentType ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     >
-                      {Object.values(TEMPLATE_CATEGORIES).map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
+                      {Object.values(CONSENT_TYPES).map(type => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
                         </option>
                       ))}
                     </select>
+                    {validationErrors.consentType && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.consentType}</p>
+                    )}
                   </div>
 
                   <div>
@@ -466,20 +562,35 @@ const ConsentTemplateEditorModal = ({
                 </div>
               )}
 
-              {/* Variables prédéfinies */}
+              {/* Variables prédéfinies organisées par catégorie */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <h3 className="font-medium text-gray-900 mb-3">Variables prédéfinies</h3>
-                <div className="grid grid-cols-1 gap-1">
-                  {commonVariables.map((variable) => (
-                    <button
-                      key={variable}
-                      type="button"
-                      onClick={() => insertVariable(variable)}
-                      className="text-left text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200"
-                    >
-                      [{variable}]
-                    </button>
-                  ))}
+                <div className="space-y-3">
+                  {Object.entries(variableCategories).map(([key, category]) => {
+                    const IconComponent = category.icon;
+                    return (
+                      <div key={key} className="border-b border-gray-100 pb-2 last:border-b-0">
+                        <div className="flex items-center text-xs font-medium text-gray-600 mb-1">
+                          <IconComponent className="h-3 w-3 mr-1" />
+                          {category.label}
+                        </div>
+                        <div className="grid grid-cols-1 gap-1">
+                          {category.variables.map((variable) => (
+                            <button
+                              key={variable.name}
+                              type="button"
+                              onClick={() => insertVariable(variable.name)}
+                              className="text-left text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                              title={`Insérer [${variable.name}]`}
+                            >
+                              <span className="font-mono">[{variable.name}]</span>
+                              <span className="text-gray-500 ml-1">- {variable.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -530,7 +641,7 @@ const ConsentTemplateEditorModal = ({
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">{formData.title}</h2>
                     <p className="text-gray-600 mb-2">{formData.description}</p>
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Catégorie: {TEMPLATE_CATEGORIES[formData.category.toUpperCase()]?.name}</span>
+                      <span>Type: {getConsentTypeName(formData.consentType)}</span>
                       <span>Spécialité: {MEDICAL_SPECIALITIES[formData.speciality.toUpperCase()]?.name}</span>
                     </div>
                   </div>
@@ -554,9 +665,147 @@ const ConsentTemplateEditorModal = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Contenu du modèle *
                   </label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 mb-3">
                     Utilisez [VARIABLE] pour insérer des variables dynamiques
                   </p>
+
+                  {/* Barre d'outils de formatage */}
+                  <div className="flex flex-wrap items-center gap-1 p-2 bg-white border rounded-lg">
+                    <span className="text-xs text-gray-500 mr-2">Formatage:</span>
+                    <button
+                      type="button"
+                      onClick={() => insertVariable('**texte en gras**')}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                      title="Gras"
+                    >
+                      <Bold className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertVariable('_texte en italique_')}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                      title="Italique"
+                    >
+                      <Italic className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertVariable('__texte souligné__')}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                      title="Souligné"
+                    >
+                      <Underline className="h-4 w-4" />
+                    </button>
+                    <div className="w-px h-5 bg-gray-300 mx-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = textareaRef.current;
+                        if (textarea) {
+                          const scrollTop = textarea.scrollTop;
+                          const start = textarea.selectionStart;
+                          const newContent = formData.content.substring(0, start) + '\n• ' + formData.content.substring(start);
+                          setFormData(prev => ({ ...prev, content: newContent }));
+                          requestAnimationFrame(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + 3, start + 3);
+                            textarea.scrollTop = scrollTop;
+                          });
+                        }
+                      }}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                      title="Liste à puces"
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = textareaRef.current;
+                        if (textarea) {
+                          const scrollTop = textarea.scrollTop;
+                          const start = textarea.selectionStart;
+                          const newContent = formData.content.substring(0, start) + '\n1. ' + formData.content.substring(start);
+                          setFormData(prev => ({ ...prev, content: newContent }));
+                          requestAnimationFrame(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + 4, start + 4);
+                            textarea.scrollTop = scrollTop;
+                          });
+                        }
+                      }}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                      title="Liste numérotée"
+                    >
+                      <ListOrdered className="h-4 w-4" />
+                    </button>
+                    <div className="w-px h-5 bg-gray-300 mx-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = textareaRef.current;
+                        if (textarea) {
+                          const scrollTop = textarea.scrollTop;
+                          const start = textarea.selectionStart;
+                          const newContent = formData.content.substring(0, start) + '\n☐ ' + formData.content.substring(start);
+                          setFormData(prev => ({ ...prev, content: newContent }));
+                          requestAnimationFrame(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + 3, start + 3);
+                            textarea.scrollTop = scrollTop;
+                          });
+                        }
+                      }}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                      title="Case à cocher"
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = textareaRef.current;
+                        if (textarea) {
+                          const scrollTop = textarea.scrollTop;
+                          const start = textarea.selectionStart;
+                          const newContent = formData.content.substring(0, start) + '\n☐ Oui    ☐ Non' + formData.content.substring(start);
+                          setFormData(prev => ({ ...prev, content: newContent }));
+                          requestAnimationFrame(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + 16, start + 16);
+                            textarea.scrollTop = scrollTop;
+                          });
+                        }
+                      }}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
+                      title="Oui/Non"
+                    >
+                      ☐/☐
+                    </button>
+                    <div className="w-px h-5 bg-gray-300 mx-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = textareaRef.current;
+                        if (textarea) {
+                          const scrollTop = textarea.scrollTop;
+                          const start = textarea.selectionStart;
+                          const line = '═'.repeat(40);
+                          const newContent = formData.content.substring(0, start) + `\n${line}\n` + formData.content.substring(start);
+                          setFormData(prev => ({ ...prev, content: newContent }));
+                          requestAnimationFrame(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + line.length + 2, start + line.length + 2);
+                            textarea.scrollTop = scrollTop;
+                          });
+                        }
+                      }}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
+                      title="Ligne de séparation"
+                    >
+                      ―――
+                    </button>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <textarea

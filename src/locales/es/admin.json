@@ -1,16 +1,47 @@
 {
   "title": "Administración",
   "description": "Gestione su consulta y usuarios",
+  "accessDenied": "Acceso denegado",
+  "noPermissionClinic": "No tiene permisos para acceder al panel de administración",
+  "overview": "Vista general",
+  "clinicConfig": "Configuración de la consulta",
+  "users": "Usuarios",
+  "roles": "Roles y permisos",
+  "teams": "Equipos y delegaciones",
+  "audit": "Auditoría y registros",
+  "totalUsers": "Usuarios totales",
+  "active": "activos",
+  "clinic": "Consulta",
+  "clinicAdmin": "Admin Consulta",
+  "clinicAdminPanel": "Panel de administración de la consulta",
+  "clinicManagement": "Gestión de la consulta",
+  "configuredSpecialties": "Especialidades configuradas",
+  "manageAvailability": "Gestionar disponibilidad",
+  "manageClinicUsers": "Gestionar usuarios de la consulta",
+  "manageRoles": "Gestionar roles",
+  "moreSpecialties": "Más especialidades",
+  "practitioners": "Profesionales",
+  "recentActivity": "Actividad reciente",
+  "role": "Rol",
+  "timeAgo": "hace",
+  "yourInfo": "Su información",
+  "adminPermissions": "Permisos de administrador",
+  "appointmentsMonth": "Citas este mes",
+  "assignSpecialties": "Asignar especialidades",
+  "createSpecialty": "Crear Especialidad",
+  "editSpecialty": "Editar Especialidad",
+  "saveChanges": "Guardar cambios",
+  "delete": "Eliminar",
   "settings": {
     "title": "Configuración",
-    "subtitle": "Configura tu consulta y preferencias",
+    "subtitle": "Configure su consulta y preferencias",
     "clinic": "Consulta",
     "medical": "Médico",
     "preferences": "Preferencias",
     "security": "Seguridad",
-    "clinicInfo": "Información de la Consulta",
-    "practitionerInfo": "Información del Médico",
-    "medicalSettings": "Configuración Médica",
+    "clinicInfo": "Información de la consulta",
+    "practitionerInfo": "Información del médico",
+    "medicalSettings": "Configuración médica",
     "language": "Idioma",
     "theme": "Tema",
     "notifications": "Notificaciones",
@@ -21,6 +52,782 @@
       "security": "Seguridad",
       "billing": "Facturación",
       "notifications": "Notificaciones"
+    },
+    "messages": {
+      "profileSaved": "Perfil de usuario guardado con éxito",
+      "companySaved": "Información de la consulta guardada con éxito",
+      "saveError": "Error al guardar",
+      "loadError": "Error al cargar los datos"
     }
+  },
+  "clinicConfiguration": {
+    "title": "Configuración de la Clínica",
+    "tabs": {
+      "schedule": "Horarios de apertura",
+      "slots": "Franjas horarias",
+      "closed": "Días de cierre"
+    },
+    "schedule": {
+      "openingDays": "Días de apertura",
+      "hoursPerDay": "Horarios por día",
+      "dayClosed": "Día cerrado",
+      "lunchBreak": "Pausa del almuerzo",
+      "morning": "Mañana",
+      "afternoon": "Tarde",
+      "from": "De",
+      "to": "A"
+    },
+    "slots": {
+      "title": "Configuración de franjas",
+      "defaultDuration": "Duración por defecto (minutos)",
+      "bufferTime": "Tiempo de margen (minutos)",
+      "maxAdvanceBooking": "Reserva máx. anticipada (días)",
+      "minAdvanceBooking": "Reserva mín. anticipada (horas)",
+      "allowWeekendBooking": "Permitir reservas en fin de semana",
+      "minutes": "minutos"
+    },
+    "closedDates": {
+      "title": "Días de cierre excepcional",
+      "addClosure": "Añadir cierre",
+      "date": "Fecha",
+      "type": "Tipo",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Motivo del cierre",
+      "holiday": "Festivo",
+      "maintenance": "Mantenimiento",
+      "other": "Otro",
+      "noClosed": "No hay días de cierre configurados"
+    },
+    "messages": {
+      "loadError": "Error al cargar la configuración",
+      "saveSuccess": "Configuración guardada con éxito",
+      "saveError": "Error al guardar la configuración",
+      "closedAdded": "Día de cierre añadido",
+      "closedRemoved": "Día de cierre eliminado",
+      "closedAddError": "Error al añadir el día de cierre",
+      "closedRemoveError": "Error al eliminar"
+    },
+    "buttons": {
+      "close": "Cerrar",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "add": "Añadir"
+    }
+  },
+  "rolesManagement": {
+    "title": "Gestión de roles",
+    "subtitle": "Personalice los permisos de los roles del sistema",
+    "tabs": {
+      "roles": "Roles",
+      "permissions": "Permisos",
+      "statistics": "Estadísticas"
+    },
+    "compliance": {
+      "title": "Cumplimiento RGPD y Secreto médico",
+      "description": "Los permisos marcados con el icono médico dan acceso a datos médicos. Deben reservarse a los profesionales sanitarios que participan en la atención al paciente."
+    },
+    "filters": {
+      "search": "Buscar",
+      "searchPlaceholder": "Nombre o descripción...",
+      "accessLevel": "Nivel de acceso",
+      "allLevels": "Todos los niveles",
+      "high": "Alto (80-100)",
+      "medium": "Medio (50-79)",
+      "low": "Bajo (1-49)",
+      "reset": "Restablecer"
+    },
+    "roleList": {
+      "title": "Roles configurados",
+      "systemRole": "Rol del sistema",
+      "level": "Nivel",
+      "levelHigh": "Alto",
+      "levelMedium": "Medio",
+      "levelLow": "Bajo",
+      "permissions": "permisos",
+      "healthcare": "Sanitario",
+      "administrative": "Administrativo",
+      "createdAt": "Creado el"
+    },
+    "actions": {
+      "viewDetails": "Ver detalles",
+      "edit": "Editar",
+      "editPermissions": "Editar permisos",
+      "resetToDefault": "Restablecer permisos por defecto",
+      "delete": "Eliminar"
+    },
+    "empty": {
+      "title": "No se encontraron roles",
+      "searchMessage": "Ningún rol coincide con sus criterios de búsqueda.",
+      "createMessage": "Comience creando su primer rol personalizado."
+    },
+    "statistics": {
+      "totalRoles": "Roles totales",
+      "systemRoles": "Roles del sistema",
+      "customRoles": "Roles personalizados",
+      "permissions": "Permisos"
+    },
+    "permissionsList": {
+      "title": "Permisos disponibles en el sistema"
+    },
+    "modal": {
+      "editSystemRole": "Editar permisos",
+      "systemRoleNote": "Rol del sistema - Solo se pueden modificar los permisos",
+      "editRole": "Editar rol",
+      "newRole": "Nuevo rol",
+      "roleName": "Nombre del rol",
+      "level": "Nivel (1-100)",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Descripción del rol y sus responsabilidades",
+      "name": "Nombre",
+      "type": "Tipo",
+      "healthcareProfessional": "Profesional sanitario",
+      "administrativeStaff": "Personal administrativo",
+      "adminData": "Datos administrativos",
+      "medicalData": "Datos médicos",
+      "medicalSecret": "Secreto médico",
+      "medicalWarning": "Estos permisos dan acceso a datos de salud protegidos por el secreto médico. Reservados a profesionales sanitarios que participan en la atención.",
+      "notRecommended": "No recomendado para este rol",
+      "medicalAccessWarning": {
+        "title": "Atención - Secreto médico",
+        "message": "Este rol no está definido como \"profesional sanitario\" pero tiene permisos de acceso a datos médicos. Esto puede constituir una violación del secreto médico."
+      }
+    },
+    "messages": {
+      "loadError": "Error al cargar los roles",
+      "loadFallback": "Cargando roles por defecto (API no disponible)",
+      "createSuccess": "Rol creado con éxito",
+      "updateSuccess": "Rol actualizado con éxito",
+      "permissionsUpdateSuccess": "Permisos del rol actualizados con éxito",
+      "saveError": "Error al guardar el rol",
+      "deleteConfirm": "¿Está seguro de que desea eliminar el rol \"{{name}}\"?",
+      "deleteSuccess": "Rol eliminado con éxito",
+      "deleteError": "Error al eliminar el rol",
+      "resetConfirm": "¿Restablecer el rol \"{{name}}\" a los permisos por defecto?\n\nEsta acción reemplazará todas las modificaciones de permisos.",
+      "resetSuccess": "Rol \"{{name}}\" restablecido a los permisos por defecto",
+      "resetError": "Error al restablecer el rol",
+      "defaultNotFound": "Definición por defecto no encontrada para este rol"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "update": "Actualizar",
+      "savePermissions": "Guardar permisos"
+    }
+  },
+  "usersManagement": {
+    "title": "Gestión de usuarios",
+    "subtitle": "Administre las cuentas de usuario y sus permisos",
+    "accessDenied": "Acceso denegado",
+    "noPermission": "No tiene permisos para acceder a la gestión de usuarios.",
+    "refresh": "Actualizar",
+    "export": "Exportar",
+    "newUserBtn": "Nuevo usuario",
+    "loading": "Cargando usuarios...",
+    "stats": {
+      "total": "Total",
+      "active": "Activos",
+      "adminFunctions": "Funciones admin",
+      "practitioners": "Profesionales"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar por nombre, email, departamento...",
+      "allRoles": "Todos los roles",
+      "allStatuses": "Todos los estados",
+      "activeOnly": "Solo activos",
+      "inactiveOnly": "Solo inactivos",
+      "allConnections": "Todas las conexiones",
+      "connectedToday": "Conectados hoy",
+      "connectedThisWeek": "Conectados esta semana",
+      "connectedThisMonth": "Conectados este mes"
+    },
+    "bulk": {
+      "selected": "{{count}} usuario(s) seleccionado(s)",
+      "activate": "Activar",
+      "deactivate": "Desactivar",
+      "delete": "Eliminar"
+    },
+    "table": {
+      "user": "Usuario",
+      "role": "Rol",
+      "department": "Departamento",
+      "status": "Estado",
+      "lastConnection": "Última conexión",
+      "actions": "Acciones"
+    },
+    "status": {
+      "inactive": "Inactivo",
+      "online": "En línea",
+      "offline": "Desconectado",
+      "nowConnected": "Ahora (conectado)"
+    },
+    "lastLogin": {
+      "never": "Nunca conectado",
+      "minutes": "Hace {{count}} min",
+      "hours": "Hace {{count}} h",
+      "days": "Hace {{count}} d"
+    },
+    "actions": {
+      "edit": "Editar",
+      "activate": "Activar",
+      "deactivate": "Desactivar",
+      "delete": "Eliminar"
+    },
+    "pagination": {
+      "showing": "Mostrando {{from}} a {{to}} de {{total}} resultados",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "exportHeaders": {
+      "id": "ID",
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "email": "Email",
+      "phone": "Teléfono",
+      "businessRole": "Rol profesional",
+      "adminFunction": "Función administrativa",
+      "profession": "Profesión",
+      "status": "Estado",
+      "createdAt": "Creado el",
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "modal": {
+      "editUser": "Editar usuario",
+      "newUser": "Nuevo usuario",
+      "editUserDesc": "Modificar información del usuario",
+      "newUserDesc": "Crear una nueva cuenta de usuario"
+    },
+    "fields": {
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "email": "Email",
+      "phone": "Teléfono",
+      "phonePlaceholder": "+33 6 12 34 56 78 o +34 612 345 678",
+      "emailReadonly": "El email no se puede modificar después de crear la cuenta"
+    },
+    "invitation": {
+      "title": "Modo de creación",
+      "sendInvitation": "Enviar invitación por email (el usuario definirá su contraseña)",
+      "password": "Contraseña",
+      "passwordPlaceholder": "Mínimo 6 caracteres",
+      "passwordNote": "La contraseña será definida por el administrador. El usuario podrá cambiarla después de iniciar sesión.",
+      "invitationNote": "Se enviará un email al usuario con un enlace para definir su contraseña. La cuenta estará en estado \"Pendiente\" hasta su validación."
+    },
+    "password": {
+      "changeTitle": "Cambiar contraseña",
+      "changeNote": "Dejar vacío para mantener la contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "placeholder": "Introducir nueva contraseña (opcional)",
+      "minLength": "La contraseña debe tener al menos 6 caracteres"
+    },
+    "roles": {
+      "businessRole": "Rol profesional",
+      "administrativeRole": "Función administrativa (opcional)",
+      "noAdminRole": "Sin función administrativa",
+      "administrativeRoleNote": "Una función administrativa puede combinarse con un rol profesional (ej: un médico que también es director)"
+    },
+    "department": {
+      "label": "Departamento",
+      "placeholder": "Seleccionar un departamento"
+    },
+    "specialty": {
+      "label": "Especialidad",
+      "placeholder": "Seleccionar una especialidad"
+    },
+    "license": {
+      "label": "Número de licencia/colegiado (opcional)",
+      "placeholder": "Ej: número de colegiado...",
+      "note": "Número de colegiado médico, licencia profesional, etc."
+    },
+    "accountActive": "Cuenta activa",
+    "validation": {
+      "emailRequired": "Email requerido",
+      "emailInvalid": "Formato de email inválido",
+      "firstNameRequired": "Nombre requerido",
+      "lastNameRequired": "Apellidos requeridos",
+      "phoneInvalid": "Formato de teléfono inválido (8-15 dígitos esperados)",
+      "passwordRequired": "Contraseña requerida (mínimo 6 caracteres)",
+      "roleRequired": "Rol requerido"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "edit": "Editar",
+      "saving": "Guardando..."
+    },
+    "messages": {
+      "loadError": "Error al cargar los usuarios",
+      "createSuccess": "Usuario creado con éxito",
+      "updateSuccess": "Usuario actualizado con éxito",
+      "saveError": "Error al guardar el usuario",
+      "deleteConfirm": "¿Está seguro de que desea eliminar este usuario?",
+      "deleteSuccess": "Usuario eliminado con éxito",
+      "deleteError": "Error al eliminar el usuario",
+      "statusUpdated": "Estado del usuario actualizado",
+      "updateError": "Error al actualizar el usuario",
+      "bulkConfirm": "¿Está seguro de aplicar esta acción a {{count}} usuario(s)?",
+      "bulkSuccess": "Acción masiva completada con éxito",
+      "bulkError": "Error al realizar la acción masiva",
+      "exportSuccess": "Usuarios exportados con éxito",
+      "exportError": "Error al exportar los usuarios"
+    }
+  },
+  "practitionersManagement": {
+    "title": "Gestión de Profesionales",
+    "tabs": {
+      "list": "Lista de profesionales",
+      "new": "Nuevo profesional",
+      "edit": "Editar profesional"
+    },
+    "list": {
+      "title": "Profesionales ({{count}})",
+      "empty": "No hay profesionales registrados"
+    },
+    "modal": {
+      "editPractitioner": "Editar profesional",
+      "newPractitioner": "Nuevo profesional",
+      "editTitle": "Editar el profesional",
+      "createTitle": "Nuevo profesional",
+      "editPractitionerDesc": "Modificar información del profesional",
+      "newPractitionerDesc": "Añadir un nuevo profesional a la consulta"
+    },
+    "fields": {
+      "title": "Título",
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "email": "Email",
+      "phone": "Teléfono",
+      "mobile": "Móvil",
+      "profession": "Profesión",
+      "specialties": "Especialidades",
+      "adeli": "N° ADELI",
+      "rpps": "N° RPPS",
+      "orderNumber": "N° de colegiado",
+      "color": "Color",
+      "active": "Activo",
+      "license": "Número de licencia",
+      "type": "Tipo de profesional",
+      "displayColor": "Color de visualización",
+      "isActive": "Profesional activo"
+    },
+    "types": {
+      "physician": "Médico",
+      "practitioner": "Profesional de salud"
+    },
+    "colors": {
+      "blue": "Azul",
+      "green": "Verde",
+      "red": "Rojo",
+      "purple": "Púrpura",
+      "orange": "Naranja",
+      "teal": "Verde azulado",
+      "pink": "Rosa",
+      "indigo": "Índigo"
+    },
+    "placeholders": {
+      "firstName": "Nombre del profesional",
+      "lastName": "Apellidos del profesional",
+      "phone": "+34 612 345 678",
+      "specialty": "Medicina general, Cardiología, etc.",
+      "license": "Número de colegiado, licencia, etc."
+    },
+    "availability": {
+      "title": "Disponibilidades",
+      "manage": "Gestionar disponibilidades"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "edit": "Editar",
+      "saving": "Guardando...",
+      "addNew": "Nuevo profesional",
+      "addFirst": "Añadir primer profesional"
+    },
+    "actions": {
+      "resendInvitation": "Reenviar invitación",
+      "activate": "Activar cuenta"
+    },
+    "messages": {
+      "loadError": "Error al cargar la lista de profesionales",
+      "createSuccess": "Profesional creado con éxito",
+      "createError": "Error al crear el profesional",
+      "updateSuccess": "Profesional actualizado con éxito",
+      "updateError": "Error al actualizar el profesional",
+      "deleteSuccess": "Profesional eliminado con éxito",
+      "deleteError": "Error al eliminar el profesional",
+      "deleteConfirm": "¿Está seguro de que desea eliminar este profesional?",
+      "resendConfirm": "¿Reenviar invitación a {{email}}?",
+      "resendSuccess": "Invitación enviada con éxito",
+      "resendError": "Error al enviar la invitación",
+      "activateConfirm": "¿Activar la cuenta de {{name}}?",
+      "activateSuccess": "Cuenta activada con éxito",
+      "activateError": "Error al activar la cuenta"
+    }
+  },
+  "departments": {
+    "direction": "Dirección",
+    "administration": "Administración",
+    "generalMedicine": "Medicina General",
+    "cardiology": "Cardiología",
+    "dermatology": "Dermatología",
+    "gynecology": "Ginecología",
+    "pediatrics": "Pediatría",
+    "radiology": "Radiología",
+    "surgery": "Cirugía",
+    "nursing": "Enfermería",
+    "reception": "Recepción",
+    "pharmacy": "Farmacia",
+    "laboratory": "Laboratorio",
+    "physiotherapy": "Fisioterapia",
+    "audit": "Auditoría"
+  },
+  "specialtiesManagement": {
+    "title": "Administración de Especialidades Médicas",
+    "subtitle": "Configure las especialidades disponibles para las clínicas en el SaaS",
+    "loading": "Cargando especialidades...",
+    "tabs": {
+      "list": "Lista de Especialidades",
+      "translations": "Traducciones",
+      "modules": "Configuración de Módulos"
+    },
+    "configuredSpecialties": "Especialidades Configuradas",
+    "specialtiesCount": "{{count}} especialidades",
+    "activeCount": "{{count}} activas",
+    "system": "Sistema",
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "modules": "Módulos",
+    "created": "Creado",
+    "updated": "Actualizado",
+    "deactivate": "Desactivar",
+    "activate": "Activar",
+    "edit": "Editar",
+    "basicInfo": "Información Básica",
+    "specialtyCode": "Código de Especialidad",
+    "color": "Color",
+    "status": "Estado",
+    "specialtyActive": "Especialidad activa",
+    "translations": "Traducciones",
+    "specialtyName": "Nombre de la especialidad",
+    "specialtyDescription": "Descripción de la especialidad",
+    "associatedModules": "Módulos Asociados",
+    "required": "Obligatorio",
+    "cancel": "Cancelar",
+    "deleteConfirm": "¿Está seguro de que desea eliminar esta especialidad?",
+    "availableModules": {
+      "base": "Módulo Base",
+      "cardiac": "Módulo Cardiológico",
+      "pediatric": "Módulo Pediátrico",
+      "preventive": "Medicina Preventiva",
+      "chronic": "Enfermedades Crónicas",
+      "surgery": "Cirugía",
+      "radiology": "Radiología",
+      "laboratory": "Laboratorio"
+    }
+  },
+  "backupManagement": {
+    "title": "Gestión de copias de seguridad",
+    "subtitle": "Copia de seguridad y restauración de datos de la aplicación",
+    "accessDenied": "Acceso denegado",
+    "noPermission": "No tiene permisos para acceder a la gestión de copias de seguridad.",
+    "refresh": "Actualizar",
+    "import": "Importar",
+    "cleanup": "Limpiar",
+    "stats": {
+      "totalBackups": "Copias totales",
+      "successful": "Exitosas",
+      "totalSize": "Tamaño total",
+      "lastBackup": "Última copia",
+      "none": "Ninguna"
+    },
+    "tabs": {
+      "backups": "Copias de seguridad",
+      "create": "Crear copia",
+      "settings": "Configuración"
+    },
+    "loading": "Cargando copias de seguridad...",
+    "empty": {
+      "title": "Sin copias de seguridad",
+      "description": "Cree su primera copia de seguridad para proteger sus datos.",
+      "createButton": "Crear copia de seguridad"
+    },
+    "table": {
+      "backup": "Copia de seguridad",
+      "type": "Tipo",
+      "size": "Tamaño",
+      "status": "Estado",
+      "actions": "Acciones",
+      "imported": "Importada"
+    },
+    "types": {
+      "full": "Completa",
+      "partial": "Parcial"
+    },
+    "actions": {
+      "viewDetails": "Ver detalles",
+      "restore": "Restaurar",
+      "export": "Exportar",
+      "delete": "Eliminar"
+    },
+    "pagination": {
+      "showing": "Mostrando {{from}} a {{to}} de {{total}} copias",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "pageOf": "Página {{current}} de {{total}}"
+    },
+    "create": {
+      "title": "Crear nueva copia de seguridad",
+      "typeLabel": "Tipo de copia de seguridad",
+      "fullBackup": "Copia completa",
+      "fullDescription": "Todos los datos de la aplicación",
+      "partialBackup": "Copia parcial",
+      "partialDescription": "Tipos de datos seleccionados",
+      "dataTypesLabel": "Tipos de datos a respaldar",
+      "descriptionLabel": "Descripción (opcional)",
+      "descriptionPlaceholder": "Descripción de la copia de seguridad...",
+      "includeAuditLogs": "Incluir registros de auditoría",
+      "cancel": "Cancelar",
+      "creating": "Creando...",
+      "createButton": "Crear copia de seguridad"
+    },
+    "dataTypes": {
+      "patients": "Pacientes",
+      "appointments": "Citas",
+      "medicalRecords": "Historiales médicos",
+      "consents": "Consentimientos",
+      "consentTemplates": "Plantillas de consentimiento",
+      "users": "Usuarios",
+      "teams": "Equipos",
+      "roles": "Roles y permisos",
+      "invoices": "Facturas",
+      "quotes": "Presupuestos",
+      "products": "Productos y servicios",
+      "settings": "Configuración"
+    },
+    "details": {
+      "title": "Detalles de la copia de seguridad",
+      "generalInfo": "Información general",
+      "metadata": "Metadatos",
+      "id": "ID",
+      "description": "Descripción",
+      "type": "Tipo",
+      "size": "Tamaño",
+      "status": "Estado",
+      "createdAt": "Creado el",
+      "version": "Versión",
+      "createdBy": "Creado por",
+      "checksum": "Checksum",
+      "dataTypesIncluded": "Tipos de datos incluidos",
+      "importedBackup": "Copia importada",
+      "importedAt": "Esta copia fue importada el {{date}}",
+      "export": "Exportar",
+      "restore": "Restaurar",
+      "close": "Cerrar"
+    },
+    "messages": {
+      "createSuccess": "¡Copia de seguridad creada con éxito!",
+      "createError": "Error al crear la copia de seguridad: {{error}}",
+      "restoreConfirm": "¿Está seguro de que desea restaurar esta copia de seguridad?",
+      "dataOverwrite": " Los datos existentes serán sobrescritos.",
+      "autoBackup": " Se creará una copia de seguridad automática antes de la restauración.",
+      "restoreComplete": "¡Restauración completada!",
+      "restoredTypes": "Tipos de datos restaurados: {{count}}",
+      "skippedTypes": "Tipos de datos omitidos: {{count}}",
+      "errors": "Errores: {{count}}",
+      "seeConsole": "Ver consola para detalles de errores.",
+      "reloadPage": "¿Desea recargar la página para aplicar los cambios?",
+      "restoreError": "Error durante la restauración: {{error}}",
+      "deleteConfirm": "¿Está seguro de que desea eliminar esta copia de seguridad?",
+      "deleteSuccess": "¡Copia de seguridad eliminada con éxito!",
+      "deleteError": "Error al eliminar la copia de seguridad.",
+      "exportError": "Error al exportar: {{error}}",
+      "importSuccess": "¡Copia de seguridad \"{{description}}\" importada con éxito!",
+      "importError": "Error al importar: {{error}}",
+      "cleanupConfirm": "¿Eliminar copias de seguridad de más de 30 días (excepto copias completas)?",
+      "cleanupSuccess": "{{count}} copia(s) de seguridad eliminada(s).",
+      "cleanupError": "Error durante la limpieza: {{error}}",
+      "loadError": "Error al cargar las copias de seguridad:"
+    }
+  },
+  "teamManagement": {
+    "title": "Gestión de equipos y delegaciones",
+    "subtitle": "Gestione los equipos de trabajo y las delegaciones de permisos",
+    "accessDenied": "Acceso denegado",
+    "noPermission": "No tiene permisos para acceder a la gestión de equipos.",
+    "refresh": "Actualizar",
+    "export": "Exportar",
+    "newTeam": "Nuevo equipo",
+    "newDelegation": "Nueva delegación",
+    "loading": "Cargando...",
+    "stats": {
+      "totalTeams": "Equipos totales",
+      "totalMembers": "Miembros totales",
+      "activeDelegations": "Delegaciones activas",
+      "pendingApprovals": "Pendientes de aprobación"
+    },
+    "tabs": {
+      "teams": "Equipos",
+      "delegations": "Delegaciones"
+    },
+    "filters": {
+      "searchTeams": "Buscar por nombre, departamento...",
+      "searchDelegations": "Buscar por usuario, razón...",
+      "allDepartments": "Todos los departamentos",
+      "allStatuses": "Todos los estados",
+      "activeOnly": "Solo activos",
+      "inactiveOnly": "Solo inactivos",
+      "active": "Activos",
+      "pending": "Pendientes",
+      "expired": "Expirados",
+      "awaitingApproval": "Pendientes de aprobación",
+      "inactive": "Inactivos"
+    },
+    "teamsTable": {
+      "team": "Equipo",
+      "teamLeader": "Líder del equipo",
+      "members": "Miembros",
+      "department": "Departamento",
+      "status": "Estado",
+      "actions": "Acciones",
+      "memberCount": "{{count}} miembro(s)"
+    },
+    "delegationsTable": {
+      "delegation": "Delegación",
+      "period": "Período",
+      "permissions": "Permisos",
+      "status": "Estado",
+      "actions": "Acciones",
+      "permissionCount": "{{count}} permiso(s)",
+      "approvedBy": "Aprobado por {{name}}"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "pending": "Pendiente",
+      "pendingApproval": "Pendiente de aprobación",
+      "expired": "Expirado"
+    },
+    "actions": {
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "approve": "Aprobar",
+      "revoke": "Revocar"
+    },
+    "pagination": {
+      "showing": "Mostrando {{from}} a {{to}} de {{total}} resultados",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "messages": {
+      "confirmDeleteTeam": "¿Está seguro de que desea eliminar este equipo?",
+      "deleteError": "Error al eliminar: {{error}}",
+      "modificationNotImplemented": "Modificación de delegaciones aún no implementada",
+      "approvalError": "Error durante la aprobación: {{error}}",
+      "confirmRevoke": "¿Está seguro de que desea revocar esta delegación?",
+      "revokeError": "Error durante la revocación: {{error}}",
+      "exportError": "Error al exportar: {{error}}",
+      "loadError": "Error al cargar datos de equipos"
+    }
+  },
+  "consents": {
+    "patientConsents": "Consentimientos del Paciente",
+    "sendConsentRequest": "Enviar Solicitud de Consentimiento",
+    "sendRequest": "Enviar Solicitud",
+    "requestSent": "¡Solicitud Enviada!",
+    "emailSentTo": "Se ha enviado un correo a {{email}}",
+    "linkGenerated": "Se ha generado el enlace de firma",
+    "signingLink": "Enlace de Firma",
+    "recipient": "Destinatario",
+    "template": "Plantilla de Consentimiento",
+    "selectTemplate": "Seleccionar plantilla",
+    "filterByType": "Filtrar por tipo",
+    "allTypes": "Todos los tipos",
+    "noTemplates": "Sin plantillas disponibles",
+    "noTemplatesForType": "Sin plantillas para el tipo \"{{type}}\"",
+    "deliveryMethod": "Método de Envío",
+    "recipientEmail": "Correo del Destinatario",
+    "emailRequired": "La dirección de correo es obligatoria",
+    "language": "Idioma del Documento",
+    "expiresIn": "Expira En",
+    "customMessage": "Mensaje Personalizado (opcional)",
+    "customMessagePlaceholder": "Añada un mensaje para el paciente...",
+    "pendingRequests": "Solicitudes Pendientes",
+    "signedConsents": "Consentimientos Firmados",
+    "requestHistory": "Historial de Solicitudes",
+    "noSignedConsents": "Sin consentimientos firmados",
+    "consentDocument": "Documento de Consentimiento",
+    "sentOn": "Enviado el",
+    "signedOn": "Firmado el",
+    "sendReminder": "Enviar Recordatorio",
+    "reminderSent": "Recordatorio enviado correctamente",
+    "preview": "Vista previa",
+    "previewConsent": "Vista previa del consentimiento",
+    "requestCreated": "Solicitud creada correctamente",
+    "signatureWorkflows": "Flujos de firma",
+    "signatureWorkflowEmail": "Por correo",
+    "signatureWorkflowEmailDesc": "Enviar un enlace de firma al paciente por correo electrónico",
+    "signatureWorkflowTablet": "En tablet",
+    "signatureWorkflowTabletDesc": "Firma inmediata en tablet en la consulta",
+    "signatureWorkflowLink": "Generar enlace",
+    "signatureWorkflowLinkDesc": "Crear un enlace para compartir con el paciente",
+    "unfilledVariables": "Variables no completadas",
+    "unfilledVariablesWarning": "Las siguientes variables no pudieron completarse automáticamente",
+    "openForSignature": "Abrir para firma",
+    "newRequest": "Nueva solicitud",
+    "expiresInHours": "Expira en {{hours}} horas",
+    "selectWorkflow": "Seleccione un flujo de firma para continuar",
+    "cancel": "Cancelar",
+    "confirmCancel": "¿Está seguro de que desea cancelar esta solicitud?",
+    "digitalSignature": "Firma Digital",
+    "status": {
+      "pending": "Pendiente",
+      "signed": "Firmado",
+      "accepted": "Aceptado",
+      "rejected": "Rechazado",
+      "expired": "Expirado",
+      "cancelled": "Cancelado"
+    },
+    "types": {
+      "medical_treatment": "Atención Médica",
+      "surgery": "Cirugía / Procedimiento Invasivo",
+      "anesthesia": "Anestesia",
+      "diagnostic": "Examen / Diagnóstico",
+      "telehealth": "Telesalud / Telemedicina",
+      "clinical_trial": "Ensayo Clínico / Investigación",
+      "minor_treatment": "Tratamiento de Menores",
+      "data_processing": "Protección de Datos (RGPD)",
+      "photo": "Derechos de Imagen (Foto/Video)",
+      "communication": "Comunicación Comercial",
+      "dental": "Atención Dental",
+      "mental_health": "Salud Mental",
+      "prevention": "Prevención / Vacunación",
+      "general_care": "Cuidados Generales"
+    }
+  },
+  "availability": {
+    "title": "Disponibilidad",
+    "subtitle": "Gestione sus franjas horarias disponibles por semana",
+    "week": "Semana",
+    "today": "Hoy",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "copyPrevious": "Copiar semana anterior",
+    "applyTemplate": "Aplicar mi plantilla",
+    "saveAsTemplate": "Guardar como plantilla",
+    "addSlot": "Añadir",
+    "closed": "Cerrado",
+    "notes": "Notas",
+    "notesPlaceholder": "Notas para esta semana...",
+    "manual": "Manual",
+    "copied": "Copiado",
+    "template": "Plantilla",
+    "default": "Predeterminado",
+    "copiedFromPrevious": "Copiado de la semana anterior",
+    "templateApplied": "Plantilla aplicada",
+    "templateSaved": "Plantilla guardada",
+    "myAvailability": "Mi disponibilidad",
+    "practitionerAvailability": "Disponibilidad del profesional",
+    "selectPractitioner": "Seleccionar un profesional",
+    "noProviderSelected": "Seleccione un profesional para ver su disponibilidad"
   }
 }

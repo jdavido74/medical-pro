@@ -1,7 +1,7 @@
 // components/auth/PermissionGuard.js
 import React from 'react';
 import { AlertCircle, Lock } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { permissionsStorage } from '../../utils/permissionsStorage';
 
 const PermissionGuard = ({
@@ -13,10 +13,24 @@ const PermissionGuard = ({
   showMessage = true,
   customMessage = null
 }) => {
-  const { user } = useAuth();
+  const { user, permissions: backendPermissions, hasPermission: authHasPermission } = useAuth();
 
-  // Obtenir les permissions de l'utilisateur
-  const userPermissions = permissionsStorage.getUserPermissions(user);
+  // Priorité: permissions du backend, sinon calcul local depuis le rôle utilisateur
+  const hasBackendPermissions = backendPermissions && backendPermissions.length > 0;
+  const localPermissions = permissionsStorage.getUserPermissions(user);
+
+  // Utilise hasPermission du backend si permissions présentes, sinon fallback local
+  const checkPermission = (perm) => {
+    if (hasBackendPermissions && authHasPermission) {
+      return authHasPermission(perm);
+    }
+    // Fallback: vérification locale basée sur le rôle de l'utilisateur
+    // NOTE: Ce fallback peut utiliser des permissions obsolètes
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[PermissionGuard] Using localStorage fallback for permission:', perm, '- Backend permissions not loaded');
+    }
+    return permissionsStorage.hasPermission(localPermissions, perm);
+  };
 
   // Déterminer les permissions requises
   const requiredPermissions = permission ? [permission] : permissions;
@@ -29,10 +43,10 @@ const PermissionGuard = ({
     hasAccess = true;
   } else if (requireAll) {
     // Toutes les permissions sont requises
-    hasAccess = permissionsStorage.hasAllPermissions(userPermissions, requiredPermissions);
+    hasAccess = requiredPermissions.every(perm => checkPermission(perm));
   } else {
     // Au moins une permission est requise
-    hasAccess = permissionsStorage.hasAnyPermission(userPermissions, requiredPermissions);
+    hasAccess = requiredPermissions.some(perm => checkPermission(perm));
   }
 
   // Si l'utilisateur a accès, afficher le contenu
@@ -94,19 +108,42 @@ const PermissionGuard = ({
 };
 
 // Hook personnalisé pour vérifier les permissions
+// IMPORTANT: Utilise les permissions du backend via useAuth()
+// et fallback sur les permissions calculées depuis localStorage si non disponibles
 export const usePermissions = () => {
-  const { user } = useAuth();
+  const { user, permissions: backendPermissions, hasPermission: authHasPermission } = useAuth();
 
-  const userPermissions = permissionsStorage.getUserPermissions(user);
+  // Priorité: permissions du backend, sinon calcul local depuis le rôle utilisateur
+  const hasBackendPermissions = backendPermissions && backendPermissions.length > 0;
+  const localPermissions = permissionsStorage.getUserPermissions(user);
+  const userPermissions = hasBackendPermissions ? backendPermissions : localPermissions;
+
+  // Utilise hasPermission du backend si permissions présentes, sinon fallback local
+  const hasPermission = (permission) => {
+    if (hasBackendPermissions && authHasPermission) {
+      return authHasPermission(permission);
+    }
+    // Fallback: vérification locale basée sur le rôle de l'utilisateur
+    // NOTE: Ce fallback peut utiliser des permissions obsolètes
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[usePermissions] Using localStorage fallback for permission:', permission, '- Backend permissions not loaded');
+    }
+    return permissionsStorage.hasPermission(localPermissions, permission);
+  };
+
+  const hasAnyPermission = (permissions) => {
+    return permissions.some(perm => hasPermission(perm));
+  };
+
+  const hasAllPermissions = (permissions) => {
+    return permissions.every(perm => hasPermission(perm));
+  };
 
   return {
     permissions: userPermissions,
-    hasPermission: (permission) =>
-      permissionsStorage.hasPermission(userPermissions, permission),
-    hasAnyPermission: (permissions) =>
-      permissionsStorage.hasAnyPermission(userPermissions, permissions),
-    hasAllPermissions: (permissions) =>
-      permissionsStorage.hasAllPermissions(userPermissions, permissions),
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
     user,
     role: user?.role
   };

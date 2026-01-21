@@ -7,12 +7,14 @@ import {
   ExternalLink, Settings, Bell, Database
 } from 'lucide-react';
 import auditStorage from '../../utils/auditStorage';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
+import { useLocale } from '../../contexts/LocaleContext';
 
 const AuditManagementModule = () => {
   const { user: currentUser } = useAuth();
   const { hasPermission } = usePermissions();
+  const { locale } = useLocale();
 
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
@@ -130,7 +132,7 @@ const AuditManagementModule = () => {
   };
 
   const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString('fr-FR');
+    return new Date(timestamp).toLocaleString(locale);
   };
 
   const getSeverityColor = (severity) => {

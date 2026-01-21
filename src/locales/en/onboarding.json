@@ -1,0 +1,161 @@
+{
+  "onboarding": {
+    "title": "Configure your clinic",
+    "subtitle": "Welcome! Let's set up {{clinicName}} together",
+    "loggedInAs": "Logged in as",
+    "loading": "Loading configuration...",
+    "helpText": "Need help? Contact our technical support.",
+
+    "buttons": {
+      "back": "Back",
+      "next": "Continue",
+      "finish": "Complete setup",
+      "skip": "Skip this step"
+    },
+
+    "errors": {
+      "title": "An error occurred",
+      "loadFailed": "Unable to load configuration status.",
+      "completeFailed": "Unable to complete configuration."
+    },
+
+    "steps": {
+      "clinic": {
+        "title": "Clinic configuration",
+        "description": "Set up your facility's basic information",
+        "fields": {
+          "name": "Clinic name",
+          "email": "Contact email",
+          "phone": "Phone",
+          "address": "Address"
+        },
+        "placeholders": {
+          "name": "Ex: Saint-Michel Clinic",
+          "email": "contact@clinic.com",
+          "phone": "+1 555 123 4567",
+          "street": "Street address",
+          "city": "City",
+          "postalCode": "Postal code"
+        },
+        "errors": {
+          "nameRequired": "Clinic name is required",
+          "emailRequired": "Contact email is required",
+          "saveFailed": "Unable to save information"
+        }
+      },
+
+      "schedule": {
+        "title": "Opening hours",
+        "description": "Configure your clinic's opening days and hours",
+        "intro": "These hours define the available time slots for appointments. You can modify them later in the clinic settings.",
+        "days": {
+          "monday": "Monday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday",
+          "thursday": "Thursday",
+          "friday": "Friday",
+          "saturday": "Saturday",
+          "sunday": "Sunday"
+        },
+        "morning": "Morning",
+        "afternoon": "Afternoon",
+        "lunchBreak": "Lunch break",
+        "applyToAllWeekdays": "Apply to all weekdays",
+        "errors": {
+          "noDayEnabled": "Please enable at least one opening day",
+          "saveFailed": "Unable to save schedule"
+        }
+      },
+
+      "team": {
+        "title": "Create a team",
+        "description": "Create your first work team",
+        "intro": "Teams help you organize your practitioners by department or specialty.",
+        "fields": {
+          "name": "Team name",
+          "description": "Description",
+          "department": "Department"
+        },
+        "placeholders": {
+          "name": "Ex: General Medicine Team",
+          "description": "Briefly describe this team",
+          "department": "Ex: General Medicine"
+        },
+        "departments": {
+          "general": "General Medicine",
+          "cardiology": "Cardiology",
+          "dermatology": "Dermatology",
+          "pediatrics": "Pediatrics",
+          "gynecology": "Gynecology",
+          "orthopedics": "Orthopedics",
+          "ophthalmology": "Ophthalmology",
+          "dentistry": "Dentistry",
+          "other": "Other"
+        },
+        "errors": {
+          "nameRequired": "Team name is required",
+          "departmentRequired": "Department is required",
+          "saveFailed": "Unable to create team"
+        },
+        "success": "Team created successfully"
+      },
+
+      "practitioner": {
+        "title": "Add a practitioner",
+        "description": "Add your first healthcare professional",
+        "intro": "Add at least one practitioner to be able to manage appointments.",
+        "fields": {
+          "firstName": "First name",
+          "lastName": "Last name",
+          "email": "Professional email",
+          "phone": "Phone",
+          "role": "Role",
+          "specialty": "Specialty",
+          "licenseNumber": "License number",
+          "team": "Team"
+        },
+        "placeholders": {
+          "firstName": "Ex: John",
+          "lastName": "Ex: Smith",
+          "email": "john.smith@clinic.com",
+          "phone": "+1 555 987 6543",
+          "licenseNumber": "12345678"
+        },
+        "roles": {
+          "doctor": "Doctor",
+          "specialist": "Specialist",
+          "nurse": "Nurse",
+          "dentist": "Dentist",
+          "physiotherapist": "Physiotherapist"
+        },
+        "specialties": {
+          "general_medicine": "General Medicine",
+          "cardiology": "Cardiology",
+          "dermatology": "Dermatology",
+          "pediatrics": "Pediatrics",
+          "gynecology": "Gynecology",
+          "orthopedics": "Orthopedics",
+          "ophthalmology": "Ophthalmology",
+          "dentistry": "Dentistry",
+          "nursing": "Nursing",
+          "physiotherapy": "Physiotherapy"
+        },
+        "errors": {
+          "firstNameRequired": "First name is required",
+          "lastNameRequired": "Last name is required",
+          "emailRequired": "Email is required",
+          "emailInvalid": "Email is not valid",
+          "roleRequired": "Role is required",
+          "saveFailed": "Unable to add practitioner"
+        },
+        "success": "Practitioner added successfully"
+      }
+    },
+
+    "completion": {
+      "title": "Setup complete!",
+      "message": "Your clinic is now configured. You can start using the application.",
+      "redirecting": "Redirecting to dashboard..."
+    }
+  }
+}

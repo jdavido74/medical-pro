@@ -1,7 +1,32 @@
 // utils/patientsStorage.js
 import { generateId } from './idGenerator';
+import { getClientIPAsync } from '../hooks/useClientIP';
 
 const PATIENTS_STORAGE_KEY = 'medicalPro_patients';
+
+// IP caching to prevent excessive API calls (5-minute TTL)
+let cachedClientIP = null;
+let ipFetchTime = null;
+const IP_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedClientIP() {
+  const now = Date.now();
+
+  // Use cached IP if still valid
+  if (cachedClientIP && ipFetchTime && now - ipFetchTime < IP_CACHE_DURATION) {
+    return cachedClientIP;
+  }
+
+  try {
+    const ip = await getClientIPAsync();
+    cachedClientIP = ip;
+    ipFetchTime = now;
+    return ip;
+  } catch (error) {
+    console.warn('[PatientsStorage] Failed to get client IP:', error);
+    return 'unknown';
+  }
+}
 
 // Service de gestion des patients conforme aux exigences médicales
 export const patientsStorage = {
@@ -94,7 +119,7 @@ export const patientsStorage = {
   },
 
   // Créer un nouveau patient - US 1.1
-  create: (patientData) => {
+  create: async (patientData) => {
     try {
       // Vérifier les doublons
       const duplicate = patientsStorage.checkDuplicate(
@@ -108,6 +133,7 @@ export const patientsStorage = {
       }
 
       const patients = patientsStorage.getAll();
+      const clientIP = await getCachedClientIP();
       const newPatient = {
         id: generateId(),
         patientNumber: patientsStorage.generatePatientNumber(),
@@ -120,7 +146,7 @@ export const patientsStorage = {
           action: 'create',
           userId: patientData.createdBy || 'system',
           timestamp: new Date().toISOString(),
-          ipAddress: 'localhost' // En production, récupérer la vraie IP
+          ipAddress: clientIP
         }]
       };
 
@@ -134,7 +160,7 @@ export const patientsStorage = {
   },
 
   // Mettre à jour un patient
-  update: (id, patientData, userId = 'system') => {
+  update: async (id, patientData, userId = 'system') => {
     try {
       const patients = patientsStorage.getAll();
       const index = patients.findIndex(patient => patient.id === id);
@@ -159,6 +185,7 @@ export const patientsStorage = {
 
       // Conserver l'historique d'accès
       const currentPatient = patients[index];
+      const clientIP = await getCachedClientIP();
       const updatedPatient = {
         ...currentPatient,
         ...patientData,
@@ -169,7 +196,7 @@ export const patientsStorage = {
             action: 'update',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost',
+            ipAddress: clientIP,
             changes: Object.keys(patientData)
           }
         ]
@@ -185,7 +212,7 @@ export const patientsStorage = {
   },
 
   // Supprimer un patient (soft delete pour conformité)
-  delete: (id, userId = 'system') => {
+  delete: async (id, userId = 'system') => {
     try {
       const patients = patientsStorage.getAll();
       const index = patients.findIndex(patient => patient.id === id);
@@ -195,6 +222,7 @@ export const patientsStorage = {
       }
 
       // Soft delete - marquer comme supprimé au lieu de supprimer
+      const clientIP = await getCachedClientIP();
       patients[index] = {
         ...patients[index],
         deleted: true,
@@ -206,7 +234,7 @@ export const patientsStorage = {
             action: 'delete',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost'
+            ipAddress: clientIP
           }
         ]
       };
@@ -234,17 +262,18 @@ export const patientsStorage = {
   },
 
   // Journaliser un accès au dossier patient - US 6.2
-  logAccess: (patientId, action, userId = 'system', details = {}) => {
+  logAccess: async (patientId, action, userId = 'system', details = {}) => {
     try {
       const patients = patientsStorage.getAll();
       const index = patients.findIndex(patient => patient.id === patientId);
 
       if (index !== -1) {
+        const clientIP = await getCachedClientIP();
         patients[index].accessLog.push({
           action,
           userId,
           timestamp: new Date().toISOString(),
-          ipAddress: 'localhost',
+          ipAddress: clientIP,
           details
         });
 

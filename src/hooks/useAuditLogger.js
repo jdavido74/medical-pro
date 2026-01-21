@@ -1,7 +1,7 @@
 // hooks/useAuditLogger.js
 import { useCallback } from 'react';
 import auditStorage from '../utils/auditStorage';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 export const useAuditLogger = () => {
   const { user } = useAuth();

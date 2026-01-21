@@ -2,18 +2,25 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calendar, Clock, Users, Settings, Plus,
-  ChevronRight, Building2, UserPlus, Edit2
+  ChevronRight, Building2, UserPlus, Edit2,
+  CheckCircle, AlertCircle, X
 } from 'lucide-react';
-import { clinicConfigStorage, practitionersStorage } from '../../utils/clinicConfigStorage';
+import { clinicSettingsApi } from '../../api/clinicSettingsApi';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 import ClinicConfigModal from './ClinicConfigModal';
 import PractitionerManagementModal from './PractitionerManagementModal';
 import PractitionerAvailabilityManager from './PractitionerAvailabilityManager';
+import {
+  filterPractitioners,
+  countPractitionersByType,
+  getPractitionerStats
+} from '../../utils/userRoles';
 
 const ClinicConfigurationModule = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('admin');
   const { user } = useAuth();
   const [config, setConfig] = useState(null);
   const [practitioners, setPractitioners] = useState([]);
@@ -22,15 +29,50 @@ const ClinicConfigurationModule = () => {
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
   const [selectedPractitionerId, setSelectedPractitionerId] = useState(null);
 
+  // États pour le chargement et les notifications
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [notification, setNotification] = useState(null);
+
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const clinicConfig = clinicConfigStorage.getConfig();
-    const allPractitioners = practitionersStorage.getAll();
-    setConfig(clinicConfig);
-    setPractitioners(allPractitioners);
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Fonction pour afficher une notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+  };
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Charger les paramètres de la clinique
+      const clinicSettings = await clinicSettingsApi.getClinicSettings();
+      setConfig(clinicSettings);
+
+      // Charger la liste des praticiens
+      const providersData = await healthcareProvidersApi.getHealthcareProviders();
+      setPractitioners(providersData.providers || []);
+
+    } catch (error) {
+      console.error('[ClinicConfigurationModule] Error loading data:', error);
+      setError(t('clinicConfig.messages.loadError') || 'Erreur lors du chargement des données');
+      showNotification(t('clinicConfig.messages.loadError') || 'Erreur lors du chargement', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConfigSave = () => {
@@ -43,15 +85,21 @@ const ClinicConfigurationModule = () => {
   };
 
   const getOperatingDaysText = () => {
-    if (!config) return '';
+    if (!config || !config.operatingDays) return '';
 
     const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
     const openDays = config.operatingDays.map(dayIndex => dayNames[dayIndex]);
     return openDays.join(', ');
   };
 
+  // Utiliser l'utilitaire centralisé pour filtrer les praticiens
   const getActivePractitioners = () => {
-    return practitioners.filter(p => p.isActive !== false);
+    return filterPractitioners(practitioners);
+  };
+
+  // Utiliser l'utilitaire centralisé pour compter par type
+  const getPractitionersByType = (type) => {
+    return countPractitionersByType(practitioners, type);
   };
 
   const getPractitionerAvailabilitySummary = (practitioner) => {
@@ -93,6 +141,38 @@ const ClinicConfigurationModule = () => {
 
   return (
     <div className="space-y-6">
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-4 flex items-center space-x-3 min-w-[320px] max-w-md ${
+            notification.type === 'success'
+              ? 'bg-green-50 border-l-4 border-green-500'
+              : 'bg-red-50 border-l-4 border-red-500'
+          }`}>
+            {notification.type === 'success' ? (
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+            )}
+            <p className={`flex-1 text-sm font-medium ${
+              notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {notification.message}
+            </p>
+            <button
+              onClick={() => setNotification(null)}
+              className={`flex-shrink-0 ${
+                notification.type === 'success'
+                  ? 'text-green-600 hover:text-green-800'
+                  : 'text-red-600 hover:text-red-800'
+              }`}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -180,26 +260,28 @@ const ClinicConfigurationModule = () => {
 
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Total:</span>
-              <span className="text-sm font-medium text-gray-900">{practitioners.length}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Actifs:</span>
-              <span className="text-sm font-medium text-green-600">{getActivePractitioners().length}</span>
+              <span className="text-sm text-gray-600">Total praticiens:</span>
+              <span className="text-sm font-medium text-gray-900">{getActivePractitioners().length}</span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Médecins:</span>
               <span className="text-sm font-medium text-gray-900">
-                {practitioners.filter(p => p.type === 'doctor').length}
+                {getPractitionersByType('doctor').length}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Spécialistes:</span>
+              <span className="text-sm font-medium text-gray-900">
+                {getPractitionersByType('specialist').length}
               </span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Infirmiers:</span>
               <span className="text-sm font-medium text-gray-900">
-                {practitioners.filter(p => p.type === 'nurse').length}
+                {getPractitionersByType('nurse').length}
               </span>
             </div>
           </div>

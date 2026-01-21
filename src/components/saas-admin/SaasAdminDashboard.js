@@ -5,7 +5,7 @@ import {
   Crown, Stethoscope, Database, TrendingUp, Settings
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useDynamicTranslations } from '../../contexts/DynamicTranslationsContext';
 import { useMedicalModules } from '../../contexts/MedicalModulesContext';
 

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedicalPro - Service Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            padding: 40px;
+            overflow: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 1.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 1.3em;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 50px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f94 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0f8b79 0%, #31ca6d 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+            color: white;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e59a0a 0%, #d91e04 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-info:hover:not(:disabled) {
+            background: linear-gradient(135deg, #3b94e8 0%, #00d9eb 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: linear-gradient(135deg, #d91c35 0%, #d94230 100%);
+        }
+
+        .services-status {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .service-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 8px;
+        }
+
+        .service-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .service-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .service-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .service-port {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.active {
+            background: #4caf50;
+        }
+
+        .status-badge.inactive {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .status-text {
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-text.active {
+            color: #4caf50;
+        }
+
+        .status-text.inactive {
+            color: #f44336;
+        }
+
+        .logs-panel {
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            border: 2px solid #333;
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .logs-title {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #00ff00;
+        }
+
+        .clear-logs {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .clear-logs:hover {
+            background: #00ff00;
+            color: #1e1e1e;
+        }
+
+        .logs-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .logs-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .logs-content::-webkit-scrollbar-track {
+            background: #2e2e2e;
+            border-radius: 4px;
+        }
+
+        .logs-content::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .logs-content::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        .log-line {
+            margin-bottom: 2px;
+        }
+
+        .log-error {
+            color: #ff6b6b;
+        }
+
+        .log-warning {
+            color: #ffd93d;
+        }
+
+        .log-success {
+            color: #6bcf7f;
+        }
+
+        .log-info {
+            color: #4ecdc4;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.online {
+            background: #4caf50;
+        }
+
+        .status-indicator.offline {
+            background: #f44336;
+        }
+
+        .status-indicator.loading {
+            background: #ff9800;
+        }
+
+        .footer {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .connection-status.connected {
+            border-left: 4px solid #4caf50;
+        }
+
+        .connection-status.disconnected {
+            border-left: 4px solid #f44336;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .logs-panel {
+                min-height: 300px;
+            }
+
+            .connection-status {
+                position: static;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status disconnected" id="connectionStatus">
+        <span class="status-indicator offline" id="statusIndicator"></span>
+        <span id="statusText">Déconnecté</span>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>
+                <span class="logo">🏥</span>
+                <span>MedicalPro Service Controller</span>
+            </h1>
+            <p class="subtitle">Pilotez vos services depuis une interface web</p>
+        </header>
+
+        <div class="content">
+            <div>
+                <div class="control-panel">
+                    <div>
+                        <h2><span class="icon">🚀</span> Démarrage</h2>
+                        <div class="button-group">
+                            <button class="btn-success" onclick="startSimple()">
+                                <span>▶️</span> Démarrage Simple
+                            </button>
+                            <button class="btn-success" onclick="startTmux()">
+                                <span>▶️</span> Démarrage avec tmux
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2><span class="icon">⏹️</span> Arrêt</h2>
+                        <div class="button-group">
+                            <button class="btn-danger" onclick="stopServices()">
+                                <span>⏹️</span> Arrêter les services
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2><span class="icon">✅</span> Vérification</h2>
+                        <div class="button-group">
+                            <button class="btn-info" onclick="checkStatus()">
+                                <span>🔍</span> Vérifier l'état
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h2><span class="icon">📊</span> État des Services</h2>
+                <div class="services-status" id="servicesStatus">
+                    <p style="color: #999; text-align: center; padding: 20px;">
+                        Cliquez sur "Vérifier l'état" pour actualiser...
+                    </p>
+                </div>
+            </div>
+
+            <div class="logs-panel">
+                <div class="logs-header">
+                    <span class="logs-title">📝 Logs Console</span>
+                    <button class="clear-logs" onclick="clearLogs()">Effacer</button>
+                </div>
+                <div class="logs-content" id="logsContent">
+                    <div class="log-line log-info">🔗 Connectez-vous au serveur...</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Services disponibles sur les ports: 3000 (Frontend) | 3001 (Backend) | 3002 (Admin) | 3003 (Controller)</p>
+        </footer>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnecting = false;
+
+        // Configuration WebSocket
+        function connectWebSocket() {
+            if (isConnecting || ws?.readyState === WebSocket.OPEN) return;
+
+            isConnecting = true;
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const url = `${protocol}//${window.location.host}`;
+
+            try {
+                ws = new WebSocket(url);
+
+                ws.onopen = () => {
+                    isConnecting = false;
+                    updateConnectionStatus(true);
+                    addLog('🔗 Connecté au serveur de contrôle', 'success');
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                };
+
+                ws.onerror = (error) => {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+                    addLog('❌ Erreur WebSocket: ' + error, 'error');
+                };
+
+                ws.onclose = () => {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+                    setTimeout(connectWebSocket, 3000);
+                };
+            } catch (err) {
+                isConnecting = false;
+                addLog('Erreur de connexion: ' + err.message, 'error');
+                setTimeout(connectWebSocket, 3000);
+            }
+        }
+
+        function handleMessage(data) {
+            switch (data.type) {
+                case 'log':
+                    addLog(data.message, 'info');
+                    break;
+                case 'error':
+                    addLog(data.message, 'error');
+                    break;
+                case 'success':
+                    addLog(data.message, 'success');
+                    break;
+                case 'warning':
+                    addLog(data.message, 'warning');
+                    break;
+                case 'complete':
+                    addLog(`✅ Commande terminée (code: ${data.code})`, 'success');
+                    break;
+                case 'start':
+                    addLog(data.message, 'info');
+                    break;
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            const text = document.getElementById('statusText');
+            const indicator = document.getElementById('statusIndicator');
+
+            if (connected) {
+                status.classList.remove('disconnected');
+                status.classList.add('connected');
+                text.textContent = '🟢 Connecté';
+                indicator.className = 'status-indicator online';
+            } else {
+                status.classList.remove('connected');
+                status.classList.add('disconnected');
+                text.textContent = '🔴 Déconnecté';
+                indicator.className = 'status-indicator offline';
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logsContent = document.getElementById('logsContent');
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+
+            // Nettoyer le message (supprimer les codes ANSI)
+            const cleanMessage = message.replace(/\033\[[0-9;]*m/g, '');
+            line.textContent = cleanMessage;
+
+            logsContent.appendChild(line);
+            logsContent.scrollTop = logsContent.scrollHeight;
+        }
+
+        function clearLogs() {
+            const logsContent = document.getElementById('logsContent');
+            logsContent.innerHTML = '<div class="log-line log-info">📝 Logs effacés</div>';
+        }
+
+        async function startSimple() {
+            addLog('🚀 Démarrage des services (mode simple)...', 'info');
+            try {
+                const response = await fetch('/api/start-simple', { method: 'POST' });
+                const data = await response.json();
+                if (data.error) addLog(`❌ Erreur: ${data.error}`, 'error');
+            } catch (err) {
+                addLog(`❌ Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function startTmux() {
+            addLog('🚀 Démarrage des services (mode tmux)...', 'info');
+            try {
+                const response = await fetch('/api/start-tmux', { method: 'POST' });
+                const data = await response.json();
+                if (data.error) addLog(`❌ Erreur: ${data.error}`, 'error');
+            } catch (err) {
+                addLog(`❌ Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function stopServices() {
+            if (confirm('Êtes-vous sûr de vouloir arrêter tous les services?')) {
+                addLog('⏹️  Arrêt des services...', 'warning');
+                try {
+                    const response = await fetch('/api/stop', { method: 'POST' });
+                    const data = await response.json();
+                    if (data.error) addLog(`❌ Erreur: ${data.error}`, 'error');
+                } catch (err) {
+                    addLog(`❌ Erreur: ${err.message}`, 'error');
+                }
+            }
+        }
+
+        async function checkStatus() {
+            addLog('🔍 Vérification de l\'état des services...', 'info');
+            try {
+                const response = await fetch('/api/status', { method: 'POST' });
+                const data = await response.json();
+                if (data.error) addLog(`❌ Erreur: ${data.error}`, 'error');
+            } catch (err) {
+                addLog(`❌ Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            addLog('🟡 Initialisation...', 'info');
+        });
+
+        // Reconnecter si la fenêtre redevient active
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && (!ws || ws.readyState !== WebSocket.OPEN)) {
+                connectWebSocket();
+            }
+        });
+    </script>
+</body>
+</html>

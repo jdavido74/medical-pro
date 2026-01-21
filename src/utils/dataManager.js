@@ -142,50 +142,23 @@ export const persistenceManager = {
   }
 };
 
-// Initialiser toutes les données de démonstration
+// DEMO DATA DISABLED - No longer initialize sample data
+// All data should come from the backend API
 export const initializeAllSampleData = () => {
-  console.log('🔧 Initialisation des données de démonstration...');
+  console.log('ℹ️ Demo data initialization disabled - using backend API');
 
   try {
-    // Vérifier si les données existent déjà
-    let hasPatients = persistenceManager.exists(STORAGE_KEYS.PATIENTS);
-    const hasAppointments = persistenceManager.exists(STORAGE_KEYS.APPOINTMENTS);
-    const hasMedicalRecords = persistenceManager.exists(STORAGE_KEYS.MEDICAL_RECORDS);
-
-    // Vérifier si les patients sont valides (non vides)
-    const patientsData = persistenceManager.get(STORAGE_KEYS.PATIENTS);
-    const patientsAreEmpty = !patientsData || !Array.isArray(patientsData) || patientsData.length === 0;
-
-    // Initialiser les catalogues (toujours nécessaire)
+    // Only initialize required catalogs and configuration
+    // NO demo patients, practitioners, appointments, or medical records
     initializeDefaultCatalog();
     initializeSampleConsents();
     initializeSampleTemplates();
-
-    // Initialiser la configuration de clinique
     initializeClinicConfig();
 
-    // Initialiser les praticiens de démonstration
-    const hasPractitioners = persistenceManager.exists(STORAGE_KEYS.PRACTITIONERS);
-    if (!hasPractitioners) {
-      console.log('👨‍⚕️ Initialisation des praticiens de démonstration...');
-      initializeSamplePractitioners();
-    }
-
-    // Initialiser les données médicales si elles n'existent pas OU si elles sont vides
-    if (!hasPatients || patientsAreEmpty) {
-      console.log('📋 Initialisation des patients de démonstration...');
-      initializeSamplePatients();
-    }
-
-    if (!hasMedicalRecords) {
-      console.log('🏥 Initialisation des dossiers médicaux de démonstration...');
-      initializeSampleMedicalRecords();
-    }
-
-    if (!hasAppointments) {
-      console.log('📅 Initialisation des rendez-vous de démonstration...');
-      initializeSampleAppointments();
-    }
+    // REMOVED: Sample practitioners initialization
+    // REMOVED: Sample patients initialization
+    // REMOVED: Sample medical records initialization
+    // REMOVED: Sample appointments initialization
 
     // Afficher le status final
     const status = persistenceManager.getDataStatus();

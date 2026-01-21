@@ -1,5 +1,5 @@
 // components/dashboard/modals/MedicalHistoryModal.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import {
   X, Stethoscope, Plus, FileText, User, Calendar, Save
 } from 'lucide-react';
@@ -7,8 +7,8 @@ import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
 import MedicalRecordForm from '../../medical/MedicalRecordForm';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
-import { medicalRecordsStorage } from '../../../utils/medicalRecordsStorage';
-import { useAuth } from '../../../contexts/AuthContext';
+import { MedicalRecordContext } from '../../../contexts/MedicalRecordContext';
+import { useAuth } from '../../../hooks/useAuth';
 
 const MedicalHistoryModal = ({
   patient,
@@ -21,6 +21,8 @@ const MedicalHistoryModal = ({
   const formRef = useRef(null);
   const { hasPermission } = usePermissions();
   const { user } = useAuth();
+  const medicalRecordContext = useContext(MedicalRecordContext);
+  const { createRecord, updateRecord, refreshRecords } = medicalRecordContext || {};
 
   // Permissions pour l'historique médical
   const canViewMedicalRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW);
@@ -46,25 +48,36 @@ const MedicalHistoryModal = ({
 
   const handleSaveRecord = async (recordData) => {
     try {
-      if (editingRecord) {
-        // Mettre à jour un dossier existant
-        await medicalRecordsStorage.update(editingRecord.id, recordData, user?.id);
-      } else {
-        // Créer un nouveau dossier médical
-        await medicalRecordsStorage.create({
+      console.log('[MedicalHistoryModal] Saving medical record:', recordData);
+
+      if (editingRecord && updateRecord) {
+        // Mettre à jour un dossier existant via l'API
+        console.log('[MedicalHistoryModal] Updating existing record:', editingRecord.id);
+        await updateRecord(editingRecord.id, recordData);
+      } else if (createRecord) {
+        // Créer un nouveau dossier médical via l'API
+        console.log('[MedicalHistoryModal] Creating new record for patient:', patient.id);
+        await createRecord({
           ...recordData,
-          patientId: patient.id,
-          createdBy: user?.id || 'unknown'
+          patientId: patient.id
         });
+      } else {
+        console.error('[MedicalHistoryModal] MedicalRecordContext not available');
+        throw new Error('MedicalRecordContext not available');
+      }
+
+      // Rafraîchir la liste des dossiers
+      if (refreshRecords) {
+        await refreshRecords();
       }
 
       setIsRecordFormOpen(false);
       setEditingRecord(null);
       setIsSubmitting(false);
-      // La liste se rechargera automatiquement via le MedicalHistoryViewer
     } catch (error) {
-      console.error('Error saving medical record:', error);
+      console.error('[MedicalHistoryModal] Error saving medical record:', error);
       setIsSubmitting(false);
+      // TODO: Afficher une notification d'erreur à l'utilisateur
     }
   };
 

@@ -4,8 +4,10 @@ import { Plus, Search, FileText, Filter, Download, Edit2, Trash2, Send, Copy, Ey
 import { invoiceStorage, getStatistics } from '../../../utils/storage';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
+import { useLocale } from '../../../contexts/LocaleContext';
 
 const InvoicesModule = ({ navigateToClient }) => {
+  const { locale } = useLocale();
   const [invoices, setInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -461,13 +463,13 @@ const InvoicesModule = ({ navigateToClient }) => {
                         </td>
                         <td className="p-4">
                           <span className="text-gray-900">
-                            {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('fr-FR') : 'N/A'}
+                            {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString(locale) : 'N/A'}
                           </span>
                         </td>
                         <td className="p-4 hidden sm:table-cell">
                           <div className="flex items-center space-x-2">
                             <span className={`text-sm ${isOverdue ? 'text-red-600' : 'text-gray-900'}`}>
-                              {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('fr-FR') : 'N/A'}
+                              {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString(locale) : 'N/A'}
                             </span>
                             {isOverdue && (
                               <span className="text-xs bg-red-100 text-red-600 px-1 py-0.5 rounded">

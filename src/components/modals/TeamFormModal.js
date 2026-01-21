@@ -1,10 +1,17 @@
 // components/modals/TeamFormModal.js
 import React, { useState, useEffect } from 'react';
-import { X, Users, User, Building, Clock, Shield, Plus, Trash2 } from 'lucide-react';
+import { X, Users, User, Building, Clock, Shield, Trash2 } from 'lucide-react';
 import { usersStorage } from '../../utils/usersStorage';
 import { permissionsStorage } from '../../utils/permissionsStorage';
+import { useTranslation } from 'react-i18next';
+import {
+  DEPARTMENT_KEYS,
+  getSpecialtiesForDepartment
+} from '../../utils/medicalConstants';
 
 const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) => {
+  const { t } = useTranslation(['admin', 'common']);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -30,27 +37,8 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
   const [availableUsers, setAvailableUsers] = useState([]);
   const [availablePermissions, setAvailablePermissions] = useState([]);
 
-  // Départements et spécialités prédéfinis
-  const departments = [
-    'Médecine Générale', 'Cardiologie', 'Dermatologie', 'Gynécologie',
-    'Pédiatrie', 'Radiologie', 'Chirurgie', 'Soins Infirmiers',
-    'Administration', 'Urgences', 'Pharmacie', 'Laboratoire'
-  ];
-
-  const specialtiesByDepartment = {
-    'Médecine Générale': ['Médecine Générale', 'Médecine Préventive'],
-    'Cardiologie': ['Cardiologie Interventionnelle', 'Rythmologie'],
-    'Dermatologie': ['Dermatologie Générale', 'Dermatologie Esthétique'],
-    'Gynécologie': ['Gynécologie Médicale', 'Obstétrique'],
-    'Pédiatrie': ['Pédiatrie Générale', 'Néonatologie'],
-    'Radiologie': ['Scanner', 'IRM', 'Échographie'],
-    'Chirurgie': ['Chirurgie Générale', 'Chirurgie Orthopédique'],
-    'Soins Infirmiers': ['Soins Généraux', 'Soins Intensifs'],
-    'Administration': ['Gestion', 'Secrétariat', 'Facturation'],
-    'Urgences': ['Médecine d\'Urgence', 'Soins Intensifs'],
-    'Pharmacie': ['Pharmacie Clinique', 'Stérilisation'],
-    'Laboratoire': ['Biologie Médicale', 'Anatomopathologie']
-  };
+  // Départements et spécialités - utilisation des constantes partagées
+  // DEPARTMENT_KEYS et getSpecialtiesForDepartment importés depuis medicalConstants.js
 
   const daysOfWeek = [
     { key: 'monday', label: 'Lundi' },
@@ -122,10 +110,11 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
 
   // S'assurer que le leader est dans les membres
   useEffect(() => {
-    if (formData.leaderId && !formData.members.includes(formData.leaderId)) {
+    const currentMembers = formData.members || [];
+    if (formData.leaderId && !currentMembers.includes(formData.leaderId)) {
       setFormData(prev => ({
         ...prev,
-        members: [...prev.members, prev.leaderId]
+        members: [...(prev.members || []), prev.leaderId]
       }));
     }
   }, [formData.leaderId]);
@@ -138,15 +127,14 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
       newErrors.name = 'Nom requis';
     }
 
-    // Chef d'équipe requis
-    if (!formData.leaderId) {
-      newErrors.leaderId = 'Chef d\'équipe requis';
-    }
-
-    // Au moins un membre requis
-    if (formData.members.length === 0) {
-      newErrors.members = 'Au moins un membre requis';
-    }
+    // Chef d'équipe et membres optionnels (le backend ne supporte pas encore ces champs)
+    // Ces validations peuvent être réactivées quand le backend sera mis à jour
+    // if (!formData.leaderId) {
+    //   newErrors.leaderId = 'Chef d\'équipe requis';
+    // }
+    // if (formData.members.length === 0) {
+    //   newErrors.members = 'Au moins un membre requis';
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -188,9 +176,9 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
     setFormData(prev => ({
       ...prev,
       schedule: {
-        ...prev.schedule,
+        ...(prev.schedule || {}),
         [day]: {
-          ...prev.schedule[day],
+          ...(prev.schedule?.[day] || { start: '', end: '' }),
           [field]: value
         }
       }
@@ -198,38 +186,43 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
   };
 
   const addMember = (userId) => {
-    if (!formData.members.includes(userId)) {
-      handleInputChange('members', [...formData.members, userId]);
+    const currentMembers = formData.members || [];
+    if (!currentMembers.includes(userId)) {
+      handleInputChange('members', [...currentMembers, userId]);
     }
   };
 
   const removeMember = (userId) => {
+    const currentMembers = formData.members || [];
     if (userId !== formData.leaderId) { // Ne pas pouvoir supprimer le leader
-      handleInputChange('members', formData.members.filter(id => id !== userId));
+      handleInputChange('members', currentMembers.filter(id => id !== userId));
     }
   };
 
   const addSpecialty = (specialty) => {
-    if (!formData.specialties.includes(specialty)) {
-      handleInputChange('specialties', [...formData.specialties, specialty]);
+    const currentSpecialties = formData.specialties || [];
+    if (!currentSpecialties.includes(specialty)) {
+      handleInputChange('specialties', [...currentSpecialties, specialty]);
     }
   };
 
   const removeSpecialty = (specialty) => {
-    handleInputChange('specialties', formData.specialties.filter(s => s !== specialty));
+    const currentSpecialties = formData.specialties || [];
+    handleInputChange('specialties', currentSpecialties.filter(s => s !== specialty));
   };
 
   const togglePermission = (permission) => {
-    const isSelected = formData.permissions.includes(permission);
+    const currentPermissions = formData.permissions || [];
+    const isSelected = currentPermissions.includes(permission);
     if (isSelected) {
-      handleInputChange('permissions', formData.permissions.filter(p => p !== permission));
+      handleInputChange('permissions', currentPermissions.filter(p => p !== permission));
     } else {
-      handleInputChange('permissions', [...formData.permissions, permission]);
+      handleInputChange('permissions', [...currentPermissions, permission]);
     }
   };
 
   const getAvailableSpecialties = () => {
-    return specialtiesByDepartment[formData.department] || [];
+    return getSpecialtiesForDepartment(formData.department);
   };
 
   const getUserDisplayName = (userId) => {
@@ -308,9 +301,9 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Sélectionner un département</option>
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                  <option value="">{t('common:select', 'Sélectionner un département')}</option>
+                  {DEPARTMENT_KEYS.map(dept => (
+                    <option key={dept} value={dept}>{t(`admin:departments.${dept}`, dept)}</option>
                   ))}
                 </select>
               </div>
@@ -318,7 +311,7 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <User className="inline h-4 w-4 mr-1" />
-                  Chef d'équipe *
+                  Chef d'équipe
                 </label>
                 <select
                   value={formData.leaderId}
@@ -356,7 +349,7 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
             {/* Membres de l'équipe */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Membres de l'équipe *
+                Membres de l'équipe
               </label>
 
               {/* Sélection de nouveaux membres */}
@@ -372,7 +365,7 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                 >
                   <option value="">Ajouter un membre</option>
                   {availableUsers
-                    .filter(user => !formData.members.includes(user.id))
+                    .filter(user => !(formData.members || []).includes(user.id))
                     .map(user => (
                       <option key={user.id} value={user.id}>
                         {user.firstName} {user.lastName} - {user.role} ({user.department})
@@ -383,7 +376,7 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
 
               {/* Liste des membres actuels */}
               <div className="space-y-2 max-h-32 overflow-y-auto">
-                {formData.members.map(userId => {
+                {(formData.members || []).map(userId => {
                   const user = availableUsers.find(u => u.id === userId);
                   const isLeader = userId === formData.leaderId;
 
@@ -440,7 +433,7 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                   >
                     <option value="">Ajouter une spécialité</option>
                     {getAvailableSpecialties()
-                      .filter(spec => !formData.specialties.includes(spec))
+                      .filter(spec => !(formData.specialties || []).includes(spec))
                       .map(spec => (
                         <option key={spec} value={spec}>{spec}</option>
                       ))}
@@ -449,7 +442,7 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
 
                 {/* Liste des spécialités */}
                 <div className="flex flex-wrap gap-2">
-                  {formData.specialties.map(specialty => (
+                  {(formData.specialties || []).map(specialty => (
                     <span
                       key={specialty}
                       className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
@@ -484,14 +477,14 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                     <div className="flex items-center gap-2">
                       <input
                         type="time"
-                        value={formData.schedule[day.key]?.start || ''}
+                        value={formData.schedule?.[day.key]?.start || ''}
                         onChange={(e) => handleScheduleChange(day.key, 'start', e.target.value)}
                         className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                       <span className="text-gray-500">à</span>
                       <input
                         type="time"
-                        value={formData.schedule[day.key]?.end || ''}
+                        value={formData.schedule?.[day.key]?.end || ''}
                         onChange={(e) => handleScheduleChange(day.key, 'end', e.target.value)}
                         className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
@@ -514,7 +507,7 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                     <label key={permission.id} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
-                        checked={formData.permissions.includes(permission.id)}
+                        checked={(formData.permissions || []).includes(permission.id)}
                         onChange={() => togglePermission(permission.id)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />

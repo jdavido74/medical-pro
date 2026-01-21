@@ -1,6 +1,37 @@
 {
   "title": "Administration",
   "description": "Manage your practice and users",
+  "accessDenied": "Access Denied",
+  "noPermissionClinic": "You don't have permissions to access the admin panel",
+  "overview": "Overview",
+  "clinicConfig": "Practice Configuration",
+  "users": "Users",
+  "roles": "Roles and Permissions",
+  "teams": "Teams and Branches",
+  "audit": "Audit and Logs",
+  "totalUsers": "Total Users",
+  "active": "active",
+  "clinic": "Practice",
+  "clinicAdmin": "Practice Admin",
+  "clinicAdminPanel": "Practice Administration Panel",
+  "clinicManagement": "Practice Management",
+  "configuredSpecialties": "Configured Specialties",
+  "manageAvailability": "Manage Availability",
+  "manageClinicUsers": "Manage Practice Users",
+  "manageRoles": "Manage Roles",
+  "moreSpecialties": "More Specialties",
+  "practitioners": "Practitioners",
+  "recentActivity": "Recent Activity",
+  "role": "Role",
+  "timeAgo": "ago",
+  "yourInfo": "Your Information",
+  "adminPermissions": "Admin Permissions",
+  "appointmentsMonth": "Appointments This Month",
+  "assignSpecialties": "Assign Specialties",
+  "createSpecialty": "Create Specialty",
+  "editSpecialty": "Edit Specialty",
+  "saveChanges": "Save Changes",
+  "delete": "Delete",
   "settings": {
     "title": "Settings",
     "subtitle": "Configure your practice and preferences",
@@ -21,6 +52,782 @@
       "security": "Security",
       "billing": "Billing",
       "notifications": "Notifications"
+    },
+    "messages": {
+      "profileSaved": "User profile saved successfully",
+      "companySaved": "Practice information saved successfully",
+      "saveError": "Error saving data",
+      "loadError": "Error loading data"
     }
+  },
+  "clinicConfiguration": {
+    "title": "Clinic Configuration",
+    "tabs": {
+      "schedule": "Opening Hours",
+      "slots": "Slots",
+      "closed": "Closure Days"
+    },
+    "schedule": {
+      "openingDays": "Opening Days",
+      "hoursPerDay": "Hours per Day",
+      "dayClosed": "Day closed",
+      "lunchBreak": "Lunch break",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "from": "From",
+      "to": "To"
+    },
+    "slots": {
+      "title": "Slot Configuration",
+      "defaultDuration": "Default duration (minutes)",
+      "bufferTime": "Buffer time (minutes)",
+      "maxAdvanceBooking": "Max advance booking (days)",
+      "minAdvanceBooking": "Min advance booking (hours)",
+      "allowWeekendBooking": "Allow weekend bookings",
+      "minutes": "minutes"
+    },
+    "closedDates": {
+      "title": "Exceptional Closure Days",
+      "addClosure": "Add closure",
+      "date": "Date",
+      "type": "Type",
+      "reason": "Reason",
+      "reasonPlaceholder": "Closure reason",
+      "holiday": "Public holiday",
+      "maintenance": "Maintenance",
+      "other": "Other",
+      "noClosed": "No closure days configured"
+    },
+    "messages": {
+      "loadError": "Error loading configuration",
+      "saveSuccess": "Configuration saved successfully",
+      "saveError": "Error saving configuration",
+      "closedAdded": "Closure day added",
+      "closedRemoved": "Closure day removed",
+      "closedAddError": "Error adding closure day",
+      "closedRemoveError": "Error removing closure day"
+    },
+    "buttons": {
+      "close": "Close",
+      "save": "Save",
+      "saving": "Saving...",
+      "add": "Add"
+    }
+  },
+  "rolesManagement": {
+    "title": "Role Management",
+    "subtitle": "Customize system role permissions",
+    "tabs": {
+      "roles": "Roles",
+      "permissions": "Permissions",
+      "statistics": "Statistics"
+    },
+    "compliance": {
+      "title": "GDPR & Medical Confidentiality Compliance",
+      "description": "Permissions marked with a medical icon give access to medical data. They should be reserved for healthcare professionals involved in patient care."
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Name or description...",
+      "accessLevel": "Access Level",
+      "allLevels": "All levels",
+      "high": "High (80-100)",
+      "medium": "Medium (50-79)",
+      "low": "Low (1-49)",
+      "reset": "Reset"
+    },
+    "roleList": {
+      "title": "Configured Roles",
+      "systemRole": "System role",
+      "level": "Level",
+      "levelHigh": "High",
+      "levelMedium": "Medium",
+      "levelLow": "Low",
+      "permissions": "permissions",
+      "healthcare": "Healthcare",
+      "administrative": "Administrative",
+      "createdAt": "Created on"
+    },
+    "actions": {
+      "viewDetails": "View details",
+      "edit": "Edit",
+      "editPermissions": "Edit permissions",
+      "resetToDefault": "Reset to default permissions",
+      "delete": "Delete"
+    },
+    "empty": {
+      "title": "No roles found",
+      "searchMessage": "No roles match your search criteria.",
+      "createMessage": "Start by creating your first custom role."
+    },
+    "statistics": {
+      "totalRoles": "Total Roles",
+      "systemRoles": "System Roles",
+      "customRoles": "Custom Roles",
+      "permissions": "Permissions"
+    },
+    "permissionsList": {
+      "title": "Available System Permissions"
+    },
+    "modal": {
+      "editSystemRole": "Edit Permissions",
+      "systemRoleNote": "System role - Only permissions can be modified",
+      "editRole": "Edit Role",
+      "newRole": "New Role",
+      "roleName": "Role Name",
+      "level": "Level (1-100)",
+      "description": "Description",
+      "descriptionPlaceholder": "Description of the role and its responsibilities",
+      "name": "Name",
+      "type": "Type",
+      "healthcareProfessional": "Healthcare Professional",
+      "administrativeStaff": "Administrative Staff",
+      "adminData": "Administrative Data",
+      "medicalData": "Medical Data",
+      "medicalSecret": "Medical Confidentiality",
+      "medicalWarning": "These permissions grant access to health data protected by medical confidentiality. Reserved for healthcare professionals involved in patient care.",
+      "notRecommended": "Not recommended for this role",
+      "medicalAccessWarning": {
+        "title": "Warning - Medical Confidentiality",
+        "message": "This role is not defined as a \"healthcare professional\" but has permissions to access medical data. This may constitute a breach of medical confidentiality."
+      }
+    },
+    "messages": {
+      "loadError": "Error loading roles",
+      "loadFallback": "Loading default roles (API unavailable)",
+      "createSuccess": "Role created successfully",
+      "updateSuccess": "Role updated successfully",
+      "permissionsUpdateSuccess": "Role permissions updated successfully",
+      "saveError": "Error saving role",
+      "deleteConfirm": "Are you sure you want to delete the role \"{{name}}\"?",
+      "deleteSuccess": "Role deleted successfully",
+      "deleteError": "Error deleting role",
+      "resetConfirm": "Reset role \"{{name}}\" to default permissions?\n\nThis will replace all permission modifications.",
+      "resetSuccess": "Role \"{{name}}\" reset to default permissions",
+      "resetError": "Error resetting role",
+      "defaultNotFound": "Default definition not found for this role"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "create": "Create",
+      "update": "Update",
+      "savePermissions": "Save Permissions"
+    }
+  },
+  "usersManagement": {
+    "title": "User Management",
+    "subtitle": "Manage user accounts and their permissions",
+    "accessDenied": "Access Denied",
+    "noPermission": "You don't have permission to access user management.",
+    "refresh": "Refresh",
+    "export": "Export",
+    "newUser": "New User",
+    "loading": "Loading users...",
+    "stats": {
+      "total": "Total",
+      "active": "Active",
+      "adminFunctions": "Admin Functions",
+      "practitioners": "Practitioners"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name, email, department...",
+      "allRoles": "All roles",
+      "allStatuses": "All statuses",
+      "activeOnly": "Active only",
+      "inactiveOnly": "Inactive only",
+      "allConnections": "All connections",
+      "connectedToday": "Connected today",
+      "connectedThisWeek": "Connected this week",
+      "connectedThisMonth": "Connected this month"
+    },
+    "bulk": {
+      "selected": "{{count}} user(s) selected",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "delete": "Delete"
+    },
+    "table": {
+      "user": "User",
+      "role": "Role",
+      "department": "Department",
+      "status": "Status",
+      "lastConnection": "Last Connection",
+      "actions": "Actions"
+    },
+    "status": {
+      "inactive": "Inactive",
+      "online": "Online",
+      "offline": "Offline",
+      "nowConnected": "Now (connected)"
+    },
+    "lastLogin": {
+      "never": "Never connected",
+      "minutes": "{{count}} min ago",
+      "hours": "{{count}} h ago",
+      "days": "{{count}} d ago"
+    },
+    "actions": {
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "delete": "Delete"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} results",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "exportHeaders": {
+      "id": "ID",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phone": "Phone",
+      "businessRole": "Business Role",
+      "adminFunction": "Admin Function",
+      "profession": "Profession",
+      "status": "Status",
+      "createdAt": "Created At",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "modal": {
+      "editUser": "Edit User",
+      "newUser": "New User",
+      "editUserDesc": "Modify user information",
+      "newUserDesc": "Create a new user account"
+    },
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phone": "Phone",
+      "phonePlaceholder": "+33 6 12 34 56 78 or +34 612 345 678",
+      "emailReadonly": "Email cannot be modified after account creation"
+    },
+    "invitation": {
+      "title": "Creation Mode",
+      "sendInvitation": "Send an invitation email (user will set their password)",
+      "password": "Password",
+      "passwordPlaceholder": "Minimum 6 characters",
+      "passwordNote": "Password will be set by administrator. User can change it after login.",
+      "invitationNote": "An email will be sent to the user with a link to set their password. Account will be in \"Pending\" status until validated."
+    },
+    "password": {
+      "changeTitle": "Change Password",
+      "changeNote": "Leave empty to keep current password",
+      "newPassword": "New Password",
+      "placeholder": "Enter new password (optional)",
+      "minLength": "Password must be at least 6 characters"
+    },
+    "roles": {
+      "businessRole": "Business Role",
+      "administrativeRole": "Administrative Function (optional)",
+      "noAdminRole": "No administrative function",
+      "administrativeRoleNote": "An administrative function can be combined with a business role (e.g., a doctor who is also a director)"
+    },
+    "department": {
+      "label": "Department",
+      "placeholder": "Select a department"
+    },
+    "specialty": {
+      "label": "Specialty",
+      "placeholder": "Select a specialty"
+    },
+    "license": {
+      "label": "License/Registration Number (optional)",
+      "placeholder": "E.g.: medical registration number...",
+      "note": "Professional registration number, medical license, etc."
+    },
+    "accountActive": "Account Active",
+    "validation": {
+      "emailRequired": "Email required",
+      "emailInvalid": "Invalid email format",
+      "firstNameRequired": "First name required",
+      "lastNameRequired": "Last name required",
+      "phoneInvalid": "Invalid phone format (8-15 digits expected)",
+      "passwordRequired": "Password required (minimum 6 characters)",
+      "roleRequired": "Role required"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "create": "Create",
+      "edit": "Edit",
+      "saving": "Saving..."
+    },
+    "messages": {
+      "loadError": "Error loading users",
+      "createSuccess": "User created successfully",
+      "updateSuccess": "User updated successfully",
+      "saveError": "Error saving user",
+      "deleteConfirm": "Are you sure you want to delete this user?",
+      "deleteSuccess": "User deleted successfully",
+      "deleteError": "Error deleting user",
+      "statusUpdated": "User status updated",
+      "updateError": "Error updating user",
+      "bulkConfirm": "Are you sure you want to apply this action to {{count}} user(s)?",
+      "bulkSuccess": "Bulk action completed successfully",
+      "bulkError": "Error performing bulk action",
+      "exportSuccess": "Users exported successfully",
+      "exportError": "Error exporting users"
+    }
+  },
+  "practitionersManagement": {
+    "title": "Practitioner Management",
+    "tabs": {
+      "list": "Practitioner List",
+      "new": "New Practitioner",
+      "edit": "Edit Practitioner"
+    },
+    "list": {
+      "title": "Practitioners ({{count}})",
+      "empty": "No practitioners registered"
+    },
+    "modal": {
+      "editPractitioner": "Edit Practitioner",
+      "newPractitioner": "New Practitioner",
+      "editTitle": "Edit Practitioner",
+      "createTitle": "New Practitioner",
+      "editPractitionerDesc": "Modify practitioner information",
+      "newPractitionerDesc": "Add a new practitioner to the practice"
+    },
+    "fields": {
+      "title": "Title",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phone": "Phone",
+      "mobile": "Mobile",
+      "profession": "Profession",
+      "specialties": "Specialties",
+      "adeli": "ADELI Number",
+      "rpps": "RPPS Number",
+      "orderNumber": "Registration Number",
+      "color": "Color",
+      "active": "Active",
+      "license": "License Number",
+      "type": "Practitioner Type",
+      "displayColor": "Display Color",
+      "isActive": "Active Practitioner"
+    },
+    "types": {
+      "physician": "Physician",
+      "practitioner": "Healthcare Practitioner"
+    },
+    "colors": {
+      "blue": "Blue",
+      "green": "Green",
+      "red": "Red",
+      "purple": "Purple",
+      "orange": "Orange",
+      "teal": "Teal",
+      "pink": "Pink",
+      "indigo": "Indigo"
+    },
+    "placeholders": {
+      "firstName": "Practitioner first name",
+      "lastName": "Practitioner last name",
+      "phone": "+1 234 567 8900",
+      "specialty": "General Medicine, Cardiology, etc.",
+      "license": "License number, medical registration, etc."
+    },
+    "availability": {
+      "title": "Availability",
+      "manage": "Manage availability"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "create": "Create",
+      "edit": "Edit",
+      "saving": "Saving...",
+      "addNew": "New Practitioner",
+      "addFirst": "Add first practitioner"
+    },
+    "actions": {
+      "resendInvitation": "Resend invitation",
+      "activate": "Activate account"
+    },
+    "messages": {
+      "loadError": "Error loading practitioners list",
+      "createSuccess": "Practitioner created successfully",
+      "createError": "Error creating practitioner",
+      "updateSuccess": "Practitioner updated successfully",
+      "updateError": "Error updating practitioner",
+      "deleteSuccess": "Practitioner deleted successfully",
+      "deleteError": "Error deleting practitioner",
+      "deleteConfirm": "Are you sure you want to delete this practitioner?",
+      "resendConfirm": "Resend invitation to {{email}}?",
+      "resendSuccess": "Invitation sent successfully",
+      "resendError": "Error sending invitation",
+      "activateConfirm": "Activate account for {{name}}?",
+      "activateSuccess": "Account activated successfully",
+      "activateError": "Error activating account"
+    }
+  },
+  "departments": {
+    "direction": "Management",
+    "administration": "Administration",
+    "generalMedicine": "General Medicine",
+    "cardiology": "Cardiology",
+    "dermatology": "Dermatology",
+    "gynecology": "Gynecology",
+    "pediatrics": "Pediatrics",
+    "radiology": "Radiology",
+    "surgery": "Surgery",
+    "nursing": "Nursing",
+    "reception": "Reception",
+    "pharmacy": "Pharmacy",
+    "laboratory": "Laboratory",
+    "physiotherapy": "Physiotherapy",
+    "audit": "Audit"
+  },
+  "specialtiesManagement": {
+    "title": "Medical Specialties Administration",
+    "subtitle": "Configure the specialties available for clinics in the SaaS",
+    "loading": "Loading specialties...",
+    "tabs": {
+      "list": "Specialties List",
+      "translations": "Translations",
+      "modules": "Module Configuration"
+    },
+    "configuredSpecialties": "Configured Specialties",
+    "specialtiesCount": "{{count}} specialties",
+    "activeCount": "{{count}} active",
+    "system": "System",
+    "active": "Active",
+    "inactive": "Inactive",
+    "modules": "Modules",
+    "created": "Created",
+    "updated": "Updated",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "edit": "Edit",
+    "basicInfo": "Basic Information",
+    "specialtyCode": "Specialty Code",
+    "color": "Color",
+    "status": "Status",
+    "specialtyActive": "Specialty active",
+    "translations": "Translations",
+    "specialtyName": "Specialty name",
+    "specialtyDescription": "Specialty description",
+    "associatedModules": "Associated Modules",
+    "required": "Required",
+    "cancel": "Cancel",
+    "deleteConfirm": "Are you sure you want to delete this specialty?",
+    "availableModules": {
+      "base": "Base Module",
+      "cardiac": "Cardiac Module",
+      "pediatric": "Pediatric Module",
+      "preventive": "Preventive Medicine",
+      "chronic": "Chronic Diseases",
+      "surgery": "Surgery",
+      "radiology": "Radiology",
+      "laboratory": "Laboratory"
+    }
+  },
+  "backupManagement": {
+    "title": "Backup Management",
+    "subtitle": "Backup and restore application data",
+    "accessDenied": "Access Denied",
+    "noPermission": "You don't have permission to access backup management.",
+    "refresh": "Refresh",
+    "import": "Import",
+    "cleanup": "Cleanup",
+    "stats": {
+      "totalBackups": "Total Backups",
+      "successful": "Successful",
+      "totalSize": "Total Size",
+      "lastBackup": "Last Backup",
+      "none": "None"
+    },
+    "tabs": {
+      "backups": "Backups",
+      "create": "Create Backup",
+      "settings": "Settings"
+    },
+    "loading": "Loading backups...",
+    "empty": {
+      "title": "No backups",
+      "description": "Create your first backup to secure your data.",
+      "createButton": "Create Backup"
+    },
+    "table": {
+      "backup": "Backup",
+      "type": "Type",
+      "size": "Size",
+      "status": "Status",
+      "actions": "Actions",
+      "imported": "Imported"
+    },
+    "types": {
+      "full": "Full",
+      "partial": "Partial"
+    },
+    "actions": {
+      "viewDetails": "View details",
+      "restore": "Restore",
+      "export": "Export",
+      "delete": "Delete"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} backups",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{current}} of {{total}}"
+    },
+    "create": {
+      "title": "Create New Backup",
+      "typeLabel": "Backup Type",
+      "fullBackup": "Full Backup",
+      "fullDescription": "All application data",
+      "partialBackup": "Partial Backup",
+      "partialDescription": "Selected data types",
+      "dataTypesLabel": "Data types to backup",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "Backup description...",
+      "includeAuditLogs": "Include audit logs",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "createButton": "Create Backup"
+    },
+    "dataTypes": {
+      "patients": "Patients",
+      "appointments": "Appointments",
+      "medicalRecords": "Medical Records",
+      "consents": "Consents",
+      "consentTemplates": "Consent Templates",
+      "users": "Users",
+      "teams": "Teams",
+      "roles": "Roles and Permissions",
+      "invoices": "Invoices",
+      "quotes": "Quotes",
+      "products": "Products and Services",
+      "settings": "Settings"
+    },
+    "details": {
+      "title": "Backup Details",
+      "generalInfo": "General Information",
+      "metadata": "Metadata",
+      "id": "ID",
+      "description": "Description",
+      "type": "Type",
+      "size": "Size",
+      "status": "Status",
+      "createdAt": "Created at",
+      "version": "Version",
+      "createdBy": "Created by",
+      "checksum": "Checksum",
+      "dataTypesIncluded": "Data Types Included",
+      "importedBackup": "Imported Backup",
+      "importedAt": "This backup was imported on {{date}}",
+      "export": "Export",
+      "restore": "Restore",
+      "close": "Close"
+    },
+    "messages": {
+      "createSuccess": "Backup created successfully!",
+      "createError": "Error creating backup: {{error}}",
+      "restoreConfirm": "Are you sure you want to restore this backup?",
+      "dataOverwrite": " Existing data will be overwritten.",
+      "autoBackup": " An automatic backup will be created before restoration.",
+      "restoreComplete": "Restoration complete!",
+      "restoredTypes": "Restored data types: {{count}}",
+      "skippedTypes": "Skipped data types: {{count}}",
+      "errors": "Errors: {{count}}",
+      "seeConsole": "See console for error details.",
+      "reloadPage": "Would you like to reload the page to apply changes?",
+      "restoreError": "Error during restoration: {{error}}",
+      "deleteConfirm": "Are you sure you want to delete this backup?",
+      "deleteSuccess": "Backup deleted successfully!",
+      "deleteError": "Error deleting backup.",
+      "exportError": "Error exporting: {{error}}",
+      "importSuccess": "Backup \"{{description}}\" imported successfully!",
+      "importError": "Error importing: {{error}}",
+      "cleanupConfirm": "Delete backups older than 30 days (except full backups)?",
+      "cleanupSuccess": "{{count}} backup(s) deleted.",
+      "cleanupError": "Error during cleanup: {{error}}",
+      "loadError": "Error loading backups:"
+    }
+  },
+  "teamManagement": {
+    "title": "Teams and Delegations Management",
+    "subtitle": "Manage work teams and permission delegations",
+    "accessDenied": "Access Denied",
+    "noPermission": "You don't have permissions to access teams management.",
+    "refresh": "Refresh",
+    "export": "Export",
+    "newTeam": "New Team",
+    "newDelegation": "New Delegation",
+    "loading": "Loading...",
+    "stats": {
+      "totalTeams": "Total Teams",
+      "totalMembers": "Total Members",
+      "activeDelegations": "Active Delegations",
+      "pendingApprovals": "Pending Approvals"
+    },
+    "tabs": {
+      "teams": "Teams",
+      "delegations": "Delegations"
+    },
+    "filters": {
+      "searchTeams": "Search by name, department...",
+      "searchDelegations": "Search by user, reason...",
+      "allDepartments": "All departments",
+      "allStatuses": "All statuses",
+      "activeOnly": "Active only",
+      "inactiveOnly": "Inactive only",
+      "active": "Active",
+      "pending": "Pending",
+      "expired": "Expired",
+      "awaitingApproval": "Awaiting approval",
+      "inactive": "Inactive"
+    },
+    "teamsTable": {
+      "team": "Team",
+      "teamLeader": "Team Leader",
+      "members": "Members",
+      "department": "Department",
+      "status": "Status",
+      "actions": "Actions",
+      "memberCount": "{{count}} member(s)"
+    },
+    "delegationsTable": {
+      "delegation": "Delegation",
+      "period": "Period",
+      "permissions": "Permissions",
+      "status": "Status",
+      "actions": "Actions",
+      "permissionCount": "{{count}} permission(s)",
+      "approvedBy": "Approved by {{name}}"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "pendingApproval": "Pending Approval",
+      "expired": "Expired"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "approve": "Approve",
+      "revoke": "Revoke"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} to {{to}} of {{total}} results",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "messages": {
+      "confirmDeleteTeam": "Are you sure you want to delete this team?",
+      "deleteError": "Error deleting: {{error}}",
+      "modificationNotImplemented": "Delegation modification not yet implemented",
+      "approvalError": "Error during approval: {{error}}",
+      "confirmRevoke": "Are you sure you want to revoke this delegation?",
+      "revokeError": "Error during revocation: {{error}}",
+      "exportError": "Error exporting: {{error}}",
+      "loadError": "Error loading teams data"
+    }
+  },
+  "consents": {
+    "patientConsents": "Patient Consents",
+    "sendConsentRequest": "Send Consent Request",
+    "sendRequest": "Send Request",
+    "requestSent": "Request Sent!",
+    "emailSentTo": "An email has been sent to {{email}}",
+    "linkGenerated": "Signing link has been generated",
+    "signingLink": "Signing Link",
+    "recipient": "Recipient",
+    "template": "Consent Template",
+    "selectTemplate": "Select a template",
+    "filterByType": "Filter by type",
+    "allTypes": "All types",
+    "noTemplates": "No templates available",
+    "noTemplatesForType": "No templates for type \"{{type}}\"",
+    "deliveryMethod": "Delivery Method",
+    "recipientEmail": "Recipient Email",
+    "emailRequired": "Email address is required",
+    "language": "Document Language",
+    "expiresIn": "Expires In",
+    "customMessage": "Custom Message (optional)",
+    "customMessagePlaceholder": "Add a message for the patient...",
+    "pendingRequests": "Pending Requests",
+    "signedConsents": "Signed Consents",
+    "requestHistory": "Request History",
+    "noSignedConsents": "No signed consents",
+    "consentDocument": "Consent Document",
+    "sentOn": "Sent on",
+    "signedOn": "Signed on",
+    "sendReminder": "Send Reminder",
+    "reminderSent": "Reminder sent successfully",
+    "preview": "Preview",
+    "previewConsent": "Consent Preview",
+    "requestCreated": "Request created successfully",
+    "signatureWorkflows": "Signature Workflows",
+    "signatureWorkflowEmail": "By email",
+    "signatureWorkflowEmailDesc": "Send a signing link to the patient by email",
+    "signatureWorkflowTablet": "On tablet",
+    "signatureWorkflowTabletDesc": "Immediate signature on tablet in the office",
+    "signatureWorkflowLink": "Generate link",
+    "signatureWorkflowLinkDesc": "Create a link to share with the patient",
+    "unfilledVariables": "Unfilled variables",
+    "unfilledVariablesWarning": "The following variables could not be automatically filled",
+    "openForSignature": "Open for signature",
+    "newRequest": "New request",
+    "expiresInHours": "Expires in {{hours}} hours",
+    "selectWorkflow": "Select a signature workflow to continue",
+    "cancel": "Cancel",
+    "confirmCancel": "Are you sure you want to cancel this request?",
+    "digitalSignature": "Digital Signature",
+    "status": {
+      "pending": "Pending",
+      "signed": "Signed",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "types": {
+      "medical_treatment": "Medical Care",
+      "surgery": "Surgery / Invasive Procedure",
+      "anesthesia": "Anesthesia",
+      "diagnostic": "Examination / Diagnostic",
+      "telehealth": "Telehealth / Telemedicine",
+      "clinical_trial": "Clinical Trial / Research",
+      "minor_treatment": "Minor Treatment",
+      "data_processing": "Data Protection (GDPR)",
+      "photo": "Image Rights (Photo/Video)",
+      "communication": "Commercial Communication",
+      "dental": "Dental Care",
+      "mental_health": "Mental Health",
+      "prevention": "Prevention / Vaccination",
+      "general_care": "General Care"
+    }
+  },
+  "availability": {
+    "title": "Availability",
+    "subtitle": "Manage your availability slots week by week",
+    "week": "Week",
+    "today": "Today",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "copyPrevious": "Copy previous week",
+    "applyTemplate": "Apply my template",
+    "saveAsTemplate": "Save as template",
+    "addSlot": "Add",
+    "closed": "Closed",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes for this week...",
+    "manual": "Manual",
+    "copied": "Copied",
+    "template": "Template",
+    "default": "Default",
+    "copiedFromPrevious": "Copied from previous week",
+    "templateApplied": "Template applied",
+    "templateSaved": "Template saved",
+    "myAvailability": "My availability",
+    "practitionerAvailability": "Practitioner availability",
+    "selectPractitioner": "Select a practitioner",
+    "noProviderSelected": "Select a practitioner to view their availability"
   }
 }

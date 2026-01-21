@@ -1,12 +1,14 @@
 {
   "save": "Guardar",
+  "saving": "Guardando...",
   "cancel": "Cancelar",
   "delete": "Eliminar",
   "edit": "Editar",
   "add": "Añadir",
+  "create": "Crear",
+  "update": "Actualizar",
   "search": "Buscar",
   "loading": "Cargando...",
-  "saving": "Guardando",
   "error": "Error",
   "success": "Éxito",
   "required": "Requerido",
@@ -22,6 +24,8 @@
   "download": "Descargar",
   "upload": "Subir",
   "view": "Ver",
+  "show": "Mostrar",
+  "hide": "Ocultar",
   "back": "Volver",
   "next": "Siguiente",
   "previous": "Anterior",
@@ -34,15 +38,110 @@
   "name": "Nombre",
   "description": "Descripción",
   "notes": "Notas",
+  "reset": "Restablecer",
+  "apply": "Aplicar",
+  "select": "Seleccionar",
+  "selectAll": "Seleccionar todo",
+  "deselectAll": "Deseleccionar todo",
+  "none": "Ninguno",
+  "all": "Todos",
+  "active": "Activo",
+  "inactive": "Inactivo",
+  "enabled": "Activado",
+  "disabled": "Desactivado",
   "premium": "Premium",
   "free": "Gratuito",
+  "firstName": "Nombre",
+  "lastName": "Apellidos",
+  "email": "Email",
+  "phone": "Teléfono",
+  "mobile": "Móvil",
+  "address": "Dirección",
+  "city": "Ciudad",
+  "postalCode": "Código postal",
+  "country": "País",
+  "password": "Contraseña",
+  "confirmPassword": "Confirmar contraseña",
+  "newPassword": "Nueva contraseña",
+  "currentPassword": "Contraseña actual",
+  "profession": "Profesión",
+  "specialty": "Especialidad",
+  "title": "Título",
+  "role": "Rol",
+  "permissions": "Permisos",
+  "dayNames": {
+    "monday": "Lunes",
+    "tuesday": "Martes",
+    "wednesday": "Miércoles",
+    "thursday": "Jueves",
+    "friday": "Viernes",
+    "saturday": "Sábado",
+    "sunday": "Domingo"
+  },
+  "dayNamesShort": {
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mié",
+    "thu": "Jue",
+    "fri": "Vie",
+    "sat": "Sáb",
+    "sun": "Dom"
+  },
+  "months": {
+    "january": "Enero",
+    "february": "Febrero",
+    "march": "Marzo",
+    "april": "Abril",
+    "may": "Mayo",
+    "june": "Junio",
+    "july": "Julio",
+    "august": "Agosto",
+    "september": "Septiembre",
+    "october": "Octubre",
+    "november": "Noviembre",
+    "december": "Diciembre"
+  },
+  "confirmations": {
+    "delete": "¿Está seguro de que desea eliminar este elemento?",
+    "deleteWithName": "¿Está seguro de que desea eliminar \"{{name}}\"?",
+    "cancel": "¿Está seguro de que desea cancelar? Los cambios no guardados se perderán.",
+    "reset": "¿Está seguro de que desea restablecer?",
+    "unsavedChanges": "Tiene cambios sin guardar. ¿Realmente desea salir?"
+  },
+  "messages": {
+    "saveSuccess": "Guardado con éxito",
+    "saveError": "Error al guardar",
+    "deleteSuccess": "Eliminado con éxito",
+    "deleteError": "Error al eliminar",
+    "loadError": "Error al cargar los datos",
+    "updateSuccess": "Actualizado con éxito",
+    "updateError": "Error al actualizar",
+    "networkError": "Error de conexión al servidor",
+    "serverError": "Error del servidor",
+    "timeout": "Tiempo de espera agotado",
+    "noData": "No hay datos disponibles",
+    "noResults": "No se encontraron resultados"
+  },
   "validation": {
     "required": "{{field}} es requerido",
     "invalidEmail": "Email inválido",
     "invalidPhone": "Número de teléfono inválido",
     "invalidMedicalNumber": "Número ADELI (9 dígitos) o RPPS (11 dígitos) inválido",
     "passwordTooShort": "La contraseña debe contener al menos 8 caracteres",
-    "clinicNameRequired": "Nombre de la consulta requerido"
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "clinicNameRequired": "Nombre de la consulta requerido",
+    "emailRequired": "Email requerido",
+    "firstNameRequired": "Nombre requerido",
+    "lastNameRequired": "Apellidos requeridos",
+    "phoneInvalid": "Formato de teléfono inválido",
+    "passwordRequired": "Contraseña requerida",
+    "fieldRequired": "Este campo es requerido"
+  },
+  "placeholders": {
+    "search": "Buscar...",
+    "selectOption": "Seleccionar una opción",
+    "enterValue": "Introducir un valor",
+    "noOptions": "No hay opciones disponibles"
   },
   "patientSearch": {
     "placeholder": "Buscar un paciente...",
@@ -54,5 +153,39 @@
     "patientSelected": "Paciente seleccionado",
     "patientNumber": "Número de paciente:",
     "incompleteWarning": "Ficha incompleta - Se completará desde la página de Pacientes"
-  }
+  },
+  "clinicStatus": {
+    "suspended": {
+      "title": "Cuenta Suspendida",
+      "message": "Su cuenta de clínica está actualmente suspendida.",
+      "details": "Por favor contacte con soporte para más información.",
+      "contactSupport": "Contactar Soporte"
+    },
+    "deleted": {
+      "title": "Cuenta Eliminada",
+      "message": "Esta cuenta de clínica ha sido eliminada permanentemente.",
+      "details": "Si cree que esto es un error, por favor contacte con soporte."
+    },
+    "inactive": {
+      "title": "Acceso Denegado",
+      "message": "El acceso a esta clínica no está autorizado.",
+      "redirecting": "Redirigiendo a la página de inicio..."
+    }
+  },
+  "statuses": {
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "pending": "Pendiente",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "draft": "Borrador",
+    "sent": "Enviado",
+    "paid": "Pagado",
+    "cancelled": "Cancelado",
+    "completed": "Completado",
+    "expired": "Expirado",
+    "revoked": "Revocado"
+  },
+  "years": "años",
+  "minutes": "min"
 }

@@ -7,7 +7,7 @@ export const USER_PROFILES_EXAMPLES = {
     id: 'dr_garcia',
     name: 'Dr. María García',
     email: 'maria.garcia@medicalpro.es',
-    role: 'doctor',
+    role: 'physician',
     specialties: ['general'],
     medicalNumber: '123456789',
     avatar: '👩‍⚕️',
@@ -31,7 +31,7 @@ export const USER_PROFILES_EXAMPLES = {
     id: 'dr_martinez',
     name: 'Dr. Juan Martínez',
     email: 'juan.martinez@medicalpro.es',
-    role: 'specialist',
+    role: 'physician',
     specialties: ['cardiology', 'general'],
     medicalNumber: '987654321',
     avatar: '👨‍⚕️',
@@ -55,7 +55,7 @@ export const USER_PROFILES_EXAMPLES = {
     id: 'dr_lopez',
     name: 'Dr. Ana López',
     email: 'ana.lopez@medicalpro.es',
-    role: 'specialist',
+    role: 'physician',
     specialties: ['pediatrics'],
     medicalNumber: '456789123',
     avatar: '👩‍⚕️',
@@ -74,12 +74,12 @@ export const USER_PROFILES_EXAMPLES = {
     }
   },
 
-  // Enfermera
+  // Enfermera (praticien de santé)
   nurse: {
     id: 'enf_rodriguez',
     name: 'Carmen Rodríguez',
     email: 'carmen.rodriguez@medicalpro.es',
-    role: 'nurse',
+    role: 'practitioner',
     specialties: [], // Solo módulos básicos
     medicalNumber: '789123456',
     avatar: '👩‍⚕️',
@@ -217,15 +217,15 @@ export const getModulesForProfile = (profile) => {
       config.required.forEach(module => allowedModules.add(module));
 
       // Añadir módulos opcionales según el rol
-      if (profile.role === 'specialist' || profile.role === 'doctor') {
+      if (profile.role === 'physician') {
         config.optional.forEach(module => allowedModules.add(module));
       }
     }
   });
 
   // Restricciones según el rol
-  if (profile.role === 'nurse') {
-    // Las enfermeras solo tienen acceso a módulos básicos
+  if (profile.role === 'practitioner') {
+    // Les praticiens ont accès aux modules de base et préventifs
     allowedModules = new Set(['base', 'preventive']);
   } else if (profile.role === 'secretary') {
     // Las secretarias solo ven información básica
@@ -264,8 +264,8 @@ export const canEditModule = (profile, moduleId) => {
     return false; // Secretarias solo leen
   }
 
-  if (profile.role === 'nurse') {
-    // Enfermeras pueden editar solo ciertos campos del módulo base
+  if (profile.role === 'practitioner') {
+    // Les praticiens peuvent éditer seulement certains champs du module base
     return moduleId === 'base' || moduleId === 'preventive';
   }
 

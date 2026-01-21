@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMedicalModules } from '../../contexts/MedicalModulesContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import { useLocale } from '../../contexts/LocaleContext';
 
 // Importar los módulos
 import BaseModule from './modules/BaseModule';
@@ -16,6 +17,7 @@ import PediatricsModule from './modules/PediatricsModule';
 const ModularMedicalRecord = ({ patientData, recordId, onUpdate, onClose }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { locale } = useLocale();
   const {
     userSpecialties,
     availableModules,
@@ -199,7 +201,7 @@ const ModularMedicalRecord = ({ patientData, recordId, onUpdate, onClose }) => {
             <div className="flex items-center space-x-4 text-sm text-gray-600">
               <span className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
-                {new Date().toLocaleDateString('es-ES')}
+                {new Date().toLocaleDateString(locale)}
               </span>
               <span className="flex items-center">
                 <User className="h-4 w-4 mr-1" />
@@ -346,7 +348,7 @@ const ModularMedicalRecord = ({ patientData, recordId, onUpdate, onClose }) => {
       <div className="mt-8 bg-gray-50 rounded-lg p-4">
         <div className="flex justify-between items-center text-sm text-gray-600">
           <div>
-            <p>Última modificación: {new Date().toLocaleString('es-ES')}</p>
+            <p>Última modificación: {new Date().toLocaleString(locale)}</p>
             <p>Módulos activos: {activeModules.length} de {availableModules.length} disponibles</p>
           </div>
           <div className="text-right">

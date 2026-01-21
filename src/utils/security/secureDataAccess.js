@@ -15,6 +15,7 @@ import auditStorage from '../auditStorage';
 import { permissionsStorage } from '../permissionsStorage';
 import { dataEncryption } from './dataEncryption';
 import { isHighlySensitive } from './sensitiveLevels';
+import { getClientIPAsync } from '../../hooks/useClientIP';
 
 /**
  * Classe pour gérer les accès sécurisés aux données
@@ -23,6 +24,39 @@ class SecureDataAccessManager {
   constructor() {
     this.auditLog = auditStorage;
     this.permissions = permissionsStorage;
+    this.cachedClientIP = null;
+    this.ipFetchTime = null;
+    this.ipCacheDuration = 5 * 60 * 1000; // Cache pour 5 minutes
+  }
+
+  /**
+   * Obtenir l'adresse IP du client avec cache
+   * Évite de faire plusieurs requêtes au serveur
+   *
+   * @returns {Promise<string>} IP du client
+   * @private
+   */
+  async _getClientIP() {
+    const now = Date.now();
+
+    // Utiliser le cache s'il est valide
+    if (
+      this.cachedClientIP &&
+      this.ipFetchTime &&
+      now - this.ipFetchTime < this.ipCacheDuration
+    ) {
+      return this.cachedClientIP;
+    }
+
+    try {
+      const ip = await getClientIPAsync();
+      this.cachedClientIP = ip;
+      this.ipFetchTime = now;
+      return ip;
+    } catch (error) {
+      console.warn('[SecureDataAccessManager] Failed to get client IP:', error);
+      return 'unknown';
+    }
   }
 
   /**
@@ -103,6 +137,9 @@ class SecureDataAccessManager {
    */
   async accessSecure(user, action, dataType, accessFn, options = {}) {
     try {
+      // Obtenir le vrai IP du client
+      const clientIP = await this._getClientIP();
+
       // 1. Vérifier les permissions
       const permissionCheck = await this.checkPermission(user, action, dataType, options.targetData);
 
@@ -114,7 +151,7 @@ class SecureDataAccessManager {
           targetId: options.targetId,
           reason: permissionCheck.reason,
           status: 'denied',
-          ipAddress: 'localhost'
+          ipAddress: clientIP
         });
 
         throw new Error(permissionCheck.reason);
@@ -130,7 +167,7 @@ class SecureDataAccessManager {
         targetId: options.targetId || (data?.id),
         reason: options.reason || `${action} ${dataType}`,
         status: 'success',
-        ipAddress: 'localhost',
+        ipAddress: clientIP,
         // Pour les données sensibles, ne pas logger la donnée elle-même
         ...(isHighlySensitive(dataType) && {
           details: `[SENSITIVE DATA - ${dataType}]`
@@ -146,6 +183,9 @@ class SecureDataAccessManager {
     } catch (error) {
       console.error(`[SecureAccess] Error accessing ${dataType}:`, error);
 
+      // Obtenir le vrai IP du client pour le logging d'erreur
+      const clientIP = await this._getClientIP();
+
       // Logger l'erreur
       this.auditLog.log({
         action: `${dataType}_${action}_ERROR`,
@@ -154,7 +194,7 @@ class SecureDataAccessManager {
         reason: options.reason || `${action} ${dataType}`,
         status: 'error',
         error: error.message,
-        ipAddress: 'localhost'
+        ipAddress: clientIP
       });
 
       throw error;
@@ -182,6 +222,9 @@ class SecureDataAccessManager {
    */
   async createSecure(user, dataType, dataToCreate, createFn, options = {}) {
     try {
+      // Obtenir le vrai IP du client
+      const clientIP = await this._getClientIP();
+
       // 1. Vérifier les permissions
       const permissionCheck = await this.checkPermission(user, 'CREATE', dataType);
 
@@ -191,7 +234,7 @@ class SecureDataAccessManager {
           userId: user?.id || 'anonymous',
           reason: permissionCheck.reason,
           status: 'denied',
-          ipAddress: 'localhost'
+          ipAddress: clientIP
         });
 
         throw new Error(permissionCheck.reason);
@@ -210,7 +253,7 @@ class SecureDataAccessManager {
         targetId: createdData?.id,
         reason: options.reason || `Created new ${dataType}`,
         status: 'success',
-        ipAddress: 'localhost',
+        ipAddress: clientIP,
         details: isHighlySensitive(dataType) ? `[SENSITIVE DATA - ${dataType}]` : null
       });
 
@@ -218,13 +261,16 @@ class SecureDataAccessManager {
     } catch (error) {
       console.error(`[SecureAccess] Error creating ${dataType}:`, error);
 
+      // Obtenir le vrai IP du client pour le logging d'erreur
+      const clientIP = await this._getClientIP();
+
       this.auditLog.log({
         action: `${dataType}_CREATE_ERROR`,
         userId: user?.id || 'anonymous',
         reason: options.reason || `Create ${dataType}`,
         status: 'error',
         error: error.message,
-        ipAddress: 'localhost'
+        ipAddress: clientIP
       });
 
       throw error;
@@ -236,6 +282,9 @@ class SecureDataAccessManager {
    */
   async updateSecure(user, dataType, dataId, dataToUpdate, updateFn, options = {}) {
     try {
+      // Obtenir le vrai IP du client
+      const clientIP = await this._getClientIP();
+
       const permissionCheck = await this.checkPermission(user, 'UPDATE', dataType);
 
       if (!permissionCheck.allowed) {
@@ -245,7 +294,7 @@ class SecureDataAccessManager {
           targetId: dataId,
           reason: permissionCheck.reason,
           status: 'denied',
-          ipAddress: 'localhost'
+          ipAddress: clientIP
         });
 
         throw new Error(permissionCheck.reason);
@@ -260,7 +309,7 @@ class SecureDataAccessManager {
         targetId: dataId,
         reason: options.reason || `Updated ${dataType}`,
         status: 'success',
-        ipAddress: 'localhost',
+        ipAddress: clientIP,
         changes: Object.keys(dataToUpdate),
         details: isHighlySensitive(dataType) ? `[SENSITIVE DATA - ${dataType}]` : null
       });
@@ -269,6 +318,9 @@ class SecureDataAccessManager {
     } catch (error) {
       console.error(`[SecureAccess] Error updating ${dataType}:`, error);
 
+      // Obtenir le vrai IP du client pour le logging d'erreur
+      const clientIP = await this._getClientIP();
+
       this.auditLog.log({
         action: `${dataType}_UPDATE_ERROR`,
         userId: user?.id || 'anonymous',
@@ -276,7 +328,7 @@ class SecureDataAccessManager {
         reason: options.reason || `Update ${dataType}`,
         status: 'error',
         error: error.message,
-        ipAddress: 'localhost'
+        ipAddress: clientIP
       });
 
       throw error;
@@ -288,6 +340,9 @@ class SecureDataAccessManager {
    */
   async deleteSecure(user, dataType, dataId, deleteFn, options = {}) {
     try {
+      // Obtenir le vrai IP du client
+      const clientIP = await this._getClientIP();
+
       const permissionCheck = await this.checkPermission(user, 'DELETE', dataType);
 
       if (!permissionCheck.allowed) {
@@ -297,7 +352,7 @@ class SecureDataAccessManager {
           targetId: dataId,
           reason: permissionCheck.reason,
           status: 'denied',
-          ipAddress: 'localhost'
+          ipAddress: clientIP
         });
 
         throw new Error(permissionCheck.reason);
@@ -311,12 +366,15 @@ class SecureDataAccessManager {
         targetId: dataId,
         reason: options.reason || `Deleted ${dataType}`,
         status: 'success',
-        ipAddress: 'localhost'
+        ipAddress: clientIP
       });
 
       return deletedData;
     } catch (error) {
       console.error(`[SecureAccess] Error deleting ${dataType}:`, error);
+
+      // Obtenir le vrai IP du client pour le logging d'erreur
+      const clientIP = await this._getClientIP();
 
       this.auditLog.log({
         action: `${dataType}_DELETE_ERROR`,
@@ -325,7 +383,7 @@ class SecureDataAccessManager {
         reason: options.reason || `Delete ${dataType}`,
         status: 'error',
         error: error.message,
-        ipAddress: 'localhost'
+        ipAddress: clientIP
       });
 
       throw error;

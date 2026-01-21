@@ -12,11 +12,23 @@
  * @see SYNC_ARCHITECTURE.md pour la documentation complète
  */
 
-import React, { createContext, useCallback, useEffect, useState } from 'react';
-import { useAuth } from './AuthContext';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { patientsApi } from '../api';
 
 export const PatientContext = createContext();
+
+/**
+ * Hook pour accéder au contexte Patient
+ * @returns {Object} Contexte patient avec état et opérations
+ */
+export const usePatients = () => {
+  const context = useContext(PatientContext);
+  if (!context) {
+    throw new Error('usePatients must be used within a PatientProvider');
+  }
+  return context;
+};
 
 export const PatientProvider = ({ children }) => {
   const { user } = useAuth();
@@ -291,6 +303,13 @@ export const PatientProvider = ({ children }) => {
     [updatePatient]
   );
 
+  /**
+   * Effacer l'erreur du contexte
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   const value = {
     // État
     patients,
@@ -310,6 +329,7 @@ export const PatientProvider = ({ children }) => {
     getPatientStatistics,
     getIncompletePatients,
     completePatient,
+    clearError,
 
     // Permissions
     canCreatePatient,

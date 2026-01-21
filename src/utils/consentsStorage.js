@@ -1,7 +1,33 @@
 // utils/consentsStorage.js
 import { generateId } from './idGenerator';
+import { getClientIPAsync } from '../hooks/useClientIP';
+import { CONSENT_TYPES as _CONSENT_TYPES, COLLECTION_METHODS as _COLLECTION_METHODS } from './consentTypes';
 
 const CONSENTS_STORAGE_KEY = 'medicalPro_consents';
+
+// IP caching to prevent excessive API calls (5-minute TTL)
+let cachedClientIP = null;
+let ipFetchTime = null;
+const IP_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedClientIP() {
+  const now = Date.now();
+
+  // Use cached IP if still valid
+  if (cachedClientIP && ipFetchTime && now - ipFetchTime < IP_CACHE_DURATION) {
+    return cachedClientIP;
+  }
+
+  try {
+    const ip = await getClientIPAsync();
+    cachedClientIP = ip;
+    ipFetchTime = now;
+    return ip;
+  } catch (error) {
+    console.warn('[ConsentsStorage] Failed to get client IP:', error);
+    return 'unknown';
+  }
+}
 
 // Service de gestion des consentements RGPD et médicaux
 export const consentsStorage = {
@@ -44,7 +70,7 @@ export const consentsStorage = {
   },
 
   // Créer un nouveau consentement - US 4.1 & 4.2
-  create: (consentData, userId = 'system') => {
+  create: async (consentData, userId = 'system') => {
     try {
       const consents = consentsStorage.getAll();
 
@@ -59,6 +85,7 @@ export const consentsStorage = {
         );
       }
 
+      const clientIP = await getCachedClientIP();
       const newConsent = {
         id: generateId(),
         ...consentData,
@@ -70,7 +97,7 @@ export const consentsStorage = {
           action: 'created',
           userId: userId,
           timestamp: new Date().toISOString(),
-          ipAddress: 'localhost',
+          ipAddress: clientIP,
           userAgent: navigator.userAgent || 'unknown',
           details: {
             method: consentData.collectionMethod || 'digital',
@@ -89,7 +116,7 @@ export const consentsStorage = {
   },
 
   // Révoquer un consentement - US 4.3
-  revoke: (consentId, userId = 'system', reason = 'patient_request') => {
+  revoke: async (consentId, userId = 'system', reason = 'patient_request') => {
     try {
       const consents = consentsStorage.getAll();
       const index = consents.findIndex(consent => consent.id === consentId);
@@ -131,7 +158,7 @@ export const consentsStorage = {
   },
 
   // Révoquer tous les consentements d'un patient pour un type donné
-  revokeByPatientAndType: (patientId, type, purpose = null, userId = 'system', reason = 'patient_request') => {
+  revokeByPatientAndType: async (patientId, type, purpose = null, userId = 'system', reason = 'patient_request') => {
     const consents = consentsStorage.getByPatient(patientId);
     const toRevoke = consents.filter(consent => {
       return consent.type === type &&
@@ -147,8 +174,9 @@ export const consentsStorage = {
   },
 
   // Mettre à jour un consentement
-  update: (consentId, updates, userId = 'system') => {
+  update: async (consentId, updates, userId = 'system') => {
     try {
+      const clientIP = await getCachedClientIP();
       const consents = consentsStorage.getAll();
       const index = consents.findIndex(consent => consent.id === consentId);
 
@@ -169,7 +197,7 @@ export const consentsStorage = {
             action: 'updated',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost',
+            ipAddress: clientIP,
             userAgent: navigator.userAgent || 'unknown',
             details: {
               fieldsChanged: Object.keys(updates)
@@ -187,8 +215,9 @@ export const consentsStorage = {
   },
 
   // Supprimer définitivement un consentement (soft delete)
-  delete: (consentId, userId = 'system') => {
+  delete: async (consentId, userId = 'system') => {
     try {
+      const clientIP = await getCachedClientIP();
       const consents = consentsStorage.getAll();
       const index = consents.findIndex(consent => consent.id === consentId);
 
@@ -209,7 +238,7 @@ export const consentsStorage = {
             action: 'deleted',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost',
+            ipAddress: clientIP,
             userAgent: navigator.userAgent || 'unknown'
           }
         ]
@@ -326,73 +355,9 @@ export const consentsStorage = {
   }
 };
 
-// Types de consentements prédéfinis
-export const CONSENT_TYPES = {
-  RGPD_DATA_PROCESSING: {
-    id: 'rgpd_data_processing',
-    name: 'Traitement des données personnelles (RGPD)',
-    description: 'Consentement pour le traitement des données personnelles dans le cadre médical',
-    required: true,
-    renewable: true,
-    defaultDuration: null // Permanent jusqu'à révocation
-  },
-  RGPD_MARKETING: {
-    id: 'rgpd_marketing',
-    name: 'Communications marketing (RGPD)',
-    description: 'Consentement pour recevoir des communications marketing et promotionnelles',
-    required: false,
-    renewable: true,
-    defaultDuration: 365 // 1 an
-  },
-  MEDICAL_CARE: {
-    id: 'medical_care',
-    name: 'Soins médicaux généraux',
-    description: 'Consentement aux soins médicaux généraux',
-    required: true,
-    renewable: false,
-    defaultDuration: null
-  },
-  MEDICAL_SPECIFIC: {
-    id: 'medical_specific',
-    name: 'Soins médicaux spécifiques',
-    description: 'Consentement pour des soins ou interventions spécifiques',
-    required: true,
-    renewable: false,
-    defaultDuration: null
-  },
-  DATA_SHARING: {
-    id: 'data_sharing',
-    name: 'Partage de données médicales',
-    description: 'Consentement pour le partage de données avec d\'autres professionnels',
-    required: false,
-    renewable: true,
-    defaultDuration: 180 // 6 mois
-  },
-  RESEARCH: {
-    id: 'research',
-    name: 'Participation à la recherche',
-    description: 'Consentement pour l\'utilisation des données à des fins de recherche',
-    required: false,
-    renewable: true,
-    defaultDuration: 365 // 1 an
-  },
-  TELEMEDICINE: {
-    id: 'telemedicine',
-    name: 'Télémédecine',
-    description: 'Consentement pour les consultations à distance',
-    required: false,
-    renewable: true,
-    defaultDuration: 365 // 1 an
-  }
-};
-
-// Méthodes de collecte des consentements
-export const COLLECTION_METHODS = {
-  DIGITAL: { id: 'digital', name: 'Numérique (formulaire)' },
-  VERBAL: { id: 'verbal', name: 'Verbal (avec témoin)' },
-  WRITTEN: { id: 'written', name: 'Écrit (signature physique)' },
-  ELECTRONIC: { id: 'electronic', name: 'Signature électronique' }
-};
+// Réexporter depuis consentTypes.js - SOURCE UNIQUE DE VÉRITÉ
+export const CONSENT_TYPES = _CONSENT_TYPES;
+export const COLLECTION_METHODS = _COLLECTION_METHODS;
 
 // Initialiser des consentements de démonstration
 export const initializeSampleConsents = () => {
@@ -407,7 +372,7 @@ export const initializeSampleConsents = () => {
           // Consentement RGPD obligatoire
           consentsStorage.create({
             patientId: patient.id,
-            type: CONSENT_TYPES.RGPD_DATA_PROCESSING.id,
+            type: _CONSENT_TYPES.DATA_PROCESSING.id,
             purpose: 'medical_care',
             status: 'granted',
             title: 'Traitement des données personnelles - Soins médicaux',
@@ -421,7 +386,7 @@ export const initializeSampleConsents = () => {
           // Consentement soins médicaux
           consentsStorage.create({
             patientId: patient.id,
-            type: CONSENT_TYPES.MEDICAL_CARE.id,
+            type: _CONSENT_TYPES.MEDICAL_TREATMENT.id,
             purpose: 'general_care',
             status: 'granted',
             title: 'Consentement aux soins médicaux',
