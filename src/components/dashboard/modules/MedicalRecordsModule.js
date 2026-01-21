@@ -1,10 +1,11 @@
 // components/dashboard/modules/MedicalRecordsModule.js
-// Refonte UX : Layout Master-Detail pour une saisie optimisée
+// Refonte UX : Liste d'historiques avec formulaire au-dessus
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  Plus, Search, Edit2, Trash2, Eye, User,
+  Plus, Search, Edit2, Trash2, User,
   AlertTriangle, ChevronRight, ChevronDown,
-  X, Check, History, UserPlus, Clock, Save
+  X, Check, UserPlus, Clock, Save, ArrowLeft,
+  Pill, FileText, Stethoscope
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../hooks/useAuth';
@@ -20,6 +21,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const formRef = useRef(null);
+  const formSectionRef = useRef(null);
 
   // Utiliser les contextes
   const {
@@ -43,34 +45,25 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
   // Filtres patients
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState('all'); // all, recent, older
+  const [dateFilter, setDateFilter] = useState('all');
 
   // Rendez-vous du jour
   const [todayAppointments, setTodayAppointments] = useState([]);
 
-  // État du formulaire
-  const [formMode, setFormMode] = useState('new'); // 'new' | 'edit' | 'view'
-  const [editingRecord, setEditingRecord] = useState(null);
-  const [showHistory, setShowHistory] = useState(false);
+  // État du formulaire - null = pas de formulaire ouvert
+  const [formState, setFormState] = useState(null); // null | { mode: 'create' } | { mode: 'edit', record: {...} }
 
   // État de chargement combiné
   const isLoading = patientsLoading || recordsLoading;
 
-  // Permissions depuis le système de permissions (clinic_roles)
+  // Permissions
   const canCreateRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_CREATE);
   const canEditRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_EDIT);
   const canDeleteRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_DELETE);
-  const canViewAllPatients = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW_ALL) || hasPermission(PERMISSIONS.PATIENTS_VIEW_ALL);
 
-  // Les patients sont déjà filtrés par le backend selon l'équipe de soins (patient_care_team)
-  // Pas besoin de filtrage supplémentaire côté client car:
-  // - L'API /patients retourne uniquement les patients auxquels l'utilisateur a accès
-  // - Le middleware backend vérifie les permissions via patient_care_team
-  const patients = useMemo(() => {
-    return contextPatients;
-  }, [contextPatients]);
+  const patients = useMemo(() => contextPatients, [contextPatients]);
 
-  // Chargement des dossiers du patient sélectionné via le contexte
+  // Chargement des dossiers du patient sélectionné
   const loadPatientRecords = useCallback(async (patientId) => {
     if (!patientId) {
       setPatientRecords([]);
@@ -79,16 +72,15 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
     try {
       setIsLoadingRecords(true);
-      // Utiliser la méthode du contexte pour récupérer les dossiers du patient
       const result = await fetchPatientRecords(patientId);
-      // L'API retourne { records, statistics, ... } - on extrait le tableau records
       const records = result?.records || result || [];
-      console.log('[MedicalRecordsModule] loadPatientRecords - result:', result);
-      console.log('[MedicalRecordsModule] loadPatientRecords - records array:', records);
-      setPatientRecords(Array.isArray(records) ? records : []);
+      // Trier par date décroissante
+      const sortedRecords = Array.isArray(records)
+        ? [...records].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        : [];
+      setPatientRecords(sortedRecords);
     } catch (err) {
       console.error('Error loading patient records:', err);
-      // Fallback: filtrer localement si l'API échoue
       const localRecords = getRecordsByPatient(patientId);
       setPatientRecords(localRecords);
     } finally {
@@ -101,15 +93,10 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     try {
       const today = new Date().toISOString().split('T')[0];
       const response = await appointmentsApi.getAppointments({ limit: 100 });
-
-      // Filtrer les rendez-vous du jour avec statut scheduled ou confirmed
       const todayAppts = (response.appointments || []).filter(apt =>
         apt.date === today && ['scheduled', 'confirmed', 'in_progress'].includes(apt.status)
       );
-
-      // Trier par heure de début
       todayAppts.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
-
       setTodayAppointments(todayAppts);
     } catch (err) {
       console.error('Error loading today appointments:', err);
@@ -117,7 +104,6 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     }
   }, []);
 
-  // Charger les rendez-vous du jour au démarrage
   useEffect(() => {
     loadTodayAppointments();
   }, [loadTodayAppointments]);
@@ -125,12 +111,13 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   useEffect(() => {
     if (selectedPatient?.id) {
       loadPatientRecords(selectedPatient.id);
+      // Fermer le formulaire quand on change de patient
+      setFormState(null);
     }
   }, [selectedPatient?.id, loadPatientRecords]);
 
   // Filtrer les patients
   const filteredPatients = patients.filter(patient => {
-    // Filtre recherche
     if (patientSearchQuery) {
       const query = patientSearchQuery.toLowerCase();
       const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
@@ -140,61 +127,43 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
       }
     }
 
-    // Filtre date (basé sur le dernier dossier ou date de création)
     if (dateFilter !== 'all') {
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       const patientDate = new Date(patient.lastVisit || patient.createdAt);
-
-      if (dateFilter === 'recent' && patientDate < thirtyDaysAgo) {
-        return false;
-      }
-      if (dateFilter === 'older' && patientDate >= thirtyDaysAgo) {
-        return false;
-      }
+      if (dateFilter === 'recent' && patientDate < thirtyDaysAgo) return false;
+      if (dateFilter === 'older' && patientDate >= thirtyDaysAgo) return false;
     }
 
     return true;
   });
 
-  // Patients avec rendez-vous aujourd'hui (triés par heure)
+  // Patients avec rendez-vous aujourd'hui
   const todayPatientIds = new Set(todayAppointments.map(apt => apt.patientId));
 
-  // Grouper les rendez-vous par patient et collecter tous les horaires
   const patientsWithTodayAppointment = useMemo(() => {
-    // Grouper les RDV par patient ID
     const appointmentsByPatient = todayAppointments.reduce((acc, apt) => {
-      if (!acc[apt.patientId]) {
-        acc[apt.patientId] = [];
-      }
-      acc[apt.patientId].push({
-        time: apt.startTime,
-        type: apt.type,
-        status: apt.status
-      });
+      if (!acc[apt.patientId]) acc[apt.patientId] = [];
+      acc[apt.patientId].push({ time: apt.startTime, type: apt.type, status: apt.status });
       return acc;
     }, {});
 
-    // Créer la liste des patients avec tous leurs horaires
     return Object.entries(appointmentsByPatient)
       .map(([patientId, appointments]) => {
         const patient = patients.find(p => p.id === patientId);
         if (patient) {
-          // Trier les RDV par heure
           appointments.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
           return {
             ...patient,
-            appointments, // Tableau de tous les RDV du jour
-            appointmentTimes: appointments.map(a => a.time).filter(Boolean), // Liste des horaires
-            firstAppointmentTime: appointments[0]?.time // Pour le tri
+            appointments,
+            appointmentTimes: appointments.map(a => a.time).filter(Boolean),
+            firstAppointmentTime: appointments[0]?.time
           };
         }
         return null;
       })
       .filter(Boolean)
-      // Trier par premier horaire de RDV
       .sort((a, b) => (a.firstAppointmentTime || '').localeCompare(b.firstAppointmentTime || ''))
-      // Appliquer le filtre de recherche
       .filter(patient => {
         if (!patientSearchQuery) return true;
         const query = patientSearchQuery.toLowerCase();
@@ -204,53 +173,44 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
       });
   }, [todayAppointments, patients, patientSearchQuery]);
 
-  // Autres patients (sans rendez-vous aujourd'hui)
   const otherPatients = filteredPatients.filter(p => !todayPatientIds.has(p.id));
 
   // Sélection d'un patient
   const handleSelectPatient = (patient) => {
     setSelectedPatient(patient);
-    setFormMode('new');
-    setEditingRecord(null);
-    setShowHistory(false);
+    setFormState(null);
     setSuccessMessage(null);
+    setError(null);
   };
 
   // Créer un nouveau dossier
-  const handleNewRecord = () => {
-    setFormMode('new');
-    setEditingRecord(null);
-    setShowHistory(false);
+  const handleCreateRecord = () => {
+    setFormState({ mode: 'create' });
+    setSuccessMessage(null);
+    setError(null);
+    // Scroll vers le formulaire
+    setTimeout(() => {
+      formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   // Éditer un dossier existant
   const handleEditRecord = async (record) => {
-    console.log('[MedicalRecordsModule] handleEditRecord - record from list:', record);
     try {
-      // Utiliser la méthode du contexte
+      setIsLoadingRecords(true);
       const fullRecord = await getRecordById(record.id);
-      console.log('[MedicalRecordsModule] handleEditRecord - fullRecord from API:', fullRecord);
-      console.log('[MedicalRecordsModule] handleEditRecord - fullRecord.basicInfo:', fullRecord?.basicInfo);
-      setEditingRecord(fullRecord);
-      setFormMode('edit');
-      // Ne pas fermer l'historique pour permettre la navigation entre dossiers
+      setFormState({ mode: 'edit', record: fullRecord });
+      setSuccessMessage(null);
+      setError(null);
+      // Scroll vers le formulaire
+      setTimeout(() => {
+        formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err) {
       console.error('Error loading record:', err);
-      setEditingRecord(record);
-      setFormMode('edit');
-    }
-  };
-
-  // Voir un dossier
-  const handleViewRecord = async (record) => {
-    try {
-      // Utiliser la méthode du contexte
-      const fullRecord = await getRecordById(record.id);
-      setEditingRecord(fullRecord);
-      setFormMode('view');
-    } catch (err) {
-      setEditingRecord(record);
-      setFormMode('view');
+      setFormState({ mode: 'edit', record });
+    } finally {
+      setIsLoadingRecords(false);
     }
   };
 
@@ -259,9 +219,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     if (!window.confirm(t('medical:module.messages.deleteConfirm'))) return;
 
     try {
-      // Utiliser la méthode du contexte (optimistic update inclus)
       await archiveRecord(recordId);
-      // Recharger les dossiers du patient
       await loadPatientRecords(selectedPatient?.id);
       setSuccessMessage(t('medical:module.messages.deleteSuccess'));
       setTimeout(() => setSuccessMessage(null), 3000);
@@ -270,44 +228,50 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     }
   };
 
+  // Fermer le formulaire et retourner à la liste
+  const handleBackToList = () => {
+    setFormState(null);
+    setSuccessMessage(null);
+  };
+
   // Soumission du formulaire
   const handleFormSubmit = async (formData) => {
     try {
-      console.log('[MedicalRecordsModule] handleFormSubmit - formData received:', formData);
-      console.log('[MedicalRecordsModule] handleFormSubmit - formData.basicInfo:', formData.basicInfo);
-
-      if (formMode === 'edit' && editingRecord?.id) {
-        // En mode édition, ne pas envoyer patientId (non autorisé par le backend)
+      if (formState?.mode === 'edit' && formState.record?.id) {
+        // Mode édition - exclure patientId
         const { patientId, ...dataWithoutPatientId } = formData;
-        console.log('[MedicalRecordsModule] handleFormSubmit - update data (without patientId):', dataWithoutPatientId);
-        await updateRecord(editingRecord.id, dataWithoutPatientId);
+        await updateRecord(formState.record.id, dataWithoutPatientId);
         setSuccessMessage(t('medical:module.messages.updateSuccess'));
+
+        // Mettre à jour le record dans formState avec les nouvelles données
+        const updatedRecord = await getRecordById(formState.record.id);
+        setFormState({ mode: 'edit', record: updatedRecord });
       } else {
-        // En mode création, ajouter patientId
+        // Mode création
         const dataWithPatient = {
           ...formData,
           patientId: selectedPatient?.id
         };
-        console.log('[MedicalRecordsModule] handleFormSubmit - create data:', dataWithPatient);
-        await createRecord(dataWithPatient);
+        const newRecord = await createRecord(dataWithPatient);
         setSuccessMessage(t('medical:module.messages.createSuccess'));
+
+        // Passer en mode édition sur le nouveau record
+        if (newRecord?.id) {
+          const fullRecord = await getRecordById(newRecord.id);
+          setFormState({ mode: 'edit', record: fullRecord });
+        }
       }
 
       // Recharger les dossiers du patient
       await loadPatientRecords(selectedPatient?.id);
 
-      // Réinitialiser le formulaire
-      setFormMode('new');
-      setEditingRecord(null);
-
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       console.error('Error saving record:', err);
       setError(t('medical:module.messages.saveError'));
     }
   };
 
-  // Formater la date selon la locale
+  // Formater la date
   const formatDate = (date) => {
     if (!date) return '-';
     const locale = i18n.language === 'es' ? 'es-ES' : i18n.language === 'en' ? 'en-US' : 'fr-FR';
@@ -318,7 +282,6 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     });
   };
 
-  // Type de consultation avec traduction
   const getTypeLabel = (type) => {
     return t(`medical:module.types.${type}`) || type || t('medical:module.types.consultation');
   };
@@ -334,6 +297,14 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     return colors[type] || 'bg-gray-100 text-gray-700';
   };
 
+  // Vérifier si un dossier a des traitements ou prescriptions
+  const hasContent = (record) => {
+    const hasTreatments = record.treatments && record.treatments.length > 0;
+    const hasPrescriptions = record.prescriptions && record.prescriptions.length > 0;
+    const hasMedications = record.currentMedications && record.currentMedications.length > 0;
+    return { hasTreatments, hasPrescriptions, hasMedications };
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[600px]">
@@ -347,7 +318,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
-      {/* Messages */}
+      {/* Messages globaux */}
       {error && (
         <div className="mx-4 mt-3 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center justify-between">
           <div className="flex items-center">
@@ -355,18 +326,6 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
             <span className="text-red-800 text-sm">{error}</span>
           </div>
           <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="mx-4 mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
-          <div className="flex items-center">
-            <Check className="h-4 w-4 text-green-600 mr-2" />
-            <span className="text-green-800 text-sm">{successMessage}</span>
-          </div>
-          <button onClick={() => setSuccessMessage(null)} className="text-green-600 hover:text-green-800">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -389,36 +348,19 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
               />
             </div>
             <div className="flex space-x-1">
-              <button
-                onClick={() => setDateFilter('all')}
-                className={`flex-1 px-2 py-1.5 text-xs rounded ${
-                  dateFilter === 'all'
-                    ? 'bg-green-100 text-green-700 font-medium'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t('medical:module.masterDetail.filters.all')}
-              </button>
-              <button
-                onClick={() => setDateFilter('recent')}
-                className={`flex-1 px-2 py-1.5 text-xs rounded ${
-                  dateFilter === 'recent'
-                    ? 'bg-green-100 text-green-700 font-medium'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t('medical:module.masterDetail.filters.recent')}
-              </button>
-              <button
-                onClick={() => setDateFilter('older')}
-                className={`flex-1 px-2 py-1.5 text-xs rounded ${
-                  dateFilter === 'older'
-                    ? 'bg-green-100 text-green-700 font-medium'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t('medical:module.masterDetail.filters.older')}
-              </button>
+              {['all', 'recent', 'older'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setDateFilter(filter)}
+                  className={`flex-1 px-2 py-1.5 text-xs rounded ${
+                    dateFilter === filter
+                      ? 'bg-green-100 text-green-700 font-medium'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {t(`medical:module.masterDetail.filters.${filter}`)}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -537,9 +479,10 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
               </div>
             </div>
           ) : (
-            <>
-              {/* En-tête patient sélectionné */}
-              <div className="border-b bg-gray-50 p-4">
+            /* Patient sélectionné */
+            <div className="flex-1 overflow-y-auto">
+              {/* En-tête patient */}
+              <div className="border-b bg-gray-50 p-4 sticky top-0 z-10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
@@ -555,37 +498,95 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <div className="flex items-center space-x-2">
-                    {/* Toggle historique */}
-                    <button
-                      onClick={() => setShowHistory(!showHistory)}
-                      className={`px-3 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors ${
-                        showHistory
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      <History className="h-4 w-4" />
-                      <span>{t('medical:module.masterDetail.history')}</span>
-                      <ChevronDown className={`h-4 w-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
-                    </button>
+              {/* Zone de contenu scrollable */}
+              <div className="p-4 space-y-4">
+                {/* Section Formulaire (si ouvert) */}
+                {formState && (
+                  <div ref={formSectionRef} className="bg-white border rounded-lg shadow-sm">
+                    {/* En-tête du formulaire */}
+                    <div className="border-b bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-t-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-white rounded-lg shadow-sm">
+                            <Stethoscope className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">
+                              {formState.mode === 'create'
+                                ? t('medical:module.masterDetail.newRecord')
+                                : t('medical:module.masterDetail.editRecord')}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {selectedPatient.firstName} {selectedPatient.lastName}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={handleBackToList}
+                            className="px-3 py-2 text-gray-600 bg-white border rounded-lg hover:bg-gray-50 text-sm flex items-center space-x-2"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                            <span>{t('medical:module.masterDetail.backToList')}</span>
+                          </button>
+                          {canCreateRecords && (
+                            <button
+                              onClick={() => formRef.current?.handleSubmit()}
+                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
+                            >
+                              <Save className="h-4 w-4" />
+                              <span>{t('medical:module.masterDetail.save')}</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
 
-                    {/* Bouton Enregistrer */}
-                    {canCreateRecords && formMode !== 'view' && (
+                      {/* Message de succès dans le formulaire */}
+                      {successMessage && (
+                        <div className="mt-3 bg-green-100 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Check className="h-4 w-4 text-green-600 mr-2" />
+                            <span className="text-green-800 text-sm">{successMessage}</span>
+                          </div>
+                          <button onClick={() => setSuccessMessage(null)} className="text-green-600 hover:text-green-800">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Contenu du formulaire */}
+                    <div className="p-4">
+                      <MedicalRecordForm
+                        ref={formRef}
+                        patient={selectedPatient}
+                        patients={[selectedPatient]}
+                        existingRecord={formState.mode === 'edit' ? formState.record : null}
+                        lastRecord={patientRecords.length > 0 ? patientRecords[0] : null}
+                        onSave={handleFormSubmit}
+                        onCancel={handleBackToList}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Section Liste des historiques */}
+                <div className="bg-white border rounded-lg">
+                  {/* En-tête de la liste */}
+                  <div className="border-b bg-gray-50 p-4 rounded-t-lg flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-5 w-5 text-gray-600" />
+                      <h3 className="font-semibold text-gray-900">
+                        {t('medical:module.masterDetail.patientRecords')}
+                      </h3>
+                      <span className="text-sm text-gray-500">({patientRecords.length})</span>
+                    </div>
+                    {canCreateRecords && !formState && (
                       <button
-                        onClick={() => formRef.current?.handleSubmit()}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
-                      >
-                        <Save className="h-4 w-4" />
-                        <span>{t('medical:module.masterDetail.save')}</span>
-                      </button>
-                    )}
-
-                    {/* Nouveau dossier */}
-                    {canCreateRecords && (
-                      <button
-                        onClick={handleNewRecord}
+                        onClick={handleCreateRecord}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
                       >
                         <Plus className="h-4 w-4" />
@@ -593,162 +594,111 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       </button>
                     )}
                   </div>
-                </div>
 
-                {/* Historique dropdown */}
-                {showHistory && patientRecords.length > 0 && (
-                  <div className="mt-4 bg-white rounded-lg border max-h-48 overflow-y-auto">
-                    {patientRecords.map((record) => (
-                      <div
-                        key={record.id}
-                        className="flex items-center justify-between p-3 hover:bg-gray-50 border-b last:border-b-0"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(record.type)}`}>
-                            {getTypeLabel(record.type)}
-                          </span>
-                          <span className="text-sm text-gray-900">
-                            {record.basicInfo?.chiefComplaint || record.diagnosis?.primary || t('medical:module.masterDetail.noDescription')}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {formatDate(record.createdAt)}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <button
-                            onClick={() => handleViewRecord(record)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                            title={t('medical:module.masterDetail.view')}
+                  {/* Liste des dossiers */}
+                  {isLoadingRecords ? (
+                    <div className="p-8 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                    </div>
+                  ) : patientRecords.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>{t('medical:module.masterDetail.noRecordsForPatient')}</p>
+                      {canCreateRecords && !formState && (
+                        <button
+                          onClick={handleCreateRecord}
+                          className="mt-4 text-green-600 hover:text-green-700 font-medium text-sm"
+                        >
+                          {t('medical:module.masterDetail.createFirstRecord')}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {patientRecords.map((record) => {
+                        const content = hasContent(record);
+                        const isCurrentlyEditing = formState?.mode === 'edit' && formState.record?.id === record.id;
+
+                        return (
+                          <div
+                            key={record.id}
+                            className={`p-4 hover:bg-gray-50 transition-colors ${
+                              isCurrentlyEditing ? 'bg-green-50 border-l-4 border-green-500' : ''
+                            }`}
                           >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          {canEditRecords && (
-                            <button
-                              onClick={() => handleEditRecord(record)}
-                              className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
-                              title={t('common:edit')}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                          )}
-                          {canDeleteRecords && (
-                            <button
-                              onClick={() => handleDeleteRecord(record.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                              title={t('common:delete')}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                {/* Date en majeur */}
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <span className="text-lg font-bold text-gray-900">
+                                    {formatDate(record.createdAt)}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(record.type)}`}>
+                                    {getTypeLabel(record.type)}
+                                  </span>
+                                  {record.status === 'signed' && (
+                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                                      Signé
+                                    </span>
+                                  )}
+                                </div>
 
-                {showHistory && patientRecords.length === 0 && (
-                  <div className="mt-4 bg-gray-100 rounded-lg p-4 text-center text-sm text-gray-500">
-                    {t('medical:module.masterDetail.noRecordsForPatient')}
-                  </div>
-                )}
-              </div>
+                                {/* Motif de consultation */}
+                                <p className="text-gray-700 mb-2">
+                                  {record.basicInfo?.chiefComplaint || record.diagnosis?.primary || t('medical:module.masterDetail.noDescription')}
+                                </p>
 
-              {/* Zone formulaire */}
-              <div className="flex-1 overflow-y-auto">
-                {isLoadingRecords ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                  </div>
-                ) : (
-                  <div className="h-full">
-                    {formMode === 'view' && editingRecord ? (
-                      /* Mode visualisation */
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {t('medical:module.masterDetail.viewRecord')}
-                          </h3>
-                          <div className="flex space-x-2">
-                            {canEditRecords && (
-                              <button
-                                onClick={() => setFormMode('edit')}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm flex items-center space-x-2"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                                <span>{t('common:edit')}</span>
-                              </button>
-                            )}
-                            <button
-                              onClick={() => { setFormMode('new'); setEditingRecord(null); }}
-                              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-                            >
-                              {t('medical:module.masterDetail.close')}
-                            </button>
-                          </div>
-                        </div>
+                                {/* Icônes indicateurs */}
+                                <div className="flex items-center space-x-3 text-sm">
+                                  {content.hasTreatments && (
+                                    <span className="flex items-center text-purple-600" title="Traitements">
+                                      <Pill className="h-4 w-4 mr-1" />
+                                      <span>{record.treatments?.length}</span>
+                                    </span>
+                                  )}
+                                  {content.hasMedications && (
+                                    <span className="flex items-center text-blue-600" title="Médicaments actuels">
+                                      <Stethoscope className="h-4 w-4 mr-1" />
+                                      <span>{record.currentMedications?.length}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
 
-                        {/* Affichage en lecture seule */}
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-2 gap-6">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-500 mb-1">{t('medical:module.masterDetail.type')}</label>
-                              <p className="text-gray-900">{getTypeLabel(editingRecord.type)}</p>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-500 mb-1">{t('medical:module.masterDetail.date')}</label>
-                              <p className="text-gray-900">{formatDate(editingRecord.createdAt)}</p>
+                              {/* Actions */}
+                              <div className="flex items-center space-x-1 ml-4">
+                                {canEditRecords && (
+                                  <button
+                                    onClick={() => handleEditRecord(record)}
+                                    className={`p-2 rounded-lg transition-colors ${
+                                      isCurrentlyEditing
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                                    }`}
+                                    title={t('common:edit')}
+                                  >
+                                    <Edit2 className="h-5 w-5" />
+                                  </button>
+                                )}
+                                {canDeleteRecords && !record.status?.includes('signed') && (
+                                  <button
+                                    onClick={() => handleDeleteRecord(record.id)}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title={t('common:delete')}
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
-
-                          {editingRecord.basicInfo?.chiefComplaint && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-500 mb-1">{t('medical:module.masterDetail.consultationReason')}</label>
-                              <p className="text-gray-900">{editingRecord.basicInfo.chiefComplaint}</p>
-                            </div>
-                          )}
-
-                          {editingRecord.diagnosis?.primary && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-500 mb-1">{t('medical:diagnosis')}</label>
-                              <p className="text-gray-900">{editingRecord.diagnosis.primary}</p>
-                            </div>
-                          )}
-
-                          {editingRecord.treatments?.length > 0 && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-500 mb-1">{t('medical:module.masterDetail.treatments')}</label>
-                              <ul className="list-disc list-inside text-gray-900">
-                                {editingRecord.treatments.map((t, i) => (
-                                  <li key={i}>{t.medication} - {t.dosage}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {editingRecord.notes && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-500 mb-1">{t('medical:notes')}</label>
-                              <p className="text-gray-900 whitespace-pre-wrap">{editingRecord.notes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      /* Mode formulaire (new ou edit) */
-                      <MedicalRecordForm
-                        ref={formRef}
-                        patient={selectedPatient}
-                        patients={[selectedPatient]}
-                        existingRecord={editingRecord}
-                        lastRecord={patientRecords.length > 0 ? patientRecords[0] : null}
-                        onSave={handleFormSubmit}
-                        onCancel={() => { setFormMode('new'); setEditingRecord(null); }}
-                      />
-                    )}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
