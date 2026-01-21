@@ -156,29 +156,49 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // Patients avec rendez-vous aujourd'hui (triés par heure)
   const todayPatientIds = new Set(todayAppointments.map(apt => apt.patientId));
 
-  // Associer les patients aux rendez-vous du jour pour afficher l'heure
-  const patientsWithTodayAppointment = todayAppointments
-    .map(apt => {
-      const patient = patients.find(p => p.id === apt.patientId);
-      if (patient) {
-        return {
-          ...patient,
-          appointmentTime: apt.startTime,
-          appointmentType: apt.type,
-          appointmentStatus: apt.status
-        };
+  // Grouper les rendez-vous par patient et collecter tous les horaires
+  const patientsWithTodayAppointment = useMemo(() => {
+    // Grouper les RDV par patient ID
+    const appointmentsByPatient = todayAppointments.reduce((acc, apt) => {
+      if (!acc[apt.patientId]) {
+        acc[apt.patientId] = [];
       }
-      return null;
-    })
-    .filter(Boolean)
-    // Appliquer le filtre de recherche aux patients du jour aussi
-    .filter(patient => {
-      if (!patientSearchQuery) return true;
-      const query = patientSearchQuery.toLowerCase();
-      const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-      const patientNumber = (patient.patientNumber || '').toLowerCase();
-      return fullName.includes(query) || patientNumber.includes(query);
-    });
+      acc[apt.patientId].push({
+        time: apt.startTime,
+        type: apt.type,
+        status: apt.status
+      });
+      return acc;
+    }, {});
+
+    // Créer la liste des patients avec tous leurs horaires
+    return Object.entries(appointmentsByPatient)
+      .map(([patientId, appointments]) => {
+        const patient = patients.find(p => p.id === patientId);
+        if (patient) {
+          // Trier les RDV par heure
+          appointments.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+          return {
+            ...patient,
+            appointments, // Tableau de tous les RDV du jour
+            appointmentTimes: appointments.map(a => a.time).filter(Boolean), // Liste des horaires
+            firstAppointmentTime: appointments[0]?.time // Pour le tri
+          };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      // Trier par premier horaire de RDV
+      .sort((a, b) => (a.firstAppointmentTime || '').localeCompare(b.firstAppointmentTime || ''))
+      // Appliquer le filtre de recherche
+      .filter(patient => {
+        if (!patientSearchQuery) return true;
+        const query = patientSearchQuery.toLowerCase();
+        const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+        const patientNumber = (patient.patientNumber || '').toLowerCase();
+        return fullName.includes(query) || patientNumber.includes(query);
+      });
+  }, [todayAppointments, patients, patientSearchQuery]);
 
   // Autres patients (sans rendez-vous aujourd'hui)
   const otherPatients = filteredPatients.filter(p => !todayPatientIds.has(p.id));
@@ -426,7 +446,10 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                                 {patient.firstName} {patient.lastName}
                               </p>
                               <p className="text-xs text-blue-600 font-medium">
-                                {patient.appointmentTime} • {patient.appointmentType || t('medical:module.types.consultation')}
+                                {patient.appointmentTimes?.join(' • ') || patient.appointmentTime}
+                                {patient.appointments?.length > 1 && (
+                                  <span className="ml-1 text-blue-400">({patient.appointments.length} RDV)</span>
+                                )}
                               </p>
                             </div>
                             <ChevronRight className="h-4 w-4 text-blue-400" />
