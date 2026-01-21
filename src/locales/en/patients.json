@@ -146,6 +146,14 @@
       "no_show": "No show"
     },
     "medicalHistory": "Medical History",
-    "edit": "Edit"
+    "edit": "Edit",
+    "signedConsents": "Signed Consents",
+    "noSignedConsents": "No signed consents",
+    "signedOn": "Signed on",
+    "consentType": "Consent type",
+    "language": "Language",
+    "ipAddress": "IP Address",
+    "documentContent": "Document content",
+    "digitalSignature": "Digital signature"
   }
 }

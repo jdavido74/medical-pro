@@ -262,6 +262,14 @@
       "no_show": "Absent"
     },
     "medicalHistory": "Historique Médical",
-    "edit": "Modifier"
+    "edit": "Modifier",
+    "signedConsents": "Consentements Signés",
+    "noSignedConsents": "Aucun consentement signé",
+    "signedOn": "Signé le",
+    "consentType": "Type de consentement",
+    "language": "Langue",
+    "ipAddress": "Adresse IP",
+    "documentContent": "Contenu du document",
+    "digitalSignature": "Signature numérique"
   }
 }

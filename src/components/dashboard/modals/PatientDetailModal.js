@@ -1,9 +1,9 @@
 // components/dashboard/modals/PatientDetailModal.js
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   X, Edit2, User, MapPin, Phone, Mail, Building, Calendar,
   Shield, Heart, Activity, FileText, Clock, Eye, Stethoscope, Plus,
-  ClipboardCheck
+  ClipboardCheck, CheckCircle, Loader, ExternalLink
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
@@ -14,6 +14,7 @@ import { medicalRecordsStorage } from '../../../utils/medicalRecordsStorage';
 import { appointmentsStorage } from '../../../utils/appointmentsStorage';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
+import { baseClient } from '../../../api/baseClient';
 
 const PatientDetailModal = ({
   patient,
@@ -36,6 +37,36 @@ const PatientDetailModal = ({
   const [isMedicalHistoryModalOpen, setIsMedicalHistoryModalOpen] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const { hasPermission } = usePermissions();
+
+  // State pour les consentements signés
+  const [signedConsents, setSignedConsents] = useState([]);
+  const [consentsLoading, setConsentsLoading] = useState(false);
+  const [viewingConsent, setViewingConsent] = useState(null);
+
+  // Charger les consentements signés du patient
+  const fetchSignedConsents = useCallback(async () => {
+    if (!patient?.id) return;
+
+    try {
+      setConsentsLoading(true);
+      const response = await baseClient.get(`/consents/patient/${patient.id}`);
+      const consents = response.data?.data || [];
+      // Filtrer uniquement les consentements signés/acceptés
+      setSignedConsents(consents.filter(c => c.status === 'accepted'));
+    } catch (err) {
+      console.error('Error fetching patient consents:', err);
+      setSignedConsents([]);
+    } finally {
+      setConsentsLoading(false);
+    }
+  }, [patient?.id]);
+
+  // Charger les consentements quand le modal s'ouvre
+  useEffect(() => {
+    if (isOpen && patient?.id) {
+      fetchSignedConsents();
+    }
+  }, [isOpen, patient?.id, fetchSignedConsents]);
 
   // Permissions pour les dossiers médicaux
   const canEditMedicalRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_EDIT);
@@ -235,6 +266,53 @@ const PatientDetailModal = ({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Consentements signés */}
+      <div className="bg-white p-6 rounded-lg border">
+        <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+          <ClipboardCheck className="h-5 w-5 mr-2 text-green-600" />
+          {t('patients:detail.signedConsents')}
+          {signedConsents.length > 0 && (
+            <span className="ml-2 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">
+              {signedConsents.length}
+            </span>
+          )}
+        </h4>
+
+        {consentsLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader className="h-5 w-5 text-gray-400 animate-spin" />
+          </div>
+        ) : signedConsents.length === 0 ? (
+          <p className="text-gray-500 italic text-sm">{t('patients:detail.noSignedConsents')}</p>
+        ) : (
+          <div className="space-y-2">
+            {signedConsents.map((consent) => (
+              <div
+                key={consent.id}
+                className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100 hover:bg-green-100 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">{consent.title}</p>
+                    <p className="text-xs text-gray-500">
+                      {t('patients:detail.signedOn')} {new Date(consent.signed_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewingConsent(consent)}
+                  className="p-2 text-green-600 hover:bg-green-200 rounded-lg transition-colors"
+                  title={t('common:view')}
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -815,6 +893,102 @@ const PatientDetailModal = ({
           onSave={handleSaveAppointment}
           preselectedPatient={patient}
         />
+      )}
+
+      {/* Consent Viewing Modal */}
+      {viewingConsent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+            {/* Header */}
+            <div className="bg-green-50 px-6 py-4 border-b border-green-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{viewingConsent.title}</h3>
+                    <p className="text-sm text-gray-600">
+                      {t('patients:detail.signedOn')} {new Date(viewingConsent.signed_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewingConsent(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-180px)]">
+              {/* Metadata */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {viewingConsent.consent_type && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">{t('patients:detail.consentType')}</label>
+                    <p className="font-medium text-gray-900">{viewingConsent.consent_type}</p>
+                  </div>
+                )}
+                {viewingConsent.template_version && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">Version</label>
+                    <p className="font-medium text-gray-900">{viewingConsent.template_version}</p>
+                  </div>
+                )}
+                {viewingConsent.language_code && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">{t('patients:detail.language')}</label>
+                    <p className="font-medium text-gray-900">{viewingConsent.language_code.toUpperCase()}</p>
+                  </div>
+                )}
+                {viewingConsent.ip_address && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">{t('patients:detail.ipAddress')}</label>
+                    <p className="font-medium text-gray-900">{viewingConsent.ip_address}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Document content */}
+              {viewingConsent.content && (
+                <div className="mb-6">
+                  <label className="text-xs text-gray-500 uppercase tracking-wide mb-2 block">{t('patients:detail.documentContent')}</label>
+                  <div
+                    className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-lg border"
+                    dangerouslySetInnerHTML={{ __html: viewingConsent.content }}
+                  />
+                </div>
+              )}
+
+              {/* Signature */}
+              {viewingConsent.signature_image && (
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-wide mb-2 block">{t('patients:detail.digitalSignature')}</label>
+                  <div className="p-4 bg-gray-50 rounded-lg border inline-block">
+                    <img
+                      src={viewingConsent.signature_image}
+                      alt="Signature"
+                      className="max-h-24"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t flex justify-end">
+              <button
+                onClick={() => setViewingConsent(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                {t('common:close')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
