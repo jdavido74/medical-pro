@@ -299,6 +299,51 @@ const MedicalRecordForm = forwardRef(({
     }
   }, [existingRecord]); // ensureFormDataStructure ne change pas car définie dans le composant
 
+  // Pré-remplir avec les données du dernier dossier lors de la création
+  useEffect(() => {
+    // Ne s'applique que pour un nouveau dossier (pas en mode édition)
+    if (!existingRecord && lastRecord) {
+      console.log('[MedicalRecordForm] Pre-filling from lastRecord:', lastRecord);
+      // Pré-remplir uniquement les champs persistants: antécédents, groupe sanguin, allergies, conditions chroniques, médicaments actuels
+      setFormData(prev => ({
+        ...prev,
+        // Antécédents - historique médical, chirurgical, habitudes
+        antecedents: {
+          personal: {
+            medicalHistory: lastRecord.antecedents?.personal?.medicalHistory || prev.antecedents?.personal?.medicalHistory || [],
+            surgicalHistory: lastRecord.antecedents?.personal?.surgicalHistory || prev.antecedents?.personal?.surgicalHistory || [],
+            allergies: lastRecord.antecedents?.personal?.allergies || prev.antecedents?.personal?.allergies || [],
+            habits: {
+              smoking: lastRecord.antecedents?.personal?.habits?.smoking || prev.antecedents?.personal?.habits?.smoking || { status: 'never', cigarettesPerDay: 0, yearsSmoking: 0, quitYear: null, packYears: 0, exposureLevel: 'low', healthAlerts: [] },
+              alcohol: lastRecord.antecedents?.personal?.habits?.alcohol || prev.antecedents?.personal?.habits?.alcohol || { status: 'never', drinksPerWeek: 0, auditC: { frequency: 0, quantity: 0, binge: 0 }, auditCScore: 0, riskLevel: 'low', healthAlerts: [] },
+              exercise: lastRecord.antecedents?.personal?.habits?.exercise || prev.antecedents?.personal?.habits?.exercise || { status: 'never', details: '' }
+            }
+          },
+          family: {
+            father: lastRecord.antecedents?.family?.father || prev.antecedents?.family?.father || '',
+            mother: lastRecord.antecedents?.family?.mother || prev.antecedents?.family?.mother || '',
+            siblings: lastRecord.antecedents?.family?.siblings || prev.antecedents?.family?.siblings || '',
+            children: lastRecord.antecedents?.family?.children || prev.antecedents?.family?.children || ''
+          }
+        },
+        // Signes vitaux - poids et taille (référence)
+        vitalSigns: {
+          ...prev.vitalSigns,
+          weight: lastRecord.vitalSigns?.weight || prev.vitalSigns?.weight || '',
+          height: lastRecord.vitalSigns?.height || prev.vitalSigns?.height || ''
+        },
+        // Données persistantes du patient
+        bloodType: lastRecord.bloodType || prev.bloodType || '',
+        allergies: lastRecord.allergies || prev.allergies || [],
+        chronicConditions: lastRecord.chronicConditions || prev.chronicConditions || [],
+        // Médicaments actuels
+        currentMedications: lastRecord.currentMedications || prev.currentMedications || [],
+        // Référence aux dernières valeurs vitales pour comparaison
+        _previousVitalSigns: lastRecord.vitalSigns || null
+      }));
+    }
+  }, [lastRecord, existingRecord]);
+
   // Charger les ordonnances existantes pour ce dossier médical
   useEffect(() => {
     const loadExistingPrescriptions = async () => {

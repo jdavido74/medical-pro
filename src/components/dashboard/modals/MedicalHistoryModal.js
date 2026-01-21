@@ -1,5 +1,5 @@
 // components/dashboard/modals/MedicalHistoryModal.js
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef, useContext, useEffect } from 'react';
 import {
   X, Stethoscope, Plus, FileText, User, Calendar, Save
 } from 'lucide-react';
@@ -18,11 +18,33 @@ const MedicalHistoryModal = ({
   const [editingRecord, setEditingRecord] = useState(null);
   const [isRecordFormOpen, setIsRecordFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [patientRecords, setPatientRecords] = useState([]);
   const formRef = useRef(null);
   const { hasPermission } = usePermissions();
   const { user } = useAuth();
   const medicalRecordContext = useContext(MedicalRecordContext);
-  const { createRecord, updateRecord, refreshRecords } = medicalRecordContext || {};
+  const { createRecord, updateRecord, refreshRecords, getPatientRecords } = medicalRecordContext || {};
+
+  // Charger les dossiers du patient pour obtenir le dernier
+  useEffect(() => {
+    const loadPatientRecords = async () => {
+      if (isOpen && patient?.id && getPatientRecords) {
+        try {
+          const result = await getPatientRecords(patient.id);
+          const records = result?.records || [];
+          // Trier par date décroissante pour avoir le plus récent en premier
+          const sortedRecords = [...records].sort((a, b) =>
+            new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          setPatientRecords(sortedRecords);
+        } catch (error) {
+          console.error('[MedicalHistoryModal] Error loading patient records:', error);
+          setPatientRecords([]);
+        }
+      }
+    };
+    loadPatientRecords();
+  }, [isOpen, patient?.id, getPatientRecords]);
 
   // Permissions pour l'historique médical
   const canViewMedicalRecords = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW);
@@ -69,6 +91,20 @@ const MedicalHistoryModal = ({
       // Rafraîchir la liste des dossiers
       if (refreshRecords) {
         await refreshRecords();
+      }
+
+      // Recharger les dossiers du patient pour mettre à jour lastRecord
+      if (getPatientRecords && patient?.id) {
+        try {
+          const result = await getPatientRecords(patient.id);
+          const records = result?.records || [];
+          const sortedRecords = [...records].sort((a, b) =>
+            new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          setPatientRecords(sortedRecords);
+        } catch (error) {
+          console.error('[MedicalHistoryModal] Error reloading patient records:', error);
+        }
       }
 
       setIsRecordFormOpen(false);
@@ -283,6 +319,7 @@ const MedicalHistoryModal = ({
                 ref={formRef}
                 patient={patient}
                 existingRecord={editingRecord}
+                lastRecord={patientRecords.length > 0 ? patientRecords[0] : null}
                 onSave={handleSaveRecord}
                 onCancel={handleCloseRecordForm}
               />

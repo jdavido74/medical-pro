@@ -80,8 +80,12 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     try {
       setIsLoadingRecords(true);
       // Utiliser la méthode du contexte pour récupérer les dossiers du patient
-      const records = await fetchPatientRecords(patientId);
-      setPatientRecords(records || []);
+      const result = await fetchPatientRecords(patientId);
+      // L'API retourne { records, statistics, ... } - on extrait le tableau records
+      const records = result?.records || result || [];
+      console.log('[MedicalRecordsModule] loadPatientRecords - result:', result);
+      console.log('[MedicalRecordsModule] loadPatientRecords - records array:', records);
+      setPatientRecords(Array.isArray(records) ? records : []);
     } catch (err) {
       console.error('Error loading patient records:', err);
       // Fallback: filtrer localement si l'API échoue
@@ -221,12 +225,15 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
   // Éditer un dossier existant
   const handleEditRecord = async (record) => {
+    console.log('[MedicalRecordsModule] handleEditRecord - record from list:', record);
     try {
       // Utiliser la méthode du contexte
       const fullRecord = await getRecordById(record.id);
+      console.log('[MedicalRecordsModule] handleEditRecord - fullRecord from API:', fullRecord);
+      console.log('[MedicalRecordsModule] handleEditRecord - fullRecord.basicInfo:', fullRecord?.basicInfo);
       setEditingRecord(fullRecord);
       setFormMode('edit');
-      setShowHistory(false);
+      // Ne pas fermer l'historique pour permettre la navigation entre dossiers
     } catch (err) {
       console.error('Error loading record:', err);
       setEditingRecord(record);
@@ -266,17 +273,22 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // Soumission du formulaire
   const handleFormSubmit = async (formData) => {
     try {
-      const dataWithPatient = {
-        ...formData,
-        patientId: selectedPatient?.id
-      };
+      console.log('[MedicalRecordsModule] handleFormSubmit - formData received:', formData);
+      console.log('[MedicalRecordsModule] handleFormSubmit - formData.basicInfo:', formData.basicInfo);
 
       if (formMode === 'edit' && editingRecord?.id) {
-        // Utiliser la méthode du contexte (optimistic update inclus)
-        await updateRecord(editingRecord.id, dataWithPatient);
+        // En mode édition, ne pas envoyer patientId (non autorisé par le backend)
+        const { patientId, ...dataWithoutPatientId } = formData;
+        console.log('[MedicalRecordsModule] handleFormSubmit - update data (without patientId):', dataWithoutPatientId);
+        await updateRecord(editingRecord.id, dataWithoutPatientId);
         setSuccessMessage(t('medical:module.messages.updateSuccess'));
       } else {
-        // Utiliser la méthode du contexte (optimistic update inclus)
+        // En mode création, ajouter patientId
+        const dataWithPatient = {
+          ...formData,
+          patientId: selectedPatient?.id
+        };
+        console.log('[MedicalRecordsModule] handleFormSubmit - create data:', dataWithPatient);
         await createRecord(dataWithPatient);
         setSuccessMessage(t('medical:module.messages.createSuccess'));
       }
