@@ -72,10 +72,12 @@ const MedicalHistoryModal = ({
     try {
       console.log('[MedicalHistoryModal] Saving medical record:', recordData);
 
-      if (editingRecord && updateRecord) {
+      if (editingRecord && !editingRecord.isNew && updateRecord) {
         // Mettre à jour un dossier existant via l'API
+        // Exclure patientId car non autorisé par le backend lors d'une mise à jour
+        const { patientId, ...dataWithoutPatientId } = recordData;
         console.log('[MedicalHistoryModal] Updating existing record:', editingRecord.id);
-        await updateRecord(editingRecord.id, recordData);
+        await updateRecord(editingRecord.id, dataWithoutPatientId);
       } else if (createRecord) {
         // Créer un nouveau dossier médical via l'API
         console.log('[MedicalHistoryModal] Creating new record for patient:', patient.id);
