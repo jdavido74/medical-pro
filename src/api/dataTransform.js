@@ -1098,9 +1098,13 @@ function transformMedicalRecordToBackend(record) {
   // === BUILD FINAL OBJECT ===
   // Only include fields that have actual values (not undefined)
   const backendData = {
-    patient_id: record.patientId,
     record_type: record.type || record.recordType || 'consultation'
   };
+
+  // patient_id only for creation (not allowed on updates)
+  if (record.patientId) {
+    backendData.patient_id = record.patientId;
+  }
 
   // IDs (optional)
   if (record.facilityId) backendData.facility_id = record.facilityId;
