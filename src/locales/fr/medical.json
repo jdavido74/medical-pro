@@ -441,6 +441,12 @@
       "noRecordsWithFilters": "Aucun dossier trouvé avec les filtres appliqués.",
       "startWithFirstRecord": "Commencez par créer le premier dossier médical."
     },
+    "deleteModal": {
+      "title": "Supprimer l'historique médical",
+      "message": "Êtes-vous sûr de vouloir supprimer cet historique médical ? Cette action est irréversible.",
+      "recordDate": "Date du dossier",
+      "warning": "Cette suppression sera enregistrée dans l'audit trail pour des raisons de traçabilité médicale."
+    },
     "badges": {
       "medicalAlert": "Alerte médicale"
     },

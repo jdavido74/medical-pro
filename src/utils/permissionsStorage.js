@@ -320,6 +320,7 @@ export const DEFAULT_ROLES = {
       PERMISSIONS.MEDICAL_RECORDS_VIEW,           // Consulter les dossiers médicaux
       PERMISSIONS.MEDICAL_RECORDS_CREATE,         // Créer des entrées médicales
       PERMISSIONS.MEDICAL_RECORDS_EDIT,           // Modifier les dossiers médicaux
+      PERMISSIONS.MEDICAL_RECORDS_DELETE,         // Supprimer les dossiers médicaux
       PERMISSIONS.MEDICAL_NOTES_CREATE,           // Créer des notes (soins infirmiers)
       PERMISSIONS.MEDICAL_ALLERGIES_VIEW,         // CRITIQUE: allergies pour sécurité des soins
       PERMISSIONS.MEDICAL_VITALS_VIEW,            // Constantes vitales

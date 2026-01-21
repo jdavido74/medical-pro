@@ -53,6 +53,9 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // État du formulaire - null = pas de formulaire ouvert
   const [formState, setFormState] = useState(null); // null | { mode: 'create' } | { mode: 'edit', record: {...} }
 
+  // État de la modal de confirmation de suppression
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState({ show: false, recordId: null, recordDate: null });
+
   // État de chargement combiné
   const isLoading = patientsLoading || recordsLoading;
 
@@ -214,9 +217,18 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     }
   };
 
-  // Supprimer un dossier
-  const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm(t('medical:module.messages.deleteConfirm'))) return;
+  // Ouvrir la modal de confirmation de suppression
+  const handleDeleteRecord = (record) => {
+    const recordDate = record.createdAt
+      ? new Date(record.createdAt).toLocaleDateString(i18n.language, { day: '2-digit', month: 'long', year: 'numeric' })
+      : '';
+    setDeleteConfirmModal({ show: true, recordId: record.id, recordDate });
+  };
+
+  // Confirmer la suppression
+  const confirmDelete = async () => {
+    const { recordId } = deleteConfirmModal;
+    setDeleteConfirmModal({ show: false, recordId: null, recordDate: null });
 
     try {
       await archiveRecord(recordId);
@@ -226,6 +238,11 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     } catch (err) {
       setError(t('medical:module.messages.deleteError'));
     }
+  };
+
+  // Annuler la suppression
+  const cancelDelete = () => {
+    setDeleteConfirmModal({ show: false, recordId: null, recordDate: null });
   };
 
   // Fermer le formulaire et retourner à la liste
@@ -682,7 +699,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                                 )}
                                 {canDeleteRecords && !record.status?.includes('signed') && (
                                   <button
-                                    onClick={() => handleDeleteRecord(record.id)}
+                                    onClick={() => handleDeleteRecord(record)}
                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title={t('common:delete')}
                                   >
@@ -702,6 +719,62 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
           )}
         </div>
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      {deleteConfirmModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={cancelDelete}
+          />
+          {/* Modal */}
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-red-50 px-6 py-4 border-b border-red-100">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {t('medical:module.deleteModal.title')}
+                </h3>
+              </div>
+            </div>
+            {/* Content */}
+            <div className="px-6 py-4">
+              <p className="text-gray-600">
+                {t('medical:module.deleteModal.message')}
+              </p>
+              {deleteConfirmModal.recordDate && (
+                <p className="mt-2 text-sm text-gray-500">
+                  {t('medical:module.deleteModal.recordDate')}: <span className="font-medium">{deleteConfirmModal.recordDate}</span>
+                </p>
+              )}
+              <p className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                <AlertTriangle className="h-4 w-4 inline mr-2" />
+                {t('medical:module.deleteModal.warning')}
+              </p>
+            </div>
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {t('common:cancel')}
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{t('common:delete')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

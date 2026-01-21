@@ -441,6 +441,12 @@
       "noRecordsWithFilters": "No se encontraron historiales con los filtros aplicados.",
       "startWithFirstRecord": "Comience creando el primer historial médico."
     },
+    "deleteModal": {
+      "title": "Eliminar historial médico",
+      "message": "¿Está seguro de que desea eliminar este historial médico? Esta acción no se puede deshacer.",
+      "recordDate": "Fecha del historial",
+      "warning": "Esta eliminación se registrará en el registro de auditoría por motivos de trazabilidad médica."
+    },
     "badges": {
       "medicalAlert": "Alerta médica"
     },

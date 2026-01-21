@@ -441,6 +441,12 @@
       "noRecordsWithFilters": "No records found with the applied filters.",
       "startWithFirstRecord": "Start by creating your first medical record."
     },
+    "deleteModal": {
+      "title": "Delete Medical Record",
+      "message": "Are you sure you want to delete this medical record? This action cannot be undone.",
+      "recordDate": "Record date",
+      "warning": "This deletion will be recorded in the audit trail for medical traceability purposes."
+    },
     "badges": {
       "medicalAlert": "Medical Alert"
     },
