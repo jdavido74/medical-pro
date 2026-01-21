@@ -697,7 +697,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                                     <Edit2 className="h-5 w-5" />
                                   </button>
                                 )}
-                                {canDeleteRecords && !record.status?.includes('signed') && (
+                                {canDeleteRecords && (
                                   <button
                                     onClick={() => handleDeleteRecord(record)}
                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
