@@ -285,9 +285,11 @@
     "planTab": {
       "recommendations": "Recomendaciones",
       "addRecommendation": "Agregar recomendación",
+      "noRecommendations": "Ninguna recomendación añadida",
       "nextFollowUp": "Próximo Seguimiento",
       "requestedTests": "Exámenes Solicitados",
-      "addTest": "Agregar examen"
+      "addTest": "Agregar examen",
+      "noTests": "Ningún examen solicitado"
     },
     "prescriptionTab": {
       "title": "Recetas Médicas",

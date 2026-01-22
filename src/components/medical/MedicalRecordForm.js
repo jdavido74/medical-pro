@@ -21,10 +21,12 @@ const MedicalRecordForm = forwardRef(({
   existingRecord = null,
   initialData = null,
   lastRecord = null, // Dernier dossier du patient pour pré-remplir
+  initialActiveTab = 'basic', // Onglet initial à afficher
   onSave,
   onSubmit,
   onCancel,
   onClose,
+  onActiveTabChange, // Callback pour notifier du changement d'onglet
   isOpen
 }, ref) => {
   const { user } = useAuth();
@@ -259,9 +261,16 @@ const MedicalRecordForm = forwardRef(({
   }));
 
   const [errors, setErrors] = useState({});
-  const [activeTab, setActiveTab] = useState('basic');
+  const [activeTab, setActiveTab] = useState(initialActiveTab || 'basic');
   const [medicationWarnings, setMedicationWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Notify parent when active tab changes
+  useEffect(() => {
+    if (onActiveTabChange) {
+      onActiveTabChange(activeTab);
+    }
+  }, [activeTab, onActiveTabChange]);
 
   // Prescription (Ordonnance) state
   const [prescriptionData, setPrescriptionData] = useState({
@@ -695,12 +704,19 @@ const MedicalRecordForm = forwardRef(({
         return;
       }
 
+      // Debug: Log treatmentPlan before save
+      console.log('[MedicalRecordForm] handleSubmitInternal - formData.treatmentPlan:', JSON.stringify(formData.treatmentPlan, null, 2));
+
       const recordData = {
         ...formData,
         patientId, // Ensure patientId is set
         medicationWarnings,
         providerId: user?.providerId // Use clinic provider ID, not central user ID
       };
+
+      // Debug: Log full recordData being sent
+      console.log('[MedicalRecordForm] handleSubmitInternal - recordData keys:', Object.keys(recordData));
+      console.log('[MedicalRecordForm] handleSubmitInternal - recordData.treatmentPlan:', JSON.stringify(recordData.treatmentPlan, null, 2));
 
       let savedRecord;
       if (currentRecordId || (record && record.id)) {
@@ -1797,28 +1813,33 @@ const MedicalRecordForm = forwardRef(({
           {t('medical:form.planTab.recommendations')}
         </label>
         <div className="space-y-2">
-          {formData.treatmentPlan.recommendations.map((recommendation, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={recommendation}
-                onChange={(e) => handleArrayInputChange('treatmentPlan', 'recommendations', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder={t('medical:form.placeholders.recommendation')}
-              />
-              <button
-                type="button"
-                onClick={() => removeArrayItem('treatmentPlan', 'recommendations', index)}
-                className="p-2 text-red-600 hover:text-red-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+          {formData.treatmentPlan.recommendations.length === 0 ? (
+            <p className="text-sm text-gray-400 italic py-2">{t('medical:form.planTab.noRecommendations', 'Aucune recommandation ajoutée')}</p>
+          ) : (
+            formData.treatmentPlan.recommendations.map((recommendation, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={recommendation}
+                  onChange={(e) => handleArrayInputChange('treatmentPlan', 'recommendations', index, e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={t('medical:form.placeholders.recommendation')}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeArrayItem('treatmentPlan', 'recommendations', index)}
+                  className="p-2 text-red-600 hover:text-red-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
+          {/* Bouton "Ajouter" en bas de la liste */}
           <button
             type="button"
             onClick={() => addArrayItem('treatmentPlan', 'recommendations')}
-            className="flex items-center space-x-2 text-green-600 hover:text-green-800"
+            className="flex items-center space-x-2 text-green-600 hover:text-green-800 mt-2"
           >
             <Plus className="h-4 w-4" />
             <span>{t('medical:form.planTab.addRecommendation')}</span>
@@ -1843,28 +1864,33 @@ const MedicalRecordForm = forwardRef(({
           {t('medical:form.planTab.requestedTests')}
         </label>
         <div className="space-y-2">
-          {formData.treatmentPlan.tests.map((test, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={test}
-                onChange={(e) => handleArrayInputChange('treatmentPlan', 'tests', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder={t('medical:form.placeholders.testOrExam')}
-              />
-              <button
-                type="button"
-                onClick={() => removeArrayItem('treatmentPlan', 'tests', index)}
-                className="p-2 text-red-600 hover:text-red-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+          {formData.treatmentPlan.tests.length === 0 ? (
+            <p className="text-sm text-gray-400 italic py-2">{t('medical:form.planTab.noTests', 'Aucun examen demandé')}</p>
+          ) : (
+            formData.treatmentPlan.tests.map((test, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={test}
+                  onChange={(e) => handleArrayInputChange('treatmentPlan', 'tests', index, e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={t('medical:form.placeholders.testOrExam')}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeArrayItem('treatmentPlan', 'tests', index)}
+                  className="p-2 text-red-600 hover:text-red-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
+          {/* Bouton "Ajouter" en bas de la liste */}
           <button
             type="button"
             onClick={() => addArrayItem('treatmentPlan', 'tests')}
-            className="flex items-center space-x-2 text-green-600 hover:text-green-800"
+            className="flex items-center space-x-2 text-green-600 hover:text-green-800 mt-2"
           >
             <Plus className="h-4 w-4" />
             <span>{t('medical:form.planTab.addTest')}</span>

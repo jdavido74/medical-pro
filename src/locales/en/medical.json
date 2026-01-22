@@ -285,9 +285,11 @@
     "planTab": {
       "recommendations": "Recommendations",
       "addRecommendation": "Add recommendation",
+      "noRecommendations": "No recommendations added",
       "nextFollowUp": "Next Follow-Up",
       "requestedTests": "Requested Tests",
-      "addTest": "Add test"
+      "addTest": "Add test",
+      "noTests": "No tests requested"
     },
     "prescriptionTab": {
       "title": "Medical Prescriptions",

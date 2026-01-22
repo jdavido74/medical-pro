@@ -5,7 +5,7 @@ import {
   Plus, Search, Edit2, Trash2, User,
   AlertTriangle, ChevronRight, ChevronDown,
   X, Check, UserPlus, Clock, Save, ArrowLeft,
-  Pill, FileText, Stethoscope
+  Pill, FileText, Stethoscope, Eye, Activity, Heart
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../hooks/useAuth';
@@ -53,8 +53,14 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // État du formulaire - null = pas de formulaire ouvert
   const [formState, setFormState] = useState(null); // null | { mode: 'create' } | { mode: 'edit', record: {...} }
 
+  // Onglet actif du formulaire (pour le préserver après sauvegarde)
+  const [currentFormTab, setCurrentFormTab] = useState('basic');
+
   // État de la modal de confirmation de suppression
   const [deleteConfirmModal, setDeleteConfirmModal] = useState({ show: false, recordId: null, recordDate: null });
+
+  // État de la modal de visualisation complète du dossier
+  const [viewRecordModal, setViewRecordModal] = useState({ show: false, record: null });
 
   // État de chargement combiné
   const isLoading = patientsLoading || recordsLoading;
@@ -189,6 +195,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // Créer un nouveau dossier
   const handleCreateRecord = () => {
     setFormState({ mode: 'create' });
+    setCurrentFormTab('basic'); // Reset tab to basic for new records
     setSuccessMessage(null);
     setError(null);
     // Scroll vers le formulaire
@@ -212,6 +219,20 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     } catch (err) {
       console.error('Error loading record:', err);
       setFormState({ mode: 'edit', record });
+    } finally {
+      setIsLoadingRecords(false);
+    }
+  };
+
+  // Ouvrir la modal de visualisation complète
+  const handleViewRecord = async (record) => {
+    try {
+      setIsLoadingRecords(true);
+      const fullRecord = await getRecordById(record.id);
+      setViewRecordModal({ show: true, record: fullRecord });
+    } catch (err) {
+      console.error('Error loading record for view:', err);
+      setViewRecordModal({ show: true, record });
     } finally {
       setIsLoadingRecords(false);
     }
@@ -534,11 +555,13 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                             <h3 className="font-semibold text-gray-900">
                               {formState.mode === 'create'
                                 ? t('medical:module.masterDetail.newRecord')
-                                : t('medical:module.masterDetail.editRecord')}
+                                : `${formatDate(formState.record?.createdAt)} - ${selectedPatient.firstName} ${selectedPatient.lastName}`}
                             </h3>
-                            <p className="text-sm text-gray-600">
-                              {selectedPatient.firstName} {selectedPatient.lastName}
-                            </p>
+                            {formState.mode === 'create' && (
+                              <p className="text-sm text-gray-600">
+                                {selectedPatient.firstName} {selectedPatient.lastName}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -583,8 +606,10 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                         patients={[selectedPatient]}
                         existingRecord={formState.mode === 'edit' ? formState.record : null}
                         lastRecord={patientRecords.length > 0 ? patientRecords[0] : null}
+                        initialActiveTab={currentFormTab}
                         onSave={handleFormSubmit}
                         onCancel={handleBackToList}
+                        onActiveTabChange={setCurrentFormTab}
                       />
                     </div>
                   </div>
@@ -684,6 +709,14 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
                               {/* Actions */}
                               <div className="flex items-center space-x-1 ml-4">
+                                {/* Voir le dossier complet */}
+                                <button
+                                  onClick={() => handleViewRecord(record)}
+                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title={t('medical:module.masterDetail.viewRecord', 'Voir le dossier')}
+                                >
+                                  <Eye className="h-5 w-5" />
+                                </button>
                                 {canEditRecords && (
                                   <button
                                     onClick={() => handleEditRecord(record)}
@@ -770,6 +803,440 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
               >
                 <Trash2 className="h-4 w-4" />
                 <span>{t('common:delete')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de visualisation du dossier complet */}
+      {viewRecordModal.show && viewRecordModal.record && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setViewRecordModal({ show: false, record: null })}
+          />
+          {/* Modal */}
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {formatDate(viewRecordModal.record.createdAt)} - {selectedPatient?.firstName} {selectedPatient?.lastName}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {getTypeLabel(viewRecordModal.record.type)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewRecordModal({ show: false, record: null })}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* === INFORMATIONS DE BASE === */}
+              <div className="border-b pb-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  {t('medical:form.tabs.basic', 'Informations de base')}
+                </h4>
+
+                {/* Motif de consultation */}
+                {viewRecordModal.record.basicInfo?.chiefComplaint && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-1">{t('medical:form.chiefComplaint', 'Motif de consultation')}</p>
+                    <p className="text-gray-800 bg-gray-50 p-3 rounded-lg">{viewRecordModal.record.basicInfo.chiefComplaint}</p>
+                  </div>
+                )}
+
+                {/* Symptômes */}
+                {viewRecordModal.record.basicInfo?.symptoms?.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-1">{t('medical:form.symptoms', 'Symptômes')}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {viewRecordModal.record.basicInfo.symptoms.map((s, i) => s && (
+                        <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 text-sm rounded-full">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Durée des symptômes */}
+                {viewRecordModal.record.basicInfo?.duration && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">{t('medical:form.symptomsDuration', 'Durée des symptômes')}</p>
+                    <p className="text-gray-800">{viewRecordModal.record.basicInfo.duration}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* === SIGNES VITAUX === */}
+              {viewRecordModal.record.vitalSigns && Object.values(viewRecordModal.record.vitalSigns).some(v => v && v !== '') && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    {t('medical:form.tabs.vitals', 'Signes vitaux')}
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {viewRecordModal.record.vitalSigns.weight && (
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-xs text-blue-600">{t('medical:form.vitals.weight', 'Poids')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.weight} kg</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.height && (
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-xs text-blue-600">{t('medical:form.vitals.height', 'Taille')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.height} cm</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.bmi && (
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-xs text-blue-600">{t('medical:form.vitals.bmi', 'IMC')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.bmi}</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.bloodPressure?.systolic && (
+                      <div className="bg-red-50 p-3 rounded-lg">
+                        <p className="text-xs text-red-600">{t('medical:form.vitals.bloodPressure', 'Tension')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.bloodPressure.systolic}/{viewRecordModal.record.vitalSigns.bloodPressure.diastolic}</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.heartRate && (
+                      <div className="bg-pink-50 p-3 rounded-lg">
+                        <p className="text-xs text-pink-600">{t('medical:form.vitals.heartRate', 'Fréquence cardiaque')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.heartRate} bpm</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.temperature && (
+                      <div className="bg-orange-50 p-3 rounded-lg">
+                        <p className="text-xs text-orange-600">{t('medical:form.vitals.temperature', 'Température')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.temperature} °C</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.respiratoryRate && (
+                      <div className="bg-teal-50 p-3 rounded-lg">
+                        <p className="text-xs text-teal-600">{t('medical:form.vitals.respiratoryRate', 'Fréquence respiratoire')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.respiratoryRate} /min</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.oxygenSaturation && (
+                      <div className="bg-cyan-50 p-3 rounded-lg">
+                        <p className="text-xs text-cyan-600">{t('medical:form.vitals.oxygenSaturation', 'Saturation O2')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.oxygenSaturation} %</p>
+                      </div>
+                    )}
+                  </div>
+                  {/* Groupe sanguin */}
+                  {viewRecordModal.record.bloodType && (
+                    <div className="mt-3">
+                      <span className="text-xs text-gray-500">{t('medical:form.vitals.bloodType', 'Groupe sanguin')}:</span>
+                      <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 text-sm font-semibold rounded">{viewRecordModal.record.bloodType}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* === ANTÉCÉDENTS === */}
+              {viewRecordModal.record.antecedents && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    {t('medical:form.tabs.antecedents', 'Antécédents')}
+                  </h4>
+
+                  {/* Antécédents personnels - Historique médical */}
+                  {viewRecordModal.record.antecedents.personal?.medicalHistory?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.antecedents.medicalHistory', 'Historique médical')}</p>
+                      <ul className="list-disc list-inside text-gray-800 bg-gray-50 p-3 rounded-lg text-sm">
+                        {viewRecordModal.record.antecedents.personal.medicalHistory.map((h, i) => h && <li key={i}>{h}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Antécédents personnels - Historique chirurgical */}
+                  {viewRecordModal.record.antecedents.personal?.surgicalHistory?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.antecedents.surgicalHistory', 'Historique chirurgical')}</p>
+                      <ul className="list-disc list-inside text-gray-800 bg-gray-50 p-3 rounded-lg text-sm">
+                        {viewRecordModal.record.antecedents.personal.surgicalHistory.map((s, i) => s && <li key={i}>{s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Habitudes - Tabac */}
+                  {viewRecordModal.record.antecedents.personal?.habits?.smoking?.status &&
+                   viewRecordModal.record.antecedents.personal.habits.smoking.status !== 'never' && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.habits.smoking', 'Tabagisme')}</p>
+                      <div className="bg-amber-50 p-3 rounded-lg text-sm">
+                        <p><span className="font-medium">{t('medical:form.habits.smokingAssessment.status', 'Statut')}:</span> {t(`medical:form.habits.${viewRecordModal.record.antecedents.personal.habits.smoking.status}`, viewRecordModal.record.antecedents.personal.habits.smoking.status)}</p>
+                        {viewRecordModal.record.antecedents.personal.habits.smoking.cigarettesPerDay > 0 && (
+                          <p><span className="font-medium">{t('medical:form.habits.smokingAssessment.cigarettesPerDay', 'Cigarettes/jour')}:</span> {viewRecordModal.record.antecedents.personal.habits.smoking.cigarettesPerDay}</p>
+                        )}
+                        {viewRecordModal.record.antecedents.personal.habits.smoking.packYears > 0 && (
+                          <p><span className="font-medium">{t('medical:form.habits.smokingAssessment.packYears', 'Paquets-années')}:</span> {viewRecordModal.record.antecedents.personal.habits.smoking.packYears}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Habitudes - Alcool */}
+                  {viewRecordModal.record.antecedents.personal?.habits?.alcohol?.status &&
+                   viewRecordModal.record.antecedents.personal.habits.alcohol.status !== 'never' && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.habits.alcohol', 'Alcool')}</p>
+                      <div className="bg-purple-50 p-3 rounded-lg text-sm">
+                        <p><span className="font-medium">{t('medical:form.habits.smokingAssessment.status', 'Statut')}:</span> {t(`medical:form.habits.${viewRecordModal.record.antecedents.personal.habits.alcohol.status}`, viewRecordModal.record.antecedents.personal.habits.alcohol.status)}</p>
+                        {viewRecordModal.record.antecedents.personal.habits.alcohol.auditCScore > 0 && (
+                          <p><span className="font-medium">Score AUDIT-C:</span> {viewRecordModal.record.antecedents.personal.habits.alcohol.auditCScore}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Antécédents familiaux */}
+                  {viewRecordModal.record.antecedents.family && Object.values(viewRecordModal.record.antecedents.family).some(v => v) && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.antecedents.family', 'Antécédents familiaux')}</p>
+                      <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-1">
+                        {viewRecordModal.record.antecedents.family.father && (
+                          <p><span className="font-medium">{t('medical:form.antecedents.father', 'Père')}:</span> {viewRecordModal.record.antecedents.family.father}</p>
+                        )}
+                        {viewRecordModal.record.antecedents.family.mother && (
+                          <p><span className="font-medium">{t('medical:form.antecedents.mother', 'Mère')}:</span> {viewRecordModal.record.antecedents.family.mother}</p>
+                        )}
+                        {viewRecordModal.record.antecedents.family.siblings && (
+                          <p><span className="font-medium">{t('medical:form.antecedents.siblings', 'Frères/Sœurs')}:</span> {viewRecordModal.record.antecedents.family.siblings}</p>
+                        )}
+                        {viewRecordModal.record.antecedents.family.children && (
+                          <p><span className="font-medium">{t('medical:form.antecedents.children', 'Enfants')}:</span> {viewRecordModal.record.antecedents.family.children}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* === ALLERGIES === */}
+              {viewRecordModal.record.allergies?.length > 0 && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    {t('medical:form.allergies.title', 'Allergies')}
+                  </h4>
+                  <div className="space-y-2">
+                    {viewRecordModal.record.allergies.map((a, i) => (
+                      <div key={i} className="bg-red-50 p-3 rounded-lg border-l-4 border-red-400">
+                        <p className="font-medium text-red-800">{a.allergen || a}</p>
+                        {a.severity && <p className="text-sm text-red-600">{t('medical:form.allergies.severity', 'Sévérité')}: {a.severity}</p>}
+                        {a.reaction && <p className="text-sm text-red-600">{t('medical:form.allergies.reaction', 'Réaction')}: {a.reaction}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* === CONDITIONS CHRONIQUES === */}
+              {viewRecordModal.record.chronicConditions?.length > 0 && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('medical:form.chronicConditions.title', 'Conditions chroniques')}</h4>
+                  <div className="space-y-2">
+                    {viewRecordModal.record.chronicConditions.map((c, i) => (
+                      <div key={i} className="bg-amber-50 p-3 rounded-lg">
+                        <p className="font-medium text-amber-800">{c.condition || c}</p>
+                        {c.diagnosisDate && <p className="text-sm text-amber-600">{t('medical:form.chronicConditions.diagnosisDate', 'Date diagnostic')}: {formatDate(c.diagnosisDate)}</p>}
+                        {c.status && <p className="text-sm text-amber-600">{t('medical:form.chronicConditions.status', 'Statut')}: {c.status}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* === TRAITEMENT ACTUEL (Médicaments en cours) === */}
+              {viewRecordModal.record.currentMedications?.length > 0 && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Pill className="h-4 w-4 text-blue-500" />
+                    {t('medical:form.tabs.currentMedications', 'Traitement actuel')}
+                  </h4>
+                  <div className="space-y-2">
+                    {viewRecordModal.record.currentMedications.map((m, i) => (
+                      <div key={i} className="bg-blue-50 p-3 rounded-lg flex items-start gap-3">
+                        <Pill className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-gray-900">{m.medication}</p>
+                          {(m.dosage || m.frequency) && <p className="text-sm text-gray-600">{m.dosage} {m.frequency && `- ${m.frequency}`}</p>}
+                          {m.notes && <p className="text-xs text-gray-500 mt-1">{m.notes}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* === DIAGNOSTIC === */}
+              {(viewRecordModal.record.diagnosis?.primary || viewRecordModal.record.diagnosis?.secondary?.length > 0) && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Stethoscope className="h-4 w-4" />
+                    {t('medical:form.tabs.diagnosis', 'Diagnostic')}
+                  </h4>
+                  {viewRecordModal.record.diagnosis.primary && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.diagnosis.primary', 'Diagnostic principal')}</p>
+                      <p className="text-gray-800 bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 font-medium">{viewRecordModal.record.diagnosis.primary}</p>
+                    </div>
+                  )}
+                  {viewRecordModal.record.diagnosis.secondary?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.diagnosis.secondary', 'Diagnostics secondaires')}</p>
+                      <ul className="list-disc list-inside text-gray-700 text-sm bg-yellow-50/50 p-3 rounded-lg">
+                        {viewRecordModal.record.diagnosis.secondary.map((d, i) => d && <li key={i}>{d}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {viewRecordModal.record.diagnosis.icd10?.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.diagnosis.icd10Codes', 'Codes CIM-10')}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {viewRecordModal.record.diagnosis.icd10.map((code, i) => code && (
+                          <span key={i} className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded font-mono">{code}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* === EXAMEN PHYSIQUE === */}
+              {viewRecordModal.record.physicalExam && Object.values(viewRecordModal.record.physicalExam).some(v => v) && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    {t('medical:form.tabs.exam', 'Examen physique')}
+                  </h4>
+                  <div className="space-y-2 bg-gray-50 p-3 rounded-lg">
+                    {viewRecordModal.record.physicalExam.general && (
+                      <div><span className="text-xs text-gray-500 font-medium">{t('medical:form.physicalExam.general', 'Général')}:</span> <span className="text-gray-800">{viewRecordModal.record.physicalExam.general}</span></div>
+                    )}
+                    {viewRecordModal.record.physicalExam.cardiovascular && (
+                      <div><span className="text-xs text-gray-500 font-medium">{t('medical:form.physicalExam.cardiovascular', 'Cardiovasculaire')}:</span> <span className="text-gray-800">{viewRecordModal.record.physicalExam.cardiovascular}</span></div>
+                    )}
+                    {viewRecordModal.record.physicalExam.respiratory && (
+                      <div><span className="text-xs text-gray-500 font-medium">{t('medical:form.physicalExam.respiratory', 'Respiratoire')}:</span> <span className="text-gray-800">{viewRecordModal.record.physicalExam.respiratory}</span></div>
+                    )}
+                    {viewRecordModal.record.physicalExam.abdomen && (
+                      <div><span className="text-xs text-gray-500 font-medium">{t('medical:form.physicalExam.abdomen', 'Abdomen')}:</span> <span className="text-gray-800">{viewRecordModal.record.physicalExam.abdomen}</span></div>
+                    )}
+                    {viewRecordModal.record.physicalExam.neurological && (
+                      <div><span className="text-xs text-gray-500 font-medium">{t('medical:form.physicalExam.neurological', 'Neurologique')}:</span> <span className="text-gray-800">{viewRecordModal.record.physicalExam.neurological}</span></div>
+                    )}
+                    {viewRecordModal.record.physicalExam.other && (
+                      <div><span className="text-xs text-gray-500 font-medium">{t('medical:form.physicalExam.otherSystems', 'Autre')}:</span> <span className="text-gray-800">{viewRecordModal.record.physicalExam.other}</span></div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* === TRAITEMENTS PRESCRITS === */}
+              {viewRecordModal.record.treatments?.length > 0 && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Pill className="h-4 w-4 text-purple-500" />
+                    {t('medical:form.tabs.treatments', 'Traitements prescrits')}
+                  </h4>
+                  <div className="space-y-2">
+                    {viewRecordModal.record.treatments.map((tr, i) => (
+                      <div key={i} className="bg-purple-50 p-3 rounded-lg">
+                        <p className="font-medium text-gray-900">{tr.medication}</p>
+                        <div className="text-sm text-gray-600 mt-1 space-y-0.5">
+                          {tr.dosage && <p>{t('medical:form.dosage', 'Dosage')}: {tr.dosage}</p>}
+                          {tr.frequency && <p>{t('medical:form.frequency', 'Fréquence')}: {tr.frequency}</p>}
+                          {tr.route && <p>{t('medical:form.treatment.route', 'Voie')}: {tr.route}</p>}
+                          {tr.duration && <p>{t('medical:form.duration', 'Durée')}: {tr.duration}</p>}
+                          {tr.startDate && <p>{t('medical:form.treatment.startDate', 'Début')}: {formatDate(tr.startDate)}</p>}
+                          {tr.endDate && <p>{t('medical:form.treatment.endDate', 'Fin')}: {formatDate(tr.endDate)}</p>}
+                          {tr.status && <p>{t('medical:form.treatment.status', 'Statut')}: <span className={`px-1.5 py-0.5 rounded text-xs ${tr.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{tr.status}</span></p>}
+                        </div>
+                        {tr.notes && <p className="text-xs text-gray-500 mt-2 italic">{tr.notes}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* === PLAN DE TRAITEMENT === */}
+              {viewRecordModal.record.treatmentPlan && (viewRecordModal.record.treatmentPlan.recommendations?.length > 0 || viewRecordModal.record.treatmentPlan.followUp || viewRecordModal.record.treatmentPlan.tests?.length > 0) && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-500" />
+                    {t('medical:form.tabs.plan', 'Plan')}
+                  </h4>
+                  {viewRecordModal.record.treatmentPlan.recommendations?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.planTab.recommendations', 'Recommandations')}</p>
+                      <ul className="list-disc list-inside text-gray-800 bg-green-50 p-3 rounded-lg">
+                        {viewRecordModal.record.treatmentPlan.recommendations.map((r, i) => r && <li key={i}>{r}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {viewRecordModal.record.treatmentPlan.followUp && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.planTab.nextFollowUp', 'Prochain suivi')}</p>
+                      <p className="text-gray-800 bg-blue-50 p-2 rounded inline-block">{formatDate(viewRecordModal.record.treatmentPlan.followUp)}</p>
+                    </div>
+                  )}
+                  {viewRecordModal.record.treatmentPlan.tests?.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">{t('medical:form.planTab.requestedTests', 'Examens demandés')}</p>
+                      <ul className="list-disc list-inside text-gray-800 bg-cyan-50 p-3 rounded-lg">
+                        {viewRecordModal.record.treatmentPlan.tests.map((te, i) => te && <li key={i}>{te}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* === NOTES === */}
+              {viewRecordModal.record.notes && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('medical:form.notes', 'Notes')}</h4>
+                  <p className="text-gray-800 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">{viewRecordModal.record.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
+              <button
+                onClick={() => {
+                  setViewRecordModal({ show: false, record: null });
+                  handleEditRecord(viewRecordModal.record);
+                }}
+                className="px-4 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors flex items-center space-x-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span>{t('common:edit')}</span>
+              </button>
+              <button
+                onClick={() => setViewRecordModal({ show: false, record: null })}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {t('common:close', 'Fermer')}
               </button>
             </div>
           </div>

@@ -285,9 +285,11 @@
     "planTab": {
       "recommendations": "Recommandations",
       "addRecommendation": "Ajouter une recommandation",
+      "noRecommendations": "Aucune recommandation ajoutée",
       "nextFollowUp": "Prochain Suivi",
       "requestedTests": "Examens Demandés",
-      "addTest": "Ajouter un examen"
+      "addTest": "Ajouter un examen",
+      "noTests": "Aucun examen demandé"
     },
     "prescriptionTab": {
       "title": "Ordonnances Médicales",
