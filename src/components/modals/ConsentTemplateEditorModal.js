@@ -1185,8 +1185,9 @@ Signature du patient: [SIGNATURE_PATIENT]"
               </div>
             )}
           </div>
-        </>
-        )}
+          </>
+          )}
+        </div>
       </div>
     </div>
   );

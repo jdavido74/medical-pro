@@ -7,6 +7,12 @@ import {
   BookOpen, Database, Code, Globe, Zap, X, Loader, Languages
 } from 'lucide-react';
 import { consentTemplatesApi } from '../../../api/consentTemplatesApi';
+import {
+  TEMPLATE_CATEGORIES,
+  MEDICAL_SPECIALITIES
+} from '../../../utils/consentTemplatesStorage';
+import ConsentTemplateEditorModal from '../../modals/ConsentTemplateEditorModal';
+import { useAuth } from '../../../hooks/useAuth';
 
 // Available languages for translations
 const AVAILABLE_LANGUAGES = [
@@ -14,12 +20,6 @@ const AVAILABLE_LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
   { code: 'es', name: 'Español', flag: '🇪🇸' }
 ];
-import {
-  TEMPLATE_CATEGORIES,
-  MEDICAL_SPECIALITIES
-} from '../../../utils/consentTemplatesStorage';
-import ConsentTemplateEditorModal from '../../modals/ConsentTemplateEditorModal';
-import { useAuth } from '../../../hooks/useAuth';
 
 const ConsentTemplatesModule = () => {
   const { user } = useAuth();
