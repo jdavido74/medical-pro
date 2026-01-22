@@ -50,7 +50,7 @@ export const AppointmentProvider = ({ children }) => {
         if (user && isAuthenticated) {
           console.log('[AppointmentContext] Loading appointments for user:', user.email);
           try {
-            const result = await appointmentsApi.getAppointments({ page: 1, limit: 100 });
+            const result = await appointmentsApi.getAppointments({ page: 1, limit: 500 });
             console.log('[AppointmentContext] API response:', result);
             console.log('[AppointmentContext] Loaded appointments:', result.appointments?.length || 0);
             setAppointments(result.appointments || []);
@@ -168,7 +168,7 @@ export const AppointmentProvider = ({ children }) => {
       } catch (error) {
         console.error('[AppointmentContext] Error deleting appointment:', error);
         // Rollback en cas d'erreur - recharger les rendez-vous
-        const result = await appointmentsApi.getAppointments({ page: 1, limit: 100 });
+        const result = await appointmentsApi.getAppointments({ page: 1, limit: 500 });
         setAppointments(result.appointments || []);
         setError(error.message || 'Failed to delete appointment');
         throw error;

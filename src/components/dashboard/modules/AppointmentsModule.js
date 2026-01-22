@@ -578,7 +578,9 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                       </span>
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
-                        {appointment.duration} min
+                        {appointment.additionalSlots && appointment.additionalSlots.length > 0
+                          ? appointment.duration * (1 + appointment.additionalSlots.length)
+                          : appointment.duration} min
                       </span>
                       {hasPermission(PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER) && appointment.practitionerName && (
                         <span className="flex items-center bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md">

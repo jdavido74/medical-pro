@@ -216,6 +216,9 @@ function transformAppointmentFromBackend(appointment) {
       practitioner: { enabled: true, beforeMinutes: 30 }
     },
 
+    // Additional slots (for multi-slot appointments)
+    additionalSlots: appointment.additional_slots || [],
+
     // Additional fields
     isTeleconsultation: appointment.is_teleconsultation || false,
     meetingLink: appointment.meeting_link,
@@ -281,28 +284,31 @@ function transformAppointmentToBackend(appointment) {
     type: appointment.type || 'consultation',
 
     // Details
-    title: appointment.title,
-    reason: appointment.reason || appointment.title,  // Fallback to title if no reason
-    description: appointment.description,
-    notes: typeof appointment.notes === 'string' ? appointment.notes : '',       // TEXT, not object!
+    ...(appointment.title && { title: appointment.title }),
+    ...(appointment.reason || appointment.title ? { reason: appointment.reason || appointment.title } : {}),
+    ...(appointment.description && { description: appointment.description }),
+    ...(typeof appointment.notes === 'string' && appointment.notes ? { notes: appointment.notes } : {}),
 
     // Priority
     priority: appointment.priority || 'normal',
 
     // Location
-    location: appointment.location,
+    ...(appointment.location && { location: appointment.location }),
 
     // Status
     status: appointment.status || 'scheduled',
 
-    // Reminders configuration (JSONB)
-    reminders: appointment.reminders,
+    // Reminders configuration (JSONB) - only send if valid object
+    ...(appointment.reminders && typeof appointment.reminders === 'object' && { reminders: appointment.reminders }),
+
+    // Additional slots (for multi-slot appointments)
+    ...(appointment.additionalSlots && appointment.additionalSlots.length > 0 && { additional_slots: appointment.additionalSlots }),
 
     // Additional fields if provided
-    is_teleconsultation: appointment.isTeleconsultation || false,
-    meeting_link: appointment.meetingLink,
-    consultation_fee: appointment.consultationFee,
-    insurance_covered: appointment.insuranceCovered !== undefined ? appointment.insuranceCovered : true
+    is_teleconsultation: Boolean(appointment.isTeleconsultation),
+    ...(appointment.meetingLink && { meeting_link: appointment.meetingLink }),
+    ...(appointment.consultationFee != null && !isNaN(Number(appointment.consultationFee)) && { consultation_fee: Number(appointment.consultationFee) }),
+    insurance_covered: appointment.insuranceCovered != null ? Boolean(appointment.insuranceCovered) : true
   };
 }
 

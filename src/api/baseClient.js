@@ -164,14 +164,18 @@ async function request(endpoint, options = {}) {
 
     if (error.status === 401) {
       // Only redirect to login for authenticated requests, NOT for login/register attempts
+      // Also exclude refresh-permissions which can fail silently without logout
       const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
+      const isRefreshPermissions = endpoint.includes('/auth/refresh-permissions');
 
-      if (!isAuthEndpoint) {
+      if (!isAuthEndpoint && !isRefreshPermissions) {
         if (DEBUG) {
           console.log('🔒 [baseClient] 401 - Redirecting to login');
         }
         localStorage.removeItem('clinicmanager_token');
         redirectToLogin();
+      } else if (isRefreshPermissions && DEBUG) {
+        console.log('🔒 [baseClient] 401 on refresh-permissions - ignoring (not redirecting)');
       }
     }
 

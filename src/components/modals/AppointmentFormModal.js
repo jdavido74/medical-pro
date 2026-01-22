@@ -65,6 +65,8 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   const [deleteMode, setDeleteMode] = useState(null); // 'notify' ou 'silent'
   const [clinicSettings, setClinicSettings] = useState(null);
   const [isClinicClosedOnSelectedDate, setIsClinicClosedOnSelectedDate] = useState(false);
+  const [occupiedSlots, setOccupiedSlots] = useState([]); // Slots occupés par d'autres RDV
+  const [slotDeselectionConfirm, setSlotDeselectionConfirm] = useState({ show: false, slot: null }); // Confirmation de désélection
 
   // Hook for standardized form error handling
   const {
@@ -249,11 +251,12 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     }
   }, [formData.startTime, formData.duration]);
 
-  // Charger les créneaux disponibles depuis le backend
+  // Charger les créneaux disponibles depuis le backend ET identifier les slots occupés
   useEffect(() => {
     const loadAvailableSlots = async () => {
       if (!formData.practitionerId || !formData.date) {
         setAvailableSlots([]);
+        setOccupiedSlots([]);
         setIsSlotsLoading(false);
         return;
       }
@@ -275,21 +278,90 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
         if (response.success && response.data?.slots) {
           let slots = response.data.slots;
           console.log('[AppointmentFormModal] Loaded slots:', slots.length);
-          setAvailableSlots(slots);
+
+          // Identifier les slots occupés par d'autres RDV (depuis le contexte)
+          const otherAppointments = appointmentContext?.appointments?.filter(apt =>
+            apt.date === formData.date &&
+            apt.practitionerId === formData.practitionerId &&
+            apt.id !== editingAppointment?.id &&
+            apt.status !== 'cancelled'
+          ) || [];
+
+          const occupied = [];
+          otherAppointments.forEach(apt => {
+            // Ajouter le slot principal
+            if (apt.startTime) {
+              occupied.push({
+                start: apt.startTime,
+                end: apt.endTime,
+                appointmentId: apt.id,
+                patientName: apt.patientName || 'Patient'
+              });
+            }
+            // Ajouter les slots supplémentaires
+            if (apt.additionalSlots && apt.additionalSlots.length > 0) {
+              apt.additionalSlots.forEach(s => {
+                occupied.push({
+                  start: s.start,
+                  end: s.end,
+                  appointmentId: apt.id,
+                  patientName: apt.patientName || 'Patient'
+                });
+              });
+            }
+          });
+          setOccupiedSlots(occupied);
+
+          // En mode édition, ajouter les slots du RDV actuel s'ils ne sont pas déjà dans la liste
+          // (car le backend les exclut puisqu'ils sont réservés)
+          if (editingAppointment && editingAppointment.date === formData.date && editingAppointment.practitionerId === formData.practitionerId) {
+            const existingStarts = new Set(slots.map(s => s.start));
+
+            // Ajouter le slot principal s'il n'existe pas
+            if (editingAppointment.startTime && !existingStarts.has(editingAppointment.startTime)) {
+              slots = [...slots, { start: editingAppointment.startTime, end: editingAppointment.endTime }];
+            }
+
+            // Ajouter les slots supplémentaires s'ils n'existent pas
+            if (editingAppointment.additionalSlots && editingAppointment.additionalSlots.length > 0) {
+              editingAppointment.additionalSlots.forEach(additionalSlot => {
+                if (!existingStarts.has(additionalSlot.start)) {
+                  slots = [...slots, { start: additionalSlot.start, end: additionalSlot.end }];
+                }
+              });
+            }
+          }
+
+          // Ajouter les slots occupés à la liste pour qu'ils soient visibles (en grisé)
+          const occupiedStarts = new Set(occupied.map(s => s.start));
+          const slotsWithOccupied = [...slots];
+          occupied.forEach(occSlot => {
+            if (!slots.find(s => s.start === occSlot.start)) {
+              slotsWithOccupied.push({ start: occSlot.start, end: occSlot.end, occupied: true });
+            }
+          });
+
+          // Trier les slots par heure de début
+          slotsWithOccupied.sort((a, b) => a.start.localeCompare(b.start));
+          console.log('[AppointmentFormModal] Total slots (with occupied):', slotsWithOccupied.length, 'occupied:', occupied.length);
+
+          setAvailableSlots(slotsWithOccupied);
         } else {
           console.warn('[AppointmentFormModal] No slots returned:', response);
           setAvailableSlots([]);
+          setOccupiedSlots([]);
         }
       } catch (error) {
         console.error('[AppointmentFormModal] Error loading available slots:', error);
         setAvailableSlots([]);
+        setOccupiedSlots([]);
       } finally {
         setIsSlotsLoading(false);
       }
     };
 
     loadAvailableSlots();
-  }, [formData.practitionerId, formData.date, formData.duration, editingAppointment?.startTime]);
+  }, [formData.practitionerId, formData.date, formData.duration, editingAppointment?.startTime, appointmentContext?.appointments]);
 
   // Vérifier si une date a des disponibilités pour le praticien sélectionné
   const isDateAvailable = (dateString) => {
@@ -927,79 +999,96 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                     <div>
                       {/* Sélection des créneaux (simple clic pour sélectionner/désélectionner) */}
                       <label className="text-xs font-medium text-gray-600 block mb-2">
-                        Slots *
+                        Slots * <span className="text-gray-400 font-normal">(rouge = occupé par un autre RDV)</span>
                       </label>
                       <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
                         {availableSlots.map((slot, index) => {
                           const isSelected = formData.startTime === slot.start || formData.additionalSlots.some(s => s.start === slot.start);
                           const isFirstSelected = formData.startTime === slot.start;
+                          const isOccupied = occupiedSlots.some(s => s.start === slot.start);
+                          const occupiedBy = occupiedSlots.find(s => s.start === slot.start);
+
+                          // Vérifier si ce slot fait partie du RDV original (en édition)
+                          const isOriginalSlot = editingAppointment && (
+                            editingAppointment.startTime === slot.start ||
+                            (editingAppointment.additionalSlots || []).some(s => s.start === slot.start)
+                          );
+
+                          // Fonction de désélection avec confirmation si nécessaire
+                          const handleDeselect = () => {
+                            if (isFirstSelected) {
+                              const nextSelected = formData.additionalSlots[0];
+                              if (nextSelected) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  startTime: nextSelected.start,
+                                  endTime: nextSelected.end,
+                                  additionalSlots: prev.additionalSlots.slice(1)
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  startTime: '',
+                                  endTime: '',
+                                  additionalSlots: []
+                                }));
+                              }
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                additionalSlots: prev.additionalSlots.filter(s => s.start !== slot.start)
+                              }));
+                            }
+                          };
 
                           return (
                             <button
                               key={index}
                               type="button"
+                              title={isOccupied ? `Occupé par: ${occupiedBy?.patientName || 'autre RDV'}` : ''}
                               onClick={() => {
+                                // Si occupé par un autre RDV, ne rien faire
+                                if (isOccupied && !isSelected) return;
+
                                 if (isSelected) {
                                   // Désélectionner le créneau
-                                  if (isFirstSelected) {
-                                    // Si c'est le premier créneau sélectionné, chercher le prochain
-                                    const nextSelected = formData.additionalSlots[0];
-                                    if (nextSelected) {
-                                      setFormData(prev => ({
-                                        ...prev,
-                                        startTime: nextSelected.start,
-                                        endTime: nextSelected.end,
-                                        additionalSlots: prev.additionalSlots.slice(1)
-                                      }));
-                                    } else {
-                                      setFormData(prev => ({
-                                        ...prev,
-                                        startTime: '',
-                                        endTime: '',
-                                        additionalSlots: []
-                                      }));
-                                    }
+                                  // Si c'est un slot original du RDV en édition, demander confirmation
+                                  if (isOriginalSlot) {
+                                    setSlotDeselectionConfirm({ show: true, slot, handleDeselect });
                                   } else {
-                                    // C'est un créneau supplémentaire
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      additionalSlots: prev.additionalSlots.filter(s => s.start !== slot.start)
-                                    }));
+                                    handleDeselect();
                                   }
                                 } else {
                                   // Sélectionner le créneau
                                   if (!formData.startTime) {
-                                    // Premier créneau sélectionné
                                     setFormData(prev => ({
                                       ...prev,
                                       startTime: slot.start,
                                       endTime: slot.end
                                     }));
                                   } else {
-                                    // Vérifier que le nouveau slot est continu avec le dernier
                                     const lastSlot = formData.additionalSlots.length > 0
                                       ? formData.additionalSlots[formData.additionalSlots.length - 1]
                                       : availableSlots.find(s => s.start === formData.startTime);
 
-                                    // Vérifier la continuité
                                     if (lastSlot && lastSlot.end === slot.start) {
-                                      // Le slot est continu, on peut l'ajouter
                                       setFormData(prev => ({
                                         ...prev,
                                         additionalSlots: [...prev.additionalSlots, slot]
                                       }));
                                     }
-                                    // Sinon, on ne fait rien (le clic est ignoré pour slot non-continu)
                                   }
                                 }
                               }}
-                              disabled={!isSelected && formData.startTime && (formData.additionalSlots.length > 0
+                              disabled={(isOccupied && !isSelected) || (!isSelected && formData.startTime && (formData.additionalSlots.length > 0
                                 ? formData.additionalSlots[formData.additionalSlots.length - 1].end !== slot.start
                                 : availableSlots.find(s => s.start === formData.startTime)?.end !== slot.start
-                              )}
+                              ))}
                               className={`p-2 text-sm border rounded transition-colors ${
                                 isSelected
                                   ? 'border-blue-500 bg-blue-500 text-white font-medium shadow-sm'
+                                  : isOccupied
+                                  ? 'border-red-300 bg-red-100 text-red-500 cursor-not-allowed'
                                   : !isSelected && formData.startTime && (formData.additionalSlots.length > 0
                                     ? formData.additionalSlots[formData.additionalSlots.length - 1].end !== slot.start
                                     : availableSlots.find(s => s.start === formData.startTime)?.end !== slot.start)
@@ -1008,6 +1097,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                               }`}
                             >
                               {slot.start}
+                              {isOccupied && !isSelected && <span className="block text-[10px]">occupé</span>}
                             </button>
                           );
                         })}
@@ -1344,6 +1434,47 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 <span>
                   {isLoading ? 'Eliminando...' : deleteMode === 'notify' ? t('appointments.deleteWithNotification') : deleteMode === 'silent' ? t('appointments.deleteSilent') : t('common.delete')}
                 </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation de désélection de slot */}
+      {slotDeselectionConfirm.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70]">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center mb-4">
+              <div className="p-2 bg-orange-100 rounded-full mr-3">
+                <AlertTriangle className="h-6 w-6 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Confirmer la désélection
+              </h3>
+            </div>
+
+            <p className="text-gray-600 mb-4">
+              Vous êtes sur le point de désélectionner le créneau <strong>{slotDeselectionConfirm.slot?.start}</strong> qui fait partie du rendez-vous actuel.
+            </p>
+            <p className="text-sm text-orange-600 mb-6">
+              ⚠️ Ce créneau sera libéré et pourra être réservé par un autre patient.
+            </p>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setSlotDeselectionConfirm({ show: false, slot: null })}
+                className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  slotDeselectionConfirm.handleDeselect?.();
+                  setSlotDeselectionConfirm({ show: false, slot: null });
+                }}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              >
+                Confirmer la désélection
               </button>
             </div>
           </div>

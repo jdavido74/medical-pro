@@ -21,6 +21,7 @@ import {
 } from '../../utils/appointmentPermissions';
 import { useLocale } from '../../contexts/LocaleContext';
 import { clinicSettingsApi } from '../../api/clinicSettingsApi';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { useTranslation } from 'react-i18next';
 
 const AvailabilityManager = ({
@@ -192,22 +193,41 @@ const AvailabilityManager = ({
 
   const [weeklyAvailability, setWeeklyAvailability] = useState(defaultAvailability);
 
-  // Charger les praticiens au démarrage
+  // Charger les praticiens au démarrage depuis l'API
   useEffect(() => {
-    const allPractitioners = loadPractitioners(user);
-    setPractitioners(allPractitioners);
+    const fetchPractitioners = async () => {
+      try {
+        const result = await healthcareProvidersApi.getHealthcareProviders({ limit: 100 });
+        const providers = (result.providers || []).map(p => ({
+          id: p.id,
+          name: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Praticien',
+          firstName: p.firstName,
+          lastName: p.lastName,
+          role: p.role,
+          specialty: p.specialty || 'Non spécifié'
+        }));
+        setPractitioners(providers);
+        console.log('[AvailabilityManager] Loaded practitioners from API:', providers.length);
+      } catch (error) {
+        console.error('[AvailabilityManager] Error loading practitioners:', error);
+        // Fallback to loadPractitioners
+        const fallbackPractitioners = loadPractitioners(user);
+        setPractitioners(fallbackPractitioners);
+      }
+    };
+    fetchPractitioners();
   }, [user]);
 
-  // Charger les données - recharger quand les RDV du contexte changent
+  // Charger les données - recharger quand les RDV du contexte changent ou les praticiens
   useEffect(() => {
     loadData();
-  }, [currentDate, selectedPractitioner, filterPractitioner, refreshKey, contextAppointments]);
+  }, [currentDate, selectedPractitioner, filterPractitioner, refreshKey, contextAppointments, practitioners]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Charger les praticiens
-      const allPractitioners = loadPractitioners(user);
+      // Utiliser les praticiens déjà chargés depuis l'API
+      const allPractitioners = practitioners.length > 0 ? practitioners : loadPractitioners(user);
 
       // Utiliser les rendez-vous du contexte (API) au lieu du localStorage
       let validAppointments = [...contextAppointments];
@@ -223,14 +243,25 @@ const AvailabilityManager = ({
       // Filtrer les RDV supprimés
       validAppointments = validAppointments.filter(apt => !apt.deleted);
 
-      // Filtrer les RDV avec des praticiens inexistants
-      validAppointments = validAppointments.filter(apt => {
-        const practitionerExists = allPractitioners.some(p => p.id === apt.practitionerId);
-        if (!practitionerExists) {
-          console.warn(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} inexistant`);
-        }
-        return practitionerExists;
+      console.log('[AvailabilityManager] Filtering appointments:', {
+        total: validAppointments.length,
+        practitionersCount: allPractitioners.length,
+        practitionerIds: allPractitioners.map(p => p.id)
       });
+
+      // Filtrer les RDV avec des praticiens inexistants
+      // SEULEMENT si on a des praticiens chargés, sinon on garde tous les RDV
+      if (allPractitioners.length > 0) {
+        validAppointments = validAppointments.filter(apt => {
+          const practitionerExists = allPractitioners.some(p => p.id === apt.practitionerId);
+          if (!practitionerExists) {
+            console.warn(`Rendez-vous ${apt.id} ignoré: praticien ${apt.practitionerId} inexistant dans la liste`, allPractitioners.map(p => p.id));
+          }
+          return practitionerExists;
+        });
+      } else {
+        console.log('[AvailabilityManager] No practitioners loaded yet, keeping all appointments');
+      }
 
       // FILTRER selon les permissions: voir tous les RDV ou seulement les siens
       let filteredByPermissions = filterAppointmentsByPermissions(validAppointments, user, hasPermission);
@@ -431,8 +462,16 @@ const AvailabilityManager = ({
   // NOTE: Les RDV sont déjà enrichis avec patientName, practitionerName, etc. dans loadData()
   // Les RDV sont également déjà filtrés selon les permissions de l'utilisateur
   const getAppointmentsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return appointments.filter(apt => apt.date === dateStr);
+    // Utiliser format local YYYY-MM-DD pour éviter les problèmes de timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    const filtered = appointments.filter(apt => apt.date === dateStr);
+    if (filtered.length > 0) {
+      console.log(`[AvailabilityManager] getAppointmentsForDate(${dateStr}): ${filtered.length} RDV trouvés`);
+    }
+    return filtered;
   };
 
   // Calculer l'âge à partir de la date de naissance

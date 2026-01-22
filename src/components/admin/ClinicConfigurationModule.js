@@ -85,11 +85,27 @@ const ClinicConfigurationModule = () => {
   };
 
   const getOperatingDaysText = () => {
-    if (!config || !config.operatingDays) return '';
+    if (!config) return '';
 
     const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-    const openDays = config.operatingDays.map(dayIndex => dayNames[dayIndex]);
-    return openDays.join(', ');
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+    // Priorité à operatingHours si défini, sinon fallback sur operatingDays
+    if (config.operatingHours && Object.keys(config.operatingHours).length > 0) {
+      const openDays = dayKeys
+        .map((key, index) => ({ key, index, config: config.operatingHours[key] }))
+        .filter(day => day.config?.enabled)
+        .map(day => dayNames[day.index]);
+      return openDays.length > 0 ? openDays.join(', ') : 'Aucun jour configuré';
+    }
+
+    // Fallback sur operatingDays
+    if (config.operatingDays) {
+      const openDays = config.operatingDays.map(dayIndex => dayNames[dayIndex]);
+      return openDays.join(', ');
+    }
+
+    return 'Non configuré';
   };
 
   // Utiliser l'utilitaire centralisé pour filtrer les praticiens
