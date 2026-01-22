@@ -627,6 +627,7 @@ function transformFacilityFromBackend(facility) {
     id: facility.id,
     name: facility.name,
     facilityType: facility.facility_type,
+    facilityNumber: facility.facility_number || '',
 
     // Registration
     finess: facility.finess,
@@ -678,6 +679,7 @@ function transformFacilityToBackend(facility) {
   const backendData = {
     name: facility.name?.trim(),
     facility_type: facility.facilityType,
+    facility_number: facility.facilityNumber,
 
     // Registration
     finess: facility.finess,

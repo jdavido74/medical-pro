@@ -33,6 +33,7 @@ const SettingsModule = () => {
     name: user?.name || '',
     email: user?.email || '',
     companyName: user?.companyName || '',
+    facilityNumber: '',
     phone: company?.phone || '',
     address: company?.address || '',
     postalCode: company?.postalCode || '',
@@ -76,6 +77,7 @@ const SettingsModule = () => {
         name: user?.name || prev.name,
         email: user?.email || prev.email,
         companyName: facilityData?.name || company?.name || prev.companyName,
+        facilityNumber: facilityData?.facilityNumber || '',
         phone: facilityData?.phone || company?.phone || prev.phone,
         address: facilityData?.address || company?.address || prev.address,
         postalCode: facilityData?.postalCode || company?.postalCode || prev.postalCode,
@@ -269,6 +271,7 @@ const SettingsModule = () => {
         // Mise à jour de l'établissement via l'API
         const facilityUpdate = {
           name: profileData.companyName,
+          facilityNumber: profileData.facilityNumber,
           phone: profileData.phone,
           addressLine1: profileData.address,
           postalCode: profileData.postalCode,
@@ -361,9 +364,9 @@ const SettingsModule = () => {
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Informations entreprise</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nom de l'entreprise
+              {t('settings.company.name', 'Nom de l\'entreprise')}
             </label>
             <input
               type="text"
@@ -372,7 +375,20 @@ const SettingsModule = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
-          
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('settings.company.number', 'Numéro')}
+            </label>
+            <input
+              type="text"
+              value={profileData.facilityNumber}
+              onChange={(e) => handleInputChange('profile', 'facilityNumber', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder={t('settings.company.numberPlaceholder', 'Ex: CONS-2024-001')}
+            />
+          </div>
+
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Adresse
