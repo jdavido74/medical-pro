@@ -816,6 +816,8 @@
     "saveAsTemplate": "Guardar como plantilla",
     "addSlot": "Añadir",
     "closed": "Cerrado",
+    "clinicClosed": "Clínica cerrada",
+    "regularClosure": "Cierre regular",
     "notes": "Notas",
     "notesPlaceholder": "Notas para esta semana...",
     "manual": "Manual",

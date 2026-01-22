@@ -23,7 +23,8 @@ import {
   AlertCircle,
   CheckCircle,
   Calendar,
-  Loader2
+  Loader2,
+  Ban
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { practitionerAvailabilityApi } from '../../api/practitionerAvailabilityApi';
@@ -55,7 +56,7 @@ const PractitionerAvailabilityWeekly = ({
   providerName = '',
   canEdit = true,
   onSave,
-  clinicHours = null
+  clinicSettings = null
 }) => {
   const { t } = useTranslation(['common', 'admin']);
 
@@ -84,6 +85,33 @@ const PractitionerAvailabilityWeekly = ({
 
   // Week days for display
   const weekDays = practitionerAvailabilityApi.getWeekDays(currentYear, currentWeek);
+
+  // Check if clinic is closed on a specific day name (from operating hours)
+  const isClinicClosedOnDayName = (dayKey) => {
+    if (!clinicSettings?.operatingHours) return false;
+    const dayConfig = clinicSettings.operatingHours[dayKey];
+    return dayConfig?.enabled === false;
+  };
+
+  // Check if a specific date is an exceptional closure
+  const isExceptionalClosure = (date) => {
+    if (!clinicSettings?.closedDates || !Array.isArray(clinicSettings.closedDates)) return false;
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    return clinicSettings.closedDates.some(closure => closure.date === dateStr);
+  };
+
+  // Get closure reason for a specific date
+  const getClosureReason = (date) => {
+    if (!clinicSettings?.closedDates || !Array.isArray(clinicSettings.closedDates)) return null;
+    const dateStr = date.toISOString().split('T')[0];
+    const closure = clinicSettings.closedDates.find(c => c.date === dateStr);
+    return closure?.reason || null;
+  };
+
+  // Check if day is closed (either regular or exceptional)
+  const isDayClinicClosed = (dayKey, date) => {
+    return isClinicClosedOnDayName(dayKey) || isExceptionalClosure(date);
+  };
 
   // Load availability for current week
   const loadAvailability = useCallback(async () => {
@@ -481,12 +509,17 @@ const PractitionerAvailabilityWeekly = ({
             const dayData = availability[day.key] || { enabled: false, slots: [] };
             const dayDate = weekDays[index];
             const dayIsToday = isToday(dayDate);
+            const isClinicClosed = isDayClinicClosed(day.key, dayDate);
+            const isExceptional = isExceptionalClosure(dayDate);
+            const closureReason = getClosureReason(dayDate);
 
             return (
               <div
                 key={day.key}
                 className={`rounded-lg border ${
-                  dayIsToday
+                  isClinicClosed
+                    ? 'border-red-200 bg-red-50'
+                    : dayIsToday
                     ? 'border-blue-300 bg-blue-50'
                     : dayData.enabled
                     ? 'border-green-200 bg-green-50'
@@ -496,7 +529,9 @@ const PractitionerAvailabilityWeekly = ({
                 {/* Day header */}
                 <div
                   className={`p-3 border-b ${
-                    dayIsToday
+                    isClinicClosed
+                      ? 'border-red-200'
+                      : dayIsToday
                       ? 'border-blue-200'
                       : dayData.enabled
                       ? 'border-green-200'
@@ -505,14 +540,26 @@ const PractitionerAvailabilityWeekly = ({
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className={`font-semibold ${dayIsToday ? 'text-blue-700' : 'text-gray-900'}`}>
+                      <div className={`font-semibold ${
+                        isClinicClosed
+                          ? 'text-red-700'
+                          : dayIsToday
+                          ? 'text-blue-700'
+                          : 'text-gray-900'
+                      }`}>
                         {t(`common:dayNames.${day.labelKey}`, day.key)}
                       </div>
-                      <div className={`text-sm ${dayIsToday ? 'text-blue-600' : 'text-gray-500'}`}>
+                      <div className={`text-sm ${
+                        isClinicClosed
+                          ? 'text-red-600'
+                          : dayIsToday
+                          ? 'text-blue-600'
+                          : 'text-gray-500'
+                      }`}>
                         {formatDate(dayDate)}
                       </div>
                     </div>
-                    {canEdit && (
+                    {canEdit && !isClinicClosed && (
                       <button
                         onClick={() => toggleDay(day.key)}
                         className={`relative w-10 h-6 rounded-full transition-colors ${
@@ -526,12 +573,32 @@ const PractitionerAvailabilityWeekly = ({
                         />
                       </button>
                     )}
+                    {isClinicClosed && (
+                      <Ban className="h-5 w-5 text-red-500" />
+                    )}
                   </div>
                 </div>
 
                 {/* Slots */}
                 <div className="p-2 min-h-[120px]">
-                  {dayData.enabled ? (
+                  {isClinicClosed ? (
+                    <div className="flex flex-col items-center justify-center h-full text-red-500 text-sm">
+                      <Ban className="h-5 w-5 mb-1" />
+                      <span className="font-medium">
+                        {t('admin:availability.clinicClosed', 'Clinique fermée')}
+                      </span>
+                      {isExceptional && closureReason && (
+                        <span className="text-xs text-red-400 mt-1 text-center">
+                          {closureReason}
+                        </span>
+                      )}
+                      {!isExceptional && (
+                        <span className="text-xs text-red-400 mt-1">
+                          {t('admin:availability.regularClosure', 'Fermeture régulière')}
+                        </span>
+                      )}
+                    </div>
+                  ) : dayData.enabled ? (
                     <>
                       {dayData.slots.map((slot, slotIndex) => (
                         <div key={slotIndex} className="flex items-center gap-1 mb-2">
