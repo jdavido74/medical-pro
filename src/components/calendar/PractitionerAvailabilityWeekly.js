@@ -230,7 +230,7 @@ const PractitionerAvailabilityWeekly = ({
       setHasChanges(false);
       setHasSpecificEntry(true);
       setSource('manual');
-      setSuccessMessage(t('common:success.saved', 'Enregistré avec succès'));
+      setSuccessMessage(t('common:messages.saveSuccess', 'Enregistré avec succès'));
 
       if (onSave) {
         onSave(availability);
@@ -315,9 +315,22 @@ const PractitionerAvailabilityWeekly = ({
     }
   };
 
-  // Format date for display
+  // Format date for display (short)
   const formatDate = (date) => {
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  };
+
+  // Format week range for navigation display
+  const formatWeekRange = () => {
+    if (weekDays.length < 7) return '';
+    const startDate = weekDays[0];
+    const endDate = weekDays[6];
+    const locale = t('common:locale', 'fr-FR');
+
+    const startDay = startDate.toLocaleDateString(locale, { weekday: 'short', day: 'numeric' });
+    const endDay = endDate.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+
+    return `${startDay} - ${endDay}`;
   };
 
   // Check if a day is today
@@ -379,11 +392,13 @@ const PractitionerAvailabilityWeekly = ({
               {t('admin:availability.today', "Aujourd'hui")}
             </button>
 
-            <div className="px-4 py-1.5 bg-gray-100 rounded-lg text-center min-w-[160px]">
-              <span className="font-semibold text-gray-900">
-                {t('admin:availability.week', 'Semaine')} {currentWeek}
-              </span>
-              <span className="text-gray-500 ml-2">{currentYear}</span>
+            <div className="px-4 py-1.5 bg-gray-100 rounded-lg text-center min-w-[200px]">
+              <div className="font-semibold text-gray-900">
+                {formatWeekRange()}
+              </div>
+              <div className="text-xs text-gray-500">
+                {t('admin:availability.week', 'Semaine')} {currentWeek}, {currentYear}
+              </div>
             </div>
 
             <button
@@ -491,7 +506,7 @@ const PractitionerAvailabilityWeekly = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <div className={`font-semibold ${dayIsToday ? 'text-blue-700' : 'text-gray-900'}`}>
-                        {t(`common:days.${day.labelKey}`, day.key)}
+                        {t(`common:dayNames.${day.labelKey}`, day.key)}
                       </div>
                       <div className={`text-sm ${dayIsToday ? 'text-blue-600' : 'text-gray-500'}`}>
                         {formatDate(dayDate)}
