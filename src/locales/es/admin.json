@@ -272,6 +272,24 @@
       "deactivate": "Desactivar",
       "delete": "Eliminar"
     },
+    "deleteModal": {
+      "title": "Eliminar usuario",
+      "impactTitle": "Impacto de la eliminación",
+      "futureAppointments": "Citas futuras",
+      "patientsAsPrimary": "Pacientes (médico principal)",
+      "pastAppointments": "Citas pasadas (conservadas)",
+      "medicalRecords": "Historiales médicos (conservados)",
+      "reassignTitle": "Reasignar expedientes activos a",
+      "selectProvider": "-- Seleccionar un profesional --",
+      "noProvidersAvailable": "No hay otros profesionales disponibles para la reasignación",
+      "reassignRequired": "La reasignación es obligatoria porque este usuario tiene citas próximas o pacientes asignados",
+      "preservedTitle": "Datos conservados:",
+      "preservedInfo": "Los historiales médicos y el historial de citas pasadas permanecerán vinculados a este usuario para la trazabilidad.",
+      "loadError": "Error al cargar las estadísticas",
+      "deleteError": "Error durante la eliminación",
+      "deleting": "Eliminando...",
+      "confirmDelete": "Eliminar"
+    },
     "pagination": {
       "showing": "Mostrando {{from}} a {{to}} de {{total}} resultados",
       "previous": "Anterior",

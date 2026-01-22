@@ -101,17 +101,72 @@ async function updateHealthcareProvider(providerId, providerData) {
 }
 
 /**
- * Delete (deactivate) a healthcare provider
+ * Get deletion statistics before deleting a provider
+ * Returns info about patients, appointments, records that will be affected
  */
-async function deleteHealthcareProvider(providerId) {
+async function getDeletionStats(providerId) {
   try {
-    const response = await baseClient.delete(`/healthcare-providers/${providerId}`);
+    const response = await baseClient.get(`/healthcare-providers/${providerId}/deletion-stats`);
+    const data = dataTransform.unwrapResponse(response);
+    return {
+      provider: data.provider ? dataTransform.transformHealthcareProviderFromBackend(data.provider) : null,
+      stats: data.stats || {
+        futureAppointments: 0,
+        patientsAsPrimary: 0,
+        pastAppointments: 0,
+        medicalRecords: 0
+      }
+    };
+  } catch (error) {
+    console.error('[healthcareProvidersApi] Error getting deletion stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Soft delete a healthcare provider with optional reassignment
+ * @param providerId - ID of provider to delete
+ * @param reassignTo - Optional ID of provider to reassign future appointments and patients to
+ */
+async function deleteHealthcareProvider(providerId, reassignTo = null) {
+  try {
+    const response = await baseClient.delete(`/healthcare-providers/${providerId}`, {
+      body: reassignTo ? { reassign_to: reassignTo } : undefined
+    });
     const data = dataTransform.unwrapResponse(response);
 
     // Transform response back to frontend format
     return dataTransform.transformHealthcareProviderFromBackend(data);
   } catch (error) {
     console.error('[healthcareProvidersApi] Error deleting provider:', error);
+    throw error;
+  }
+}
+
+/**
+ * Restore a soft-deleted healthcare provider
+ */
+async function restoreHealthcareProvider(providerId) {
+  try {
+    const response = await baseClient.post(`/healthcare-providers/${providerId}/restore`);
+    const data = dataTransform.unwrapResponse(response);
+    return dataTransform.transformHealthcareProviderFromBackend(data);
+  } catch (error) {
+    console.error('[healthcareProvidersApi] Error restoring provider:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get list of deleted healthcare providers
+ */
+async function getDeletedHealthcareProviders() {
+  try {
+    const response = await baseClient.get('/healthcare-providers/deleted');
+    const providersData = response.data || [];
+    return providersData.map(dataTransform.transformHealthcareProviderFromBackend);
+  } catch (error) {
+    console.error('[healthcareProvidersApi] Error fetching deleted providers:', error);
     throw error;
   }
 }
@@ -155,6 +210,9 @@ export const healthcareProvidersApi = {
   createHealthcareProvider,
   updateHealthcareProvider,
   deleteHealthcareProvider,
+  getDeletionStats,
+  restoreHealthcareProvider,
+  getDeletedHealthcareProviders,
   resendInvitation,
   activateProvider
 };

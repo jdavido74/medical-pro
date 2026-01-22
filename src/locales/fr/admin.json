@@ -272,6 +272,24 @@
       "deactivate": "Désactiver",
       "delete": "Supprimer"
     },
+    "deleteModal": {
+      "title": "Supprimer l'utilisateur",
+      "impactTitle": "Impact de la suppression",
+      "futureAppointments": "RDV à venir",
+      "patientsAsPrimary": "Patients (médecin traitant)",
+      "pastAppointments": "RDV passés (conservés)",
+      "medicalRecords": "Dossiers médicaux (conservés)",
+      "reassignTitle": "Réattribuer les dossiers actifs à",
+      "selectProvider": "-- Sélectionner un praticien --",
+      "noProvidersAvailable": "Aucun autre praticien disponible pour la réattribution",
+      "reassignRequired": "La réattribution est obligatoire car cet utilisateur a des RDV à venir ou des patients assignés",
+      "preservedTitle": "Données conservées :",
+      "preservedInfo": "Les dossiers médicaux et l'historique des rendez-vous passés resteront liés à cet utilisateur pour la traçabilité.",
+      "loadError": "Erreur lors du chargement des statistiques",
+      "deleteError": "Erreur lors de la suppression",
+      "deleting": "Suppression...",
+      "confirmDelete": "Supprimer"
+    },
     "pagination": {
       "showing": "Affichage de {{from}} à {{to}} sur {{total}} résultats",
       "previous": "Précédent",

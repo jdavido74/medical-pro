@@ -16,6 +16,7 @@ import {
   hasAdministrativeRole
 } from '../../utils/userRoles';
 import UserFormModal from '../modals/UserFormModal';
+import DeleteUserReassignModal from '../modals/DeleteUserReassignModal';
 import { usePermissions } from '../auth/PermissionGuard';
 import { useTranslation } from 'react-i18next';
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
@@ -54,6 +55,8 @@ const UserManagementModule = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [notification, setNotification] = useState(null);
 
   // État pour les praticiens en attente (pending)
@@ -260,16 +263,29 @@ const UserManagementModule = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm(t('users.messages.deleteConfirm') || 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-      return;
-    }
+  const handleDeleteUser = (user) => {
+    // Open the delete modal with reassignment options
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
 
+  const handleConfirmDelete = async (userId, reassignToId) => {
     try {
-      await deleteUser(userId);
+      // If it's a pending provider (from healthcare_providers table), use that API
+      const user = allUsers.find(u => u.id === userId);
+      if (user?.isPendingProvider) {
+        await healthcareProvidersApi.deleteHealthcareProvider(userId, reassignToId);
+        await loadPendingProviders(); // Refresh pending providers
+      } else {
+        // For regular users from central DB
+        await deleteUser(userId);
+      }
       showNotification(t('users.messages.deleteSuccess') || 'Utilisateur supprimé avec succès', 'success');
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     } catch (error) {
-      showNotification(error.message || t('users.messages.deleteError') || 'Erreur lors de la suppression', 'error');
+      console.error('[UserManagementModule] Delete error:', error);
+      throw error; // Let the modal handle the error display
     }
   };
 
@@ -778,7 +794,7 @@ const UserManagementModule = () => {
 
                             {hasPermission('users.delete') && (
                               <button
-                                onClick={() => handleDeleteUser(user.id)}
+                                onClick={() => handleDeleteUser(user)}
                                 className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
                                 title={t('usersManagement.actions.delete')}
                               >
@@ -868,6 +884,20 @@ const UserManagementModule = () => {
         onSave={handleSaveUser}
         user={editingUser}
         currentUser={currentUser}
+      />
+
+      {/* Modal de suppression avec réattribution */}
+      <DeleteUserReassignModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        user={userToDelete}
+        providers={allUsers.filter(u =>
+          u.role && ['physician', 'practitioner'].includes(u.role) && u.isActive
+        )}
       />
 
       {/* Notification Toast */}

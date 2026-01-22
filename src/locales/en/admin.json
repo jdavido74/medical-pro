@@ -272,6 +272,24 @@
       "deactivate": "Deactivate",
       "delete": "Delete"
     },
+    "deleteModal": {
+      "title": "Delete User",
+      "impactTitle": "Deletion Impact",
+      "futureAppointments": "Future appointments",
+      "patientsAsPrimary": "Patients (primary physician)",
+      "pastAppointments": "Past appointments (preserved)",
+      "medicalRecords": "Medical records (preserved)",
+      "reassignTitle": "Reassign active records to",
+      "selectProvider": "-- Select a practitioner --",
+      "noProvidersAvailable": "No other practitioners available for reassignment",
+      "reassignRequired": "Reassignment is required because this user has upcoming appointments or assigned patients",
+      "preservedTitle": "Preserved data:",
+      "preservedInfo": "Medical records and past appointment history will remain linked to this user for traceability.",
+      "loadError": "Error loading statistics",
+      "deleteError": "Error during deletion",
+      "deleting": "Deleting...",
+      "confirmDelete": "Delete"
+    },
     "pagination": {
       "showing": "Showing {{from}} to {{to}} of {{total}} results",
       "previous": "Previous",
