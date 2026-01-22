@@ -13,7 +13,7 @@ import { profileApi } from '../../../api/profileApi';
 import PractitionerAvailabilityWeekly from '../../calendar/PractitionerAvailabilityWeekly';
 
 const SettingsModule = () => {
-  const { user, company, updateUser, updateCompany } = useAuth();
+  const { user, company, refreshUser } = useAuth();
   const { t } = useTranslation('admin');
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +21,9 @@ const SettingsModule = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [facility, setFacility] = useState(null);
   const [error, setError] = useState(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const logoInputRef = React.useRef(null);
 
   // État pour les notifications
   const [notification, setNotification] = useState(null);
@@ -124,15 +127,107 @@ const SettingsModule = () => {
     setNotification({ message, type });
   };
 
-  const tabs = [
-    { id: 'profile', label: t('settings.tabs.profile'), icon: User },
-    { id: 'availability', label: t('availability.myAvailability', 'Mes disponibilités'), icon: Clock },
-    { id: 'company', label: t('settings.tabs.company'), icon: Building },
-    { id: 'catalog', label: t('settings.tabs.catalog'), icon: Package },
-    { id: 'security', label: t('settings.tabs.security'), icon: Shield },
-    { id: 'billing', label: t('settings.tabs.billing'), icon: CreditCard },
-    { id: 'notifications', label: t('settings.tabs.notifications'), icon: Bell }
+  // Logo upload handlers
+  const handleLogoChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      showNotification(t('settings.messages.logoInvalidType', 'Type de fichier invalide. PNG, JPG ou WebP uniquement.'), 'error');
+      return;
+    }
+
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      showNotification(t('settings.messages.logoTooLarge', 'Le fichier est trop volumineux (max 2 Mo).'), 'error');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      const result = await facilitiesApi.uploadLogo(file);
+
+      // Update facility with new logo URL
+      setFacility(prev => ({ ...prev, logoUrl: result.logo_url }));
+      setLogoPreview(null);
+      showNotification(t('settings.messages.logoUploaded', 'Logo mis à jour avec succès'), 'success');
+    } catch (error) {
+      console.error('[SettingsModule] Error uploading logo:', error);
+      showNotification(t('settings.messages.logoUploadError', 'Erreur lors de l\'upload du logo'), 'error');
+    } finally {
+      setIsUploadingLogo(false);
+      // Reset file input
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!window.confirm(t('settings.messages.logoRemoveConfirm', 'Êtes-vous sûr de vouloir supprimer le logo ?'))) {
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      await facilitiesApi.removeLogo();
+      setFacility(prev => ({ ...prev, logoUrl: null }));
+      showNotification(t('settings.messages.logoRemoved', 'Logo supprimé avec succès'), 'success');
+    } catch (error) {
+      console.error('[SettingsModule] Error removing logo:', error);
+      showNotification(t('settings.messages.logoRemoveError', 'Erreur lors de la suppression du logo'), 'error');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleLogoDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      // Create a synthetic event to pass to handleLogoChange
+      const syntheticEvent = {
+        target: { files: [file] }
+      };
+      handleLogoChange(syntheticEvent);
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  // Build logo URL - handle both relative and absolute paths
+  const getLogoUrl = () => {
+    if (!facility?.logoUrl) return null;
+    // If it's already an absolute URL, return as-is
+    if (facility.logoUrl.startsWith('http')) return facility.logoUrl;
+    // Otherwise prepend the API base URL
+    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    return `${apiBase}${facility.logoUrl}`;
+  };
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.administrativeRole === 'clinic_admin';
+
+  // All tabs definition
+  const allTabs = [
+    { id: 'profile', label: t('settings.tabs.profile'), icon: User, adminOnly: false },
+    { id: 'availability', label: t('availability.myAvailability', 'Mes disponibilités'), icon: Clock, adminOnly: false },
+    { id: 'security', label: t('settings.tabs.security'), icon: Shield, adminOnly: false },
+    { id: 'company', label: t('settings.tabs.company'), icon: Building, adminOnly: true },
+    { id: 'catalog', label: t('settings.tabs.catalog'), icon: Package, adminOnly: true },
+    { id: 'billing', label: t('settings.tabs.billing'), icon: CreditCard, adminOnly: true },
+    { id: 'notifications', label: t('settings.tabs.notifications'), icon: Bell, adminOnly: true }
   ];
+
+  // Filter tabs based on role
+  const tabs = allTabs.filter(tab => !tab.adminOnly || isAdmin);
 
   const handleInputChange = (section, field, value) => {
     if (section === 'profile') {
@@ -143,6 +238,7 @@ const SettingsModule = () => {
   };
 
   const handleSave = async (section) => {
+    console.log('[SettingsModule] handleSave called for section:', section);
     setIsSaving(true);
     setError(null);
 
@@ -163,15 +259,10 @@ const SettingsModule = () => {
         };
 
         console.log('[SettingsModule] Updating profile in both databases:', profileUpdate);
-        const updatedProfile = await profileApi.updateProfile(profileUpdate);
+        await profileApi.updateProfile(profileUpdate);
 
-        // Synchroniser le contexte AuthContext avec les données mises à jour
-        updateUser({
-          name: profileData.name,
-          email: updatedProfile.central.email,
-          firstName: updatedProfile.central.first_name,
-          lastName: updatedProfile.central.last_name
-        });
+        // Recharger les données utilisateur depuis le backend
+        await refreshUser();
 
         showNotification(t('settings.messages.profileSaved'), 'success');
       } else if (section === 'company') {
@@ -179,7 +270,6 @@ const SettingsModule = () => {
         const facilityUpdate = {
           name: profileData.companyName,
           phone: profileData.phone,
-          address: profileData.address,
           addressLine1: profileData.address,
           postalCode: profileData.postalCode,
           city: profileData.city,
@@ -187,24 +277,24 @@ const SettingsModule = () => {
         };
 
         console.log('[SettingsModule] Updating facility with:', facilityUpdate);
+        console.log('[SettingsModule] Current facility ID:', facility?.id);
         const updatedFacility = await facilitiesApi.updateCurrentFacility(facilityUpdate);
+        console.log('[SettingsModule] Facility updated successfully:', updatedFacility);
         setFacility(updatedFacility);
 
-        // Mettre à jour le contexte AuthContext pour synchroniser le header
-        updateCompany({
-          name: updatedFacility.name,
-          phone: updatedFacility.phone,
-          address: updatedFacility.address
-        });
+        // Recharger les données depuis le backend pour synchroniser le header
+        await refreshUser();
 
         showNotification(t('settings.messages.companySaved'), 'success');
       }
     } catch (error) {
       console.error('[SettingsModule] Error saving:', error);
-      const errorMessage = error.message || t('settings.messages.saveError');
+      console.error('[SettingsModule] Error details:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.error?.message || error.message || t('settings.messages.saveError');
       setError(errorMessage);
       showNotification(errorMessage, 'error');
     } finally {
+      console.log('[SettingsModule] Save completed, isSaving set to false');
       setIsSaving(false);
     }
   };
@@ -355,11 +445,56 @@ const SettingsModule = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Logo de l'entreprise</h3>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-2">Glissez votre logo ici ou cliquez pour choisir</p>
-          <p className="text-sm text-gray-500">PNG, JPG jusqu'à 2MB</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('settings.company.logo', 'Logo de l\'entreprise')}</h3>
+
+        {/* Current Logo Preview */}
+        {getLogoUrl() && (
+          <div className="mb-4 flex items-center space-x-4">
+            <div className="relative">
+              <img
+                src={getLogoUrl()}
+                alt="Logo"
+                className="h-20 w-20 object-contain border border-gray-200 rounded-lg bg-white p-1"
+              />
+            </div>
+            <button
+              onClick={handleRemoveLogo}
+              disabled={isUploadingLogo}
+              className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-1 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>{t('settings.company.removeLogo', 'Supprimer')}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Upload Zone */}
+        <div
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+            ${isUploadingLogo ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'}`}
+          onClick={() => logoInputRef.current?.click()}
+          onDrop={handleLogoDrop}
+          onDragOver={handleDragOver}
+        >
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            onChange={handleLogoChange}
+            className="hidden"
+          />
+          {isUploadingLogo ? (
+            <>
+              <div className="h-12 w-12 mx-auto mb-4 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+              <p className="text-indigo-600 font-medium">{t('settings.company.uploading', 'Envoi en cours...')}</p>
+            </>
+          ) : (
+            <>
+              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-2">{t('settings.company.dropLogo', 'Glissez votre logo ici ou cliquez pour choisir')}</p>
+              <p className="text-sm text-gray-500">{t('settings.company.logoFormats', 'PNG, JPG, WebP jusqu\'à 2 Mo')}</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -853,35 +988,35 @@ const SettingsModule = () => {
         </div>
       )}
 
-      <div className="flex gap-8">
-        {/* Navigation des onglets */}
-        <div className="w-64 flex-shrink-0">
-        <nav className="space-y-2">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-indigo-100 text-indigo-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      <div className="space-y-6">
+        {/* Navigation horizontale des onglets */}
+        <div className="bg-white rounded-xl shadow-sm border">
+          <nav className="flex flex-wrap border-b border-gray-200">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
 
-      {/* Contenu de l'onglet */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm border p-8">
-        {renderTabContent()}
+          {/* Contenu de l'onglet */}
+          <div className="p-6">
+            {renderTabContent()}
+          </div>
+        </div>
       </div>
-    </div>
     </>
   );
 };

@@ -214,6 +214,85 @@ async function deleteRequest(endpoint, options = {}) {
   return request(endpoint, { ...options, method: 'DELETE' });
 }
 
+/**
+ * Upload file (multipart/form-data)
+ * @param {string} endpoint - API endpoint
+ * @param {FormData} formData - FormData object with file(s)
+ * @returns {Promise<object>} Response data
+ */
+async function upload(endpoint, formData) {
+  try {
+    const url = new URL(`${API_BASE_URL}${endpoint}`);
+
+    // Build headers WITHOUT Content-Type (browser will set it with boundary)
+    const requestHeaders = {};
+
+    // Add authentication token
+    const token = getAuthToken();
+    if (token) {
+      requestHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (DEBUG) {
+      console.log('📤 [baseClient] Upload Request:', { endpoint, hasToken: !!token });
+    }
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT * 2); // Longer timeout for uploads
+
+    // Make request - body is FormData directly, NOT JSON.stringify
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: requestHeaders,
+      body: formData, // Pass FormData directly
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    // Handle response
+    const contentType = response.headers.get('content-type');
+    let data = null;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    // Check for errors
+    if (!response.ok) {
+      console.error('❌ [baseClient] Upload Error:', {
+        endpoint,
+        status: response.status,
+        message: data?.error?.message || data?.message
+      });
+
+      throw {
+        status: response.status,
+        message: data?.error?.message || data?.message || 'Upload Error',
+        data: data
+      };
+    }
+
+    if (DEBUG) {
+      console.log('✅ [baseClient] Upload Success:', { endpoint, status: response.status });
+    }
+
+    return data;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw {
+        status: 408,
+        message: 'Upload timeout',
+        isTimeout: true
+      };
+    }
+    throw error;
+  }
+}
+
 export const baseClient = {
   request,
   get,
@@ -221,6 +300,7 @@ export const baseClient = {
   put,
   patch,
   delete: deleteRequest,
+  upload,
   getAuthToken,
   getCompanyId,
   API_BASE_URL

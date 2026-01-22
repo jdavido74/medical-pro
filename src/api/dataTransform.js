@@ -656,6 +656,7 @@ function transformFacilityFromBackend(facility) {
     settings: facility.settings || {},
     timezone: facility.timezone || 'Europe/Paris',
     language: facility.language || 'fr-FR',
+    logoUrl: facility.logo_url || null,
 
     // Status
     isActive: facility.is_active,
