@@ -147,6 +147,87 @@ async function getMandatoryTemplates() {
   }
 }
 
+// ============================================
+// Translation Management Functions
+// ============================================
+
+/**
+ * Get all translations for a consent template
+ */
+async function getTemplateTranslations(templateId) {
+  try {
+    const response = await baseClient.get(`/consent-templates/${templateId}/translations`);
+    const data = dataTransform.unwrapResponse(response);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('[consentTemplatesApi] Error fetching translations:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get a specific translation by language code
+ */
+async function getTemplateTranslation(templateId, languageCode) {
+  try {
+    const response = await baseClient.get(`/consent-templates/${templateId}/translations/${languageCode}`);
+    return dataTransform.unwrapResponse(response);
+  } catch (error) {
+    console.error('[consentTemplatesApi] Error fetching translation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new translation for a consent template
+ */
+async function createTemplateTranslation(templateId, translationData) {
+  try {
+    const response = await baseClient.post(`/consent-templates/${templateId}/translations`, {
+      language_code: translationData.languageCode,
+      title: translationData.title,
+      description: translationData.description,
+      terms: translationData.terms
+    });
+    return dataTransform.unwrapResponse(response);
+  } catch (error) {
+    console.error('[consentTemplatesApi] Error creating translation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update an existing translation (uses POST with upsert logic)
+ */
+async function updateTemplateTranslation(templateId, languageCode, translationData) {
+  try {
+    // Backend uses upsert on POST, so we use the same endpoint for updates
+    const response = await baseClient.post(`/consent-templates/${templateId}/translations`, {
+      language_code: languageCode,
+      title: translationData.title,
+      description: translationData.description,
+      terms: translationData.terms
+    });
+    return dataTransform.unwrapResponse(response);
+  } catch (error) {
+    console.error('[consentTemplatesApi] Error updating translation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a translation
+ */
+async function deleteTemplateTranslation(templateId, languageCode) {
+  try {
+    const response = await baseClient.delete(`/consent-templates/${templateId}/translations/${languageCode}`);
+    return dataTransform.unwrapResponse(response);
+  } catch (error) {
+    console.error('[consentTemplatesApi] Error deleting translation:', error);
+    throw error;
+  }
+}
+
 export const consentTemplatesApi = {
   getConsentTemplates,
   getConsentTemplateById,
@@ -155,5 +236,11 @@ export const consentTemplatesApi = {
   deleteConsentTemplate,
   getActiveTemplates,
   getTemplatesByType,
-  getMandatoryTemplates
+  getMandatoryTemplates,
+  // Translation functions
+  getTemplateTranslations,
+  getTemplateTranslation,
+  createTemplateTranslation,
+  updateTemplateTranslation,
+  deleteTemplateTranslation
 };

@@ -4,9 +4,16 @@ import {
   FileText, Plus, Search, Filter, Eye, Edit2, Copy, Trash2, Download,
   Upload, Settings, BarChart3, Tag, Clock, CheckCircle, XCircle,
   AlertTriangle, Users, Calendar, Star, TrendingUp, RefreshCw,
-  BookOpen, Database, Code, Globe, Zap, X, Loader
+  BookOpen, Database, Code, Globe, Zap, X, Loader, Languages
 } from 'lucide-react';
 import { consentTemplatesApi } from '../../../api/consentTemplatesApi';
+
+// Available languages for translations
+const AVAILABLE_LANGUAGES = [
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' }
+];
 import {
   TEMPLATE_CATEGORIES,
   MEDICAL_SPECIALITIES
@@ -779,6 +786,28 @@ const ConsentTemplatesModule = () => {
 
 // Modal pour afficher les détails d'un modèle
 const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
+  const [translations, setTranslations] = useState([]);
+  const [translationsLoading, setTranslationsLoading] = useState(false);
+
+  // Load translations when modal opens
+  useEffect(() => {
+    const loadTranslations = async () => {
+      if (template?.id) {
+        setTranslationsLoading(true);
+        try {
+          const translationsList = await consentTemplatesApi.getTemplateTranslations(template.id);
+          setTranslations(translationsList || []);
+        } catch (error) {
+          console.error('[TemplateDetailsModal] Error loading translations:', error);
+          setTranslations([]);
+        } finally {
+          setTranslationsLoading(false);
+        }
+      }
+    };
+    loadTranslations();
+  }, [template?.id]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -864,6 +893,51 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
                 </div>
               </div>
             )}
+
+            {/* Traductions disponibles */}
+            <div>
+              <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                <Languages className="h-4 w-4 mr-2" />
+                Traductions disponibles
+              </h4>
+              {translationsLoading ? (
+                <div className="flex items-center text-gray-500">
+                  <Loader className="h-4 w-4 animate-spin mr-2" />
+                  Chargement des traductions...
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {AVAILABLE_LANGUAGES.map((lang) => {
+                    const hasTranslation = translations.some(t => t.language_code === lang.code);
+                    return (
+                      <div
+                        key={lang.code}
+                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                          hasTranslation
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <span className="text-xl mr-2">{lang.flag}</span>
+                          <span className="text-sm font-medium">{lang.name}</span>
+                        </div>
+                        {hasTranslation ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-gray-400" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {translations.length === 0 && !translationsLoading && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Aucune traduction disponible. Modifiez le modèle pour ajouter des traductions.
+                </p>
+              )}
+            </div>
 
             {/* Aperçu du contenu */}
             <div>

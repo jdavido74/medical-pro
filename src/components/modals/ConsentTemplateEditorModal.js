@@ -4,7 +4,8 @@ import {
   X, Save, FileText, Upload, Download, Eye, Copy, AlertCircle,
   Plus, Minus, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Quote, Code, Link, Image, Undo, Redo, Type,
-  CheckSquare, Mail, User, Calendar, Phone, MapPin, Stethoscope
+  CheckSquare, Mail, User, Calendar, Phone, MapPin, Stethoscope,
+  Globe, Trash2, Languages, Check, Loader
 } from 'lucide-react';
 import { consentTemplatesApi } from '../../api/consentTemplatesApi';
 import {
@@ -18,6 +19,13 @@ const getConsentTypeName = (typeId) => {
   const type = Object.values(CONSENT_TYPES).find(t => t.id === typeId);
   return type?.name || typeId;
 };
+
+// Available languages for translations
+const AVAILABLE_LANGUAGES = [
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' }
+];
 
 const ConsentTemplateEditorModal = ({
   isOpen,
@@ -51,6 +59,19 @@ const ConsentTemplateEditorModal = ({
 
   // Variables dynamiques détectées automatiquement
   const [detectedVariables, setDetectedVariables] = useState([]);
+
+  // Translation states
+  const [activeEditorTab, setActiveEditorTab] = useState('content'); // 'content' or 'translations'
+  const [translations, setTranslations] = useState([]);
+  const [translationsLoading, setTranslationsLoading] = useState(false);
+  const [selectedTranslationLang, setSelectedTranslationLang] = useState(null);
+  const [editingTranslation, setEditingTranslation] = useState({
+    languageCode: '',
+    title: '',
+    description: '',
+    terms: ''
+  });
+  const [translationSaving, setTranslationSaving] = useState(false);
 
   // Charger les données initiales - seulement quand le modal s'ouvre
   useEffect(() => {
@@ -92,6 +113,98 @@ const ConsentTemplateEditorModal = ({
     const variables = [...new Set(matches.map(match => match[1]))];
     setDetectedVariables(variables);
   }, [formData.content]);
+
+  // Load translations when editing an existing template
+  useEffect(() => {
+    const loadTranslations = async () => {
+      if (isOpen && editingTemplate?.id && mode === 'edit') {
+        setTranslationsLoading(true);
+        try {
+          const translationsList = await consentTemplatesApi.getTemplateTranslations(editingTemplate.id);
+          setTranslations(translationsList || []);
+        } catch (error) {
+          console.error('[ConsentTemplateEditorModal] Error loading translations:', error);
+          setTranslations([]);
+        } finally {
+          setTranslationsLoading(false);
+        }
+      } else {
+        setTranslations([]);
+      }
+    };
+    loadTranslations();
+  }, [isOpen, editingTemplate?.id, mode]);
+
+  // Translation management functions
+  const handleSelectTranslation = (langCode) => {
+    const existingTranslation = translations.find(t => t.language_code === langCode);
+    if (existingTranslation) {
+      setEditingTranslation({
+        languageCode: existingTranslation.language_code,
+        title: existingTranslation.title || '',
+        description: existingTranslation.description || '',
+        terms: existingTranslation.terms || ''
+      });
+    } else {
+      // Pre-fill with original content for new translation
+      setEditingTranslation({
+        languageCode: langCode,
+        title: formData.title || '',
+        description: formData.description || '',
+        terms: formData.content || ''
+      });
+    }
+    setSelectedTranslationLang(langCode);
+  };
+
+  const handleSaveTranslation = async () => {
+    if (!editingTemplate?.id || !selectedTranslationLang) return;
+
+    setTranslationSaving(true);
+    try {
+      // Backend uses upsert logic, so we always use createTemplateTranslation
+      await consentTemplatesApi.createTemplateTranslation(
+        editingTemplate.id,
+        editingTranslation
+      );
+
+      // Reload translations
+      const updatedTranslations = await consentTemplatesApi.getTemplateTranslations(editingTemplate.id);
+      setTranslations(updatedTranslations || []);
+      setSelectedTranslationLang(null);
+      setEditingTranslation({ languageCode: '', title: '', description: '', terms: '' });
+    } catch (error) {
+      console.error('[ConsentTemplateEditorModal] Error saving translation:', error);
+      alert('Erreur lors de la sauvegarde de la traduction');
+    } finally {
+      setTranslationSaving(false);
+    }
+  };
+
+  const handleDeleteTranslation = async (langCode) => {
+    if (!editingTemplate?.id) return;
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer la traduction en ${AVAILABLE_LANGUAGES.find(l => l.code === langCode)?.name}?`)) {
+      return;
+    }
+
+    try {
+      await consentTemplatesApi.deleteTemplateTranslation(editingTemplate.id, langCode);
+      const updatedTranslations = await consentTemplatesApi.getTemplateTranslations(editingTemplate.id);
+      setTranslations(updatedTranslations || []);
+      if (selectedTranslationLang === langCode) {
+        setSelectedTranslationLang(null);
+        setEditingTranslation({ languageCode: '', title: '', description: '', terms: '' });
+      }
+    } catch (error) {
+      console.error('[ConsentTemplateEditorModal] Error deleting translation:', error);
+      alert('Erreur lors de la suppression de la traduction');
+    }
+  };
+
+  const cancelTranslationEdit = () => {
+    setSelectedTranslationLang(null);
+    setEditingTranslation({ languageCode: '', title: '', description: '', terms: '' });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -178,6 +291,11 @@ const ConsentTemplateEditorModal = ({
     setImportedFileName('');
     setDetectedVariables([]);
     setIsInitialized(false); // Reset so next open re-initializes
+    // Reset translation states
+    setActiveEditorTab('content');
+    setTranslations([]);
+    setSelectedTranslationLang(null);
+    setEditingTranslation({ languageCode: '', title: '', description: '', terms: '' });
     onClose();
   };
 
@@ -383,6 +501,34 @@ const ConsentTemplateEditorModal = ({
             <h2 className="text-xl font-semibold">{getModalTitle()}</h2>
           </div>
           <div className="flex items-center space-x-2">
+            {/* Tabs for Content/Translations - only show when editing */}
+            {mode === 'edit' && editingTemplate?.id && (
+              <div className="flex bg-blue-700 rounded-lg p-1 mr-4">
+                <button
+                  onClick={() => setActiveEditorTab('content')}
+                  className={`px-3 py-1 rounded text-sm flex items-center ${
+                    activeEditorTab === 'content' ? 'bg-white text-blue-600' : 'text-blue-100 hover:text-white'
+                  }`}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  Contenu
+                </button>
+                <button
+                  onClick={() => setActiveEditorTab('translations')}
+                  className={`px-3 py-1 rounded text-sm flex items-center ${
+                    activeEditorTab === 'translations' ? 'bg-white text-blue-600' : 'text-blue-100 hover:text-white'
+                  }`}
+                >
+                  <Globe className="h-4 w-4 mr-1" />
+                  Traductions
+                  {translations.length > 0 && (
+                    <span className="ml-1 bg-green-500 text-white text-xs px-1.5 rounded-full">
+                      {translations.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
             <button
               onClick={() => setShowPreview(!showPreview)}
               className="px-3 py-1 bg-blue-500 rounded hover:bg-blue-400 flex items-center"
@@ -400,6 +546,209 @@ const ConsentTemplateEditorModal = ({
         </div>
 
         <div className="flex h-[85vh]">
+          {/* Translations Panel - shown when translations tab is active */}
+          {activeEditorTab === 'translations' && mode === 'edit' && editingTemplate?.id ? (
+            <div className="flex-1 flex">
+              {/* Languages list */}
+              <div className="w-64 bg-gray-50 border-r p-4 overflow-y-auto">
+                <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+                  <Languages className="h-5 w-5 mr-2" />
+                  Langues disponibles
+                </h3>
+
+                {translationsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader className="h-6 w-6 animate-spin text-blue-600" />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {AVAILABLE_LANGUAGES.map((lang) => {
+                      const hasTranslation = translations.some(t => t.language_code === lang.code);
+                      const isSelected = selectedTranslationLang === lang.code;
+
+                      return (
+                        <div
+                          key={lang.code}
+                          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                            isSelected ? 'bg-blue-100 border-2 border-blue-500' : 'bg-white border border-gray-200 hover:bg-gray-50'
+                          }`}
+                          onClick={() => handleSelectTranslation(lang.code)}
+                        >
+                          <div className="flex items-center">
+                            <span className="text-xl mr-2">{lang.flag}</span>
+                            <div>
+                              <div className="font-medium text-gray-900">{lang.name}</div>
+                              <div className="text-xs text-gray-500">{lang.code.toUpperCase()}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {hasTranslation ? (
+                              <>
+                                <span className="text-green-600" title="Traduction existante">
+                                  <Check className="h-4 w-4" />
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteTranslation(lang.code);
+                                  }}
+                                  className="text-red-500 hover:text-red-700 p-1"
+                                  title="Supprimer la traduction"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                                Non traduit
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-6 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                  <p className="font-medium mb-1">Info</p>
+                  <p>Sélectionnez une langue pour ajouter ou modifier sa traduction.</p>
+                </div>
+              </div>
+
+              {/* Translation editor */}
+              <div className="flex-1 flex flex-col">
+                {selectedTranslationLang ? (
+                  <>
+                    <div className="bg-gray-50 border-b p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <span className="text-2xl mr-3">
+                            {AVAILABLE_LANGUAGES.find(l => l.code === selectedTranslationLang)?.flag}
+                          </span>
+                          <div>
+                            <h3 className="font-medium text-gray-900">
+                              Traduction en {AVAILABLE_LANGUAGES.find(l => l.code === selectedTranslationLang)?.name}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {translations.some(t => t.language_code === selectedTranslationLang)
+                                ? 'Modifier la traduction existante'
+                                : 'Créer une nouvelle traduction'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={cancelTranslationEdit}
+                            className="px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            onClick={handleSaveTranslation}
+                            disabled={translationSaving}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                          >
+                            {translationSaving ? (
+                              <>
+                                <Loader className="h-4 w-4 animate-spin mr-2" />
+                                Enregistrement...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                Enregistrer
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6">
+                      <div className="max-w-4xl mx-auto space-y-6">
+                        {/* Title */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Titre traduit *
+                          </label>
+                          <input
+                            type="text"
+                            value={editingTranslation.title}
+                            onChange={(e) => setEditingTranslation(prev => ({ ...prev, title: e.target.value }))}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Titre dans cette langue"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Original: {formData.title}
+                          </p>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Description traduite *
+                          </label>
+                          <textarea
+                            value={editingTranslation.description}
+                            onChange={(e) => setEditingTranslation(prev => ({ ...prev, description: e.target.value }))}
+                            rows={3}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Description dans cette langue"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Original: {formData.description}
+                          </p>
+                        </div>
+
+                        {/* Terms/Content */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Contenu traduit (termes) *
+                          </label>
+                          <div className="border border-gray-300 rounded-lg overflow-hidden">
+                            <textarea
+                              value={editingTranslation.terms}
+                              onChange={(e) => setEditingTranslation(prev => ({ ...prev, terms: e.target.value }))}
+                              rows={15}
+                              className="w-full p-4 resize-none focus:ring-0 focus:outline-none font-mono text-sm"
+                              placeholder="Contenu du consentement dans cette langue..."
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Conservez les variables [VARIABLE] telles quelles pour le remplacement automatique.
+                          </p>
+                        </div>
+
+                        {/* Original content reference */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Contenu original (référence)
+                          </h4>
+                          <div className="bg-white border rounded p-3 max-h-48 overflow-y-auto text-sm text-gray-600 whitespace-pre-wrap">
+                            {formData.content || 'Aucun contenu original'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center bg-gray-50">
+                    <div className="text-center">
+                      <Globe className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Gestion des traductions</h3>
+                      <p className="text-gray-500 max-w-md">
+                        Sélectionnez une langue dans la liste de gauche pour ajouter ou modifier sa traduction.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+          /* Original content editor - wrapped in else condition */
+          <>
           {/* Panneau de configuration */}
           <div className="w-80 bg-gray-50 border-r overflow-y-auto p-4">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -836,7 +1185,8 @@ Signature du patient: [SIGNATURE_PATIENT]"
               </div>
             )}
           </div>
-        </div>
+        </>
+        )}
       </div>
     </div>
   );
