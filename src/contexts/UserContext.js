@@ -162,7 +162,7 @@ export const UserProvider = ({ children }) => {
   );
 
   /**
-   * Supprimer un utilisateur (soft delete)
+   * Supprimer un utilisateur
    */
   const deleteUser = useCallback(
     async (userId) => {
@@ -174,12 +174,11 @@ export const UserProvider = ({ children }) => {
           throw new Error('You cannot delete your own account');
         }
 
-        // Optimistic update - mark as inactive instead of removing
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === userId ? { ...u, isActive: false } : u
-          )
-        );
+        // Store previous users for rollback
+        const previousUsers = users;
+
+        // Optimistic update - remove user from list
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
 
         // API call
         await usersApi.deleteUser(userId);
@@ -187,12 +186,13 @@ export const UserProvider = ({ children }) => {
         return { success: true };
       } catch (error) {
         console.error('[UserContext] Error deleting user:', error);
+        // Rollback on error
         await refreshUsers();
         setError(error.message || 'Failed to delete user');
         throw error;
       }
     },
-    [currentUser, refreshUsers]
+    [currentUser, users, refreshUsers]
   );
 
   /**
