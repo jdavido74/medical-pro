@@ -4,5 +4,186 @@
   "templates": {
     "title": "Consent Templates",
     "description": "Create and manage your custom consent templates"
-  }
+  },
+  "loading": "Loading consents...",
+  "retry": "Retry",
+  "errors": {
+    "loadingTemplates": "Error loading templates",
+    "revoke": "Error revoking consent",
+    "delete": "Error deleting consent",
+    "generateReport": "Error generating report",
+    "toggleStatus": "Error changing status",
+    "export": "Error exporting"
+  },
+  "confirm": {
+    "delete": "Are you sure you want to delete this consent?",
+    "deleteTemplate": "Are you sure you want to delete this template?"
+  },
+  "status": {
+    "pendingSignature": "Pending signature",
+    "revoked": "Revoked",
+    "expired": "Expired",
+    "expiringSoon": "Expiring soon",
+    "active": "Active",
+    "inactive": "Inactive",
+    "draft": "Draft",
+    "unknown": "Unknown"
+  },
+  "stats": {
+    "totalConsents": "Total consents",
+    "active": "active",
+    "revoked": "Revoked",
+    "expiringSoon": "Expiring soon",
+    "in30Days": "Within 30 days",
+    "thisMonth": "This month",
+    "newConsents": "New consents",
+    "totalTemplates": "Total templates",
+    "usage": "Usage",
+    "drafts": "Drafts",
+    "createdThisMonth": "Created this month"
+  },
+  "tabs": {
+    "management": "Consent management",
+    "expirations": "Expirations",
+    "reports": "Reports",
+    "templates": "Consent templates",
+    "categories": "Categories",
+    "analytics": "Analytics"
+  },
+  "search": {
+    "placeholder": "Search by patient, type, purpose...",
+    "templatesPlaceholder": "Search templates..."
+  },
+  "filters": {
+    "allStatuses": "All statuses",
+    "active": "Active",
+    "pendingSignature": "Pending signature",
+    "revoked": "Revoked",
+    "expired": "Expired",
+    "expiringSoon": "Expiring soon",
+    "required": "Required",
+    "allPatients": "All patients",
+    "allTypes": "All types",
+    "allCategories": "All categories",
+    "allSpecialties": "All specialties",
+    "allStatus": "All statuses"
+  },
+  "actions": {
+    "newConsent": "New consent",
+    "newTemplate": "New template",
+    "viewDetails": "View details",
+    "edit": "Edit",
+    "revoke": "Revoke",
+    "patientReport": "Patient report",
+    "delete": "Delete",
+    "renew": "Renew",
+    "details": "Details",
+    "duplicate": "Duplicate",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "export": "Export",
+    "close": "Close",
+    "createFirstTemplate": "Create first template"
+  },
+  "sort": {
+    "label": "Sort by:",
+    "createdAt": "Creation date",
+    "patient": "Patient",
+    "type": "Type",
+    "status": "Status",
+    "expiresAt": "Expiration date",
+    "updatedAt": "Modification date",
+    "title": "Title",
+    "category": "Category",
+    "usage": "Usage",
+    "version": "Version"
+  },
+  "table": {
+    "patient": "Patient",
+    "typePurpose": "Type / Purpose",
+    "status": "Status",
+    "collection": "Collection",
+    "dates": "Dates",
+    "actions": "Actions",
+    "created": "Created:",
+    "expires": "Expires:",
+    "revoked": "Revoked:",
+    "template": "Template",
+    "category": "Category",
+    "usage": "Usage",
+    "version": "Version",
+    "modified": "Modified:",
+    "times": "times",
+    "lastUsed": "Last:"
+  },
+  "count": {
+    "consents": "consent(s)",
+    "templates": "template(s)",
+    "models": "templates",
+    "usages": "usages"
+  },
+  "empty": {
+    "noConsents": "No consents found",
+    "noTemplates": "No templates found",
+    "noExpiring": "No consents expiring soon"
+  },
+  "expiring": {
+    "title": "Consents expiring within 30 days",
+    "expiresOn": "Expires on"
+  },
+  "reports": {
+    "title": "Reports and statistics",
+    "byType": "By consent type",
+    "byCollectionMethod": "By collection method"
+  },
+  "details": {
+    "title": "Consent details",
+    "templateTitle": "Template details",
+    "generalInfo": "General information",
+    "patient": "Patient",
+    "type": "Type",
+    "purpose": "Purpose",
+    "status": "Status",
+    "collectionMethod": "Collection method",
+    "expirationDate": "Expiration date",
+    "description": "Description",
+    "specificDetails": "Specific details",
+    "procedure": "Procedure",
+    "risks": "Risks",
+    "alternatives": "Alternatives",
+    "expectedResults": "Expected results",
+    "witness": "Witness",
+    "witnessName": "Name:",
+    "witnessRole": "Role:",
+    "auditTrail": "Action history",
+    "action": "Action:",
+    "by": "By:",
+    "detailsLabel": "Details:",
+    "title": "Title",
+    "category": "Category",
+    "specialty": "Specialty",
+    "version": "Version",
+    "usageCount": "Usage",
+    "variablesAvailable": "Available variables",
+    "translationsAvailable": "Available translations",
+    "loadingTranslations": "Loading translations...",
+    "noTranslations": "No translations available. Edit the template to add translations.",
+    "contentPreview": "Content preview",
+    "modificationHistory": "Modification history"
+  },
+  "categories": {
+    "title": "Categories and specialties",
+    "available": "Available categories",
+    "medicalSpecialties": "Medical specialties"
+  },
+  "analytics": {
+    "title": "Statistics and analytics",
+    "mostUsed": "Most used templates",
+    "statusDistribution": "Status distribution",
+    "active": "Active",
+    "drafts": "Drafts",
+    "inactive": "Inactive"
+  },
+  "patientUnknown": "Unknown patient",
+  "loadingTemplates": "Loading templates..."
 }

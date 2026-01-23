@@ -4,5 +4,186 @@
   "templates": {
     "title": "Modèles de consentements",
     "description": "Créez et gérez vos modèles de consentements personnalisés"
-  }
+  },
+  "loading": "Chargement des consentements...",
+  "retry": "Réessayer",
+  "errors": {
+    "loadingTemplates": "Erreur lors du chargement des modèles",
+    "revoke": "Erreur lors de la révocation du consentement",
+    "delete": "Erreur lors de la suppression du consentement",
+    "generateReport": "Erreur lors de la génération du rapport",
+    "toggleStatus": "Erreur lors du changement de statut",
+    "export": "Erreur lors de l'export"
+  },
+  "confirm": {
+    "delete": "Êtes-vous sûr de vouloir supprimer ce consentement ?",
+    "deleteTemplate": "Êtes-vous sûr de vouloir supprimer ce modèle ?"
+  },
+  "status": {
+    "pendingSignature": "En attente de signature",
+    "revoked": "Révoqué",
+    "expired": "Expiré",
+    "expiringSoon": "Expire bientôt",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "draft": "Brouillon",
+    "unknown": "Inconnu"
+  },
+  "stats": {
+    "totalConsents": "Total des consentements",
+    "active": "actifs",
+    "revoked": "Révoqués",
+    "expiringSoon": "Expirent bientôt",
+    "in30Days": "Dans les 30 jours",
+    "thisMonth": "Ce mois",
+    "newConsents": "Nouveaux consentements",
+    "totalTemplates": "Total modèles",
+    "usage": "Utilisations",
+    "drafts": "Brouillons",
+    "createdThisMonth": "Créés ce mois"
+  },
+  "tabs": {
+    "management": "Gestion des consentements",
+    "expirations": "Expirations",
+    "reports": "Rapports",
+    "templates": "Modèles de consentements",
+    "categories": "Catégories",
+    "analytics": "Statistiques"
+  },
+  "search": {
+    "placeholder": "Rechercher par patient, type, finalité...",
+    "templatesPlaceholder": "Rechercher des modèles..."
+  },
+  "filters": {
+    "allStatuses": "Tous les statuts",
+    "active": "Actifs",
+    "pendingSignature": "En attente de signature",
+    "revoked": "Révoqués",
+    "expired": "Expirés",
+    "expiringSoon": "Expirant bientôt",
+    "required": "Obligatoires",
+    "allPatients": "Tous les patients",
+    "allTypes": "Tous les types",
+    "allCategories": "Toutes catégories",
+    "allSpecialties": "Toutes spécialités",
+    "allStatus": "Tous statuts"
+  },
+  "actions": {
+    "newConsent": "Nouveau consentement",
+    "newTemplate": "Nouveau modèle",
+    "viewDetails": "Voir les détails",
+    "edit": "Modifier",
+    "revoke": "Révoquer",
+    "patientReport": "Rapport patient",
+    "delete": "Supprimer",
+    "renew": "Renouveler",
+    "details": "Détails",
+    "duplicate": "Dupliquer",
+    "deactivate": "Désactiver",
+    "activate": "Activer",
+    "export": "Exporter",
+    "close": "Fermer",
+    "createFirstTemplate": "Créer le premier modèle"
+  },
+  "sort": {
+    "label": "Trier par:",
+    "createdAt": "Date de création",
+    "patient": "Patient",
+    "type": "Type",
+    "status": "Statut",
+    "expiresAt": "Date d'expiration",
+    "updatedAt": "Date de modification",
+    "title": "Titre",
+    "category": "Catégorie",
+    "usage": "Utilisation",
+    "version": "Version"
+  },
+  "table": {
+    "patient": "Patient",
+    "typePurpose": "Type / Finalité",
+    "status": "Statut",
+    "collection": "Collecte",
+    "dates": "Dates",
+    "actions": "Actions",
+    "created": "Créé:",
+    "expires": "Expire:",
+    "revoked": "Révoqué:",
+    "template": "Modèle",
+    "category": "Catégorie",
+    "usage": "Utilisation",
+    "version": "Version",
+    "modified": "Modifié:",
+    "times": "fois",
+    "lastUsed": "Dernière:"
+  },
+  "count": {
+    "consents": "consentement(s)",
+    "templates": "modèle(s)",
+    "models": "modèles",
+    "usages": "utilisations"
+  },
+  "empty": {
+    "noConsents": "Aucun consentement trouvé",
+    "noTemplates": "Aucun modèle trouvé",
+    "noExpiring": "Aucun consentement n'expire prochainement"
+  },
+  "expiring": {
+    "title": "Consentements expirant dans les 30 jours",
+    "expiresOn": "Expire le"
+  },
+  "reports": {
+    "title": "Rapports et statistiques",
+    "byType": "Par type de consentement",
+    "byCollectionMethod": "Par méthode de collecte"
+  },
+  "details": {
+    "title": "Détails du consentement",
+    "templateTitle": "Détails du modèle",
+    "generalInfo": "Informations générales",
+    "patient": "Patient",
+    "type": "Type",
+    "purpose": "Finalité",
+    "status": "Statut",
+    "collectionMethod": "Méthode de collecte",
+    "expirationDate": "Date d'expiration",
+    "description": "Description",
+    "specificDetails": "Détails spécifiques",
+    "procedure": "Procédure",
+    "risks": "Risques",
+    "alternatives": "Alternatives",
+    "expectedResults": "Résultats attendus",
+    "witness": "Témoin",
+    "witnessName": "Nom:",
+    "witnessRole": "Rôle:",
+    "auditTrail": "Historique des actions",
+    "action": "Action:",
+    "by": "Par:",
+    "detailsLabel": "Détails:",
+    "title": "Titre",
+    "category": "Catégorie",
+    "specialty": "Spécialité",
+    "version": "Version",
+    "usageCount": "Utilisations",
+    "variablesAvailable": "Variables disponibles",
+    "translationsAvailable": "Traductions disponibles",
+    "loadingTranslations": "Chargement des traductions...",
+    "noTranslations": "Aucune traduction disponible. Modifiez le modèle pour ajouter des traductions.",
+    "contentPreview": "Aperçu du contenu",
+    "modificationHistory": "Historique des modifications"
+  },
+  "categories": {
+    "title": "Catégories et spécialités",
+    "available": "Catégories disponibles",
+    "medicalSpecialties": "Spécialités médicales"
+  },
+  "analytics": {
+    "title": "Statistiques et analyses",
+    "mostUsed": "Modèles les plus utilisés",
+    "statusDistribution": "Répartition par statut",
+    "active": "Actifs",
+    "drafts": "Brouillons",
+    "inactive": "Inactifs"
+  },
+  "patientUnknown": "Patient inconnu",
+  "loadingTemplates": "Chargement des modèles..."
 }

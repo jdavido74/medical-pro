@@ -6,6 +6,7 @@ import {
   AlertTriangle, Users, Calendar, Star, TrendingUp, RefreshCw,
   BookOpen, Database, Code, Globe, Zap, X, Loader, Languages
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { consentTemplatesApi } from '../../../api/consentTemplatesApi';
 import {
   TEMPLATE_CATEGORIES,
@@ -22,6 +23,7 @@ const AVAILABLE_LANGUAGES = [
 ];
 
 const ConsentTemplatesModule = () => {
+  const { t } = useTranslation('consents');
   const { user } = useAuth();
   const [templates, setTemplates] = useState([]);
   const [filteredTemplates, setFilteredTemplates] = useState([]);
@@ -103,7 +105,7 @@ const ConsentTemplatesModule = () => {
       setStatistics(stats);
     } catch (err) {
       console.error('[ConsentTemplatesModule] Error loading data:', err);
-      setError('Erreur lors du chargement des modèles');
+      setError(t('errors.loadingTemplates'));
     } finally {
       setLoading(false);
     }
@@ -206,18 +208,18 @@ const ConsentTemplatesModule = () => {
       loadData();
     } catch (err) {
       console.error('[ConsentTemplatesModule] Error toggling status:', err);
-      alert('Erreur lors du changement de statut');
+      alert(t('errors.toggleStatus'));
     }
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce modèle ?')) {
+    if (window.confirm(t('confirm.deleteTemplate'))) {
       try {
         await consentTemplatesApi.deleteConsentTemplate(templateId);
         loadData();
       } catch (err) {
         console.error('[ConsentTemplatesModule] Error deleting template:', err);
-        alert('Erreur lors de la suppression');
+        alert(t('errors.delete'));
       }
     }
   };
@@ -244,7 +246,7 @@ const ConsentTemplatesModule = () => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('[ConsentTemplatesModule] Error exporting template:', err);
-      alert('Erreur lors de l\'export');
+      alert(t('errors.export'));
     }
   };
 
@@ -258,22 +260,22 @@ const ConsentTemplatesModule = () => {
       case 'active':
         return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
           <CheckCircle className="h-3 w-3 mr-1" />
-          Actif
+          {t('status.active')}
         </span>;
       case 'inactive':
         return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
           <XCircle className="h-3 w-3 mr-1" />
-          Inactif
+          {t('status.inactive')}
         </span>;
       case 'draft':
         return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
           <Edit2 className="h-3 w-3 mr-1" />
-          Brouillon
+          {t('status.draft')}
         </span>;
       default:
         return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
           <AlertTriangle className="h-3 w-3 mr-1" />
-          Inconnu
+          {t('status.unknown')}
         </span>;
     }
   };
@@ -307,7 +309,7 @@ const ConsentTemplatesModule = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Chargement des modèles...</p>
+          <p className="text-gray-600">{t('loadingTemplates')}</p>
         </div>
       </div>
     );
@@ -324,7 +326,7 @@ const ConsentTemplatesModule = () => {
             onClick={loadData}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Réessayer
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -349,27 +351,27 @@ const ConsentTemplatesModule = () => {
       {/* Header avec statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total modèles"
+          title={t('stats.totalTemplates')}
           value={statistics.total || 0}
-          subtitle={`${statistics.active || 0} actifs`}
+          subtitle={`${statistics.active || 0} ${t('stats.active')}`}
           icon={FileText}
           color="blue"
         />
         <StatCard
-          title="Utilisations"
+          title={t('stats.usage')}
           value={statistics.totalUsage || 0}
-          subtitle="Ce mois"
+          subtitle={t('stats.thisMonth')}
           icon={BarChart3}
           color="green"
         />
         <StatCard
-          title="Brouillons"
+          title={t('stats.drafts')}
           value={statistics.draft || 0}
           icon={Edit2}
           color="yellow"
         />
         <StatCard
-          title="Créés ce mois"
+          title={t('stats.createdThisMonth')}
           value={statistics.createdThisMonth || 0}
           icon={Calendar}
           color="purple"
@@ -389,7 +391,7 @@ const ConsentTemplatesModule = () => {
               }`}
             >
               <FileText className="h-4 w-4 inline mr-2" />
-              Modèles de consentements
+              {t('tabs.templates')}
             </button>
             <button
               onClick={() => setActiveTab('categories')}
@@ -400,7 +402,7 @@ const ConsentTemplatesModule = () => {
               }`}
             >
               <Tag className="h-4 w-4 inline mr-2" />
-              Catégories
+              {t('tabs.categories')}
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
@@ -411,7 +413,7 @@ const ConsentTemplatesModule = () => {
               }`}
             >
               <BarChart3 className="h-4 w-4 inline mr-2" />
-              Statistiques
+              {t('tabs.analytics')}
             </button>
           </nav>
         </div>
@@ -427,7 +429,7 @@ const ConsentTemplatesModule = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <input
                       type="text"
-                      placeholder="Rechercher des modèles..."
+                      placeholder={t('search.templatesPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -441,7 +443,7 @@ const ConsentTemplatesModule = () => {
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="">Toutes catégories</option>
+                      <option value="">{t('filters.allCategories')}</option>
                       {Object.values(TEMPLATE_CATEGORIES).map(category => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -454,7 +456,7 @@ const ConsentTemplatesModule = () => {
                       onChange={(e) => setSelectedSpeciality(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="">Toutes spécialités</option>
+                      <option value="">{t('filters.allSpecialties')}</option>
                       {Object.values(MEDICAL_SPECIALITIES).map(speciality => (
                         <option key={speciality.id} value={speciality.id}>
                           {speciality.name}
@@ -467,10 +469,10 @@ const ConsentTemplatesModule = () => {
                       onChange={(e) => setSelectedStatus(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="">Tous statuts</option>
-                      <option value="active">Actif</option>
-                      <option value="draft">Brouillon</option>
-                      <option value="inactive">Inactif</option>
+                      <option value="">{t('filters.allStatus')}</option>
+                      <option value="active">{t('status.active')}</option>
+                      <option value="draft">{t('status.draft')}</option>
+                      <option value="inactive">{t('status.inactive')}</option>
                     </select>
                   </div>
                 </div>
@@ -488,25 +490,25 @@ const ConsentTemplatesModule = () => {
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Nouveau modèle
+                    {t('actions.newTemplate')}
                   </button>
                 </div>
               </div>
 
               {/* Tri */}
               <div className="flex items-center gap-4 mb-4">
-                <span className="text-sm text-gray-600">Trier par:</span>
+                <span className="text-sm text-gray-600">{t('sort.label')}</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="px-2 py-1 border border-gray-300 rounded text-sm"
                 >
-                  <option value="updatedAt">Date de modification</option>
-                  <option value="createdAt">Date de création</option>
-                  <option value="title">Titre</option>
-                  <option value="category">Catégorie</option>
-                  <option value="usage">Utilisation</option>
-                  <option value="version">Version</option>
+                  <option value="updatedAt">{t('sort.updatedAt')}</option>
+                  <option value="createdAt">{t('sort.createdAt')}</option>
+                  <option value="title">{t('sort.title')}</option>
+                  <option value="category">{t('sort.category')}</option>
+                  <option value="usage">{t('sort.usage')}</option>
+                  <option value="version">{t('sort.version')}</option>
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -515,7 +517,7 @@ const ConsentTemplatesModule = () => {
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
                 <span className="text-sm text-gray-500 ml-auto">
-                  {filteredTemplates.length} modèle(s)
+                  {filteredTemplates.length} {t('count.templates')}
                 </span>
               </div>
 
@@ -525,22 +527,22 @@ const ConsentTemplatesModule = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Modèle
+                        {t('table.template')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Catégorie
+                        {t('table.category')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Statut
+                        {t('table.status')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Utilisation
+                        {t('table.usage')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Version
+                        {t('table.version')}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        {t('table.actions')}
                       </th>
                     </tr>
                   </thead>
@@ -558,7 +560,7 @@ const ConsentTemplatesModule = () => {
                                 {template.description}
                               </div>
                               <div className="text-xs text-gray-400 mt-1">
-                                Modifié: {new Date(template.updatedAt).toLocaleDateString()}
+                                {t('table.modified')} {new Date(template.updatedAt).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
@@ -578,10 +580,10 @@ const ConsentTemplatesModule = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div>
-                            <div>{template.usage?.timesUsed || 0} fois</div>
+                            <div>{template.usage?.timesUsed || 0} {t('table.times')}</div>
                             {template.usage?.lastUsed && (
                               <div className="text-xs text-gray-400">
-                                Dernière: {new Date(template.usage.lastUsed).toLocaleDateString()}
+                                {t('table.lastUsed')} {new Date(template.usage.lastUsed).toLocaleDateString()}
                               </div>
                             )}
                           </div>
@@ -593,42 +595,42 @@ const ConsentTemplatesModule = () => {
                           <button
                             onClick={() => handleViewTemplate(template)}
                             className="text-blue-600 hover:text-blue-900"
-                            title="Voir les détails"
+                            title={t('actions.viewDetails')}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleEditTemplate(template)}
                             className="text-green-600 hover:text-green-900"
-                            title="Modifier"
+                            title={t('actions.edit')}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDuplicateTemplate(template)}
                             className="text-purple-600 hover:text-purple-900"
-                            title="Dupliquer"
+                            title={t('actions.duplicate')}
                           >
                             <Copy className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleToggleStatus(template.id)}
                             className={`${template.status === 'active' ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}`}
-                            title={template.status === 'active' ? 'Désactiver' : 'Activer'}
+                            title={template.status === 'active' ? t('actions.deactivate') : t('actions.activate')}
                           >
                             {template.status === 'active' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                           </button>
                           <button
                             onClick={() => handleExportTemplate(template)}
                             className="text-blue-600 hover:text-blue-900"
-                            title="Exporter"
+                            title={t('actions.export')}
                           >
                             <Download className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteTemplate(template.id)}
                             className="text-red-600 hover:text-red-900"
-                            title="Supprimer"
+                            title={t('actions.delete')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -642,12 +644,12 @@ const ConsentTemplatesModule = () => {
               {filteredTemplates.length === 0 && (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Aucun modèle trouvé</p>
+                  <p className="text-gray-500">{t('empty.noTemplates')}</p>
                   <button
                     onClick={handleCreateTemplate}
                     className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    Créer le premier modèle
+                    {t('actions.createFirstTemplate')}
                   </button>
                 </div>
               )}
@@ -657,12 +659,12 @@ const ConsentTemplatesModule = () => {
           {activeTab === 'categories' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-6">
-                Catégories et spécialités
+                {t('categories.title')}
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Catégories */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Catégories disponibles</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('categories.available')}</h4>
                   <div className="space-y-2">
                     {Object.values(TEMPLATE_CATEGORIES).map(category => (
                       <div key={category.id} className="flex justify-between items-center bg-white p-3 rounded">
@@ -671,7 +673,7 @@ const ConsentTemplatesModule = () => {
                           <div className="text-sm text-gray-500">{category.description}</div>
                         </div>
                         <div className="text-sm text-gray-500">
-                          {statistics.byCategory?.[category.id]?.count || 0} modèles
+                          {statistics.byCategory?.[category.id]?.count || 0} {t('count.models')}
                         </div>
                       </div>
                     ))}
@@ -680,13 +682,13 @@ const ConsentTemplatesModule = () => {
 
                 {/* Spécialités */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Spécialités médicales</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('categories.medicalSpecialties')}</h4>
                   <div className="space-y-2">
                     {Object.values(MEDICAL_SPECIALITIES).map(speciality => (
                       <div key={speciality.id} className="flex justify-between items-center bg-white p-3 rounded">
                         <div className="font-medium text-gray-900">{speciality.name}</div>
                         <div className="text-sm text-gray-500">
-                          {statistics.bySpeciality?.[speciality.id]?.count || 0} modèles
+                          {statistics.bySpeciality?.[speciality.id]?.count || 0} {t('count.models')}
                         </div>
                       </div>
                     ))}
@@ -699,12 +701,12 @@ const ConsentTemplatesModule = () => {
           {activeTab === 'analytics' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-6">
-                Statistiques et analyses
+                {t('analytics.title')}
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Modèles les plus utilisés */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Modèles les plus utilisés</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('analytics.mostUsed')}</h4>
                   <div className="space-y-3">
                     {statistics.mostUsed?.slice(0, 5).map((template, index) => (
                       <div key={template.id} className="flex items-center justify-between bg-white p-3 rounded">
@@ -720,7 +722,7 @@ const ConsentTemplatesModule = () => {
                           </div>
                         </div>
                         <div className="text-sm font-medium text-gray-900">
-                          {template.usage?.timesUsed || 0} utilisations
+                          {template.usage?.timesUsed || 0} {t('count.usages')}
                         </div>
                       </div>
                     ))}
@@ -729,26 +731,26 @@ const ConsentTemplatesModule = () => {
 
                 {/* Répartition par statut */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Répartition par statut</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('analytics.statusDistribution')}</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-gray-700">Actifs</span>
+                        <span className="text-gray-700">{t('analytics.active')}</span>
                       </div>
                       <span className="font-medium">{statistics.active || 0}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center">
                         <Edit2 className="h-4 w-4 text-yellow-500 mr-2" />
-                        <span className="text-gray-700">Brouillons</span>
+                        <span className="text-gray-700">{t('analytics.drafts')}</span>
                       </div>
                       <span className="font-medium">{statistics.draft || 0}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center">
                         <XCircle className="h-4 w-4 text-gray-500 mr-2" />
-                        <span className="text-gray-700">Inactifs</span>
+                        <span className="text-gray-700">{t('analytics.inactive')}</span>
                       </div>
                       <span className="font-medium">{statistics.inactive || 0}</span>
                     </div>
@@ -786,6 +788,7 @@ const ConsentTemplatesModule = () => {
 
 // Modal pour afficher les détails d'un modèle
 const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
+  const { t } = useTranslation('consents');
   const [translations, setTranslations] = useState([]);
   const [translationsLoading, setTranslationsLoading] = useState(false);
 
@@ -812,7 +815,7 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Détails du modèle</h2>
+          <h2 className="text-xl font-semibold">{t('details.templateTitle')}</h2>
           <button onClick={onClose} className="text-white hover:text-gray-200">
             <X className="h-6 w-6" />
           </button>
@@ -822,68 +825,68 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
           <div className="space-y-6">
             {/* Informations générales */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Informations générales</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">{t('details.generalInfo')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Titre</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.title')}</label>
                   <p className="text-sm text-gray-900">{template.title}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Statut</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.status')}</label>
                   <div className="mt-1">
                     {template.status === 'active' && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Actif
+                        {t('status.active')}
                       </span>
                     )}
                     {template.status === 'draft' && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
                         <Edit2 className="h-3 w-3 mr-1" />
-                        Brouillon
+                        {t('status.draft')}
                       </span>
                     )}
                     {template.status === 'inactive' && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
                         <XCircle className="h-3 w-3 mr-1" />
-                        Inactif
+                        {t('status.inactive')}
                       </span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Catégorie</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.category')}</label>
                   <p className="text-sm text-gray-900">
                     {TEMPLATE_CATEGORIES[template.category?.toUpperCase()]?.name || template.category}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Spécialité</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.specialty')}</label>
                   <p className="text-sm text-gray-900">
                     {MEDICAL_SPECIALITIES[template.speciality?.toUpperCase()]?.name || template.speciality}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Version</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.version')}</label>
                   <p className="text-sm text-gray-900">v{template.version}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Utilisations</label>
-                  <p className="text-sm text-gray-900">{template.usage?.timesUsed || 0} fois</p>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.usageCount')}</label>
+                  <p className="text-sm text-gray-900">{template.usage?.timesUsed || 0} {t('table.times')}</p>
                 </div>
               </div>
             </div>
 
             {/* Description */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+              <h4 className="font-medium text-gray-900 mb-2">{t('details.description')}</h4>
               <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{template.description}</p>
             </div>
 
             {/* Variables détectées */}
             {template.variables && template.variables.length > 0 && (
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Variables disponibles</h4>
+                <h4 className="font-medium text-gray-900 mb-3">{t('details.variablesAvailable')}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {template.variables.map((variable, index) => (
                     <div key={index} className="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
@@ -898,12 +901,12 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
             <div>
               <h4 className="font-medium text-gray-900 mb-3 flex items-center">
                 <Languages className="h-4 w-4 mr-2" />
-                Traductions disponibles
+                {t('details.translationsAvailable')}
               </h4>
               {translationsLoading ? (
                 <div className="flex items-center text-gray-500">
                   <Loader className="h-4 w-4 animate-spin mr-2" />
-                  Chargement des traductions...
+                  {t('details.loadingTranslations')}
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
@@ -934,14 +937,14 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
               )}
               {translations.length === 0 && !translationsLoading && (
                 <p className="text-sm text-gray-500 mt-2">
-                  Aucune traduction disponible. Modifiez le modèle pour ajouter des traductions.
+                  {t('details.noTranslations')}
                 </p>
               )}
             </div>
 
             {/* Aperçu du contenu */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Aperçu du contenu</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('details.contentPreview')}</h4>
               <div className="bg-gray-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
                 <div
                   className="text-sm whitespace-pre-wrap"
@@ -958,7 +961,7 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
             {/* Audit trail */}
             {template.auditTrail && template.auditTrail.length > 0 && (
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Historique des modifications</h4>
+                <h4 className="font-medium text-gray-900 mb-3">{t('details.modificationHistory')}</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {template.auditTrail.slice(-5).reverse().map((entry, index) => (
                     <div key={index} className="border border-gray-200 rounded p-3 text-sm">
@@ -968,7 +971,7 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
                             {entry.action} - v{entry.version}
                           </p>
                           <p className="text-gray-600">
-                            Par: {entry.userId} • {new Date(entry.timestamp).toLocaleString()}
+                            {t('details.by')} {entry.userId} • {new Date(entry.timestamp).toLocaleString()}
                           </p>
                           {entry.changes && (
                             <p className="text-gray-500 text-xs mt-1">
@@ -990,13 +993,13 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
             onClick={onClose}
             className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
           >
-            Fermer
+            {t('actions.close')}
           </button>
           <button
             onClick={onEdit}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Modifier
+            {t('actions.edit')}
           </button>
         </div>
       </div>

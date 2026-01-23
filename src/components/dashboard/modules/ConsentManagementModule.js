@@ -19,6 +19,7 @@ import {
   Signature,
   Loader
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useConsents } from '../../../contexts/ConsentContext';
 import { usePatients } from '../../../contexts/PatientContext';
 import { consentSigningApi } from '../../../api/consentSigningApi';
@@ -27,6 +28,7 @@ import ConsentFormModal from '../../modals/ConsentFormModal';
 import { useAuth } from '../../../hooks/useAuth';
 
 const ConsentManagementModule = () => {
+  const { t } = useTranslation('consents');
   const { user } = useAuth();
 
   // Utiliser les contextes au lieu des appels API directs
@@ -279,18 +281,18 @@ const ConsentManagementModule = () => {
       await loadSigningRequests();
     } catch (err) {
       console.error('[ConsentManagementModule] Error revoking consent:', err);
-      alert('Erreur lors de la révocation du consentement');
+      alert(t('errors.revoke'));
     }
   };
 
   const handleDeleteConsent = async (consentId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce consentement ?')) {
+    if (window.confirm(t('confirm.delete'))) {
       try {
         // Utiliser la méthode du contexte (optimistic update inclus)
         await deleteConsent(consentId);
       } catch (err) {
         console.error('[ConsentManagementModule] Error deleting consent:', err);
-        alert('Erreur lors de la suppression du consentement');
+        alert(t('errors.delete'));
       }
     }
   };
@@ -349,7 +351,7 @@ const ConsentManagementModule = () => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('[ConsentManagementModule] Error generating report:', err);
-      alert('Erreur lors de la génération du rapport');
+      alert(t('errors.generateReport'));
     }
   };
 
@@ -363,40 +365,40 @@ const ConsentManagementModule = () => {
     if (consent.status === 'pending_signature' || consent.isPendingSignature) {
       return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
         <Clock className="h-3 w-3 mr-1 animate-pulse" />
-        En attente de signature
+        {t('status.pendingSignature')}
       </span>;
     }
 
     if (consent.status === 'revoked') {
       return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
         <X className="h-3 w-3 mr-1" />
-        Révoqué
+        {t('status.revoked')}
       </span>;
     }
 
     if (isExpired) {
       return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
         <Clock className="h-3 w-3 mr-1" />
-        Expiré
+        {t('status.expired')}
       </span>;
     }
 
     if (isExpiring) {
       return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
         <AlertTriangle className="h-3 w-3 mr-1" />
-        Expire bientôt
+        {t('status.expiringSoon')}
       </span>;
     }
 
     return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
       <CheckCircle className="h-3 w-3 mr-1" />
-      Actif
+      {t('status.active')}
     </span>;
   };
 
   const getPatientName = (patientId) => {
     const patient = patients.find(p => p.id === patientId);
-    return patient ? `${patient.firstName} ${patient.lastName}` : 'Patient inconnu';
+    return patient ? `${patient.firstName} ${patient.lastName}` : t('patientUnknown');
   };
 
   const getPatientNumber = (patientId) => {
@@ -430,7 +432,7 @@ const ConsentManagementModule = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Chargement des consentements...</p>
+          <p className="text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -447,7 +449,7 @@ const ConsentManagementModule = () => {
             onClick={loadData}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Réessayer
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -472,29 +474,29 @@ const ConsentManagementModule = () => {
       {/* Header avec statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total des consentements"
+          title={t('stats.totalConsents')}
           value={statistics.total || 0}
-          subtitle={`${statistics.active || 0} actifs`}
+          subtitle={`${statistics.active || 0} ${t('stats.active')}`}
           icon={Shield}
           color="blue"
         />
         <StatCard
-          title="Révoqués"
+          title={t('stats.revoked')}
           value={statistics.revoked || 0}
           icon={X}
           color="red"
         />
         <StatCard
-          title="Expirent bientôt"
+          title={t('stats.expiringSoon')}
           value={expiringConsents.length}
-          subtitle="Dans les 30 jours"
+          subtitle={t('stats.in30Days')}
           icon={AlertTriangle}
           color="orange"
         />
         <StatCard
-          title="Ce mois"
+          title={t('stats.thisMonth')}
           value={statistics.createdThisMonth || 0}
-          subtitle="Nouveaux consentements"
+          subtitle={t('stats.newConsents')}
           icon={Calendar}
           color="green"
         />
@@ -513,7 +515,7 @@ const ConsentManagementModule = () => {
               }`}
             >
               <Shield className="h-4 w-4 inline mr-2" />
-              Gestion des consentements
+              {t('tabs.management')}
             </button>
             <button
               onClick={() => setActiveTab('expiring')}
@@ -524,7 +526,7 @@ const ConsentManagementModule = () => {
               }`}
             >
               <Clock className="h-4 w-4 inline mr-2" />
-              Expirations ({expiringConsents.length})
+              {t('tabs.expirations')} ({expiringConsents.length})
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
@@ -535,7 +537,7 @@ const ConsentManagementModule = () => {
               }`}
             >
               <FileText className="h-4 w-4 inline mr-2" />
-              Rapports
+              {t('tabs.reports')}
             </button>
           </nav>
         </div>
@@ -551,7 +553,7 @@ const ConsentManagementModule = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <input
                       type="text"
-                      placeholder="Rechercher par patient, type, finalité..."
+                      placeholder={t('search.placeholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -565,13 +567,13 @@ const ConsentManagementModule = () => {
                       onChange={(e) => setSelectedFilter(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="all">Tous les statuts</option>
-                      <option value="active">Actifs</option>
-                      <option value="pending_signature">En attente de signature</option>
-                      <option value="revoked">Révoqués</option>
-                      <option value="expired">Expirés</option>
-                      <option value="expiring">Expirant bientôt</option>
-                      <option value="required">Obligatoires</option>
+                      <option value="all">{t('filters.allStatuses')}</option>
+                      <option value="active">{t('filters.active')}</option>
+                      <option value="pending_signature">{t('filters.pendingSignature')}</option>
+                      <option value="revoked">{t('filters.revoked')}</option>
+                      <option value="expired">{t('filters.expired')}</option>
+                      <option value="expiring">{t('filters.expiringSoon')}</option>
+                      <option value="required">{t('filters.required')}</option>
                     </select>
 
                     <select
@@ -579,7 +581,7 @@ const ConsentManagementModule = () => {
                       onChange={(e) => setSelectedPatient(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="">Tous les patients</option>
+                      <option value="">{t('filters.allPatients')}</option>
                       {patients.map(patient => (
                         <option key={patient.id} value={patient.id}>
                           {patient.firstName} {patient.lastName} - {patient.patientNumber}
@@ -592,7 +594,7 @@ const ConsentManagementModule = () => {
                       onChange={(e) => setSelectedType(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="">Tous les types</option>
+                      <option value="">{t('filters.allTypes')}</option>
                       {Object.values(CONSENT_TYPES).map(type => (
                         <option key={type.id} value={type.id}>
                           {type.name}
@@ -615,24 +617,24 @@ const ConsentManagementModule = () => {
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Nouveau consentement
+                    {t('actions.newConsent')}
                   </button>
                 </div>
               </div>
 
               {/* Tri */}
               <div className="flex items-center gap-4 mb-4">
-                <span className="text-sm text-gray-600">Trier par:</span>
+                <span className="text-sm text-gray-600">{t('sort.label')}</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="px-2 py-1 border border-gray-300 rounded text-sm"
                 >
-                  <option value="createdAt">Date de création</option>
-                  <option value="patientName">Patient</option>
-                  <option value="type">Type</option>
-                  <option value="status">Statut</option>
-                  <option value="expiresAt">Date d'expiration</option>
+                  <option value="createdAt">{t('sort.createdAt')}</option>
+                  <option value="patientName">{t('sort.patient')}</option>
+                  <option value="type">{t('sort.type')}</option>
+                  <option value="status">{t('sort.status')}</option>
+                  <option value="expiresAt">{t('sort.expiresAt')}</option>
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -641,7 +643,7 @@ const ConsentManagementModule = () => {
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
                 <span className="text-sm text-gray-500 ml-auto">
-                  {filteredConsents.length} consentement(s)
+                  {filteredConsents.length} {t('count.consents')}
                 </span>
               </div>
 
@@ -651,22 +653,22 @@ const ConsentManagementModule = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Patient
+                        {t('table.patient')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type / Finalité
+                        {t('table.typePurpose')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Statut
+                        {t('table.status')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Collecte
+                        {t('table.collection')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Dates
+                        {t('table.dates')}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        {t('table.actions')}
                       </th>
                     </tr>
                   </thead>
@@ -710,12 +712,12 @@ const ConsentManagementModule = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div>
-                            <div>Créé: {new Date(consent.createdAt).toLocaleDateString()}</div>
+                            <div>{t('table.created')} {new Date(consent.createdAt).toLocaleDateString()}</div>
                             {consent.expiresAt && (
-                              <div>Expire: {new Date(consent.expiresAt).toLocaleDateString()}</div>
+                              <div>{t('table.expires')} {new Date(consent.expiresAt).toLocaleDateString()}</div>
                             )}
                             {consent.revokedAt && (
-                              <div className="text-red-600">Révoqué: {new Date(consent.revokedAt).toLocaleDateString()}</div>
+                              <div className="text-red-600">{t('table.revoked')} {new Date(consent.revokedAt).toLocaleDateString()}</div>
                             )}
                           </div>
                         </td>
@@ -723,14 +725,14 @@ const ConsentManagementModule = () => {
                           <button
                             onClick={() => handleViewDetails(consent)}
                             className="text-blue-600 hover:text-blue-900"
-                            title="Voir les détails"
+                            title={t('actions.viewDetails')}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleEditConsent(consent)}
                             className="text-green-600 hover:text-green-900"
-                            title="Modifier"
+                            title={t('actions.edit')}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
@@ -738,7 +740,7 @@ const ConsentManagementModule = () => {
                             <button
                               onClick={() => handleRevokeConsent(consent.id)}
                               className="text-orange-600 hover:text-orange-900"
-                              title="Révoquer"
+                              title={t('actions.revoke')}
                             >
                               <X className="h-4 w-4" />
                             </button>
@@ -746,14 +748,14 @@ const ConsentManagementModule = () => {
                           <button
                             onClick={() => generatePatientReport(consent.patientId)}
                             className="text-purple-600 hover:text-purple-900"
-                            title="Rapport patient"
+                            title={t('actions.patientReport')}
                           >
                             <Download className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteConsent(consent.id)}
                             className="text-red-600 hover:text-red-900"
-                            title="Supprimer"
+                            title={t('actions.delete')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -767,7 +769,7 @@ const ConsentManagementModule = () => {
               {filteredConsents.length === 0 && (
                 <div className="text-center py-8">
                   <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Aucun consentement trouvé</p>
+                  <p className="text-gray-500">{t('empty.noConsents')}</p>
                 </div>
               )}
             </>
@@ -776,7 +778,7 @@ const ConsentManagementModule = () => {
           {activeTab === 'expiring' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Consentements expirant dans les 30 jours
+                {t('expiring.title')}
               </h3>
               {expiringConsents.length > 0 ? (
                 <div className="space-y-4">
@@ -789,7 +791,7 @@ const ConsentManagementModule = () => {
                           </h4>
                           <p className="text-sm text-gray-600">{consent.purpose}</p>
                           <p className="text-sm text-orange-600 mt-1">
-                            Expire le {new Date(consent.expiresAt).toLocaleDateString()}
+                            {t('expiring.expiresOn')} {new Date(consent.expiresAt).toLocaleDateString()}
                           </p>
                         </div>
                         <div className="flex space-x-2">
@@ -797,13 +799,13 @@ const ConsentManagementModule = () => {
                             onClick={() => handleEditConsent(consent)}
                             className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700"
                           >
-                            Renouveler
+                            {t('actions.renew')}
                           </button>
                           <button
                             onClick={() => handleViewDetails(consent)}
                             className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
                           >
-                            Détails
+                            {t('actions.details')}
                           </button>
                         </div>
                       </div>
@@ -813,7 +815,7 @@ const ConsentManagementModule = () => {
               ) : (
                 <div className="text-center py-8">
                   <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Aucun consentement n'expire prochainement</p>
+                  <p className="text-gray-500">{t('empty.noExpiring')}</p>
                 </div>
               )}
             </div>
@@ -822,12 +824,12 @@ const ConsentManagementModule = () => {
           {activeTab === 'analytics' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-6">
-                Rapports et statistiques
+                {t('reports.title')}
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Statistiques par type */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Par type de consentement</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('reports.byType')}</h4>
                   <div className="space-y-2">
                     {Object.entries(statistics.byType || {}).map(([type, stats]) => (
                       <div key={type} className="flex justify-between items-center">
@@ -844,7 +846,7 @@ const ConsentManagementModule = () => {
 
                 {/* Statistiques par méthode de collecte */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Par méthode de collecte</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('reports.byCollectionMethod')}</h4>
                   <div className="space-y-2">
                     {Object.entries(statistics.byCollectionMethod || {}).map(([method, count]) => (
                       <div key={method} className="flex justify-between items-center">
@@ -884,11 +886,13 @@ const ConsentManagementModule = () => {
 
 // Modal pour afficher les détails d'un consentement avec audit trail
 const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
+  const { t } = useTranslation('consents');
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
         <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Détails du consentement</h2>
+          <h2 className="text-xl font-semibold">{t('details.title')}</h2>
           <button onClick={onClose} className="text-white hover:text-gray-200">
             <X className="h-6 w-6" />
           </button>
@@ -898,33 +902,33 @@ const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
           <div className="space-y-6">
             {/* Informations générales */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Informations générales</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">{t('details.generalInfo')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Patient</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.patient')}</label>
                   <p className="text-sm text-gray-900">{patientName}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Type</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.type')}</label>
                   <p className="text-sm text-gray-900">{consent.title}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Finalité</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.purpose')}</label>
                   <p className="text-sm text-gray-900">{consent.purpose}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Statut</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.status')}</label>
                   <p className="text-sm text-gray-900">{consent.status}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Méthode de collecte</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('details.collectionMethod')}</label>
                   <p className="text-sm text-gray-900">
                     {COLLECTION_METHODS[consent.collectionMethod]?.name || consent.collectionMethod}
                   </p>
                 </div>
                 {consent.expiresAt && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Date d'expiration</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('details.expirationDate')}</label>
                     <p className="text-sm text-gray-900">{new Date(consent.expiresAt).toLocaleDateString()}</p>
                   </div>
                 )}
@@ -934,7 +938,7 @@ const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
             {/* Description */}
             {consent.description && (
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{t('details.description')}</h4>
                 <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{consent.description}</p>
               </div>
             )}
@@ -942,29 +946,29 @@ const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
             {/* Détails spécifiques */}
             {consent.specificDetails && Object.values(consent.specificDetails).some(v => v) && (
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Détails spécifiques</h4>
+                <h4 className="font-medium text-gray-900 mb-3">{t('details.specificDetails')}</h4>
                 <div className="space-y-3">
                   {consent.specificDetails.procedure && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Procédure</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('details.procedure')}</label>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{consent.specificDetails.procedure}</p>
                     </div>
                   )}
                   {consent.specificDetails.risks && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Risques</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('details.risks')}</label>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{consent.specificDetails.risks}</p>
                     </div>
                   )}
                   {consent.specificDetails.alternatives && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Alternatives</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('details.alternatives')}</label>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{consent.specificDetails.alternatives}</p>
                     </div>
                   )}
                   {consent.specificDetails.expectedResults && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Résultats attendus</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('details.expectedResults')}</label>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{consent.specificDetails.expectedResults}</p>
                     </div>
                   )}
@@ -975,31 +979,31 @@ const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
             {/* Témoin */}
             {consent.witness && consent.witness.name && (
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Témoin</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{t('details.witness')}</h4>
                 <div className="bg-yellow-50 p-3 rounded">
-                  <p className="text-sm"><strong>Nom:</strong> {consent.witness.name}</p>
-                  <p className="text-sm"><strong>Rôle:</strong> {consent.witness.role}</p>
+                  <p className="text-sm"><strong>{t('details.witnessName')}</strong> {consent.witness.name}</p>
+                  <p className="text-sm"><strong>{t('details.witnessRole')}</strong> {consent.witness.role}</p>
                 </div>
               </div>
             )}
 
             {/* Audit trail */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Historique des actions</h4>
+              <h4 className="font-medium text-gray-900 mb-3">{t('details.auditTrail')}</h4>
               <div className="space-y-2">
                 {consent.auditTrail?.map((entry, index) => (
                   <div key={index} className="border border-gray-200 rounded p-3">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          Action: {entry.action}
+                          {t('details.action')} {entry.action}
                         </p>
                         <p className="text-sm text-gray-600">
-                          Par: {entry.userId} • {new Date(entry.timestamp).toLocaleString()}
+                          {t('details.by')} {entry.userId} • {new Date(entry.timestamp).toLocaleString()}
                         </p>
                         {entry.details && (
                           <p className="text-xs text-gray-500 mt-1">
-                            Détails: {JSON.stringify(entry.details)}
+                            {t('details.detailsLabel')} {JSON.stringify(entry.details)}
                           </p>
                         )}
                       </div>
@@ -1016,7 +1020,7 @@ const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
             onClick={onClose}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
           >
-            Fermer
+            {t('actions.close')}
           </button>
         </div>
       </div>

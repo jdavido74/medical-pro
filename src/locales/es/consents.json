@@ -4,5 +4,186 @@
   "templates": {
     "title": "Plantillas de Consentimiento",
     "description": "Cree y gestione sus plantillas de consentimiento personalizadas"
-  }
+  },
+  "loading": "Cargando consentimientos...",
+  "retry": "Reintentar",
+  "errors": {
+    "loadingTemplates": "Error al cargar las plantillas",
+    "revoke": "Error al revocar el consentimiento",
+    "delete": "Error al eliminar el consentimiento",
+    "generateReport": "Error al generar el informe",
+    "toggleStatus": "Error al cambiar el estado",
+    "export": "Error al exportar"
+  },
+  "confirm": {
+    "delete": "¿Está seguro de que desea eliminar este consentimiento?",
+    "deleteTemplate": "¿Está seguro de que desea eliminar esta plantilla?"
+  },
+  "status": {
+    "pendingSignature": "Pendiente de firma",
+    "revoked": "Revocado",
+    "expired": "Expirado",
+    "expiringSoon": "Expira pronto",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "draft": "Borrador",
+    "unknown": "Desconocido"
+  },
+  "stats": {
+    "totalConsents": "Total de consentimientos",
+    "active": "activos",
+    "revoked": "Revocados",
+    "expiringSoon": "Expiran pronto",
+    "in30Days": "En 30 días",
+    "thisMonth": "Este mes",
+    "newConsents": "Nuevos consentimientos",
+    "totalTemplates": "Total plantillas",
+    "usage": "Usos",
+    "drafts": "Borradores",
+    "createdThisMonth": "Creados este mes"
+  },
+  "tabs": {
+    "management": "Gestión de consentimientos",
+    "expirations": "Vencimientos",
+    "reports": "Informes",
+    "templates": "Plantillas de consentimiento",
+    "categories": "Categorías",
+    "analytics": "Estadísticas"
+  },
+  "search": {
+    "placeholder": "Buscar por paciente, tipo, finalidad...",
+    "templatesPlaceholder": "Buscar plantillas..."
+  },
+  "filters": {
+    "allStatuses": "Todos los estados",
+    "active": "Activos",
+    "pendingSignature": "Pendiente de firma",
+    "revoked": "Revocados",
+    "expired": "Expirados",
+    "expiringSoon": "Por expirar",
+    "required": "Obligatorios",
+    "allPatients": "Todos los pacientes",
+    "allTypes": "Todos los tipos",
+    "allCategories": "Todas las categorías",
+    "allSpecialties": "Todas las especialidades",
+    "allStatus": "Todos los estados"
+  },
+  "actions": {
+    "newConsent": "Nuevo consentimiento",
+    "newTemplate": "Nueva plantilla",
+    "viewDetails": "Ver detalles",
+    "edit": "Editar",
+    "revoke": "Revocar",
+    "patientReport": "Informe del paciente",
+    "delete": "Eliminar",
+    "renew": "Renovar",
+    "details": "Detalles",
+    "duplicate": "Duplicar",
+    "deactivate": "Desactivar",
+    "activate": "Activar",
+    "export": "Exportar",
+    "close": "Cerrar",
+    "createFirstTemplate": "Crear primera plantilla"
+  },
+  "sort": {
+    "label": "Ordenar por:",
+    "createdAt": "Fecha de creación",
+    "patient": "Paciente",
+    "type": "Tipo",
+    "status": "Estado",
+    "expiresAt": "Fecha de expiración",
+    "updatedAt": "Fecha de modificación",
+    "title": "Título",
+    "category": "Categoría",
+    "usage": "Uso",
+    "version": "Versión"
+  },
+  "table": {
+    "patient": "Paciente",
+    "typePurpose": "Tipo / Finalidad",
+    "status": "Estado",
+    "collection": "Recopilación",
+    "dates": "Fechas",
+    "actions": "Acciones",
+    "created": "Creado:",
+    "expires": "Expira:",
+    "revoked": "Revocado:",
+    "template": "Plantilla",
+    "category": "Categoría",
+    "usage": "Uso",
+    "version": "Versión",
+    "modified": "Modificado:",
+    "times": "veces",
+    "lastUsed": "Última:"
+  },
+  "count": {
+    "consents": "consentimiento(s)",
+    "templates": "plantilla(s)",
+    "models": "plantillas",
+    "usages": "usos"
+  },
+  "empty": {
+    "noConsents": "No se encontraron consentimientos",
+    "noTemplates": "No se encontraron plantillas",
+    "noExpiring": "Ningún consentimiento expira próximamente"
+  },
+  "expiring": {
+    "title": "Consentimientos que expiran en 30 días",
+    "expiresOn": "Expira el"
+  },
+  "reports": {
+    "title": "Informes y estadísticas",
+    "byType": "Por tipo de consentimiento",
+    "byCollectionMethod": "Por método de recopilación"
+  },
+  "details": {
+    "title": "Detalles del consentimiento",
+    "templateTitle": "Detalles de la plantilla",
+    "generalInfo": "Información general",
+    "patient": "Paciente",
+    "type": "Tipo",
+    "purpose": "Finalidad",
+    "status": "Estado",
+    "collectionMethod": "Método de recopilación",
+    "expirationDate": "Fecha de expiración",
+    "description": "Descripción",
+    "specificDetails": "Detalles específicos",
+    "procedure": "Procedimiento",
+    "risks": "Riesgos",
+    "alternatives": "Alternativas",
+    "expectedResults": "Resultados esperados",
+    "witness": "Testigo",
+    "witnessName": "Nombre:",
+    "witnessRole": "Rol:",
+    "auditTrail": "Historial de acciones",
+    "action": "Acción:",
+    "by": "Por:",
+    "detailsLabel": "Detalles:",
+    "title": "Título",
+    "category": "Categoría",
+    "specialty": "Especialidad",
+    "version": "Versión",
+    "usageCount": "Usos",
+    "variablesAvailable": "Variables disponibles",
+    "translationsAvailable": "Traducciones disponibles",
+    "loadingTranslations": "Cargando traducciones...",
+    "noTranslations": "No hay traducciones disponibles. Edite la plantilla para agregar traducciones.",
+    "contentPreview": "Vista previa del contenido",
+    "modificationHistory": "Historial de modificaciones"
+  },
+  "categories": {
+    "title": "Categorías y especialidades",
+    "available": "Categorías disponibles",
+    "medicalSpecialties": "Especialidades médicas"
+  },
+  "analytics": {
+    "title": "Estadísticas y análisis",
+    "mostUsed": "Plantillas más utilizadas",
+    "statusDistribution": "Distribución por estado",
+    "active": "Activos",
+    "drafts": "Borradores",
+    "inactive": "Inactivos"
+  },
+  "patientUnknown": "Paciente desconocido",
+  "loadingTemplates": "Cargando plantillas..."
 }
