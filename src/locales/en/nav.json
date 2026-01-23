@@ -55,5 +55,51 @@
         "description": "Nurse"
       }
     }
+  },
+  "modules": {
+    "home": {
+      "title": "Home",
+      "description": "Dashboard and overview"
+    },
+    "patients": {
+      "title": "Patients",
+      "description": "Patient management"
+    },
+    "appointments": {
+      "title": "Appointments",
+      "description": "Scheduling and consultation tracking"
+    },
+    "medicalRecords": {
+      "title": "Medical Records",
+      "description": "Patient medical history"
+    },
+    "consents": {
+      "title": "Consents",
+      "description": "Patient consent management"
+    },
+    "consentTemplates": {
+      "title": "Consent Templates",
+      "description": "Template creation and management"
+    },
+    "quotes": {
+      "title": "Quotes",
+      "description": "Quote creation and tracking"
+    },
+    "invoices": {
+      "title": "Invoices",
+      "description": "Billing and payments"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "description": "Activity reports and analysis"
+    },
+    "admin": {
+      "title": "Administration",
+      "description": "Clinic configuration and management"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Preferences and configuration"
+    }
   }
 }

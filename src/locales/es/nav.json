@@ -55,5 +55,51 @@
         "description": "Enfermera"
       }
     }
+  },
+  "modules": {
+    "home": {
+      "title": "Inicio",
+      "description": "Panel de control y vista general"
+    },
+    "patients": {
+      "title": "Pacientes",
+      "description": "Gestión de pacientes"
+    },
+    "appointments": {
+      "title": "Citas",
+      "description": "Planificación y seguimiento de consultas"
+    },
+    "medicalRecords": {
+      "title": "Historiales Médicos",
+      "description": "Historial médico de los pacientes"
+    },
+    "consents": {
+      "title": "Consentimientos",
+      "description": "Gestión de consentimientos de pacientes"
+    },
+    "consentTemplates": {
+      "title": "Plantillas de Consentimiento",
+      "description": "Creación y gestión de plantillas"
+    },
+    "quotes": {
+      "title": "Presupuestos",
+      "description": "Creación y seguimiento de presupuestos"
+    },
+    "invoices": {
+      "title": "Facturas",
+      "description": "Facturación y pagos"
+    },
+    "analytics": {
+      "title": "Estadísticas",
+      "description": "Análisis e informes de actividad"
+    },
+    "admin": {
+      "title": "Administración",
+      "description": "Configuración y gestión de la clínica"
+    },
+    "settings": {
+      "title": "Configuración",
+      "description": "Preferencias y configuración"
+    }
   }
 }

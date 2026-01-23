@@ -55,5 +55,51 @@
         "description": "Infirmière"
       }
     }
+  },
+  "modules": {
+    "home": {
+      "title": "Accueil",
+      "description": "Tableau de bord et vue d'ensemble"
+    },
+    "patients": {
+      "title": "Patients",
+      "description": "Gestion de la patientèle"
+    },
+    "appointments": {
+      "title": "Rendez-vous",
+      "description": "Planification et suivi des consultations"
+    },
+    "medicalRecords": {
+      "title": "Dossiers médicaux",
+      "description": "Historique médical des patients"
+    },
+    "consents": {
+      "title": "Consentements",
+      "description": "Gestion des consentements patients"
+    },
+    "consentTemplates": {
+      "title": "Modèles de consentements",
+      "description": "Création et gestion des modèles"
+    },
+    "quotes": {
+      "title": "Devis",
+      "description": "Création et suivi des devis"
+    },
+    "invoices": {
+      "title": "Factures",
+      "description": "Facturation et paiements"
+    },
+    "analytics": {
+      "title": "Statistiques",
+      "description": "Analyses et rapports d'activité"
+    },
+    "admin": {
+      "title": "Administration",
+      "description": "Configuration et gestion du cabinet"
+    },
+    "settings": {
+      "title": "Paramètres",
+      "description": "Préférences et configuration"
+    }
   }
 }

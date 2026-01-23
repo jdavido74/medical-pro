@@ -38,34 +38,34 @@ const Header = () => {
 
   const getModuleTitle = (module) => {
     const modules = {
-      home: t('modules.home.title'),
-      patients: t('modules.patients.title'),
-      appointments: t('modules.appointments.title'),
-      'medical-records': t('modules.medicalRecords.title'),
-      consents: t('modules.consents.title'),
-      'consent-templates': t('modules.consentTemplates.title'),
-      quotes: t('modules.quotes.title'),
-      invoices: t('modules.invoices.title'),
-      analytics: t('modules.analytics.title'),
+      home: t('nav:modules.home.title'),
+      patients: t('nav:modules.patients.title'),
+      appointments: t('nav:modules.appointments.title'),
+      'medical-records': t('nav:modules.medicalRecords.title'),
+      consents: t('nav:modules.consents.title'),
+      'consent-templates': t('nav:modules.consentTemplates.title'),
+      quotes: t('nav:modules.quotes.title'),
+      invoices: t('nav:modules.invoices.title'),
+      analytics: t('nav:modules.analytics.title'),
       admin: t('admin.title'),
-      settings: t('modules.settings.title')
+      settings: t('nav:modules.settings.title')
     };
     return modules[module] || t('common.dashboard');
   };
 
   const getModuleDescription = (module) => {
     const descriptions = {
-      home: t('modules.home.description'),
-      patients: t('modules.patients.description'),
-      appointments: t('modules.appointments.description'),
-      'medical-records': t('modules.medicalRecords.description'),
-      consents: t('modules.consents.description'),
-      'consent-templates': t('modules.consentTemplates.description'),
-      quotes: t('modules.quotes.description'),
-      invoices: t('modules.invoices.description'),
-      analytics: t('modules.analytics.description'),
+      home: t('nav:modules.home.description'),
+      patients: t('nav:modules.patients.description'),
+      appointments: t('nav:modules.appointments.description'),
+      'medical-records': t('nav:modules.medicalRecords.description'),
+      consents: t('nav:modules.consents.description'),
+      'consent-templates': t('nav:modules.consentTemplates.description'),
+      quotes: t('nav:modules.quotes.description'),
+      invoices: t('nav:modules.invoices.description'),
+      analytics: t('nav:modules.analytics.description'),
       admin: t('admin.description'),
-      settings: t('modules.settings.description')
+      settings: t('nav:modules.settings.description')
     };
     return descriptions[module] || '';
   };
