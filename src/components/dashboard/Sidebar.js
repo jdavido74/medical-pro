@@ -39,37 +39,37 @@ const Sidebar = () => {
    */
   const menuConfig = [
     // Accessible à tous
-    { id: 'home', path: '/dashboard', icon: Home, permission: null },
+    { id: 'home', path: '/dashboard', icon: Home, permission: null, labelKey: 'home' },
 
     // Patients - Données admin (secrétaire, admin, soignants)
-    { id: 'patients', path: '/patients', icon: Users, permission: 'patients.view' },
+    { id: 'patients', path: '/patients', icon: Users, permission: 'patients.view', labelKey: 'patients' },
 
     // Rendez-vous (secrétaire, admin, soignants)
-    { id: 'appointments', path: '/appointments', icon: Calendar, permission: 'appointments.view' },
+    { id: 'appointments', path: '/appointments', icon: Calendar, permission: 'appointments.view', labelKey: 'appointments' },
 
     // Dossiers médicaux - SECRET MÉDICAL (médecin, praticien, infirmier uniquement)
-    { id: 'medical-records', path: '/medical-records', icon: FileText, permission: 'medical_records.view', medicalOnly: true },
+    { id: 'medical-records', path: '/medical-records', icon: FileText, permission: 'medical_records.view', medicalOnly: true, labelKey: 'medicalRecords' },
 
     // Consentements patients (secrétaire assign, soignants consultation)
-    { id: 'consents', path: '/consents', icon: Shield, permission: 'consents.view' },
+    { id: 'consents', path: '/consents', icon: Shield, permission: 'consents.view', labelKey: 'consents' },
 
     // Templates de consentements (admin clinique gestion complète, autres consultation)
-    { id: 'consent-templates', path: '/consent-templates', icon: FileText, permission: 'consent_templates.view' },
+    { id: 'consent-templates', path: '/consent-templates', icon: FileText, permission: 'consent_templates.view', labelKey: 'consentTemplates' },
 
     // Devis (secrétaire, admin, médecin peut initier)
-    { id: 'quotes', path: '/quotes', icon: FileText, permission: 'quotes.view' },
+    { id: 'quotes', path: '/quotes', icon: FileText, permission: 'quotes.view', labelKey: 'quotes' },
 
     // Factures (secrétaire, admin - pas les soignants sauf besoin)
-    { id: 'invoices', path: '/invoices', icon: FileText, permission: 'invoices.view' },
+    { id: 'invoices', path: '/invoices', icon: FileText, permission: 'invoices.view', labelKey: 'invoices' },
 
     // Statistiques (admin, direction)
-    { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.view' },
+    { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.view', labelKey: 'analytics' },
 
     // Administration clinique (admin, super_admin, direction, clinic_admin)
-    { id: 'admin', path: '/admin', icon: Shield, permission: null, adminOnly: true },
+    { id: 'admin', path: '/admin', icon: Shield, permission: null, adminOnly: true, labelKey: 'admin' },
 
     // Paramètres personnels (tous)
-    { id: 'settings', path: '/settings', icon: Settings, permission: null }
+    { id: 'settings', path: '/settings', icon: Settings, permission: null, labelKey: 'settings' }
   ];
 
   // Filter menu items based on user permissions and role
@@ -96,7 +96,7 @@ const Sidebar = () => {
       .map(item => ({
         ...item,
         path: buildUrl(item.path),
-        label: t(`sidebar.${item.id}`)
+        label: t(`sidebar.${item.labelKey}`)
       }));
   }, [user, hasPermission, buildUrl, t]);
 
