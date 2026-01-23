@@ -519,19 +519,19 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     let isValid = true;
 
     if (!formData.patientId) {
-      setFieldError('patientId', t('appointments.validation.patientRequired', 'Patient requis'));
+      setFieldError('patientId', t('appointments:validation.patientRequired', 'Patient requis'));
       isValid = false;
     }
     if (!formData.practitionerId) {
-      setFieldError('practitionerId', t('appointments.validation.practitionerRequired', 'Praticien requis'));
+      setFieldError('practitionerId', t('appointments:validation.practitionerRequired', 'Praticien requis'));
       isValid = false;
     }
     if (!formData.date) {
-      setFieldError('date', t('appointments.validation.dateRequired', 'Date requise'));
+      setFieldError('date', t('appointments:validation.dateRequired', 'Date requise'));
       isValid = false;
     }
     if (!formData.startTime) {
-      setFieldError('startTime', t('appointments.validation.timeRequired', 'Heure de début requise'));
+      setFieldError('startTime', t('appointments:validation.timeRequired', 'Heure de début requise'));
       isValid = false;
     }
     // Title is optional - if not provided, patient name will be used as fallback
@@ -542,20 +542,20 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (appointmentDate < today) {
-        setFieldError('date', t('appointments.validation.dateInPast', 'La date ne peut pas être dans le passé'));
+        setFieldError('date', t('appointments:validation.dateInPast', 'La date ne peut pas être dans le passé'));
         isValid = false;
       }
     }
 
     // Vérifier que les créneaux sont continus
     if (!areSlotsContinuous()) {
-      setFieldError('startTime', t('appointments.validation.slotsContinuous', 'Les créneaux doivent être continus (adjacents)'));
+      setFieldError('startTime', t('appointments:validation.slotsContinuous', 'Les créneaux doivent être continus (adjacents)'));
       isValid = false;
     }
 
     // Vérifier les conflits
     if (conflicts.length > 0) {
-      setFieldError('time', t('appointments.validation.slotConflict', 'Créneau en conflit avec un autre rendez-vous'));
+      setFieldError('time', t('appointments:validation.slotConflict', 'Créneau en conflit avec un autre rendez-vous'));
       isValid = false;
     }
 
@@ -573,12 +573,12 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     const userProviderId = user?.providerId || user?.id;
 
     if (isPractitioner && isCreating && formData.practitionerId !== userProviderId) {
-      setFieldError('general', t('appointments.validation.selfOnly', 'Un médecin ne peut créer que des rendez-vous pour lui-même'));
+      setFieldError('general', t('appointments:validation.selfOnly', 'Un médecin ne peut créer que des rendez-vous pour lui-même'));
       return;
     }
 
     if (!appointmentContext) {
-      setFieldError('general', t('appointments.validation.contextError', 'Appointment context not available'));
+      setFieldError('general', t('appointments:validation.contextError', 'Appointment context not available'));
       return;
     }
 
@@ -636,7 +636,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     console.log('[handleDelete] Starting deletion with mode:', mode, 'appointmentId:', appointmentId);
 
     if (!appointmentContext) {
-      setFieldError('general', t('appointments.validation.contextError', 'Appointment context not available'));
+      setFieldError('general', t('appointments:validation.contextError', 'Appointment context not available'));
       return;
     }
 
@@ -715,7 +715,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {editingAppointment ? t('appointments.edit') : t('appointments.new')}
+                {editingAppointment ? t('appointments:edit') : t('appointments:new')}
               </h2>
               <p className="text-sm text-gray-500">
                 {editingAppointment ? 'Modifique los detalles de la cita' : 'Programe una nueva cita'}
@@ -743,7 +743,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isLoading}
                   className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                  title={t('appointments.deleteTitle')}
+                  title={t('appointments:deleteTitle')}
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>{t('common.delete')}</span>
@@ -754,10 +754,10 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               onClick={handleSave}
               disabled={isLoading || conflicts.length > 0}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-              title={t('appointments.save')}
+              title={t('appointments:save')}
             >
               <Save className="h-4 w-4" />
-              <span>{isLoading ? `${t('common.saving')}...` : t('appointments.save')}</span>
+              <span>{isLoading ? `${t('common.saving')}...` : t('appointments:save')}</span>
             </button>
             <button
               onClick={onClose}
@@ -883,7 +883,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               {/* Titre (optionnel - nom du patient par défaut) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('appointments.title', 'Titre')}
+                  {t('appointments:title', 'Titre')}
                   <span className="text-gray-400 text-xs ml-1">({t('common.optional', 'optionnel')})</span>
                 </label>
                 <input
@@ -891,7 +891,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('appointments.titlePlaceholder', 'Laisser vide pour utiliser le nom du patient')}
+                  placeholder={t('appointments:titlePlaceholder', 'Laisser vide pour utiliser le nom du patient')}
                 />
               </div>
 
@@ -919,7 +919,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                     Date *
                     {isClinicClosedOnSelectedDate && (
                       <span className="ml-2 text-xs text-red-600 font-medium">
-                        🚫 {t('appointments.messages.clinicClosed')}
+                        🚫 {t('appointments:messages.clinicClosed')}
                       </span>
                     )}
                     {!isClinicClosedOnSelectedDate && formData.practitionerId && formData.date && !isDateAvailable(formData.date) && (
@@ -952,7 +952,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                   {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
                   {isClinicClosedOnSelectedDate && (
                     <p className="text-xs text-red-600 mt-1 font-medium">
-                      🚫 {t('appointments.messages.clinicClosed')} - {t('appointments.selectAnotherDate')}
+                      🚫 {t('appointments:messages.clinicClosed')} - {t('appointments:selectAnotherDate')}
                     </p>
                   )}
                   {!isClinicClosedOnSelectedDate && formData.practitionerId && (
@@ -965,7 +965,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 {/* Sélection de l'heure parmi les créneaux disponibles */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('appointments.timeSlots')}
+                    {t('appointments:timeSlots')}
                     {formData.practitionerId && formData.date && (
                       <span className="ml-2 text-xs text-gray-500">
                         ({availableSlots.length} disponibles)
@@ -986,8 +986,8 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                     isClinicClosedOnSelectedDate ? (
                       <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center text-red-700 text-sm">
                         <AlertTriangle className="h-5 w-5 inline-block mr-2" />
-                        <strong>{t('appointments.messages.clinicClosed')}</strong>
-                        <p className="mt-1 text-xs">{t('appointments.selectAnotherDate', 'Veuillez sélectionner une autre date.')}</p>
+                        <strong>{t('appointments:messages.clinicClosed')}</strong>
+                        <p className="mt-1 text-xs">{t('appointments:selectAnotherDate', 'Veuillez sélectionner une autre date.')}</p>
                       </div>
                     ) : (
                       <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-center text-orange-700 text-sm">
@@ -1303,7 +1303,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
 
           {(getFieldError('general') || generalError) && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{getFieldError('general') || generalError?.message || t('appointments.deletionError')}</p>
+              <p className="text-red-700 text-sm">{getFieldError('general') || generalError?.message || t('appointments:deletionError')}</p>
             </div>
           )}
         </div>
@@ -1313,7 +1313,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
           <div className="text-sm text-gray-500">
             {conflicts.length > 0 && (
               <span className="text-red-600 font-medium">
-                ⚠️ {t('appointments.slotConflict')}
+                ⚠️ {t('appointments:slotConflict')}
               </span>
             )}
           </div>
@@ -1331,7 +1331,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="h-4 w-4" />
-              <span>{isLoading ? `${t('common.saving')}...` : t('appointments.save')}</span>
+              <span>{isLoading ? `${t('common.saving')}...` : t('appointments:save')}</span>
             </button>
           </div>
         </div>
@@ -1357,7 +1357,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                {t('appointments.deleteTitle')}
+                {t('appointments:deleteTitle')}
               </h3>
               <p className="text-gray-600 text-center mb-4 text-sm">
                 Elija cómo cancelar esta cita:
@@ -1382,9 +1382,9 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       : 'border-gray-200 hover:border-blue-300 bg-white'
                   } disabled:opacity-50`}
                 >
-                  <div className="font-medium text-gray-900">📧 {t('appointments.deleteWithNotification')}</div>
+                  <div className="font-medium text-gray-900">📧 {t('appointments:deleteWithNotification')}</div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {t('appointments.notifyPatient')} / {t('appointments.notifyPractitioner')}
+                    {t('appointments:notifyPatient')} / {t('appointments:notifyPractitioner')}
                   </div>
                 </button>
 
@@ -1398,9 +1398,9 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
                       : 'border-gray-200 hover:border-orange-300 bg-white'
                   } disabled:opacity-50`}
                 >
-                  <div className="font-medium text-gray-900">⚠️ {t('appointments.deleteSilent')}</div>
+                  <div className="font-medium text-gray-900">⚠️ {t('appointments:deleteSilent')}</div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {t('appointments.noNotification')}
+                    {t('appointments:noNotification')}
                   </div>
                 </button>
               </div>
@@ -1432,7 +1432,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
               >
                 <Trash2 className="h-4 w-4" />
                 <span>
-                  {isLoading ? 'Eliminando...' : deleteMode === 'notify' ? t('appointments.deleteWithNotification') : deleteMode === 'silent' ? t('appointments.deleteSilent') : t('common.delete')}
+                  {isLoading ? 'Eliminando...' : deleteMode === 'notify' ? t('appointments:deleteWithNotification') : deleteMode === 'silent' ? t('appointments:deleteSilent') : t('common.delete')}
                 </span>
               </button>
             </div>

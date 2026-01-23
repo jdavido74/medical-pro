@@ -861,7 +861,7 @@ const AvailabilityManager = ({
                       {isClinicClosed && (
                         <span className="text-xs text-red-600 font-medium flex items-center gap-1 bg-red-50 px-2 py-1 rounded">
                           <Ban className="h-3 w-3" />
-                          {t('appointments.messages.clinicClosed')}
+                          {t('appointments:messages.clinicClosed')}
                         </span>
                       )}
                     </div>
@@ -887,7 +887,7 @@ const AvailabilityManager = ({
 
                   {isClinicClosed ? (
                     <div className="text-sm text-gray-500 italic">
-                      {t('appointments.clinicClosedNoAvailability', 'La clinique est fermée ce jour. Aucune disponibilité ne peut être configurée.')}
+                      {t('appointments:clinicClosedNoAvailability', 'La clinique est fermée ce jour. Aucune disponibilité ne peut être configurée.')}
                     </div>
                   ) : dayConfig.enabled && (
                     <div className="space-y-2">
@@ -953,7 +953,7 @@ const AvailabilityManager = ({
                   {isClosed ? (
                     <div className="text-xs text-red-600 mt-1 font-medium flex items-center justify-center gap-1">
                       <Ban className="h-3 w-3" />
-                      {t('appointments.messages.clinicClosed')}
+                      {t('appointments:messages.clinicClosed')}
                     </div>
                   ) : (
                     <div className="text-xs text-gray-500 mt-1">
@@ -1085,7 +1085,7 @@ const AvailabilityManager = ({
               {isClinicClosedOnDay(currentDate) && (
                 <span className="ml-3 text-xs text-red-600 font-medium inline-flex items-center gap-1 bg-red-50 px-2 py-1 rounded">
                   <Ban className="h-3 w-3" />
-                  {t('appointments.messages.clinicClosed')}
+                  {t('appointments:messages.clinicClosed')}
                 </span>
               )}
             </h3>
@@ -1094,8 +1094,8 @@ const AvailabilityManager = ({
             {isClinicClosedOnDay(currentDate) ? (
               <div className="text-center py-8 bg-gray-100 rounded-lg">
                 <Ban className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 font-medium">{t('appointments.messages.clinicClosed')}</p>
-                <p className="text-sm text-gray-500 mt-1">{t('appointments.selectAnotherDate')}</p>
+                <p className="text-gray-600 font-medium">{t('appointments:messages.clinicClosed')}</p>
+                <p className="text-sm text-gray-500 mt-1">{t('appointments:selectAnotherDate')}</p>
               </div>
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1215,7 +1215,7 @@ const AvailabilityManager = ({
             <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
               <Ban className="h-3 w-3 text-gray-400" />
             </div>
-            <span>{t('appointments.messages.clinicClosed')}</span>
+            <span>{t('appointments:messages.clinicClosed')}</span>
           </div>
         </div>
       </div>
