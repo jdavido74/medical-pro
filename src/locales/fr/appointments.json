@@ -1,6 +1,9 @@
 {
   "title": "Rendez-vous",
   "subtitle": "Planifiez et organisez les consultations",
+  "new": "Nouveau rendez-vous",
+  "edit": "Modifier le rendez-vous",
+  "save": "Enregistrer",
   "newAppointment": "Nouveau rendez-vous",
   "editAppointment": "Modifier le rendez-vous",
   "deleteAppointment": "Supprimer le rendez-vous",
@@ -24,6 +27,11 @@
   "practitioner": "Praticien",
   "type": "Type",
   "location": "Lieu",
+  "timeSlots": "Créneaux horaires",
+  "slotConflict": "Ce créneau est déjà occupé",
+  "titlePlaceholder": "Titre du rendez-vous (optionnel)",
+  "selectAnotherDate": "Veuillez sélectionner une autre date.",
+  "clinicClosedNoAvailability": "La clinique est fermée ce jour. Aucune disponibilité ne peut être configurée.",
   "table": {
     "patient": "Patient",
     "date": "Date",
@@ -41,7 +49,19 @@
     "notes": "Notes supplémentaires",
     "create": "Créer le rendez-vous",
     "update": "Mettre à jour",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "selectPatient": "Sélectionner un patient",
+    "selectPractitioner": "Sélectionner un praticien",
+    "selectType": "Sélectionner un type",
+    "selectDate": "Sélectionner une date",
+    "selectTime": "Sélectionner une heure",
+    "selectDuration": "Sélectionner une durée",
+    "description": "Description",
+    "priority": "Priorité",
+    "reminders": "Rappels",
+    "teleconsultation": "Téléconsultation",
+    "meetingLink": "Lien de la réunion",
+    "consultationFee": "Honoraires"
   },
   "statuses": {
     "scheduled": "Programmé",
@@ -63,6 +83,28 @@
     "vaccination": "Vaccination",
     "surgery": "Chirurgie"
   },
+  "priority": {
+    "low": "Basse",
+    "normal": "Normale",
+    "high": "Haute",
+    "urgent": "URGENT"
+  },
+  "delete": {
+    "title": "Supprimer le rendez-vous",
+    "silent": "Supprimer sans notifier",
+    "withNotification": "Supprimer et notifier",
+    "confirmMessage": "Êtes-vous sûr de vouloir supprimer ce rendez-vous ?",
+    "notifyPatient": "Notifier le patient",
+    "notifyPractitioner": "Notifier le praticien",
+    "noNotification": "Aucune notification"
+  },
+  "deleteTitle": "Supprimer le rendez-vous",
+  "deleteSilent": "Supprimer sans notifier",
+  "deleteWithNotification": "Supprimer et notifier",
+  "deletionError": "Erreur lors de la suppression du rendez-vous",
+  "notifyPatient": "Notifier le patient",
+  "notifyPractitioner": "Notifier le praticien",
+  "noNotification": "Aucune notification",
   "messages": {
     "appointmentCreated": "Rendez-vous créé avec succès",
     "appointmentUpdated": "Rendez-vous modifié avec succès",
@@ -73,20 +115,39 @@
     "conflict": "Créneau déjà occupé",
     "clinicClosed": "Clinique fermée",
     "selectAnotherDate": "Veuillez sélectionner une autre date.",
-    "clinicClosedNoAvailability": "La clinique est fermée ce jour. Aucune disponibilité ne peut être configurée."
+    "clinicClosedNoAvailability": "La clinique est fermée ce jour. Aucune disponibilité ne peut être configurée.",
+    "reminderSent": "Rappel envoyé",
+    "statusChanged": "Statut modifié"
+  },
+  "validation": {
+    "patientRequired": "Veuillez sélectionner un patient",
+    "practitionerRequired": "Veuillez sélectionner un praticien",
+    "dateRequired": "Veuillez sélectionner une date",
+    "timeRequired": "Veuillez sélectionner au moins un créneau horaire",
+    "dateInPast": "La date ne peut pas être dans le passé",
+    "slotConflict": "Le créneau sélectionné est déjà occupé",
+    "slotsContinuous": "Les créneaux doivent être consécutifs",
+    "selfOnly": "Vous ne pouvez créer des rendez-vous que pour vous-même",
+    "contextError": "Erreur de contexte : impossible de charger les données"
   },
   "filters": {
     "filterByStatus": "Filtrer par statut",
     "filterByType": "Filtrer par type",
     "filterByDate": "Filtrer par date",
+    "filterByPractitioner": "Filtrer par praticien",
     "clearFilters": "Effacer les filtres",
-    "allStatuses": "Tous les statuts"
+    "allStatuses": "Tous les statuts",
+    "allTypes": "Tous les types",
+    "allPractitioners": "Tous les praticiens"
   },
   "stats": {
     "today": "Aujourd'hui",
     "confirmed": "Confirmés",
     "inProgress": "En cours",
-    "avgDuration": "Durée moyenne"
+    "avgDuration": "Durée moyenne",
+    "total": "Total",
+    "cancelled": "Annulés",
+    "completed": "Terminés"
   },
   "tabs": {
     "appointments": "Liste des RDV",
@@ -100,17 +161,46 @@
     "noAppointmentsFound": "Aucun rendez-vous trouvé",
     "noAppointmentsScheduled": "Aucun rendez-vous programmé",
     "modifyFilters": "Essayez de modifier vos filtres ou votre recherche.",
-    "firstAppointment": "Commencez par programmer votre premier rendez-vous médical."
+    "firstAppointment": "Commencez par programmer votre premier rendez-vous médical.",
+    "empty": "Aucun rendez-vous",
+    "loadMore": "Charger plus"
   },
   "actions": {
     "confirm": "Confirmer",
     "start": "Démarrer",
     "complete": "Terminer",
     "edit": "Modifier",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "cancel": "Annuler",
+    "reschedule": "Reporter",
+    "sendReminder": "Envoyer un rappel",
+    "markNoShow": "Marquer absent",
+    "viewDetails": "Voir les détails"
   },
-  "priority": {
-    "urgent": "URGENT"
+  "calendar": {
+    "weekView": "Semaine",
+    "dayView": "Jour",
+    "monthView": "Mois",
+    "available": "Disponible",
+    "occupied": "Occupé",
+    "closed": "Fermé",
+    "legend": "Légende",
+    "freeSlot": "Créneau libre",
+    "scheduledAppointment": "Rendez-vous programmé",
+    "occupiedSlot": "Créneau occupé",
+    "unavailable": "Non disponible",
+    "clinicClosed": "Clinique fermée"
+  },
+  "reminders": {
+    "title": "Rappels",
+    "patient": "Rappel patient",
+    "practitioner": "Rappel praticien",
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "before": "Avant",
+    "minutes": "minutes",
+    "hours": "heures",
+    "days": "jours"
   },
   "loading": "Chargement des rendez-vous..."
 }

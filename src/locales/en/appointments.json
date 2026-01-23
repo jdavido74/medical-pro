@@ -1,20 +1,23 @@
 {
   "title": "Appointments",
   "subtitle": "Schedule and organize consultations",
-  "newAppointment": "New Appointment",
-  "editAppointment": "Edit Appointment",
-  "deleteAppointment": "Delete Appointment",
+  "new": "New appointment",
+  "edit": "Edit appointment",
+  "save": "Save",
+  "newAppointment": "New appointment",
+  "editAppointment": "Edit appointment",
+  "deleteAppointment": "Delete appointment",
   "searchAppointments": "Search an appointment...",
-  "calendarView": "Calendar View",
-  "listView": "List View",
+  "calendarView": "Calendar view",
+  "listView": "List view",
   "today": "Today",
-  "thisWeek": "This Week",
-  "thisMonth": "This Month",
-  "myAppointments": "My Appointments",
-  "allAppointments": "All Appointments",
+  "thisWeek": "This week",
+  "thisMonth": "This month",
+  "myAppointments": "My appointments",
+  "allAppointments": "All appointments",
   "upcoming": "Upcoming",
   "past": "Past",
-  "appointmentDate": "Appointment Date",
+  "appointmentDate": "Appointment date",
   "appointmentTime": "Time",
   "duration": "Duration",
   "reason": "Reason",
@@ -24,6 +27,11 @@
   "practitioner": "Practitioner",
   "type": "Type",
   "location": "Location",
+  "timeSlots": "Time slots",
+  "slotConflict": "This slot is already occupied",
+  "titlePlaceholder": "Appointment title (optional)",
+  "selectAnotherDate": "Please select another date.",
+  "clinicClosedNoAvailability": "The clinic is closed this day. No availability can be configured.",
   "table": {
     "patient": "Patient",
     "date": "Date",
@@ -34,22 +42,34 @@
     "actions": "Actions"
   },
   "form": {
-    "basicInfo": "Basic Information",
-    "dateTime": "Date and Time",
-    "appointmentType": "Appointment Type",
-    "reason": "Reason for Consultation",
-    "notes": "Additional Notes",
-    "create": "Create Appointment",
+    "basicInfo": "Basic information",
+    "dateTime": "Date and time",
+    "appointmentType": "Appointment type",
+    "reason": "Reason for consultation",
+    "notes": "Additional notes",
+    "create": "Create appointment",
     "update": "Update",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "selectPatient": "Select a patient",
+    "selectPractitioner": "Select a practitioner",
+    "selectType": "Select a type",
+    "selectDate": "Select a date",
+    "selectTime": "Select a time",
+    "selectDuration": "Select a duration",
+    "description": "Description",
+    "priority": "Priority",
+    "reminders": "Reminders",
+    "teleconsultation": "Teleconsultation",
+    "meetingLink": "Meeting link",
+    "consultationFee": "Consultation fee"
   },
   "statuses": {
     "scheduled": "Scheduled",
     "confirmed": "Confirmed",
-    "in_progress": "In Progress",
+    "in_progress": "In progress",
     "completed": "Completed",
     "cancelled": "Cancelled",
-    "no_show": "No Show",
+    "no_show": "No show",
     "rescheduled": "Rescheduled"
   },
   "types": {
@@ -63,6 +83,28 @@
     "vaccination": "Vaccination",
     "surgery": "Surgery"
   },
+  "priority": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "URGENT"
+  },
+  "delete": {
+    "title": "Delete appointment",
+    "silent": "Delete without notifying",
+    "withNotification": "Delete and notify",
+    "confirmMessage": "Are you sure you want to delete this appointment?",
+    "notifyPatient": "Notify patient",
+    "notifyPractitioner": "Notify practitioner",
+    "noNotification": "No notification"
+  },
+  "deleteTitle": "Delete appointment",
+  "deleteSilent": "Delete without notifying",
+  "deleteWithNotification": "Delete and notify",
+  "deletionError": "Error deleting appointment",
+  "notifyPatient": "Notify patient",
+  "notifyPractitioner": "Notify practitioner",
+  "noNotification": "No notification",
   "messages": {
     "appointmentCreated": "Appointment created successfully",
     "appointmentUpdated": "Appointment updated successfully",
@@ -73,44 +115,92 @@
     "conflict": "Time slot already occupied",
     "clinicClosed": "Clinic closed",
     "selectAnotherDate": "Please select another date.",
-    "clinicClosedNoAvailability": "The clinic is closed this day. No availability can be configured."
+    "clinicClosedNoAvailability": "The clinic is closed this day. No availability can be configured.",
+    "reminderSent": "Reminder sent",
+    "statusChanged": "Status changed"
+  },
+  "validation": {
+    "patientRequired": "Please select a patient",
+    "practitionerRequired": "Please select a practitioner",
+    "dateRequired": "Please select a date",
+    "timeRequired": "Please select at least one time slot",
+    "dateInPast": "Date cannot be in the past",
+    "slotConflict": "The selected slot is already occupied",
+    "slotsContinuous": "Slots must be consecutive",
+    "selfOnly": "You can only create appointments for yourself",
+    "contextError": "Context error: unable to load data"
   },
   "filters": {
-    "filterByStatus": "Filter by Status",
-    "filterByType": "Filter by Type",
-    "filterByDate": "Filter by Date",
-    "clearFilters": "Clear Filters",
-    "allStatuses": "All Statuses"
+    "filterByStatus": "Filter by status",
+    "filterByType": "Filter by type",
+    "filterByDate": "Filter by date",
+    "filterByPractitioner": "Filter by practitioner",
+    "clearFilters": "Clear filters",
+    "allStatuses": "All statuses",
+    "allTypes": "All types",
+    "allPractitioners": "All practitioners"
   },
   "stats": {
     "today": "Today",
     "confirmed": "Confirmed",
-    "inProgress": "In Progress",
-    "avgDuration": "Average Duration"
+    "inProgress": "In progress",
+    "avgDuration": "Average duration",
+    "total": "Total",
+    "cancelled": "Cancelled",
+    "completed": "Completed"
   },
   "tabs": {
-    "appointments": "Appointments List",
+    "appointments": "Appointments list",
     "availability": "Calendar"
   },
   "list": {
-    "title": "Scheduled Appointments",
+    "title": "Scheduled appointments",
     "search": "Search by patient, reason, number...",
-    "internalNotes": "Internal Notes:",
+    "internalNotes": "Internal notes:",
     "slots": "+{{count}} slot(s)",
     "noAppointmentsFound": "No appointments found",
     "noAppointmentsScheduled": "No appointments scheduled",
     "modifyFilters": "Try modifying your filters or search.",
-    "firstAppointment": "Start by scheduling your first medical appointment."
+    "firstAppointment": "Start by scheduling your first medical appointment.",
+    "empty": "No appointments",
+    "loadMore": "Load more"
   },
   "actions": {
     "confirm": "Confirm",
     "start": "Start",
     "complete": "Complete",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "reschedule": "Reschedule",
+    "sendReminder": "Send reminder",
+    "markNoShow": "Mark as no show",
+    "viewDetails": "View details"
   },
-  "priority": {
-    "urgent": "URGENT"
+  "calendar": {
+    "weekView": "Week",
+    "dayView": "Day",
+    "monthView": "Month",
+    "available": "Available",
+    "occupied": "Occupied",
+    "closed": "Closed",
+    "legend": "Legend",
+    "freeSlot": "Free slot",
+    "scheduledAppointment": "Scheduled appointment",
+    "occupiedSlot": "Occupied slot",
+    "unavailable": "Unavailable",
+    "clinicClosed": "Clinic closed"
+  },
+  "reminders": {
+    "title": "Reminders",
+    "patient": "Patient reminder",
+    "practitioner": "Practitioner reminder",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "before": "Before",
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days"
   },
   "loading": "Loading appointments..."
 }

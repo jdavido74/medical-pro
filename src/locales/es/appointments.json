@@ -1,20 +1,23 @@
 {
   "title": "Citas",
   "subtitle": "Planifica y organiza las consultas",
-  "newAppointment": "Nueva Cita",
-  "editAppointment": "Modificar Cita",
-  "deleteAppointment": "Eliminar Cita",
-  "searchAppointments": "Buscar cita...",
-  "calendarView": "Vista Calendario",
-  "listView": "Vista Lista",
+  "new": "Nueva cita",
+  "edit": "Modificar cita",
+  "save": "Guardar",
+  "newAppointment": "Nueva cita",
+  "editAppointment": "Modificar cita",
+  "deleteAppointment": "Eliminar cita",
+  "searchAppointments": "Buscar una cita...",
+  "calendarView": "Vista calendario",
+  "listView": "Vista lista",
   "today": "Hoy",
-  "thisWeek": "Esta Semana",
-  "thisMonth": "Este Mes",
-  "myAppointments": "Mis Citas",
-  "allAppointments": "Todas las Citas",
+  "thisWeek": "Esta semana",
+  "thisMonth": "Este mes",
+  "myAppointments": "Mis citas",
+  "allAppointments": "Todas las citas",
   "upcoming": "Próximas",
   "past": "Pasadas",
-  "appointmentDate": "Fecha de la Cita",
+  "appointmentDate": "Fecha de la cita",
   "appointmentTime": "Hora",
   "duration": "Duración",
   "reason": "Motivo",
@@ -24,6 +27,11 @@
   "practitioner": "Médico",
   "type": "Tipo",
   "location": "Ubicación",
+  "timeSlots": "Franjas horarias",
+  "slotConflict": "Esta franja ya está ocupada",
+  "titlePlaceholder": "Título de la cita (opcional)",
+  "selectAnotherDate": "Por favor seleccione otra fecha.",
+  "clinicClosedNoAvailability": "La clínica está cerrada este día. No se puede configurar disponibilidad.",
   "table": {
     "patient": "Paciente",
     "date": "Fecha",
@@ -34,22 +42,34 @@
     "actions": "Acciones"
   },
   "form": {
-    "basicInfo": "Información Básica",
-    "dateTime": "Fecha y Hora",
-    "appointmentType": "Tipo de Cita",
-    "reason": "Motivo de la Consulta",
-    "notes": "Notas Adicionales",
-    "create": "Crear Cita",
+    "basicInfo": "Información básica",
+    "dateTime": "Fecha y hora",
+    "appointmentType": "Tipo de cita",
+    "reason": "Motivo de la consulta",
+    "notes": "Notas adicionales",
+    "create": "Crear cita",
     "update": "Actualizar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "selectPatient": "Seleccionar un paciente",
+    "selectPractitioner": "Seleccionar un médico",
+    "selectType": "Seleccionar un tipo",
+    "selectDate": "Seleccionar una fecha",
+    "selectTime": "Seleccionar una hora",
+    "selectDuration": "Seleccionar una duración",
+    "description": "Descripción",
+    "priority": "Prioridad",
+    "reminders": "Recordatorios",
+    "teleconsultation": "Teleconsulta",
+    "meetingLink": "Enlace de la reunión",
+    "consultationFee": "Honorarios"
   },
   "statuses": {
     "scheduled": "Programada",
     "confirmed": "Confirmada",
-    "in_progress": "En Curso",
+    "in_progress": "En curso",
     "completed": "Completada",
     "cancelled": "Cancelada",
-    "no_show": "No Presentada",
+    "no_show": "No presentado",
     "rescheduled": "Reprogramada"
   },
   "types": {
@@ -63,6 +83,28 @@
     "vaccination": "Vacunación",
     "surgery": "Cirugía"
   },
+  "priority": {
+    "low": "Baja",
+    "normal": "Normal",
+    "high": "Alta",
+    "urgent": "URGENTE"
+  },
+  "delete": {
+    "title": "Eliminar cita",
+    "silent": "Eliminar sin notificar",
+    "withNotification": "Eliminar y notificar",
+    "confirmMessage": "¿Está seguro de que desea eliminar esta cita?",
+    "notifyPatient": "Notificar al paciente",
+    "notifyPractitioner": "Notificar al médico",
+    "noNotification": "Sin notificación"
+  },
+  "deleteTitle": "Eliminar cita",
+  "deleteSilent": "Eliminar sin notificar",
+  "deleteWithNotification": "Eliminar y notificar",
+  "deletionError": "Error al eliminar la cita",
+  "notifyPatient": "Notificar al paciente",
+  "notifyPractitioner": "Notificar al médico",
+  "noNotification": "Sin notificación",
   "messages": {
     "appointmentCreated": "Cita creada con éxito",
     "appointmentUpdated": "Cita actualizada con éxito",
@@ -70,47 +112,95 @@
     "appointmentConfirmed": "Cita confirmada",
     "deleteConfirm": "¿Está seguro de que desea eliminar esta cita?",
     "noAppointments": "No hay citas en este momento",
-    "conflict": "Horario ya ocupado",
+    "conflict": "Franja horaria ya ocupada",
     "clinicClosed": "Clínica cerrada",
     "selectAnotherDate": "Por favor seleccione otra fecha.",
-    "clinicClosedNoAvailability": "La clínica está cerrada este día. No se puede configurar disponibilidad."
+    "clinicClosedNoAvailability": "La clínica está cerrada este día. No se puede configurar disponibilidad.",
+    "reminderSent": "Recordatorio enviado",
+    "statusChanged": "Estado modificado"
+  },
+  "validation": {
+    "patientRequired": "Por favor seleccione un paciente",
+    "practitionerRequired": "Por favor seleccione un médico",
+    "dateRequired": "Por favor seleccione una fecha",
+    "timeRequired": "Por favor seleccione al menos una franja horaria",
+    "dateInPast": "La fecha no puede ser en el pasado",
+    "slotConflict": "La franja seleccionada ya está ocupada",
+    "slotsContinuous": "Las franjas deben ser consecutivas",
+    "selfOnly": "Solo puede crear citas para usted mismo",
+    "contextError": "Error de contexto: no se pueden cargar los datos"
   },
   "filters": {
-    "filterByStatus": "Filtrar por Estado",
-    "filterByType": "Filtrar por Tipo",
-    "filterByDate": "Filtrar por Fecha",
-    "clearFilters": "Limpiar Filtros",
-    "allStatuses": "Todos los Estados"
+    "filterByStatus": "Filtrar por estado",
+    "filterByType": "Filtrar por tipo",
+    "filterByDate": "Filtrar por fecha",
+    "filterByPractitioner": "Filtrar por médico",
+    "clearFilters": "Limpiar filtros",
+    "allStatuses": "Todos los estados",
+    "allTypes": "Todos los tipos",
+    "allPractitioners": "Todos los médicos"
   },
   "stats": {
     "today": "Hoy",
     "confirmed": "Confirmadas",
-    "inProgress": "En Curso",
-    "avgDuration": "Duración Promedio"
+    "inProgress": "En curso",
+    "avgDuration": "Duración promedio",
+    "total": "Total",
+    "cancelled": "Canceladas",
+    "completed": "Completadas"
   },
   "tabs": {
-    "appointments": "Lista de Citas",
+    "appointments": "Lista de citas",
     "availability": "Calendario"
   },
   "list": {
-    "title": "Citas Programadas",
+    "title": "Citas programadas",
     "search": "Buscar por paciente, motivo, número...",
-    "internalNotes": "Notas Internas:",
-    "slots": "+{{count}} hueco(s)",
+    "internalNotes": "Notas internas:",
+    "slots": "+{{count}} franja(s)",
     "noAppointmentsFound": "No se encontraron citas",
     "noAppointmentsScheduled": "No hay citas programadas",
     "modifyFilters": "Intente modificar sus filtros o búsqueda.",
-    "firstAppointment": "Comience programando su primera cita médica."
+    "firstAppointment": "Comience programando su primera cita médica.",
+    "empty": "Sin citas",
+    "loadMore": "Cargar más"
   },
   "actions": {
     "confirm": "Confirmar",
     "start": "Iniciar",
     "complete": "Completar",
     "edit": "Modificar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "reschedule": "Reprogramar",
+    "sendReminder": "Enviar recordatorio",
+    "markNoShow": "Marcar como ausente",
+    "viewDetails": "Ver detalles"
   },
-  "priority": {
-    "urgent": "URGENTE"
+  "calendar": {
+    "weekView": "Semana",
+    "dayView": "Día",
+    "monthView": "Mes",
+    "available": "Disponible",
+    "occupied": "Ocupado",
+    "closed": "Cerrado",
+    "legend": "Leyenda",
+    "freeSlot": "Franja libre",
+    "scheduledAppointment": "Cita programada",
+    "occupiedSlot": "Franja ocupada",
+    "unavailable": "No disponible",
+    "clinicClosed": "Clínica cerrada"
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "patient": "Recordatorio paciente",
+    "practitioner": "Recordatorio médico",
+    "enabled": "Activado",
+    "disabled": "Desactivado",
+    "before": "Antes",
+    "minutes": "minutos",
+    "hours": "horas",
+    "days": "días"
   },
   "loading": "Cargando citas..."
 }
