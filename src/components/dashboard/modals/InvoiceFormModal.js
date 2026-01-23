@@ -1,11 +1,12 @@
 // components/dashboard/modals/InvoiceFormModal.js
 import React, { useState, useEffect } from 'react';
-import { 
-  X, Save, Plus, Trash2, User, Building, Calendar, Calculator, 
-  ChevronDown, ChevronUp, CheckCircle, Clock, Send, DollarSign,
-  Percent, Minus
+import {
+  X, Save, Plus, Trash2, User, Building, Calendar, Calculator,
+  ChevronDown, ChevronUp, CheckCircle, Send, DollarSign,
+  Percent, Minus, Clock
 } from 'lucide-react';
-import { clientStorage, settingsStorage, calculateInvoiceTotals } from '../../../utils/storage';
+import { clientStorage, settingsStorage } from '../../../utils/storage';
+import CatalogProductSelector from '../../common/CatalogProductSelector';
 
 const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelectedClient = null }) => {
   const [formData, setFormData] = useState({
@@ -203,7 +204,24 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
       unitPrice: 0,
       taxRate: null // null = utilise la TVA par défaut
     };
-    
+
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, newItem]
+    }));
+  };
+
+  // Add item from catalog selection
+  const addItemFromCatalog = (catalogItem) => {
+    const newItem = {
+      id: Date.now(),
+      description: catalogItem.description,
+      quantity: 1,
+      unitPrice: catalogItem.unitPrice,
+      taxRate: catalogItem.taxRate,
+      catalogItemId: catalogItem.catalogItemId
+    };
+
     setFormData(prev => ({
       ...prev,
       items: [...prev.items, newItem]
@@ -508,14 +526,22 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Lignes de facturation</h3>
-              <button
-                type="button"
-                onClick={addItem}
-                className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Ajouter une ligne</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <CatalogProductSelector
+                  onSelect={addItemFromCatalog}
+                  includeServices={true}
+                  placeholder="Ajouter depuis le catalogue"
+                  className="w-64"
+                />
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Ligne manuelle</span>
+                </button>
+              </div>
             </div>
 
             {errors.items && (

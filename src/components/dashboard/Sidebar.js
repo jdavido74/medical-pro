@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, Users, Calendar, FileText, BarChart3, Settings,
-  LogOut, Heart, Shield
+  LogOut, Heart, Shield, Package
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
@@ -61,6 +61,9 @@ const Sidebar = () => {
 
     // Factures (secrétaire, admin - pas les soignants sauf besoin)
     { id: 'invoices', path: '/invoices', icon: FileText, permission: 'invoices.view', labelKey: 'invoices' },
+
+    // Catalogue (produits, traitements, services - admin, secrétaire)
+    { id: 'catalog', path: '/catalog', icon: Package, permission: 'catalog.view', labelKey: 'catalog' },
 
     // Statistiques (admin, direction)
     { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.view', labelKey: 'analytics' },

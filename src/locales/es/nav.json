@@ -18,6 +18,7 @@
     "consentTemplates": "Plantillas de Consentimiento",
     "quotes": "Presupuestos",
     "invoices": "Facturas",
+    "catalog": "Catálogo",
     "analytics": "Estadísticas",
     "admin": "Administración",
     "settings": "Configuración",
@@ -100,6 +101,10 @@
     "settings": {
       "title": "Configuración",
       "description": "Preferencias y configuración"
+    },
+    "catalog": {
+      "title": "Catálogo",
+      "description": "Productos, tratamientos y servicios"
     }
   }
 }

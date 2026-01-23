@@ -1,0 +1,230 @@
+{
+  "title": "Catalogue",
+  "subtitle": "Gérez vos produits, traitements et services",
+
+  "tabs": {
+    "all": "Tous",
+    "medications": "Médicaments",
+    "treatments": "Traitements",
+    "services": "Services",
+    "categories": "Catégories"
+  },
+
+  "types": {
+    "medication": "Médicament",
+    "treatment": "Traitement",
+    "service": "Service"
+  },
+
+  "fields": {
+    "name": "Nom",
+    "description": "Description",
+    "type": "Type",
+    "category": "Catégorie",
+    "price": "Prix",
+    "vatRate": "Taux TVA",
+    "isActive": "Actif",
+    "dosage": "Dosage",
+    "dosageUnit": "Unité de dosage",
+    "volume": "Volume",
+    "provenance": "Provenance",
+    "duration": "Durée",
+    "family": "Famille",
+    "variants": "Variantes",
+    "createdAt": "Créé le",
+    "updatedAt": "Modifié le"
+  },
+
+  "units": {
+    "mg": "mg",
+    "ml": "ml",
+    "g": "g",
+    "ui": "UI",
+    "mcg": "mcg",
+    "minutes": "minutes",
+    "milligrams": "milligrammes",
+    "milliliters": "millilitres",
+    "grams": "grammes",
+    "international_units": "unités internationales",
+    "micrograms": "microgrammes"
+  },
+
+  "placeholders": {
+    "name": "Nom du produit ou service",
+    "description": "Description (optionnel)",
+    "price": "0.00",
+    "dosage": "Ex: 500",
+    "volume": "Ex: 10",
+    "provenance": "Ex: France",
+    "duration": "Ex: 30",
+    "search": "Rechercher dans le catalogue...",
+    "selectCategory": "Sélectionner une catégorie",
+    "categoryName": "Nom de la catégorie"
+  },
+
+  "actions": {
+    "add": "Ajouter",
+    "addItem": "Ajouter un élément",
+    "addMedication": "Ajouter un médicament",
+    "addTreatment": "Ajouter un traitement",
+    "addService": "Ajouter un service",
+    "addVariant": "Ajouter une variante",
+    "addCategory": "Ajouter une catégorie",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "duplicate": "Dupliquer",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "convertToFamily": "Convertir en famille",
+    "import": "Importer",
+    "export": "Exporter",
+    "resetCategories": "Réinitialiser les catégories"
+  },
+
+  "family": {
+    "title": "Famille de produits",
+    "createTitle": "Créer une famille",
+    "editTitle": "Modifier la famille",
+    "description": "Créez une famille pour gérer des variantes avec des attributs communs",
+    "inheritedFrom": "Hérité de",
+    "variantsCount": "{{count}} variante",
+    "variantsCount_plural": "{{count}} variantes",
+    "noVariants": "Aucune variante",
+    "addFirstVariant": "Ajouter la première variante"
+  },
+
+  "variant": {
+    "title": "Variante",
+    "createTitle": "Créer une variante",
+    "editTitle": "Modifier la variante",
+    "inheritedFields": "Champs hérités du parent",
+    "overrideField": "Remplacer cette valeur"
+  },
+
+  "categories": {
+    "title": "Catégories",
+    "manage": "Gérer les catégories",
+    "description": "Organisez vos produits et services par catégories personnalisées",
+    "color": "Couleur",
+    "itemsCount": "{{count}} élément",
+    "itemsCount_plural": "{{count}} éléments",
+    "uncategorized": "Non catégorisé",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette catégorie ?",
+    "deleteWarning": "Les éléments de cette catégorie ne seront pas supprimés, ils deviendront non catégorisés.",
+    "hasItems": "Cette catégorie contient des éléments"
+  },
+
+  "status": {
+    "active": "Actif",
+    "inactive": "Inactif",
+    "all": "Tous les statuts"
+  },
+
+  "filters": {
+    "type": "Type",
+    "category": "Catégorie",
+    "status": "Statut",
+    "search": "Rechercher",
+    "clearFilters": "Effacer les filtres",
+    "showInactive": "Afficher les inactifs"
+  },
+
+  "sort": {
+    "name": "Nom",
+    "price": "Prix",
+    "createdAt": "Date de création",
+    "updatedAt": "Date de modification"
+  },
+
+  "empty": {
+    "title": "Aucun élément",
+    "description": "Commencez par ajouter des produits ou services à votre catalogue",
+    "filteredTitle": "Aucun résultat",
+    "filteredDescription": "Aucun élément ne correspond à vos critères de recherche"
+  },
+
+  "modal": {
+    "createTitle": "Nouvel élément",
+    "editTitle": "Modifier l'élément",
+    "deleteTitle": "Supprimer l'élément",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ?",
+    "deleteFamilyWarning": "Cette action supprimera également toutes les variantes associées.",
+    "basicInfo": "Informations générales",
+    "pricingInfo": "Tarification",
+    "attributesInfo": "Attributs",
+    "pricing": "Tarification",
+    "attributes": "Attributs",
+    "advanced": "Avancé"
+  },
+
+  "validation": {
+    "name": {
+      "required": "Le nom est requis",
+      "minLength": "Le nom doit contenir au moins 2 caractères",
+      "maxLength": "Le nom ne peut pas dépasser 100 caractères"
+    },
+    "price": {
+      "required": "Le prix est requis",
+      "min": "Le prix ne peut pas être négatif",
+      "max": "Le prix ne peut pas dépasser 999 999,99 €"
+    },
+    "vatRate": {
+      "invalid": "Taux de TVA invalide"
+    },
+    "dosage": {
+      "range": "Le dosage doit être compris entre 0 et 999 999"
+    },
+    "volume": {
+      "range": "Le volume doit être compris entre 0 et 10 000 ml"
+    },
+    "duration": {
+      "range": "La durée doit être comprise entre 5 et 480 minutes"
+    }
+  },
+
+  "messages": {
+    "createSuccess": "Élément créé avec succès",
+    "updateSuccess": "Élément mis à jour avec succès",
+    "deleteSuccess": "Élément supprimé avec succès",
+    "duplicateSuccess": "Élément dupliqué avec succès",
+    "activateSuccess": "Élément activé",
+    "deactivateSuccess": "Élément désactivé",
+    "importSuccess": "{{count}} élément(s) importé(s) avec succès",
+    "exportSuccess": "Catalogue exporté avec succès",
+    "categoryCreateSuccess": "Catégorie créée avec succès",
+    "categoryUpdateSuccess": "Catégorie mise à jour avec succès",
+    "categoryDeleteSuccess": "Catégorie supprimée avec succès",
+    "error": "Une erreur est survenue",
+    "loadError": "Erreur lors du chargement du catalogue"
+  },
+
+  "stats": {
+    "total": "Total",
+    "active": "Actifs",
+    "inactive": "Inactifs",
+    "families": "Familles",
+    "variants": "Variantes"
+  },
+
+  "import": {
+    "title": "Importer des éléments",
+    "description": "Importez des éléments depuis un fichier JSON",
+    "dropzone": "Déposez un fichier JSON ici ou cliquez pour sélectionner",
+    "overwrite": "Remplacer les éléments existants",
+    "preview": "Aperçu de l'import"
+  },
+
+  "export": {
+    "title": "Exporter le catalogue",
+    "description": "Exportez vos éléments au format JSON",
+    "activeOnly": "Exporter uniquement les éléments actifs",
+    "byType": "Exporter par type"
+  },
+
+  "integration": {
+    "appointmentDuration": "Ce service définira la durée du rendez-vous",
+    "billingItem": "Cet élément peut être ajouté aux devis et factures",
+    "linkedAppointments": "Rendez-vous liés",
+    "linkedInvoices": "Factures liées"
+  }
+}

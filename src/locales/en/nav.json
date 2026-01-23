@@ -18,6 +18,7 @@
     "consentTemplates": "Consent Templates",
     "quotes": "Quotes",
     "invoices": "Invoices",
+    "catalog": "Catalog",
     "analytics": "Analytics",
     "admin": "Administration",
     "settings": "Settings",
@@ -100,6 +101,10 @@
     "settings": {
       "title": "Settings",
       "description": "Preferences and configuration"
+    },
+    "catalog": {
+      "title": "Catalog",
+      "description": "Products, treatments and services"
     }
   }
 }

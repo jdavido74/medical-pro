@@ -18,6 +18,7 @@
     "consentTemplates": "Modèles de consentements",
     "quotes": "Devis",
     "invoices": "Factures",
+    "catalog": "Catalogue",
     "analytics": "Statistiques",
     "admin": "Administration",
     "settings": "Paramètres",
@@ -100,6 +101,10 @@
     "settings": {
       "title": "Paramètres",
       "description": "Préférences et configuration"
+    },
+    "catalog": {
+      "title": "Catalogue",
+      "description": "Produits, traitements et services"
     }
   }
 }

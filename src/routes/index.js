@@ -36,6 +36,7 @@ import QuotesModule from '../components/dashboard/modules/QuotesModule';
 import InvoicesModule from '../components/dashboard/modules/InvoicesModule';
 import ConsentManagementModule from '../components/dashboard/modules/ConsentManagementModule';
 import ConsentTemplatesModule from '../components/dashboard/modules/ConsentTemplatesModule';
+import CatalogModule from '../components/dashboard/modules/CatalogModule';
 import SettingsModule from '../components/dashboard/modules/SettingsModule';
 
 // Modules Admin
@@ -205,6 +206,16 @@ const dashboardRoutes = [
     )
   },
 
+  // Catalogue - produits, traitements et services
+  {
+    path: 'catalog',
+    element: (
+      <PermissionRoute permission="catalog.view">
+        <CatalogModule />
+      </PermissionRoute>
+    )
+  },
+
   // Paramètres - accessible à tous les utilisateurs authentifiés
   { path: 'settings', element: <SettingsModule /> }
 ];
@@ -335,6 +346,7 @@ export const routes = [
   { path: '/invoices/:id', element: <LegacyRouteRedirect /> },
   { path: '/consents', element: <LegacyRouteRedirect /> },
   { path: '/consent-templates', element: <LegacyRouteRedirect /> },
+  { path: '/catalog', element: <LegacyRouteRedirect /> },
   { path: '/settings', element: <LegacyRouteRedirect /> },
 
   // Legacy admin routes

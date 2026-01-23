@@ -18,6 +18,7 @@ import frInvoices from './locales/fr/invoices.json';
 import frAnalytics from './locales/fr/analytics.json';
 import frAdmin from './locales/fr/admin.json';
 import frOnboarding from './locales/fr/onboarding.json';
+import frCatalog from './locales/fr/catalog.json';
 
 // Import English translations
 import enCommon from './locales/en/common.json';
@@ -34,6 +35,7 @@ import enInvoices from './locales/en/invoices.json';
 import enAnalytics from './locales/en/analytics.json';
 import enAdmin from './locales/en/admin.json';
 import enOnboarding from './locales/en/onboarding.json';
+import enCatalog from './locales/en/catalog.json';
 
 // Import Spanish translations
 import esCommon from './locales/es/common.json';
@@ -50,6 +52,7 @@ import esInvoices from './locales/es/invoices.json';
 import esAnalytics from './locales/es/analytics.json';
 import esAdmin from './locales/es/admin.json';
 import esOnboarding from './locales/es/onboarding.json';
+import esCatalog from './locales/es/catalog.json';
 
 /**
  * Detect language from URL locale first, then fall back to region detection
@@ -102,7 +105,8 @@ i18n
         invoices: frInvoices,
         analytics: frAnalytics,
         admin: frAdmin,
-        onboarding: frOnboarding
+        onboarding: frOnboarding,
+        catalog: frCatalog
       },
       en: {
         common: enCommon,
@@ -118,7 +122,8 @@ i18n
         invoices: enInvoices,
         analytics: enAnalytics,
         admin: enAdmin,
-        onboarding: enOnboarding
+        onboarding: enOnboarding,
+        catalog: enCatalog
       },
       es: {
         common: esCommon,
@@ -134,13 +139,14 @@ i18n
         invoices: esInvoices,
         analytics: esAnalytics,
         admin: esAdmin,
-        onboarding: esOnboarding
+        onboarding: esOnboarding,
+        catalog: esCatalog
       }
     },
     lng: defaultLanguage,
     fallbackLng: 'fr', // French as fallback for missing translations
     defaultNS: 'common',
-    ns: ['common', 'auth', 'nav', 'home', 'public', 'dashboard', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'analytics', 'admin', 'onboarding'],
+    ns: ['common', 'auth', 'nav', 'home', 'public', 'dashboard', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'analytics', 'admin', 'onboarding', 'catalog'],
 
     interpolation: {
       escapeValue: false // React already escapes values

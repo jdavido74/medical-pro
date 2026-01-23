@@ -139,7 +139,13 @@ export const PERMISSIONS = {
   SETTINGS_VIEW: 'settings.view',
   SETTINGS_EDIT: 'settings.edit',
   SETTINGS_CLINIC: 'settings.clinic',
-  SETTINGS_SECURITY: 'settings.security'
+  SETTINGS_SECURITY: 'settings.security',
+
+  // Catalogue de produits et services
+  CATALOG_VIEW: 'catalog.view',
+  CATALOG_CREATE: 'catalog.create',
+  CATALOG_EDIT: 'catalog.edit',
+  CATALOG_DELETE: 'catalog.delete'
 };
 
 // ============================================================================
@@ -219,7 +225,9 @@ export const DEFAULT_ROLES = {
       // Système
       PERMISSIONS.SYSTEM_SETTINGS, PERMISSIONS.SYSTEM_BACKUP, PERMISSIONS.SYSTEM_AUDIT,
       // Paramètres
-      PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC, PERMISSIONS.SETTINGS_SECURITY
+      PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC, PERMISSIONS.SETTINGS_SECURITY,
+      // Catalogue
+      PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT, PERMISSIONS.CATALOG_DELETE
     ],
     color: 'purple'
   },
@@ -264,7 +272,9 @@ export const DEFAULT_ROLES = {
       // Audit
       PERMISSIONS.AUDIT_VIEW, PERMISSIONS.AUDIT_EXPORT,
       // Paramètres
-      PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC
+      PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC,
+      // Catalogue
+      PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT, PERMISSIONS.CATALOG_DELETE
     ],
     color: 'blue'
   },
@@ -357,6 +367,8 @@ export const DEFAULT_ROLES = {
       PERMISSIONS.INVOICES_VIEW, PERMISSIONS.INVOICES_CREATE, PERMISSIONS.INVOICES_EDIT,
       PERMISSIONS.INVOICES_SEND,
       PERMISSIONS.QUOTES_VIEW, PERMISSIONS.QUOTES_CREATE, PERMISSIONS.QUOTES_EDIT,
+      // Catalogue (lecture seule pour secrétaire)
+      PERMISSIONS.CATALOG_VIEW,
       // Paramètres
       PERMISSIONS.SETTINGS_VIEW
     ],
@@ -550,6 +562,16 @@ export const PERMISSION_CATEGORIES = {
     permissions: [
       PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC,
       PERMISSIONS.SETTINGS_SECURITY
+    ]
+  },
+  catalog: {
+    name: 'Catalogue',
+    icon: 'Package',
+    description: 'Gestion des produits, traitements et services',
+    isMedicalData: false,
+    permissions: [
+      PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT,
+      PERMISSIONS.CATALOG_DELETE
     ]
   }
 };
@@ -960,7 +982,13 @@ export const permissionsStorage = {
       [PERMISSIONS.SETTINGS_VIEW]: 'Voir les paramètres',
       [PERMISSIONS.SETTINGS_EDIT]: 'Modifier les paramètres',
       [PERMISSIONS.SETTINGS_CLINIC]: 'Paramètres de la clinique',
-      [PERMISSIONS.SETTINGS_SECURITY]: 'Paramètres de sécurité'
+      [PERMISSIONS.SETTINGS_SECURITY]: 'Paramètres de sécurité',
+
+      // Catalogue
+      [PERMISSIONS.CATALOG_VIEW]: 'Voir le catalogue',
+      [PERMISSIONS.CATALOG_CREATE]: 'Créer des éléments catalogue',
+      [PERMISSIONS.CATALOG_EDIT]: 'Modifier le catalogue',
+      [PERMISSIONS.CATALOG_DELETE]: 'Supprimer du catalogue'
     };
 
     return labels[permission] || permission;

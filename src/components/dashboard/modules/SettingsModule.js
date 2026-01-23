@@ -2,12 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   User, Building, Shield, CreditCard, Bell, Save,
-  Upload, Eye, EyeOff, CheckCircle, Package, Plus, Edit2, Trash2,
+  Upload, Eye, EyeOff, CheckCircle, Plus, Edit2, Trash2,
   X, AlertCircle, Clock
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
-import { catalogStorage, productsStorage, servicesStorage } from '../../../utils/productsStorage';
 import { facilitiesApi } from '../../../api/facilitiesApi';
 import { profileApi } from '../../../api/profileApi';
 import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
@@ -48,17 +47,6 @@ const SettingsModule = () => {
     newPassword: '',
     confirmPassword: '',
     twoFactorEnabled: false
-  });
-
-  // Epic 7: États pour le catalogue de produits/services
-  const [catalogItems, setCatalogItems] = useState([]);
-  const [isAddingItem, setIsAddingItem] = useState(false);
-  const [newItem, setNewItem] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category: '',
-    type: 'product' // product, service, bundle
   });
 
   // Charger les données de l'établissement depuis l'API
@@ -118,16 +106,6 @@ const SettingsModule = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Charger le catalogue au montage
-  useEffect(() => {
-    loadCatalog();
-  }, []);
-
-  const loadCatalog = () => {
-    const items = catalogStorage.getAll();
-    setCatalogItems(items);
   };
 
   // Auto-hide notification after 5 seconds
@@ -239,7 +217,6 @@ const SettingsModule = () => {
     { id: 'availability', label: t('availability.myAvailability', 'Mes disponibilités'), icon: Clock, adminOnly: false },
     { id: 'security', label: t('settings.tabs.security'), icon: Shield, adminOnly: false },
     { id: 'company', label: t('settings.tabs.company'), icon: Building, adminOnly: true },
-    { id: 'catalog', label: t('settings.tabs.catalog'), icon: Package, adminOnly: true },
     { id: 'billing', label: t('settings.tabs.billing'), icon: CreditCard, adminOnly: true },
     { id: 'notifications', label: t('settings.tabs.notifications'), icon: Bell, adminOnly: true }
   ];
@@ -702,210 +679,6 @@ const SettingsModule = () => {
     </div>
   );
 
-  const renderCatalogTab = () => {
-    const handleAddItem = () => {
-      if (!newItem.name || !newItem.price) {
-        alert('Nom et prix requis');
-        return;
-      }
-
-      try {
-        const itemData = {
-          ...newItem,
-          price: parseFloat(newItem.price),
-          id: Date.now().toString()
-        };
-
-        if (newItem.type === 'product') {
-          productsStorage.add(itemData);
-        } else if (newItem.type === 'service') {
-          servicesStorage.add(itemData);
-        }
-
-        setNewItem({ name: '', description: '', price: '', category: '', type: 'product' });
-        setIsAddingItem(false);
-        loadCatalog();
-      } catch (error) {
-        console.error('Erreur ajout item:', error);
-        alert('Erreur lors de l\'ajout');
-      }
-    };
-
-    const handleDeleteItem = (id, type) => {
-      if (!window.confirm('Supprimer cet élément ?')) return;
-
-      try {
-        if (type === 'product') {
-          productsStorage.delete(id);
-        } else if (type === 'service') {
-          servicesStorage.delete(id);
-        }
-        loadCatalog();
-      } catch (error) {
-        console.error('Erreur suppression:', error);
-        alert('Erreur lors de la suppression');
-      }
-    };
-
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900">Catálogo de Productos y Servicios</h3>
-          <button
-            onClick={() => setIsAddingItem(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Añadir Elemento</span>
-          </button>
-        </div>
-
-        {/* Formulario agregar item */}
-        {isAddingItem && (
-          <div className="bg-gray-50 p-6 rounded-lg border">
-            <h4 className="font-medium text-gray-900 mb-4">Nuevo Elemento</h4>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
-                <input
-                  type="text"
-                  value={newItem.name}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Precio (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newItem.price}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, price: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-                <select
-                  value={newItem.type}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="product">Producto</option>
-                  <option value="service">Servicio</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
-                <input
-                  type="text"
-                  value={newItem.category}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                <textarea
-                  value={newItem.description}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex space-x-3 mt-4">
-              <button
-                onClick={handleAddItem}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Guardar
-              </button>
-              <button
-                onClick={() => setIsAddingItem(false)}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Lista de elementos */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left p-4 font-medium text-gray-900">Nombre</th>
-                <th className="text-left p-4 font-medium text-gray-900">Tipo</th>
-                <th className="text-left p-4 font-medium text-gray-900">Precio</th>
-                <th className="text-left p-4 font-medium text-gray-900">Categoría</th>
-                <th className="text-left p-4 font-medium text-gray-900 w-20">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {catalogItems.length === 0 ? (
-                <tr>
-                  <td className="p-4 text-gray-500 text-center" colSpan="5">
-                    No hay elementos en el catálogo
-                  </td>
-                </tr>
-              ) : (
-                catalogItems.map((item) => (
-                  <tr key={item.id} className="border-t hover:bg-gray-50">
-                    <td className="p-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
-                        {item.description && (
-                          <p className="text-sm text-gray-500">{item.description}</p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.type === 'product'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {item.type === 'product' ? 'Producto' : 'Servicio'}
-                      </span>
-                    </td>
-                    <td className="p-4 font-medium text-gray-900">
-                      €{item.price?.toFixed(2)}
-                    </td>
-                    <td className="p-4 text-gray-600">{item.category || '-'}</td>
-                    <td className="p-4">
-                      <div className="flex space-x-2">
-                        <button
-                          className="p-1 hover:bg-gray-100 rounded transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 className="h-4 w-4 text-gray-600" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.id, item.type)}
-                          className="p-1 hover:bg-red-100 rounded transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
-
   const renderNotificationsTab = () => (
     <div className="space-y-6">
       <div>
@@ -974,8 +747,6 @@ const SettingsModule = () => {
         return renderAvailabilityTab();
       case 'company':
         return renderCompanyTab();
-      case 'catalog':
-        return renderCatalogTab();
       case 'security':
         return renderSecurityTab();
       case 'billing':

@@ -1,0 +1,230 @@
+{
+  "title": "Catálogo",
+  "subtitle": "Gestiona tus productos, tratamientos y servicios",
+
+  "tabs": {
+    "all": "Todos",
+    "medications": "Medicamentos",
+    "treatments": "Tratamientos",
+    "services": "Servicios",
+    "categories": "Categorías"
+  },
+
+  "types": {
+    "medication": "Medicamento",
+    "treatment": "Tratamiento",
+    "service": "Servicio"
+  },
+
+  "fields": {
+    "name": "Nombre",
+    "description": "Descripción",
+    "type": "Tipo",
+    "category": "Categoría",
+    "price": "Precio",
+    "vatRate": "Tipo IVA",
+    "isActive": "Activo",
+    "dosage": "Dosis",
+    "dosageUnit": "Unidad de dosis",
+    "volume": "Volumen",
+    "provenance": "Procedencia",
+    "duration": "Duración",
+    "family": "Familia",
+    "variants": "Variantes",
+    "createdAt": "Creado",
+    "updatedAt": "Actualizado"
+  },
+
+  "units": {
+    "mg": "mg",
+    "ml": "ml",
+    "g": "g",
+    "ui": "UI",
+    "mcg": "mcg",
+    "minutes": "minutos",
+    "milligrams": "miligramos",
+    "milliliters": "mililitros",
+    "grams": "gramos",
+    "international_units": "unidades internacionales",
+    "micrograms": "microgramos"
+  },
+
+  "placeholders": {
+    "name": "Nombre del producto o servicio",
+    "description": "Descripción (opcional)",
+    "price": "0.00",
+    "dosage": "Ej: 500",
+    "volume": "Ej: 10",
+    "provenance": "Ej: España",
+    "duration": "Ej: 30",
+    "search": "Buscar en el catálogo...",
+    "selectCategory": "Seleccionar una categoría",
+    "categoryName": "Nombre de la categoría"
+  },
+
+  "actions": {
+    "add": "Añadir",
+    "addItem": "Añadir elemento",
+    "addMedication": "Añadir medicamento",
+    "addTreatment": "Añadir tratamiento",
+    "addService": "Añadir servicio",
+    "addVariant": "Añadir variante",
+    "addCategory": "Añadir categoría",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "duplicate": "Duplicar",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "convertToFamily": "Convertir en familia",
+    "import": "Importar",
+    "export": "Exportar",
+    "resetCategories": "Restablecer categorías"
+  },
+
+  "family": {
+    "title": "Familia de productos",
+    "createTitle": "Crear familia",
+    "editTitle": "Editar familia",
+    "description": "Crea una familia para gestionar variantes con atributos comunes",
+    "inheritedFrom": "Heredado de",
+    "variantsCount": "{{count}} variante",
+    "variantsCount_plural": "{{count}} variantes",
+    "noVariants": "Sin variantes",
+    "addFirstVariant": "Añadir primera variante"
+  },
+
+  "variant": {
+    "title": "Variante",
+    "createTitle": "Crear variante",
+    "editTitle": "Editar variante",
+    "inheritedFields": "Campos heredados del padre",
+    "overrideField": "Reemplazar este valor"
+  },
+
+  "categories": {
+    "title": "Categorías",
+    "manage": "Gestionar categorías",
+    "description": "Organiza tus productos y servicios con categorías personalizadas",
+    "color": "Color",
+    "itemsCount": "{{count}} elemento",
+    "itemsCount_plural": "{{count}} elementos",
+    "uncategorized": "Sin categoría",
+    "confirmDelete": "¿Estás seguro de que quieres eliminar esta categoría?",
+    "deleteWarning": "Los elementos de esta categoría no se eliminarán, quedarán sin categoría.",
+    "hasItems": "Esta categoría contiene elementos"
+  },
+
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "all": "Todos los estados"
+  },
+
+  "filters": {
+    "type": "Tipo",
+    "category": "Categoría",
+    "status": "Estado",
+    "search": "Buscar",
+    "clearFilters": "Limpiar filtros",
+    "showInactive": "Mostrar inactivos"
+  },
+
+  "sort": {
+    "name": "Nombre",
+    "price": "Precio",
+    "createdAt": "Fecha de creación",
+    "updatedAt": "Fecha de modificación"
+  },
+
+  "empty": {
+    "title": "Sin elementos",
+    "description": "Comienza añadiendo productos o servicios a tu catálogo",
+    "filteredTitle": "Sin resultados",
+    "filteredDescription": "Ningún elemento coincide con tus criterios de búsqueda"
+  },
+
+  "modal": {
+    "createTitle": "Nuevo elemento",
+    "editTitle": "Editar elemento",
+    "deleteTitle": "Eliminar elemento",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar \"{{name}}\"?",
+    "deleteFamilyWarning": "Esto también eliminará todas las variantes asociadas.",
+    "basicInfo": "Información básica",
+    "pricingInfo": "Precios",
+    "attributesInfo": "Atributos",
+    "pricing": "Precios",
+    "attributes": "Atributos",
+    "advanced": "Avanzado"
+  },
+
+  "validation": {
+    "name": {
+      "required": "El nombre es obligatorio",
+      "minLength": "El nombre debe tener al menos 2 caracteres",
+      "maxLength": "El nombre no puede exceder 100 caracteres"
+    },
+    "price": {
+      "required": "El precio es obligatorio",
+      "min": "El precio no puede ser negativo",
+      "max": "El precio no puede exceder 999.999,99 €"
+    },
+    "vatRate": {
+      "invalid": "Tipo de IVA no válido"
+    },
+    "dosage": {
+      "range": "La dosis debe estar entre 0 y 999.999"
+    },
+    "volume": {
+      "range": "El volumen debe estar entre 0 y 10.000 ml"
+    },
+    "duration": {
+      "range": "La duración debe estar entre 5 y 480 minutos"
+    }
+  },
+
+  "messages": {
+    "createSuccess": "Elemento creado correctamente",
+    "updateSuccess": "Elemento actualizado correctamente",
+    "deleteSuccess": "Elemento eliminado correctamente",
+    "duplicateSuccess": "Elemento duplicado correctamente",
+    "activateSuccess": "Elemento activado",
+    "deactivateSuccess": "Elemento desactivado",
+    "importSuccess": "{{count}} elemento(s) importado(s) correctamente",
+    "exportSuccess": "Catálogo exportado correctamente",
+    "categoryCreateSuccess": "Categoría creada correctamente",
+    "categoryUpdateSuccess": "Categoría actualizada correctamente",
+    "categoryDeleteSuccess": "Categoría eliminada correctamente",
+    "error": "Ha ocurrido un error",
+    "loadError": "Error al cargar el catálogo"
+  },
+
+  "stats": {
+    "total": "Total",
+    "active": "Activos",
+    "inactive": "Inactivos",
+    "families": "Familias",
+    "variants": "Variantes"
+  },
+
+  "import": {
+    "title": "Importar elementos",
+    "description": "Importa elementos desde un archivo JSON",
+    "dropzone": "Arrastra un archivo JSON aquí o haz clic para seleccionar",
+    "overwrite": "Reemplazar elementos existentes",
+    "preview": "Vista previa de la importación"
+  },
+
+  "export": {
+    "title": "Exportar catálogo",
+    "description": "Exporta tus elementos en formato JSON",
+    "activeOnly": "Exportar solo elementos activos",
+    "byType": "Exportar por tipo"
+  },
+
+  "integration": {
+    "appointmentDuration": "Este servicio definirá la duración de la cita",
+    "billingItem": "Este elemento se puede añadir a presupuestos y facturas",
+    "linkedAppointments": "Citas vinculadas",
+    "linkedInvoices": "Facturas vinculadas"
+  }
+}
