@@ -598,7 +598,14 @@ export const permissionsStorage = {
   // Gestion des rôles
   getRoles: () => {
     const roles = localStorage.getItem('clinic_roles');
-    return roles ? JSON.parse(roles) : [];
+    if (roles) {
+      const parsed = JSON.parse(roles);
+      if (parsed && parsed.length > 0) {
+        return parsed;
+      }
+    }
+    // Fallback sur les rôles système par défaut
+    return Object.values(DEFAULT_ROLES);
   },
 
   getRole: (roleId) => {

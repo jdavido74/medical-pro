@@ -33,6 +33,11 @@
   },
   "form": {
     "recordType": "Record Type",
+    "recordDate": "Consultation Date",
+    "recordDateTime": "Consultation Date and Time",
+    "assistantProvider": "Assistant",
+    "noAssistant": "No assistant",
+    "assistantProviderHelp": "Staff member who assisted during this consultation (nurse, medical assistant, etc.)",
     "date": "Date",
     "chiefComplaint": "Chief Complaint",
     "history": "History",

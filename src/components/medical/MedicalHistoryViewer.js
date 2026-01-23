@@ -118,18 +118,18 @@ const MedicalHistoryViewer = ({
 
     if (filters.dateFrom) {
       filtered = filtered.filter(record =>
-        new Date(record.createdAt) >= new Date(filters.dateFrom)
+        new Date(record.recordDate || record.createdAt) >= new Date(filters.dateFrom)
       );
     }
 
     if (filters.dateTo) {
       filtered = filtered.filter(record =>
-        new Date(record.createdAt) <= new Date(filters.dateTo)
+        new Date(record.recordDate || record.createdAt) <= new Date(filters.dateTo)
       );
     }
 
-    // Ordenar por fecha (más reciente primero)
-    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Ordenar par date (plus récent en premier) - utiliser recordDate si disponible
+    filtered.sort((a, b) => new Date(b.recordDate || b.createdAt) - new Date(a.recordDate || a.createdAt));
 
     setFilteredRecords(filtered);
   };
@@ -203,10 +203,10 @@ const MedicalHistoryViewer = ({
       return grouped;
     }
 
-    // Par défaut, grouper par mois
+    // Par défaut, grouper par mois (utiliser recordDate si disponible)
     const grouped = {};
     records.forEach(record => {
-      const date = new Date(record.createdAt);
+      const date = new Date(record.recordDate || record.createdAt);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (!grouped[monthKey]) {
         grouped[monthKey] = [];
@@ -459,11 +459,22 @@ const MedicalHistoryViewer = ({
                             {getRecordTypeLabel(record.type)}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {new Date(record.createdAt).toLocaleDateString(locale)}
+                            {new Date(record.recordDate || record.createdAt).toLocaleString(locale, {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </span>
                           <span className="text-sm text-gray-500">
                             Dr. {getPractitionerName(record.practitionerId)}
                           </span>
+                          {record.assistantProviderId && (
+                            <span className="text-sm text-gray-400">
+                              + {getPractitionerName(record.assistantProviderId)}
+                            </span>
+                          )}
                         </div>
 
                         <h4 className="text-lg font-medium text-gray-900 mb-2">

@@ -746,6 +746,14 @@ function transformMedicalRecordFromBackend(record) {
     type: record.record_type,
     recordType: record.record_type,
 
+    // Date et heure de consultation (éditable) - format pour datetime-local: YYYY-MM-DDTHH:MM
+    recordDate: record.record_date
+      ? record.record_date.slice(0, 16) // Tronquer les secondes et timezone pour datetime-local
+      : (record.created_at ? record.created_at.slice(0, 16) : null),
+
+    // Assistant optionnel (infirmière, aide-soignant, etc.)
+    assistantProviderId: record.assistant_provider_id,
+
     // Basic info
     chiefComplaint: record.chief_complaint,
     symptoms: record.symptoms || [],
@@ -1113,6 +1121,17 @@ function transformMedicalRecordToBackend(record) {
   if (record.facilityId) backendData.facility_id = record.facilityId;
   if (record.providerId || record.practitionerId) {
     backendData.provider_id = record.providerId || record.practitionerId;
+  }
+
+  // Date de consultation (éditable)
+  const recordDate = toDateOrNull(record.recordDate);
+  if (recordDate) {
+    backendData.record_date = recordDate;
+  }
+
+  // Assistant optionnel (infirmière, aide-soignant, etc.)
+  if (record.assistantProviderId) {
+    backendData.assistant_provider_id = record.assistantProviderId;
   }
 
   // Basic info (strings - send if not empty)

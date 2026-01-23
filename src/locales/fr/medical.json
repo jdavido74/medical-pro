@@ -33,6 +33,11 @@
   },
   "form": {
     "recordType": "Type de dossier",
+    "recordDate": "Date de consultation",
+    "recordDateTime": "Date et heure de consultation",
+    "assistantProvider": "Assistant(e)",
+    "noAssistant": "Aucun assistant",
+    "assistantProviderHelp": "Personnel ayant assisté lors de cette consultation (infirmier(e), aide-soignant(e), etc.)",
     "date": "Date",
     "chiefComplaint": "Motif principal",
     "history": "Antécédents",

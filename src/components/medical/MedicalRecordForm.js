@@ -4,11 +4,12 @@ import {
   FileText, Activity, Heart, AlertTriangle, Plus, X, Save,
   Stethoscope, Thermometer, Scale, Ruler, Droplets, Clock,
   Pill, CheckCircle, Trash2, User, Search, Check, Loader2,
-  FileSignature, Eye, Printer, Settings, Edit3
+  FileSignature, Eye, Printer, Settings, Edit3, Calendar, Users
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { medicalRecordsApi } from '../../api/medicalRecordsApi';
 import { prescriptionsApi } from '../../api/prescriptionsApi';
+import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import PrescriptionPreview from './PrescriptionPreview';
 import SmokingAssessment from './SmokingAssessment';
 import AlcoholAssessment from './AlcoholAssessment';
@@ -69,6 +70,12 @@ const MedicalRecordForm = forwardRef(({
       patientId: data?.patientId || patient?.id || selectedPatientId || '',
       practitionerId: data?.practitionerId || user?.providerId || '',
       type: data?.type || 'consultation',
+
+      // Date et heure de la consultation - éditable, par défaut maintenant
+      recordDate: data?.recordDate || new Date().toISOString().slice(0, 16),
+
+      // Assistant optionnel (infirmière, aide-soignant, etc.)
+      assistantProviderId: data?.assistantProviderId || '',
 
       // Antécédents - repris du dossier précédent si disponible
       antecedents: {
@@ -264,6 +271,26 @@ const MedicalRecordForm = forwardRef(({
   const [activeTab, setActiveTab] = useState(initialActiveTab || 'basic');
   const [medicationWarnings, setMedicationWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Liste du personnel médical pour le champ assistant
+  const [staffList, setStaffList] = useState([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+
+  // Charger la liste du personnel médical
+  useEffect(() => {
+    const loadStaff = async () => {
+      try {
+        setStaffLoading(true);
+        const result = await healthcareProvidersApi.getHealthcareProviders({ isActive: true });
+        setStaffList(result.providers || []);
+      } catch (error) {
+        console.error('[MedicalRecordForm] Error loading staff:', error);
+      } finally {
+        setStaffLoading(false);
+      }
+    };
+    loadStaff();
+  }, []);
 
   // Notify parent when active tab changes
   useEffect(() => {
@@ -775,6 +802,47 @@ const MedicalRecordForm = forwardRef(({
     console.log('[MedicalRecordForm] renderBasicTab - chiefComplaint value:', formData.basicInfo?.chiefComplaint);
     return (
     <div className="space-y-6">
+      {/* Date et heure de consultation et Assistant */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Calendar className="inline h-4 w-4 mr-1" />
+            {t('medical:form.recordDateTime')}
+          </label>
+          <input
+            type="datetime-local"
+            value={formData.recordDate || ''}
+            onChange={(e) => handleInputChange(null, 'recordDate', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Users className="inline h-4 w-4 mr-1" />
+            {t('medical:form.assistantProvider')}
+            <span className="text-gray-400 text-xs ml-1">({t('common:optional')})</span>
+          </label>
+          <select
+            value={formData.assistantProviderId || ''}
+            onChange={(e) => handleInputChange(null, 'assistantProviderId', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            disabled={staffLoading}
+          >
+            <option value="">{staffLoading ? t('common:loading') : t('medical:form.noAssistant')}</option>
+            {staffList
+              .filter(staff => staff.id !== formData.practitionerId) // Exclure le praticien principal
+              .map(staff => (
+                <option key={staff.id} value={staff.id}>
+                  {staff.firstName} {staff.lastName} - {staff.role || staff.specialty || t('common:staff')}
+                </option>
+              ))
+            }
+          </select>
+          <p className="text-gray-500 text-xs mt-1">{t('medical:form.assistantProviderHelp')}</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

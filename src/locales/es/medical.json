@@ -33,6 +33,11 @@
   },
   "form": {
     "recordType": "Tipo de Historial",
+    "recordDate": "Fecha de consulta",
+    "recordDateTime": "Fecha y hora de consulta",
+    "assistantProvider": "Asistente",
+    "noAssistant": "Sin asistente",
+    "assistantProviderHelp": "Personal que asistió durante esta consulta (enfermero/a, auxiliar, etc.)",
     "date": "Fecha",
     "chiefComplaint": "Motivo Principal",
     "history": "Antecedentes",
