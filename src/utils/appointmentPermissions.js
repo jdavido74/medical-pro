@@ -31,10 +31,32 @@ export const enrichAppointmentWithPermissions = (
   }
 
   // Données de base toujours enrichies
+  // Utiliser plusieurs sources pour le praticien:
+  // 1. practitioner passé en paramètre (lookup localStorage)
+  // 2. appointment.practitioner (depuis l'API backend avec healthcare_provider inclus)
+  const embeddedPractitioner = appointment.practitioner;
+  let practitionerName = 'Non assigné';
+  let practitionerSpecialty = '';
+
+  if (practitioner) {
+    // Source 1: Practitioner trouvé par lookup
+    practitionerName = practitioner.name || `${practitioner.firstName || ''} ${practitioner.lastName || ''}`.trim() || 'Non assigné';
+    practitionerSpecialty = practitioner.specialty || '';
+  } else if (embeddedPractitioner) {
+    // Source 2: Practitioner inclus dans la réponse API (healthcare_provider)
+    const firstName = embeddedPractitioner.first_name || embeddedPractitioner.firstName || '';
+    const lastName = embeddedPractitioner.last_name || embeddedPractitioner.lastName || '';
+    practitionerName = `${firstName} ${lastName}`.trim() || 'Non assigné';
+    // Use profession or first specialty from specialties array
+    practitionerSpecialty = embeddedPractitioner.profession ||
+      (embeddedPractitioner.specialties && embeddedPractitioner.specialties[0]) ||
+      embeddedPractitioner.specialty || '';
+  }
+
   const enriched = {
     ...appointment,
-    practitionerName: practitioner?.name || 'Non assigné',
-    practitionerSpecialty: practitioner?.specialty || ''
+    practitionerName,
+    practitionerSpecialty
   };
 
   // Vérifier les permissions pour afficher les données patient

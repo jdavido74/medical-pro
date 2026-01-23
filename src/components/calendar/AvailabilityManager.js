@@ -204,7 +204,8 @@ const AvailabilityManager = ({
           firstName: p.firstName,
           lastName: p.lastName,
           role: p.role,
-          specialty: p.specialty || 'Non spécifié'
+          specialty: p.specialty || 'Non spécifié',
+          availability: p.availability || {} // Include availability from API
         }));
         setPractitioners(providers);
         console.log('[AvailabilityManager] Loaded practitioners from API:', providers.length);
@@ -312,13 +313,35 @@ const AvailabilityManager = ({
 
   const loadAvailabilities = () => {
     try {
-      const practitionerId = selectedPractitioner?.id || user?.id;
-      if (!practitionerId) {
+      const practitionerId = selectedPractitioner?.id || filterPractitioner;
+      if (!practitionerId || practitionerId === 'all') {
         setWeeklyAvailability(defaultAvailability);
         return;
       }
 
-      // Charger les disponibilités pour chaque jour de la semaine
+      // Priorité 1: Charger depuis l'API (disponibilité du praticien en base de données)
+      const practitioner = practitioners.find(p => p.id === practitionerId);
+      if (practitioner?.availability && Object.keys(practitioner.availability).length > 0) {
+        console.log('[AvailabilityManager] Loading availability from API for practitioner:', practitionerId);
+        const apiAvailability = practitioner.availability;
+        const weekAvailability = { ...defaultAvailability };
+        const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+        dayNames.forEach(dayName => {
+          if (apiAvailability[dayName]) {
+            weekAvailability[dayName] = {
+              enabled: apiAvailability[dayName].enabled !== false,
+              slots: apiAvailability[dayName].slots || []
+            };
+          }
+        });
+
+        setWeeklyAvailability(weekAvailability);
+        return;
+      }
+
+      // Priorité 2: Fallback vers localStorage (legacy)
+      console.log('[AvailabilityManager] No API availability, falling back to localStorage for practitioner:', practitionerId);
       const weekAvailability = { ...defaultAvailability };
       const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -421,7 +444,11 @@ const AvailabilityManager = ({
     if (!dayAvailability?.enabled) return [];
 
     const slots = [];
-    const dateStr = date.toISOString().split('T')[0];
+    // Utiliser format local YYYY-MM-DD pour éviter les problèmes de timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
     dayAvailability.slots.forEach(slot => {
       const slotStart = new Date(`${dateStr}T${slot.start}`);
