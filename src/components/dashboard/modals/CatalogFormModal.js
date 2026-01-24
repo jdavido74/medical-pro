@@ -213,10 +213,14 @@ const CatalogFormModal = ({
     try {
       let result;
 
-      // Prepare data for API (use 'title' for API, transform 'type' to 'itemType')
+      // Prepare data for API
+      // - 'type' (legacy) must be 'product' or 'service'
+      // - 'itemType' is the medical type: medication, treatment, service, product
+      const legacyType = (formData.type === 'service') ? 'service' : 'product';
       const apiData = {
         ...formData,
         title: formData.name,
+        type: legacyType,
         itemType: formData.type,
         unitPrice: formData.price,
         taxRate: formData.vatRate
@@ -233,6 +237,7 @@ const CatalogFormModal = ({
           variants.map(v => ({
             ...v,
             title: v.name || `${formData.name} ${v.dosage}${v.dosageUnit}`,
+            type: legacyType,
             itemType: formData.type,
             category: formData.category,
             taxRate: formData.vatRate,
