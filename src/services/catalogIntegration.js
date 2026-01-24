@@ -7,7 +7,7 @@ import { catalogStorage } from '../utils/catalogStorage';
 import { CATALOG_TYPES } from '../constants/catalogConfig';
 
 /**
- * Get services for appointment selection
+ * Get services for appointment selection (sync - from cache)
  * Returns services with duration for appointment scheduling
  */
 export const getServicesForAppointment = () => {
@@ -15,17 +15,17 @@ export const getServicesForAppointment = () => {
 
   return services.map(service => ({
     id: service.id,
-    name: service.name,
+    name: service.title || service.name,
     description: service.description,
     duration: service.duration || 30, // Default 30 minutes if not set
-    price: service.price,
+    price: service.unitPrice || service.price,
     category: service.category,
     type: 'service'
   }));
 };
 
 /**
- * Get treatments for appointment selection
+ * Get treatments for appointment selection (sync - from cache)
  * Returns treatments with duration for appointment scheduling
  */
 export const getTreatmentsForAppointment = () => {
@@ -35,21 +35,25 @@ export const getTreatmentsForAppointment = () => {
     .filter(treatment => treatment.duration) // Only treatments with duration set
     .map(treatment => ({
       id: treatment.id,
-      name: treatment.name,
+      name: treatment.title || treatment.name,
       description: treatment.description,
       duration: treatment.duration,
-      price: treatment.price,
+      price: treatment.unitPrice || treatment.price,
       category: treatment.category,
       type: 'treatment',
       // Additional treatment info
       dosage: treatment.dosage,
       dosageUnit: treatment.dosageUnit,
-      volume: treatment.volume
+      volume: treatment.volume,
+      prepBefore: treatment.prepBefore,
+      prepAfter: treatment.prepAfter,
+      isOverlappable: treatment.isOverlappable,
+      machineTypeId: treatment.machineTypeId
     }));
 };
 
 /**
- * Get all items (services + treatments) that can be scheduled as appointments
+ * Get all items (services + treatments) that can be scheduled as appointments (sync)
  * Returns items with duration for appointment scheduling
  */
 export const getItemsForAppointment = () => {
@@ -60,21 +64,29 @@ export const getItemsForAppointment = () => {
 };
 
 /**
+ * Get items for appointments from API (async - fresh data)
+ * Returns items with duration, prep times, and planning info
+ */
+export const getItemsForAppointmentAsync = async () => {
+  return catalogStorage.getForAppointmentsAsync();
+};
+
+/**
  * Get a service by ID with appointment-relevant fields
  */
 export const getServiceForAppointment = (serviceId) => {
   const service = catalogStorage.getResolved(serviceId);
 
-  if (!service || service.type !== 'service') {
+  if (!service || (service.itemType !== 'service' && service.type !== 'service')) {
     return null;
   }
 
   return {
     id: service.id,
-    name: service.name,
+    name: service.title || service.name,
     description: service.description,
     duration: service.duration || 30,
-    price: service.price,
+    price: service.unitPrice || service.price,
     category: service.category
   };
 };
@@ -104,11 +116,11 @@ export const getProductsForBilling = (options = {}) => {
 
   return items.map(item => ({
     id: item.id,
-    name: item.name,
+    name: item.title || item.name,
     description: item.description,
-    type: item.type,
-    price: item.price,
-    vatRate: item.vatRate,
+    type: item.itemType || item.type,
+    price: item.unitPrice || item.price,
+    vatRate: item.taxRate || item.vatRate,
     category: item.category,
     // Additional info for display
     dosage: item.dosage,
@@ -131,11 +143,11 @@ export const getProductForBilling = (productId) => {
 
   return {
     id: item.id,
-    name: item.name,
+    name: item.title || item.name,
     description: item.description,
-    type: item.type,
-    price: item.price,
-    vatRate: item.vatRate,
+    type: item.itemType || item.type,
+    price: item.unitPrice || item.price,
+    vatRate: item.taxRate || item.vatRate,
     category: item.category,
     dosage: item.dosage,
     dosageUnit: item.dosageUnit,
@@ -259,10 +271,10 @@ export const searchCatalog = (query, options = {}) => {
     .slice(0, limit)
     .map(item => ({
       id: item.id,
-      name: formatProductName(item),
-      type: item.type,
-      price: item.price,
-      vatRate: item.vatRate,
+      name: formatProductName({ ...item, name: item.title || item.name }),
+      type: item.itemType || item.type,
+      price: item.unitPrice || item.price,
+      vatRate: item.taxRate || item.vatRate,
       duration: item.duration
     }));
 };
@@ -329,7 +341,7 @@ export const validateCatalogItem = (itemId) => {
  */
 export const getItemPrice = (itemId) => {
   const resolved = catalogStorage.getResolved(itemId);
-  return resolved ? resolved.price : null;
+  return resolved ? (resolved.unitPrice || resolved.price) : null;
 };
 
 /**
@@ -337,7 +349,7 @@ export const getItemPrice = (itemId) => {
  */
 export const getItemVatRate = (itemId) => {
   const resolved = catalogStorage.getResolved(itemId);
-  return resolved ? resolved.vatRate : null;
+  return resolved ? (resolved.taxRate || resolved.vatRate) : null;
 };
 
 // Export all functions as named exports and as default object
@@ -345,6 +357,7 @@ export default {
   getServicesForAppointment,
   getTreatmentsForAppointment,
   getItemsForAppointment,
+  getItemsForAppointmentAsync,
   getServiceForAppointment,
   getProductsForBilling,
   getProductForBilling,

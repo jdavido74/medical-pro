@@ -62,12 +62,18 @@ const CatalogModule = () => {
   const [categoryManagerType, setCategoryManagerType] = useState('medication');
 
   // Load data
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const loadedItems = catalogStorage.getAll();
+      const loadedItems = await catalogStorage.getAllAsync();
       const loadedCategories = catalogCategoriesStorage.getAll();
-      setItems(loadedItems);
+      // Transform items: API uses 'title', frontend uses 'name'; API uses 'itemType', frontend uses 'type'
+      const transformedItems = loadedItems.map(item => ({
+        ...item,
+        name: item.title || item.name,
+        type: item.itemType || item.type
+      }));
+      setItems(transformedItems);
       setCategories(loadedCategories);
     } catch (error) {
       console.error('Error loading catalog:', error);
@@ -169,58 +175,80 @@ const CatalogModule = () => {
   };
 
   // Handle duplicate item
-  const handleDuplicate = (item) => {
-    const result = catalogStorage.duplicate(item.id);
-    if (result.success) {
-      loadData();
-      showToast(t('messages.duplicateSuccess'));
-    } else {
-      showToast(t('messages.error'), 'error');
-    }
+  const handleDuplicate = async (item) => {
     setActionMenuOpen(null);
-  };
-
-  // Handle toggle active
-  const handleToggleActive = (item) => {
-    const result = catalogStorage.toggleActive(item.id);
-    if (result.success) {
-      loadData();
-      showToast(result.item.isActive ? t('messages.activateSuccess') : t('messages.deactivateSuccess'));
-    } else {
-      showToast(t('messages.error'), 'error');
-    }
-    setActionMenuOpen(null);
-  };
-
-  // Handle delete item
-  const handleDelete = (item) => {
-    if (window.confirm(t('modal.deleteConfirm', { name: item.name }))) {
-      const result = catalogStorage.remove(item.id);
+    try {
+      const result = await catalogStorage.duplicate(item.id);
       if (result.success) {
-        loadData();
-        showToast(t('messages.deleteSuccess'));
+        await loadData();
+        showToast(t('messages.duplicateSuccess'));
       } else {
         showToast(t('messages.error'), 'error');
       }
+    } catch (error) {
+      console.error('Error duplicating item:', error);
+      showToast(t('messages.error'), 'error');
     }
+  };
+
+  // Handle toggle active
+  const handleToggleActive = async (item) => {
     setActionMenuOpen(null);
+    try {
+      const result = await catalogStorage.toggleActive(item.id);
+      if (result.success) {
+        await loadData();
+        showToast(result.item.isActive ? t('messages.activateSuccess') : t('messages.deactivateSuccess'));
+      } else {
+        showToast(t('messages.error'), 'error');
+      }
+    } catch (error) {
+      console.error('Error toggling active status:', error);
+      showToast(t('messages.error'), 'error');
+    }
+  };
+
+  // Handle delete item
+  const handleDelete = async (item) => {
+    if (window.confirm(t('modal.deleteConfirm', { name: item.name }))) {
+      setActionMenuOpen(null);
+      try {
+        const result = await catalogStorage.remove(item.id);
+        if (result.success) {
+          await loadData();
+          showToast(t('messages.deleteSuccess'));
+        } else {
+          showToast(t('messages.error'), 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        showToast(t('messages.error'), 'error');
+      }
+    } else {
+      setActionMenuOpen(null);
+    }
   };
 
   // Handle convert to family
-  const handleConvertToFamily = (item) => {
-    const result = catalogStorage.convertToFamily(item.id);
-    if (result.success) {
-      loadData();
-      showToast(t('messages.updateSuccess'));
-    } else {
+  const handleConvertToFamily = async (item) => {
+    setActionMenuOpen(null);
+    try {
+      const result = await catalogStorage.convertToFamily(item.id);
+      if (result.success) {
+        await loadData();
+        showToast(t('messages.updateSuccess'));
+      } else {
+        showToast(t('messages.error'), 'error');
+      }
+    } catch (error) {
+      console.error('Error converting to family:', error);
       showToast(t('messages.error'), 'error');
     }
-    setActionMenuOpen(null);
   };
 
   // Handle form save
-  const handleFormSave = () => {
-    loadData();
+  const handleFormSave = async () => {
+    await loadData();
     setShowFormModal(false);
     showToast(formMode === 'create' || formMode === 'variant' ? t('messages.createSuccess') : t('messages.updateSuccess'));
   };
@@ -256,9 +284,19 @@ const CatalogModule = () => {
     return category ? category.color : '#6B7280';
   };
 
-  // Stats
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const stats = useMemo(() => catalogStorage.getStats(), [items.length]);
+  // Stats - computed from local items state
+  const stats = useMemo(() => ({
+    total: items.length,
+    active: items.filter(i => i.isActive).length,
+    inactive: items.filter(i => !i.isActive).length,
+    families: items.filter(i => i.isFamily).length,
+    variants: items.filter(i => i.isVariant).length,
+    byType: {
+      medication: items.filter(i => i.type === 'medication').length,
+      treatment: items.filter(i => i.type === 'treatment').length,
+      service: items.filter(i => i.type === 'service').length
+    }
+  }), [items]);
 
   // Render item row
   const renderItem = (item, isVariant = false) => {

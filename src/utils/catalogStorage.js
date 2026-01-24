@@ -1,47 +1,113 @@
 /**
  * Catalog Storage
- * Manages catalog items with support for families and variants
+ * Manages catalog items via backend API with local caching
+ * Supports families and variants with inheritance
  */
 
-import { STORAGE_KEYS, getDefaultCatalogItem, validateCatalogItem } from '../constants/catalogConfig';
+import catalogApi from '../api/catalogApi';
+import { getDefaultCatalogItem, validateCatalogItem } from '../constants/catalogConfig';
 
-const STORAGE_KEY = STORAGE_KEYS.CATALOG_ITEMS;
+// Local cache for performance
+let cache = {
+  items: [],
+  lastFetch: null,
+  isFetching: false,
+  initialized: false
+};
 
-// Generate unique ID
-const generateId = () => `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+const CACHE_TTL = 60000; // 1 minute cache TTL
 
-// Get all items from storage
-const getAll = () => {
+// Check if cache is valid
+const isCacheValid = () => {
+  return cache.initialized && cache.lastFetch && (Date.now() - cache.lastFetch) < CACHE_TTL;
+};
+
+// Invalidate cache
+const invalidateCache = () => {
+  cache.lastFetch = null;
+};
+
+// Fetch all items from API and update cache
+const fetchAll = async (force = false) => {
+  if (!force && isCacheValid()) {
+    return cache.items;
+  }
+
+  if (cache.isFetching) {
+    // Wait for ongoing fetch
+    return new Promise(resolve => {
+      const check = setInterval(() => {
+        if (!cache.isFetching) {
+          clearInterval(check);
+          resolve(cache.items);
+        }
+      }, 50);
+    });
+  }
+
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    cache.isFetching = true;
+    const response = await catalogApi.getCatalogItems({ limit: 1000, includeVariants: true });
+
+    if (response.success) {
+      cache.items = response.data || [];
+      cache.lastFetch = Date.now();
+      cache.initialized = true;
+    }
+
+    return cache.items;
   } catch (error) {
-    console.error('Error reading catalog items:', error);
-    return [];
+    console.error('[catalogStorage] Error fetching items:', error);
+    return cache.items; // Return cached data on error
+  } finally {
+    cache.isFetching = false;
   }
 };
 
-// Save all items to storage
-const saveAll = (items) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    return true;
-  } catch (error) {
-    console.error('Error saving catalog items:', error);
-    return false;
+// Get all items (sync from cache, async refresh in background)
+const getAll = () => {
+  // Trigger async refresh if needed
+  if (!isCacheValid()) {
+    fetchAll();
   }
+  return cache.items;
+};
+
+// Get all items async (ensures fresh data)
+const getAllAsync = async () => {
+  await fetchAll(true);
+  return cache.items;
 };
 
 // Get a single item by ID
 const getById = (id) => {
-  const items = getAll();
-  return items.find(item => item.id === id) || null;
+  return cache.items.find(item => item.id === id) || null;
+};
+
+// Get a single item by ID async
+const getByIdAsync = async (id) => {
+  try {
+    const response = await catalogApi.getCatalogItem(id);
+    if (response.success) {
+      // Update cache
+      const index = cache.items.findIndex(i => i.id === id);
+      if (index !== -1) {
+        cache.items[index] = response.data;
+      } else {
+        cache.items.push(response.data);
+      }
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('[catalogStorage] Error fetching item:', error);
+    return getById(id); // Fallback to cache
+  }
 };
 
 // Get item with resolved inheritance (for variants)
 const getResolved = (id) => {
-  const items = getAll();
-  const item = items.find(i => i.id === id);
+  const item = cache.items.find(i => i.id === id);
 
   if (!item) return null;
 
@@ -51,7 +117,7 @@ const getResolved = (id) => {
   }
 
   // Get parent and merge
-  const parent = items.find(i => i.id === item.parentId);
+  const parent = cache.items.find(i => i.id === item.parentId);
   if (!parent) {
     return item;
   }
@@ -71,55 +137,62 @@ const getResolved = (id) => {
 
 // Get all families (items that can have variants)
 const getFamilies = () => {
-  const items = getAll();
-  return items.filter(item => item.isFamily);
+  return cache.items.filter(item => item.isFamily);
+};
+
+// Get families async from API
+const getFamiliesAsync = async () => {
+  try {
+    const response = await catalogApi.getCatalogFamilies();
+    if (response.success) {
+      return response.data || [];
+    }
+    return getFamilies(); // Fallback to cache
+  } catch (error) {
+    console.error('[catalogStorage] Error fetching families:', error);
+    return getFamilies();
+  }
 };
 
 // Get variants for a family
 const getVariants = (familyId) => {
-  const items = getAll();
-  return items.filter(item => item.parentId === familyId && item.isVariant);
+  return cache.items.filter(item => item.parentId === familyId && item.isVariant);
 };
 
 // Get all items by type
 const getByType = (type) => {
-  const items = getAll();
-  return items.filter(item => item.type === type);
+  return cache.items.filter(item => item.itemType === type);
 };
 
 // Get all items by category
 const getByCategory = (categoryId) => {
-  const items = getAll();
-  return items.filter(item => item.category === categoryId);
+  return cache.items.filter(item => item.category === categoryId);
 };
 
 // Get active items only
 const getActive = () => {
-  const items = getAll();
-  return items.filter(item => item.isActive);
+  return cache.items.filter(item => item.isActive);
 };
 
 // Get items for selection (active, non-family items with resolved data)
 const getForSelection = (type = null) => {
-  const items = getAll();
-  return items
+  return cache.items
     .filter(item => item.isActive && !item.isFamily)
-    .filter(item => !type || item.type === type)
+    .filter(item => !type || item.itemType === type)
     .map(item => getResolved(item.id));
 };
 
 // Search items
 const search = (query, options = {}) => {
-  const items = getAll();
   const lowerQuery = query.toLowerCase();
   const { type, category, activeOnly = true, includeVariants = true } = options;
 
-  return items.filter(item => {
+  return cache.items.filter(item => {
     // Active filter
     if (activeOnly && !item.isActive) return false;
 
     // Type filter
-    if (type && item.type !== type) return false;
+    if (type && item.itemType !== type) return false;
 
     // Category filter
     if (category && item.category !== category) return false;
@@ -129,392 +202,319 @@ const search = (query, options = {}) => {
 
     // Text search
     const searchableText = [
-      item.name,
+      item.title,
       item.description,
-      item.provenance
+      item.provenance,
+      item.sku
     ].filter(Boolean).join(' ').toLowerCase();
 
     return searchableText.includes(lowerQuery);
   });
 };
 
+// Search async via API
+const searchAsync = async (query, options = {}) => {
+  try {
+    const response = await catalogApi.searchCatalog(query, options);
+    if (response.success) {
+      return response.data || [];
+    }
+    return search(query, options); // Fallback to local search
+  } catch (error) {
+    console.error('[catalogStorage] Error searching:', error);
+    return search(query, options);
+  }
+};
+
 // Create a new item
-const create = (itemData, userId = null) => {
+const create = async (itemData, userId = null) => {
   const validation = validateCatalogItem(itemData);
   if (!validation.isValid) {
     return { success: false, errors: validation.errors };
   }
 
-  const items = getAll();
-  const now = new Date().toISOString();
+  try {
+    // Transform name to title for API
+    const apiData = {
+      ...itemData,
+      title: itemData.name || itemData.title
+    };
+    delete apiData.name;
 
-  const newItem = {
-    ...getDefaultCatalogItem(itemData.type),
-    ...itemData,
-    id: generateId(),
-    createdAt: now,
-    updatedAt: now,
-    createdBy: userId
-  };
+    const response = await catalogApi.createCatalogItem(apiData);
 
-  // If creating a variant, link to parent
-  if (newItem.isVariant && newItem.parentId) {
-    const parentIndex = items.findIndex(i => i.id === newItem.parentId);
-    if (parentIndex !== -1) {
-      // Add variant ID to parent's variants array
-      if (!items[parentIndex].variants) {
-        items[parentIndex].variants = [];
-      }
-      items[parentIndex].variants.push(newItem.id);
+    if (response.success) {
+      // Transform response back (title to name for compatibility)
+      const item = {
+        ...response.data,
+        name: response.data.title
+      };
+
+      // Update cache
+      cache.items.push(item);
+
+      return { success: true, item };
     }
+
+    return { success: false, errors: { general: response.error?.message || 'api.error' } };
+  } catch (error) {
+    console.error('[catalogStorage] Error creating item:', error);
+    return { success: false, errors: { general: error.message || 'api.error' } };
   }
-
-  items.push(newItem);
-
-  if (saveAll(items)) {
-    return { success: true, item: newItem };
-  }
-
-  return { success: false, errors: { general: 'storage.error' } };
 };
 
 // Create a family with variants
-const createFamily = (familyData, variantsData, userId = null) => {
-  const items = getAll();
-  const now = new Date().toISOString();
-
-  // Create the family item
-  const family = {
-    ...getDefaultCatalogItem(familyData.type),
-    ...familyData,
-    id: generateId(),
-    isFamily: true,
-    isVariant: false,
-    variants: [],
-    createdAt: now,
-    updatedAt: now,
-    createdBy: userId
-  };
-
-  // Create variants
-  const variants = variantsData.map(variantData => {
-    const variantId = generateId();
-    family.variants.push(variantId);
-
-    return {
-      ...getDefaultCatalogItem(familyData.type),
-      ...variantData,
-      id: variantId,
-      parentId: family.id,
-      isFamily: false,
-      isVariant: true,
-      type: family.type, // Inherit type from family
-      createdAt: now,
-      updatedAt: now,
-      createdBy: userId
+const createFamily = async (familyData, variantsData, userId = null) => {
+  try {
+    // Create family first
+    const familyApiData = {
+      ...familyData,
+      title: familyData.name || familyData.title,
+      isFamily: true,
+      isVariant: false
     };
-  });
+    delete familyApiData.name;
 
-  items.push(family, ...variants);
+    const familyResponse = await catalogApi.createCatalogItem(familyApiData);
 
-  if (saveAll(items)) {
+    if (!familyResponse.success) {
+      return { success: false, errors: { general: familyResponse.error?.message || 'api.error' } };
+    }
+
+    const family = {
+      ...familyResponse.data,
+      name: familyResponse.data.title
+    };
+
+    // Create variants
+    const variants = [];
+    for (const variantData of variantsData) {
+      const variantApiData = {
+        ...variantData,
+        title: variantData.name || variantData.title
+      };
+      delete variantApiData.name;
+
+      const variantResponse = await catalogApi.createVariant(family.id, variantApiData);
+      if (variantResponse.success) {
+        variants.push({
+          ...variantResponse.data,
+          name: variantResponse.data.title
+        });
+      }
+    }
+
+    // Update cache
+    cache.items.push(family, ...variants);
+    invalidateCache();
+
     return { success: true, family, variants };
+  } catch (error) {
+    console.error('[catalogStorage] Error creating family:', error);
+    return { success: false, errors: { general: error.message || 'api.error' } };
   }
-
-  return { success: false, errors: { general: 'storage.error' } };
 };
 
 // Update an item
-const update = (id, updates) => {
-  const items = getAll();
-  const index = items.findIndex(i => i.id === id);
-
-  if (index === -1) {
-    return { success: false, errors: { general: 'item.notFound' } };
-  }
-
-  const currentItem = items[index];
-
-  // Merge updates
-  const updatedItem = {
-    ...currentItem,
-    ...updates,
-    id, // Prevent ID change
-    updatedAt: new Date().toISOString()
-  };
-
-  // Validate
-  const validation = validateCatalogItem(updatedItem);
-  if (!validation.isValid) {
-    return { success: false, errors: validation.errors };
-  }
-
-  items[index] = updatedItem;
-
-  // If this is a family, propagate inheritable changes to variants
-  if (currentItem.isFamily && currentItem.variants && currentItem.variants.length > 0) {
-    const inheritableFields = ['type', 'category', 'provenance', 'vatRate'];
-    const changedInheritableFields = inheritableFields.filter(
-      field => updates[field] !== undefined && updates[field] !== currentItem[field]
-    );
-
-    if (changedInheritableFields.length > 0) {
-      currentItem.variants.forEach(variantId => {
-        const variantIndex = items.findIndex(i => i.id === variantId);
-        if (variantIndex !== -1) {
-          // Only update fields that the variant hasn't explicitly overridden
-          changedInheritableFields.forEach(field => {
-            if (items[variantIndex][field] === currentItem[field] ||
-                items[variantIndex][field] === null ||
-                items[variantIndex][field] === undefined) {
-              items[variantIndex][field] = updates[field];
-            }
-          });
-          items[variantIndex].updatedAt = new Date().toISOString();
-        }
-      });
+const update = async (id, updates) => {
+  try {
+    // Transform name to title if present
+    const apiUpdates = { ...updates };
+    if (apiUpdates.name) {
+      apiUpdates.title = apiUpdates.name;
+      delete apiUpdates.name;
     }
-  }
 
-  if (saveAll(items)) {
-    return { success: true, item: updatedItem };
-  }
+    const response = await catalogApi.updateCatalogItem(id, apiUpdates);
 
-  return { success: false, errors: { general: 'storage.error' } };
+    if (response.success) {
+      const item = {
+        ...response.data,
+        name: response.data.title
+      };
+
+      // Update cache
+      const index = cache.items.findIndex(i => i.id === id);
+      if (index !== -1) {
+        cache.items[index] = item;
+      }
+
+      return { success: true, item };
+    }
+
+    return { success: false, errors: { general: response.error?.message || 'api.error' } };
+  } catch (error) {
+    console.error('[catalogStorage] Error updating item:', error);
+    return { success: false, errors: { general: error.message || 'api.error' } };
+  }
 };
 
 // Delete an item
-const remove = (id) => {
-  const items = getAll();
-  const index = items.findIndex(i => i.id === id);
+const remove = async (id) => {
+  try {
+    const response = await catalogApi.deleteCatalogItem(id);
 
-  if (index === -1) {
-    return { success: false, errors: { general: 'item.notFound' } };
-  }
+    if (response.success) {
+      // Remove from cache
+      const index = cache.items.findIndex(i => i.id === id);
+      if (index !== -1) {
+        const item = cache.items[index];
 
-  const item = items[index];
-
-  // If deleting a family, also delete all variants
-  if (item.isFamily && item.variants && item.variants.length > 0) {
-    const variantIds = [...item.variants];
-    variantIds.forEach(variantId => {
-      const variantIndex = items.findIndex(i => i.id === variantId);
-      if (variantIndex !== -1) {
-        items.splice(variantIndex, 1);
+        // If deleting a family, also remove variants from cache
+        if (item.isFamily) {
+          cache.items = cache.items.filter(i => i.parentId !== id && i.id !== id);
+        } else {
+          cache.items.splice(index, 1);
+        }
       }
-    });
-    // Re-find the family index after removing variants
-    const newIndex = items.findIndex(i => i.id === id);
-    if (newIndex !== -1) {
-      items.splice(newIndex, 1);
-    }
-  } else {
-    // If deleting a variant, remove from parent's variants array
-    if (item.isVariant && item.parentId) {
-      const parentIndex = items.findIndex(i => i.id === item.parentId);
-      if (parentIndex !== -1 && items[parentIndex].variants) {
-        items[parentIndex].variants = items[parentIndex].variants.filter(v => v !== id);
-      }
-    }
-    items.splice(index, 1);
-  }
 
-  if (saveAll(items)) {
-    return { success: true };
-  }
+      return { success: true };
+    }
 
-  return { success: false, errors: { general: 'storage.error' } };
+    return { success: false, errors: { general: response.error?.message || 'api.error' } };
+  } catch (error) {
+    console.error('[catalogStorage] Error deleting item:', error);
+    return { success: false, errors: { general: error.message || 'api.error' } };
+  }
 };
 
 // Add a variant to an existing family
-const addVariant = (familyId, variantData, userId = null) => {
-  const items = getAll();
-  const familyIndex = items.findIndex(i => i.id === familyId && i.isFamily);
+const addVariant = async (familyId, variantData, userId = null) => {
+  try {
+    const variantApiData = {
+      ...variantData,
+      title: variantData.name || variantData.title
+    };
+    delete variantApiData.name;
 
-  if (familyIndex === -1) {
-    return { success: false, errors: { general: 'family.notFound' } };
+    const response = await catalogApi.createVariant(familyId, variantApiData);
+
+    if (response.success) {
+      const variant = {
+        ...response.data,
+        name: response.data.title
+      };
+
+      // Update cache
+      cache.items.push(variant);
+
+      return { success: true, variant };
+    }
+
+    return { success: false, errors: { general: response.error?.message || 'api.error' } };
+  } catch (error) {
+    console.error('[catalogStorage] Error adding variant:', error);
+    return { success: false, errors: { general: error.message || 'api.error' } };
   }
-
-  const family = items[familyIndex];
-  const now = new Date().toISOString();
-
-  const variant = {
-    ...getDefaultCatalogItem(family.type),
-    ...variantData,
-    id: generateId(),
-    parentId: familyId,
-    isFamily: false,
-    isVariant: true,
-    type: family.type,
-    createdAt: now,
-    updatedAt: now,
-    createdBy: userId
-  };
-
-  // Add variant ID to family
-  if (!items[familyIndex].variants) {
-    items[familyIndex].variants = [];
-  }
-  items[familyIndex].variants.push(variant.id);
-
-  items.push(variant);
-
-  if (saveAll(items)) {
-    return { success: true, variant };
-  }
-
-  return { success: false, errors: { general: 'storage.error' } };
 };
 
 // Convert a regular item to a family
-const convertToFamily = (id) => {
-  const items = getAll();
-  const index = items.findIndex(i => i.id === id);
-
-  if (index === -1) {
-    return { success: false, errors: { general: 'item.notFound' } };
-  }
-
-  if (items[index].isVariant) {
-    return { success: false, errors: { general: 'variant.cannotConvert' } };
-  }
-
-  items[index] = {
-    ...items[index],
-    isFamily: true,
-    variants: [],
-    updatedAt: new Date().toISOString()
-  };
-
-  if (saveAll(items)) {
-    return { success: true, item: items[index] };
-  }
-
-  return { success: false, errors: { general: 'storage.error' } };
+const convertToFamily = async (id) => {
+  return update(id, { isFamily: true });
 };
 
 // Toggle active status
-const toggleActive = (id) => {
-  const items = getAll();
-  const index = items.findIndex(i => i.id === id);
-
-  if (index === -1) {
-    return { success: false, errors: { general: 'item.notFound' } };
-  }
-
-  items[index] = {
-    ...items[index],
-    isActive: !items[index].isActive,
-    updatedAt: new Date().toISOString()
-  };
-
-  if (saveAll(items)) {
-    return { success: true, item: items[index] };
-  }
-
-  return { success: false, errors: { general: 'storage.error' } };
-};
-
-// Duplicate an item
-const duplicate = (id, userId = null) => {
+const toggleActive = async (id) => {
   const item = getById(id);
-
   if (!item) {
     return { success: false, errors: { general: 'item.notFound' } };
   }
 
-  const duplicatedItem = {
-    ...item,
-    id: undefined, // Will be generated
-    name: `${item.name} (copy)`,
-    isFamily: false,
-    isVariant: false,
-    parentId: null,
-    variants: []
-  };
-
-  return create(duplicatedItem, userId);
+  return update(id, { isActive: !item.isActive });
 };
 
-// Import items from array
-const importItems = (itemsData, userId = null, options = { overwrite: false }) => {
-  const existingItems = options.overwrite ? [] : getAll();
-  const results = { success: [], errors: [] };
-  const now = new Date().toISOString();
+// Duplicate an item
+const duplicate = async (id, userId = null) => {
+  try {
+    const response = await catalogApi.duplicateCatalogItem(id);
 
-  itemsData.forEach((itemData, index) => {
-    const validation = validateCatalogItem(itemData);
-    if (!validation.isValid) {
-      results.errors.push({ index, errors: validation.errors });
-      return;
+    if (response.success) {
+      const item = {
+        ...response.data,
+        name: response.data.title
+      };
+
+      // Update cache
+      cache.items.push(item);
+
+      return { success: true, item };
     }
 
-    const newItem = {
-      ...getDefaultCatalogItem(itemData.type),
-      ...itemData,
-      id: itemData.id || generateId(),
-      createdAt: itemData.createdAt || now,
-      updatedAt: now,
-      createdBy: userId
-    };
-
-    existingItems.push(newItem);
-    results.success.push(newItem);
-  });
-
-  if (saveAll(existingItems)) {
-    return { success: true, ...results };
+    return { success: false, errors: { general: response.error?.message || 'api.error' } };
+  } catch (error) {
+    console.error('[catalogStorage] Error duplicating item:', error);
+    return { success: false, errors: { general: error.message || 'api.error' } };
   }
-
-  return { success: false, errors: [{ general: 'storage.error' }] };
-};
-
-// Export items
-const exportItems = (options = {}) => {
-  let items = getAll();
-
-  if (options.type) {
-    items = items.filter(i => i.type === options.type);
-  }
-
-  if (options.activeOnly) {
-    items = items.filter(i => i.isActive);
-  }
-
-  return items;
 };
 
 // Get statistics
 const getStats = () => {
-  const items = getAll();
+  const items = cache.items;
 
   return {
     total: items.length,
     active: items.filter(i => i.isActive).length,
     inactive: items.filter(i => !i.isActive).length,
     byType: {
-      medication: items.filter(i => i.type === 'medication').length,
-      treatment: items.filter(i => i.type === 'treatment').length,
-      service: items.filter(i => i.type === 'service').length
+      medication: items.filter(i => i.itemType === 'medication').length,
+      treatment: items.filter(i => i.itemType === 'treatment').length,
+      service: items.filter(i => i.itemType === 'service').length,
+      products: items.filter(i => i.itemType === 'product').length
     },
     families: items.filter(i => i.isFamily).length,
     variants: items.filter(i => i.isVariant).length
   };
 };
 
-// Clear all items
-const clearAll = () => {
+// Get statistics async from API
+const getStatsAsync = async () => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
-    return true;
+    const response = await catalogApi.getCatalogStats();
+    if (response.success) {
+      return response.data;
+    }
+    return getStats(); // Fallback to local stats
   } catch (error) {
-    console.error('Error clearing catalog:', error);
-    return false;
+    console.error('[catalogStorage] Error fetching stats:', error);
+    return getStats();
   }
+};
+
+// Get items for appointments async
+const getForAppointmentsAsync = async () => {
+  try {
+    const response = await catalogApi.getItemsForAppointments();
+    if (response.success) {
+      return response.data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('[catalogStorage] Error fetching items for appointments:', error);
+    return [];
+  }
+};
+
+// Initialize - fetch data on module load
+const initialize = async () => {
+  if (!cache.initialized) {
+    await fetchAll(true);
+  }
+  return cache.items;
+};
+
+// Clear cache
+const clearCache = () => {
+  cache = {
+    items: [],
+    lastFetch: null,
+    isFetching: false,
+    initialized: false
+  };
 };
 
 // Export storage module
 export const catalogStorage = {
+  // Sync methods (from cache)
   getAll,
   getById,
   getResolved,
@@ -525,6 +525,17 @@ export const catalogStorage = {
   getActive,
   getForSelection,
   search,
+  getStats,
+
+  // Async methods (from API)
+  getAllAsync,
+  getByIdAsync,
+  getFamiliesAsync,
+  searchAsync,
+  getStatsAsync,
+  getForAppointmentsAsync,
+
+  // CRUD operations (all async)
   create,
   createFamily,
   update,
@@ -533,10 +544,12 @@ export const catalogStorage = {
   convertToFamily,
   toggleActive,
   duplicate,
-  importItems,
-  exportItems,
-  getStats,
-  clearAll
+
+  // Cache management
+  initialize,
+  invalidateCache,
+  clearCache,
+  fetchAll
 };
 
 export default catalogStorage;

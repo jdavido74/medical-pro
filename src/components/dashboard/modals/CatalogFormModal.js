@@ -213,26 +213,36 @@ const CatalogFormModal = ({
     try {
       let result;
 
+      // Prepare data for API (use 'title' for API, transform 'type' to 'itemType')
+      const apiData = {
+        ...formData,
+        title: formData.name,
+        itemType: formData.type,
+        unitPrice: formData.price,
+        taxRate: formData.vatRate
+      };
+
       if (mode === 'edit') {
-        result = catalogStorage.update(item.id, formData);
+        result = await catalogStorage.update(item.id, apiData);
       } else if (mode === 'variant') {
-        result = catalogStorage.addVariant(parentItem.id, formData, user?.id);
+        result = await catalogStorage.addVariant(parentItem.id, apiData, user?.id);
       } else if (createAsFamily && variants.length > 0) {
         // Create as family with variants
-        result = catalogStorage.createFamily(
-          { ...formData, isFamily: true },
+        result = await catalogStorage.createFamily(
+          { ...apiData, isFamily: true },
           variants.map(v => ({
             ...v,
-            name: v.name || `${formData.name} ${v.dosage}${v.dosageUnit}`,
-            type: formData.type,
+            title: v.name || `${formData.name} ${v.dosage}${v.dosageUnit}`,
+            itemType: formData.type,
             category: formData.category,
-            vatRate: formData.vatRate,
+            taxRate: formData.vatRate,
+            unitPrice: v.price,
             provenance: formData.provenance
           })),
           user?.id
         );
       } else {
-        result = catalogStorage.create(formData, user?.id);
+        result = await catalogStorage.create(apiData, user?.id);
       }
 
       if (result.success) {
@@ -242,7 +252,7 @@ const CatalogFormModal = ({
       }
     } catch (error) {
       console.error('Error saving catalog item:', error);
-      setErrors({ general: t('messages.error') });
+      setErrors({ general: error.message || t('messages.error') });
     } finally {
       setIsSubmitting(false);
     }
