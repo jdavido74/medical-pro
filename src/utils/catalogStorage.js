@@ -5,7 +5,7 @@
  */
 
 import catalogApi from '../api/catalogApi';
-import { getDefaultCatalogItem, validateCatalogItem } from '../constants/catalogConfig';
+// Config imports removed - validation is handled by the form component
 
 // Local cache for performance
 let cache = {
@@ -228,16 +228,14 @@ const searchAsync = async (query, options = {}) => {
 
 // Create a new item
 const create = async (itemData, userId = null) => {
-  const validation = validateCatalogItem(itemData);
-  if (!validation.isValid) {
-    return { success: false, errors: validation.errors };
-  }
+  // Note: Validation is done in the form before calling this function
+  // itemData already has 'title' (not 'name') when coming from CatalogFormModal
 
   try {
-    // Transform name to title for API
+    // Ensure we have title (could come as 'name' from legacy code or 'title' from form)
     const apiData = {
       ...itemData,
-      title: itemData.name || itemData.title
+      title: itemData.title || itemData.name
     };
     delete apiData.name;
 

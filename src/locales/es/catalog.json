@@ -29,10 +29,35 @@
     "volume": "Volumen",
     "provenance": "Procedencia",
     "duration": "Duración",
+    "prepBefore": "Preparación antes",
+    "prepBeforeHint": "Tiempo de preparación antes de la cita",
+    "prepAfter": "Tiempo después",
+    "prepAfterHint": "Tiempo de limpieza/descanso después de la cita",
+    "noPrepTime": "Ninguno",
     "family": "Familia",
     "variants": "Variantes",
+    "tags": "Etiquetas",
     "createdAt": "Creado",
     "updatedAt": "Actualizado"
+  },
+
+  "tags": {
+    "title": "Etiquetas",
+    "description": "Usa etiquetas para agrupar y organizar tus productos",
+    "noTags": "No hay etiquetas disponibles",
+    "newTagPlaceholder": "Nueva etiqueta...",
+    "create": "Crear",
+    "createSuccess": "Etiqueta creada con éxito",
+    "createError": "Error al crear la etiqueta",
+    "selected": "{{count}} etiqueta seleccionada",
+    "selected_plural": "{{count}} etiquetas seleccionadas",
+    "selectColor": "Seleccionar un color",
+    "product": "producto",
+    "products": "productos",
+    "noProducts": "No hay productos con esta etiqueta",
+    "delete": "Eliminar etiqueta",
+    "deleteSuccess": "Etiqueta eliminada con éxito",
+    "deleteHasProducts": "Esta etiqueta tiene productos asociados y no se puede eliminar"
   },
 
   "units": {
@@ -111,7 +136,23 @@
     "uncategorized": "Sin categoría",
     "confirmDelete": "¿Estás seguro de que quieres eliminar esta categoría?",
     "deleteWarning": "Los elementos de esta categoría no se eliminarán, quedarán sin categoría.",
-    "hasItems": "Esta categoría contiene elementos"
+    "hasItems": "Esta categoría contiene elementos",
+    "doubleClickToEdit": "Doble clic para editar"
+  },
+
+  "defaultCategories": {
+    "vitamins": "Vitaminas y Suplementos",
+    "antibiotics": "Antibióticos",
+    "painkillers": "Analgésicos",
+    "dermatology": "Dermatología",
+    "injections": "Inyecciones",
+    "aesthetic": "Estética",
+    "therapy": "Terapia",
+    "preventive": "Cuidado Preventivo",
+    "consultation": "Consultas",
+    "diagnostic": "Diagnósticos",
+    "followup": "Seguimiento",
+    "emergency": "Urgencia"
   },
 
   "status": {

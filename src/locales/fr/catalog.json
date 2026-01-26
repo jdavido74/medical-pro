@@ -29,10 +29,35 @@
     "volume": "Volume",
     "provenance": "Provenance",
     "duration": "Durée",
+    "prepBefore": "Préparation avant",
+    "prepBeforeHint": "Temps de préparation avant le RDV",
+    "prepAfter": "Temps après",
+    "prepAfterHint": "Temps de nettoyage/repos après le RDV",
+    "noPrepTime": "Aucun",
     "family": "Famille",
     "variants": "Variantes",
+    "tags": "Tags",
     "createdAt": "Créé le",
     "updatedAt": "Modifié le"
+  },
+
+  "tags": {
+    "title": "Tags",
+    "description": "Utilisez les tags pour grouper et organiser vos produits",
+    "noTags": "Aucun tag disponible",
+    "newTagPlaceholder": "Nouveau tag...",
+    "create": "Créer",
+    "createSuccess": "Tag créé avec succès",
+    "createError": "Erreur lors de la création du tag",
+    "selected": "{{count}} tag sélectionné",
+    "selected_plural": "{{count}} tags sélectionnés",
+    "selectColor": "Sélectionner une couleur",
+    "product": "produit",
+    "products": "produits",
+    "noProducts": "Aucun produit avec ce tag",
+    "delete": "Supprimer le tag",
+    "deleteSuccess": "Tag supprimé avec succès",
+    "deleteHasProducts": "Ce tag est associé à des produits et ne peut pas être supprimé"
   },
 
   "units": {
@@ -111,7 +136,23 @@
     "uncategorized": "Non catégorisé",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette catégorie ?",
     "deleteWarning": "Les éléments de cette catégorie ne seront pas supprimés, ils deviendront non catégorisés.",
-    "hasItems": "Cette catégorie contient des éléments"
+    "hasItems": "Cette catégorie contient des éléments",
+    "doubleClickToEdit": "Double-cliquez pour modifier"
+  },
+
+  "defaultCategories": {
+    "vitamins": "Vitamines & Compléments",
+    "antibiotics": "Antibiotiques",
+    "painkillers": "Antidouleurs",
+    "dermatology": "Dermatologie",
+    "injections": "Injections",
+    "aesthetic": "Esthétique",
+    "therapy": "Thérapie",
+    "preventive": "Soins préventifs",
+    "consultation": "Consultations",
+    "diagnostic": "Diagnostics",
+    "followup": "Suivi",
+    "emergency": "Urgence"
   },
 
   "status": {

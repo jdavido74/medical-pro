@@ -7,25 +7,26 @@ import { STORAGE_KEYS } from '../constants/catalogConfig';
 
 const STORAGE_KEY = STORAGE_KEYS.CATALOG_CATEGORIES;
 
-// Default categories per type
+// Default categories per type - use i18n keys for names
+// These keys should be translated in catalog.json under "defaultCategories"
 const DEFAULT_CATEGORIES = {
   medication: [
-    { id: 'vitamins', name: 'Vitamins & Supplements', color: '#10B981' },
-    { id: 'antibiotics', name: 'Antibiotics', color: '#EF4444' },
-    { id: 'painkillers', name: 'Pain Relief', color: '#F59E0B' },
-    { id: 'dermatology', name: 'Dermatology', color: '#8B5CF6' }
+    { id: 'vitamins', nameKey: 'defaultCategories.vitamins', color: '#10B981' },
+    { id: 'antibiotics', nameKey: 'defaultCategories.antibiotics', color: '#EF4444' },
+    { id: 'painkillers', nameKey: 'defaultCategories.painkillers', color: '#F59E0B' },
+    { id: 'dermatology', nameKey: 'defaultCategories.dermatology', color: '#8B5CF6' }
   ],
   treatment: [
-    { id: 'injections', name: 'Injections', color: '#3B82F6' },
-    { id: 'aesthetic', name: 'Aesthetic', color: '#EC4899' },
-    { id: 'therapy', name: 'Therapy', color: '#06B6D4' },
-    { id: 'preventive', name: 'Preventive Care', color: '#84CC16' }
+    { id: 'injections', nameKey: 'defaultCategories.injections', color: '#3B82F6' },
+    { id: 'aesthetic', nameKey: 'defaultCategories.aesthetic', color: '#EC4899' },
+    { id: 'therapy', nameKey: 'defaultCategories.therapy', color: '#06B6D4' },
+    { id: 'preventive', nameKey: 'defaultCategories.preventive', color: '#84CC16' }
   ],
   service: [
-    { id: 'consultation', name: 'Consultations', color: '#6366F1' },
-    { id: 'diagnostic', name: 'Diagnostics', color: '#14B8A6' },
-    { id: 'followup', name: 'Follow-up', color: '#F97316' },
-    { id: 'emergency', name: 'Emergency', color: '#DC2626' }
+    { id: 'consultation', nameKey: 'defaultCategories.consultation', color: '#6366F1' },
+    { id: 'diagnostic', nameKey: 'defaultCategories.diagnostic', color: '#14B8A6' },
+    { id: 'followup', nameKey: 'defaultCategories.followup', color: '#F97316' },
+    { id: 'emergency', nameKey: 'defaultCategories.emergency', color: '#DC2626' }
   ]
 };
 

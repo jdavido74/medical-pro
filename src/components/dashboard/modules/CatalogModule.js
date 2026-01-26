@@ -1,17 +1,18 @@
 /**
  * CatalogModule - Main catalog management module
- * Manages medications, treatments, and services with family/variant support
+ * Manages medications, treatments, and services with tag-based grouping
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Package, Plus, Search, MoreVertical, Edit, Trash2, Copy,
+  Package, Plus, Search, Edit, Trash2, Copy,
   ChevronDown, ChevronRight, Pill, Syringe, Stethoscope, Tag,
   ToggleLeft, ToggleRight, X, Check
 } from 'lucide-react';
 import { catalogStorage } from '../../../utils/catalogStorage';
-import { catalogCategoriesStorage } from '../../../utils/catalogCategoriesStorage';
+import categoriesApi from '../../../api/categoriesApi';
+import tagsApi from '../../../api/tagsApi';
 import { CATALOG_TYPES, DOSAGE_UNITS } from '../../../constants/catalogConfig';
 import { usePermissions } from '../../auth/PermissionGuard';
 import CatalogFormModal from '../modals/CatalogFormModal';
@@ -20,14 +21,16 @@ import CatalogFormModal from '../modals/CatalogFormModal';
 const TYPE_ICONS = {
   medication: Pill,
   treatment: Syringe,
-  service: Stethoscope
+  service: Stethoscope,
+  product: Package  // Fallback for legacy 'product' type
 };
 
 // Color mapping for item types
 const TYPE_COLORS = {
   medication: 'bg-green-100 text-green-700',
   treatment: 'bg-blue-100 text-blue-700',
-  service: 'bg-purple-100 text-purple-700'
+  service: 'bg-purple-100 text-purple-700',
+  product: 'bg-gray-100 text-gray-700'  // Fallback for legacy 'product' type
 };
 
 const CatalogModule = () => {
@@ -42,39 +45,64 @@ const CatalogModule = () => {
   // State
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState({});
+  const [availableTags, setAvailableTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [expandedFamilies, setExpandedFamilies] = useState(new Set());
+  // eslint-disable-next-line no-unused-vars
+  const [selectedTagFilter, setSelectedTagFilter] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [formMode, setFormMode] = useState('create'); // 'create', 'edit', 'variant'
-  const [parentItem, setParentItem] = useState(null);
+  const [formMode, setFormMode] = useState('create'); // 'create', 'edit'
   const [showCategoryManager, setShowCategoryManager] = useState(false);
-  const [actionMenuOpen, setActionMenuOpen] = useState(null);
   const [toast, setToast] = useState(null);
+  // Legacy family/variant UI state (kept for UI compatibility)
+  const [expandedFamilies, setExpandedFamilies] = useState(new Set());
 
   // Category manager state (lifted from renderCategoryManager to avoid hooks in render function)
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#6366F1');
   const [categoryManagerType, setCategoryManagerType] = useState('medication');
+  // Category editing state
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [editingCategoryColor, setEditingCategoryColor] = useState('');
 
   // Load data
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const loadedItems = await catalogStorage.getAllAsync();
-      const loadedCategories = catalogCategoriesStorage.getAll();
-      // Transform items: API uses 'title', frontend uses 'name'; API uses 'itemType', frontend uses 'type'
+      // Load items, categories and tags in parallel
+      const [loadedItems, tagsResponse, categoriesResponse] = await Promise.all([
+        catalogStorage.getAllAsync(),
+        tagsApi.getTags(),
+        categoriesApi.getCategoriesGrouped()
+      ]);
+
+      // Transform items: API uses different field names than frontend
       const transformedItems = loadedItems.map(item => ({
         ...item,
         name: item.title || item.name,
-        type: item.itemType || item.type
+        type: item.itemType || item.type,
+        price: item.unitPrice ?? item.price ?? 0,
+        vatRate: item.taxRate ?? item.vatRate ?? 20,
+        isActive: item.isActive !== false,  // Default to true if not explicitly false
+        // Get first category ID if categories array exists
+        category: item.categories && item.categories.length > 0 ? item.categories[0].id : null
       }));
       setItems(transformedItems);
-      setCategories(loadedCategories);
+
+      // Set categories grouped by type
+      if (categoriesResponse.success) {
+        setCategories(categoriesResponse.data || {});
+      }
+
+      // Set tags
+      if (tagsResponse.success) {
+        setAvailableTags(tagsResponse.data || []);
+      }
     } catch (error) {
       console.error('Error loading catalog:', error);
       showToast(t('messages.loadError'), 'error');
@@ -149,9 +177,8 @@ const CatalogModule = () => {
   };
 
   // Handle create new item
-  const handleCreate = (type = 'medication') => {
+  const handleCreate = () => {
     setSelectedItem(null);
-    setParentItem(null);
     setFormMode('create');
     setShowFormModal(true);
   };
@@ -159,24 +186,21 @@ const CatalogModule = () => {
   // Handle edit item
   const handleEdit = (item) => {
     setSelectedItem(item);
-    setParentItem(null);
     setFormMode('edit');
     setShowFormModal(true);
-    setActionMenuOpen(null);
   };
 
-  // Handle add variant
+  // Handle add variant (legacy - now use tags for grouping)
+  // eslint-disable-next-line no-unused-vars
   const handleAddVariant = (familyItem) => {
+    // With tags system, just create a new item and assign the same tag
     setSelectedItem(null);
-    setParentItem(familyItem);
-    setFormMode('variant');
+    setFormMode('create');
     setShowFormModal(true);
-    setActionMenuOpen(null);
   };
 
   // Handle duplicate item
   const handleDuplicate = async (item) => {
-    setActionMenuOpen(null);
     try {
       const result = await catalogStorage.duplicate(item.id);
       if (result.success) {
@@ -193,7 +217,6 @@ const CatalogModule = () => {
 
   // Handle toggle active
   const handleToggleActive = async (item) => {
-    setActionMenuOpen(null);
     try {
       const result = await catalogStorage.toggleActive(item.id);
       if (result.success) {
@@ -211,7 +234,6 @@ const CatalogModule = () => {
   // Handle delete item
   const handleDelete = async (item) => {
     if (window.confirm(t('modal.deleteConfirm', { name: item.name }))) {
-      setActionMenuOpen(null);
       try {
         const result = await catalogStorage.remove(item.id);
         if (result.success) {
@@ -224,14 +246,11 @@ const CatalogModule = () => {
         console.error('Error deleting item:', error);
         showToast(t('messages.error'), 'error');
       }
-    } else {
-      setActionMenuOpen(null);
     }
   };
 
   // Handle convert to family
   const handleConvertToFamily = async (item) => {
-    setActionMenuOpen(null);
     try {
       const result = await catalogStorage.convertToFamily(item.id);
       if (result.success) {
@@ -273,7 +292,8 @@ const CatalogModule = () => {
     if (!categoryId) return t('categories.uncategorized');
     const typeCategories = categories[itemType] || [];
     const category = typeCategories.find(c => c.id === categoryId);
-    return category ? category.name : categoryId;
+    if (!category) return t('categories.uncategorized');
+    return category.name;
   };
 
   // Get category color
@@ -300,7 +320,7 @@ const CatalogModule = () => {
 
   // Render item row
   const renderItem = (item, isVariant = false) => {
-    const TypeIcon = TYPE_ICONS[item.type];
+    const TypeIcon = TYPE_ICONS[item.type] || Package;  // Fallback to Package icon
     const variants = item.isFamily ? getItemVariants(item.id) : [];
     const isExpanded = expandedFamilies.has(item.id);
     const dosageStr = formatDosage(item);
@@ -326,7 +346,7 @@ const CatalogModule = () => {
               {!item.isFamily && !isVariant && <div className="w-6" />}
               {isVariant && <div className="w-6 border-l-2 border-gray-200 h-full -ml-4 mr-2" />}
 
-              <div className={`p-2 rounded-lg ${TYPE_COLORS[item.type]} mr-3`}>
+              <div className={`p-2 rounded-lg ${TYPE_COLORS[item.type] || 'bg-gray-100 text-gray-700'} mr-3`}>
                 <TypeIcon className="h-4 w-4" />
               </div>
 
@@ -356,7 +376,7 @@ const CatalogModule = () => {
 
           {/* Type column */}
           <td className="px-6 py-4 whitespace-nowrap">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[item.type]}`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[item.type] || 'bg-gray-100 text-gray-700'}`}>
               {t(`types.${item.type}`)}
             </span>
           </td>
@@ -395,90 +415,69 @@ const CatalogModule = () => {
 
           {/* Actions column */}
           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <div className="relative inline-block text-left">
-              <button
-                onClick={() => setActionMenuOpen(actionMenuOpen === item.id ? null : item.id)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </button>
+            <div className="flex items-center justify-end gap-1">
+              {canEdit && (
+                <button
+                  onClick={() => handleEdit(item)}
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title={t('actions.edit')}
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+              )}
 
-              {actionMenuOpen === item.id && (
-                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                  <div className="py-1">
-                    {canEdit && (
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        {t('actions.edit')}
-                      </button>
-                    )}
+              {canCreate && (
+                <button
+                  onClick={() => handleDuplicate(item)}
+                  className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                  title={t('actions.duplicate')}
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              )}
 
-                    {canCreate && (
-                      <button
-                        onClick={() => handleDuplicate(item)}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        {t('actions.duplicate')}
-                      </button>
-                    )}
+              {canEdit && item.isFamily && (
+                <button
+                  onClick={() => handleAddVariant(item)}
+                  className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  title={t('actions.addVariant')}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              )}
 
-                    {canEdit && item.isFamily && (
-                      <button
-                        onClick={() => handleAddVariant(item)}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t('actions.addVariant')}
-                      </button>
-                    )}
+              {canEdit && !item.isFamily && !item.isVariant && CATALOG_TYPES[item.type]?.canHaveVariants && (
+                <button
+                  onClick={() => handleConvertToFamily(item)}
+                  className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                  title={t('actions.convertToFamily')}
+                >
+                  <Tag className="h-4 w-4" />
+                </button>
+              )}
 
-                    {canEdit && !item.isFamily && !item.isVariant && CATALOG_TYPES[item.type]?.canHaveVariants && (
-                      <button
-                        onClick={() => handleConvertToFamily(item)}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <Tag className="h-4 w-4 mr-2" />
-                        {t('actions.convertToFamily')}
-                      </button>
-                    )}
+              {canEdit && (
+                <button
+                  onClick={() => handleToggleActive(item)}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    item.isActive
+                      ? 'text-gray-400 hover:text-orange-600 hover:bg-orange-50'
+                      : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                  }`}
+                  title={item.isActive ? t('actions.deactivate') : t('actions.activate')}
+                >
+                  {item.isActive ? <ToggleLeft className="h-4 w-4" /> : <ToggleRight className="h-4 w-4" />}
+                </button>
+              )}
 
-                    {canEdit && (
-                      <button
-                        onClick={() => handleToggleActive(item)}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        {item.isActive ? (
-                          <>
-                            <ToggleLeft className="h-4 w-4 mr-2" />
-                            {t('actions.deactivate')}
-                          </>
-                        ) : (
-                          <>
-                            <ToggleRight className="h-4 w-4 mr-2" />
-                            {t('actions.activate')}
-                          </>
-                        )}
-                      </button>
-                    )}
-
-                    {canDelete && (
-                      <>
-                        <div className="border-t border-gray-100 my-1" />
-                        <button
-                          onClick={() => handleDelete(item)}
-                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          {t('actions.delete')}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+              {canDelete && (
+                <button
+                  onClick={() => handleDelete(item)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title={t('actions.delete')}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               )}
             </div>
           </td>
@@ -491,28 +490,110 @@ const CatalogModule = () => {
   };
 
   // Handle adding a category
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
 
-    const result = catalogCategoriesStorage.add(categoryManagerType, {
-      name: newCategoryName.trim(),
-      color: newCategoryColor
-    });
+    try {
+      const response = await categoriesApi.createCategory({
+        name: newCategoryName.trim(),
+        color: newCategoryColor,
+        type: categoryManagerType
+      });
 
-    if (result) {
-      setCategories(catalogCategoriesStorage.getAll());
-      setNewCategoryName('');
-      showToast(t('messages.categoryCreateSuccess'));
+      if (response.success) {
+        // Reload categories from API
+        const categoriesResponse = await categoriesApi.getCategoriesGrouped();
+        if (categoriesResponse.success) {
+          setCategories(categoriesResponse.data || {});
+        }
+        setNewCategoryName('');
+        showToast(t('messages.categoryCreateSuccess'));
+      } else {
+        showToast(response.error?.message || t('messages.error'), 'error');
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      showToast(t('messages.error'), 'error');
     }
   };
 
   // Handle deleting a category
-  const handleDeleteCategory = (categoryId) => {
-    if (window.confirm(t('categories.confirmDelete'))) {
-      catalogCategoriesStorage.remove(categoryId);
-      setCategories(catalogCategoriesStorage.getAll());
-      showToast(t('messages.categoryDeleteSuccess'));
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm(t('categories.confirmDelete'))) return;
+
+    try {
+      const response = await categoriesApi.deleteCategory(categoryId);
+
+      if (response.success) {
+        // Reload categories from API
+        const categoriesResponse = await categoriesApi.getCategoriesGrouped();
+        if (categoriesResponse.success) {
+          setCategories(categoriesResponse.data || {});
+        }
+        showToast(t('messages.categoryDeleteSuccess'));
+      } else {
+        showToast(response.error?.message || t('messages.error'), 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      showToast(t('messages.error'), 'error');
     }
+  };
+
+  // Start editing a category
+  const startEditingCategory = (category) => {
+    setEditingCategoryId(category.id);
+    setEditingCategoryName(category.name);
+    setEditingCategoryColor(category.color);
+  };
+
+  // Save category edit
+  const saveEditingCategory = async () => {
+    if (!editingCategoryName.trim() || !editingCategoryId) return;
+
+    try {
+      const response = await categoriesApi.updateCategory(editingCategoryId, {
+        name: editingCategoryName.trim(),
+        color: editingCategoryColor
+      });
+
+      if (response.success) {
+        // Reload categories from API
+        const categoriesResponse = await categoriesApi.getCategoriesGrouped();
+        if (categoriesResponse.success) {
+          setCategories(categoriesResponse.data || {});
+        }
+        showToast(t('messages.categoryUpdateSuccess'));
+      } else {
+        showToast(response.error?.message || t('messages.error'), 'error');
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+      showToast(t('messages.error'), 'error');
+    }
+
+    cancelEditingCategory();
+  };
+
+  // Cancel category edit
+  const cancelEditingCategory = () => {
+    setEditingCategoryId(null);
+    setEditingCategoryName('');
+    setEditingCategoryColor('');
+  };
+
+  // Handle key press in edit input
+  const handleEditKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      saveEditingCategory();
+    } else if (e.key === 'Escape') {
+      cancelEditingCategory();
+    }
+  };
+
+  // Get display name for category
+  const getCategoryDisplayName = (category) => {
+    return category.name;
   };
 
   // Render category manager
@@ -575,23 +656,78 @@ const CatalogModule = () => {
           {(categories[categoryManagerType] || []).map(category => (
             <div
               key={category.id}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group"
             >
-              <div className="flex items-center gap-3">
-                <span
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: category.color }}
-                />
-                <span className="text-sm font-medium text-gray-900">{category.name}</span>
-              </div>
+              {editingCategoryId === category.id ? (
+                /* Edit mode */
+                <div className="flex items-center gap-2 flex-1">
+                  <input
+                    type="color"
+                    value={editingCategoryColor}
+                    onChange={(e) => setEditingCategoryColor(e.target.value)}
+                    className="h-8 w-8 rounded-md border border-gray-300 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={editingCategoryName}
+                    onChange={(e) => setEditingCategoryName(e.target.value)}
+                    onKeyDown={handleEditKeyPress}
+                    autoFocus
+                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                  <button
+                    onClick={saveEditingCategory}
+                    className="p-1 text-green-600 hover:text-green-700"
+                    title={t('actions.save', 'Enregistrer')}
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={cancelEditingCategory}
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    title={t('actions.cancel', 'Annuler')}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                /* View mode */
+                <>
+                  <div
+                    className="flex items-center gap-3 flex-1 cursor-pointer"
+                    onDoubleClick={() => canEdit && startEditingCategory(category)}
+                    title={canEdit ? t('categories.doubleClickToEdit', 'Double-cliquez pour modifier') : ''}
+                  >
+                    <span
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="text-sm font-medium text-gray-900">
+                      {getCategoryDisplayName(category)}
+                    </span>
+                  </div>
 
-              {canDelete && (
-                <button
-                  onClick={() => handleDeleteCategory(category.id)}
-                  className="text-gray-400 hover:text-red-500"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  <div className="flex items-center gap-1">
+                    {canEdit && (
+                      <button
+                        onClick={() => startEditingCategory(category)}
+                        className="p-1 text-gray-400 hover:text-green-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title={t('actions.edit')}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title={t('actions.delete')}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           ))}
@@ -707,7 +843,7 @@ const CatalogModule = () => {
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
               >
                 <option value="">{t('filters.category')}</option>
-                {catalogCategoriesStorage.getAllFlat().map(cat => (
+                {Object.values(categories).flat().map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
@@ -809,7 +945,7 @@ const CatalogModule = () => {
           onClose={() => setShowFormModal(false)}
           onSave={handleFormSave}
           item={selectedItem}
-          parentItem={parentItem}
+          availableTags={availableTags}
           mode={formMode}
           categories={categories}
         />
@@ -829,13 +965,6 @@ const CatalogModule = () => {
         </div>
       )}
 
-      {/* Click outside to close action menu */}
-      {actionMenuOpen && (
-        <div
-          className="fixed inset-0 z-0"
-          onClick={() => setActionMenuOpen(null)}
-        />
-      )}
     </div>
   );
 };

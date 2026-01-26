@@ -151,6 +151,8 @@ export const getDefaultCatalogItem = (type = 'medication') => ({
   volume: null,
   provenance: null,
   duration: getDefaultDuration(type),
+  prepBefore: 0,
+  prepAfter: 0,
   variants: [],
   createdAt: null,
   updatedAt: null,
