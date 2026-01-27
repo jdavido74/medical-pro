@@ -196,6 +196,45 @@
     "viewDetails": "Voir les détails",
     "previous": "Précédent",
     "next": "Suivant",
-    "saving": "Enregistrement..."
+    "saving": "Enregistrement...",
+    "sendConsent": "Envoyer consentement"
+  },
+
+  "list": {
+    "title": "Liste",
+    "searchPatient": "Rechercher par nom de patient...",
+    "noResults": "Aucun rendez-vous trouvé",
+    "columns": {
+      "date": "Date",
+      "time": "Heure",
+      "patient": "Patient",
+      "treatment": "Traitement",
+      "machine": "Machine",
+      "provider": "Praticien",
+      "status": "Statut",
+      "consent": "Consentement",
+      "actions": "Actions"
+    },
+    "period": {
+      "all": "Toutes les dates",
+      "today": "Aujourd'hui",
+      "thisWeek": "Cette semaine",
+      "thisMonth": "Ce mois",
+      "nextWeek": "Semaine prochaine",
+      "nextMonth": "Mois prochain",
+      "past": "Passés"
+    },
+    "consent": {
+      "pending": "En attente",
+      "sent": "Envoyé",
+      "signed": "Signé",
+      "notRequired": "Non requis",
+      "send": "Envoyer consentement",
+      "view": "Voir consentement"
+    },
+    "selected": "{{count}} sélectionné(s)",
+    "bulkActions": "Actions groupées",
+    "deleteSelected": "Supprimer sélection",
+    "sendConsentSelected": "Envoyer consentements"
   }
 }

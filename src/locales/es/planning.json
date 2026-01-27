@@ -196,6 +196,45 @@
     "viewDetails": "Ver detalles",
     "previous": "Anterior",
     "next": "Siguiente",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "sendConsent": "Enviar consentimiento"
+  },
+
+  "list": {
+    "title": "Lista",
+    "searchPatient": "Buscar por nombre de paciente...",
+    "noResults": "No se encontraron citas",
+    "columns": {
+      "date": "Fecha",
+      "time": "Hora",
+      "patient": "Paciente",
+      "treatment": "Tratamiento",
+      "machine": "Máquina",
+      "provider": "Profesional",
+      "status": "Estado",
+      "consent": "Consentimiento",
+      "actions": "Acciones"
+    },
+    "period": {
+      "all": "Todas las fechas",
+      "today": "Hoy",
+      "thisWeek": "Esta semana",
+      "thisMonth": "Este mes",
+      "nextWeek": "Semana próxima",
+      "nextMonth": "Mes próximo",
+      "past": "Pasados"
+    },
+    "consent": {
+      "pending": "Pendiente",
+      "sent": "Enviado",
+      "signed": "Firmado",
+      "notRequired": "No requerido",
+      "send": "Enviar consentimiento",
+      "view": "Ver consentimiento"
+    },
+    "selected": "{{count}} seleccionado(s)",
+    "bulkActions": "Acciones en grupo",
+    "deleteSelected": "Eliminar selección",
+    "sendConsentSelected": "Enviar consentimientos"
   }
 }

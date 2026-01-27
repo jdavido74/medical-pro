@@ -1,18 +1,21 @@
 /**
  * PlanningModule - Unified appointment planning
  * Handles both machine-based treatments and practitioner consultations
+ * Includes calendar views (day, week, month) and list view with search and filters
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, Filter,
-  Cpu, User, Clock, MapPin, X, Check, AlertCircle,
-  CircleDot, CheckCircle2, PlayCircle, XCircle, AlertTriangle, Link
+  Cpu, User, Clock, Check,
+  CircleDot, CheckCircle2, PlayCircle, XCircle, AlertTriangle, Link,
+  List, Search, Send, Eye, MoreHorizontal, Trash2
 } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { usePermissions } from '../../auth/PermissionGuard';
 import PlanningBookingModal from '../modals/PlanningBookingModal';
+import SendConsentRequestModal from '../../modals/SendConsentRequestModal';
 
 
 // Status icons and colors
@@ -24,6 +27,18 @@ const STATUS_CONFIG = {
   cancelled: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100', title: 'cancelled' },
   no_show: { icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100', title: 'no_show' }
 };
+
+// Patient colors for visual distinction (alternating by day)
+const PATIENT_COLORS = [
+  { bg: 'bg-blue-50', border: 'border-blue-300', accent: 'border-l-blue-500' },
+  { bg: 'bg-amber-50', border: 'border-amber-300', accent: 'border-l-amber-500' },
+  { bg: 'bg-emerald-50', border: 'border-emerald-300', accent: 'border-l-emerald-500' },
+  { bg: 'bg-violet-50', border: 'border-violet-300', accent: 'border-l-violet-500' },
+  { bg: 'bg-rose-50', border: 'border-rose-300', accent: 'border-l-rose-500' },
+  { bg: 'bg-cyan-50', border: 'border-cyan-300', accent: 'border-l-cyan-500' },
+  { bg: 'bg-orange-50', border: 'border-orange-300', accent: 'border-l-orange-500' },
+  { bg: 'bg-teal-50', border: 'border-teal-300', accent: 'border-l-teal-500' }
+];
 
 const PlanningModule = () => {
   const { t } = useTranslation('planning');
@@ -38,13 +53,25 @@ const PlanningModule = () => {
   const [resources, setResources] = useState({ machines: [], providers: [] });
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('week'); // day, week, month
+  const [viewMode, setViewMode] = useState('week'); // day, week, month, list
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedResource, setSelectedResource] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // List view specific state
+  const [listSearchQuery, setListSearchQuery] = useState('');
+  const [listPeriodFilter, setListPeriodFilter] = useState('thisWeek');
+  const [listStatusFilter, setListStatusFilter] = useState('');
+  const [listConsentFilter, setListConsentFilter] = useState('');
+  const [listAppointments, setListAppointments] = useState([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [consentPatient, setConsentPatient] = useState(null);
+  const [consentAppointmentId, setConsentAppointmentId] = useState(null);
+  const [actionMenuOpen, setActionMenuOpen] = useState(null);
 
   // Calculate date range based on view mode
   const dateRange = useMemo(() => {
@@ -102,6 +129,128 @@ const PlanningModule = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // List view: calculate date range based on period filter
+  const listDateRange = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let start, end;
+
+    switch (listPeriodFilter) {
+      case 'today':
+        start = end = today;
+        break;
+      case 'thisWeek': {
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        start = new Date(today);
+        start.setDate(diff);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        break;
+      }
+      case 'thisMonth':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        break;
+      case 'nextWeek': {
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1) + 7;
+        start = new Date(today);
+        start.setDate(diff);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        break;
+      }
+      case 'nextMonth':
+        start = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        end = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+        break;
+      case 'past':
+        start = new Date('2020-01-01');
+        end = new Date(today);
+        end.setDate(end.getDate() - 1);
+        break;
+      case 'all':
+      default:
+        start = new Date('2020-01-01');
+        end = new Date('2099-12-31');
+    }
+
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
+  }, [listPeriodFilter]);
+
+  // Load list view data
+  const loadListData = useCallback(async () => {
+    if (viewMode !== 'list') return;
+
+    setListLoading(true);
+    try {
+      const params = {
+        startDate: listDateRange.start,
+        endDate: listDateRange.end,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined
+      };
+
+      const response = await planningApi.getCalendar(params);
+
+      if (response.success) {
+        let filtered = response.data || [];
+
+        // Apply patient search filter
+        if (listSearchQuery.trim()) {
+          const query = listSearchQuery.toLowerCase().trim();
+          filtered = filtered.filter(apt =>
+            apt.patient?.fullName?.toLowerCase().includes(query) ||
+            apt.patient?.firstName?.toLowerCase().includes(query) ||
+            apt.patient?.lastName?.toLowerCase().includes(query)
+          );
+        }
+
+        // Apply status filter
+        if (listStatusFilter) {
+          filtered = filtered.filter(apt => apt.status === listStatusFilter);
+        }
+
+        // Apply consent filter
+        if (listConsentFilter) {
+          filtered = filtered.filter(apt => {
+            const consentStatus = apt.consentStatus || 'notRequired';
+            return consentStatus === listConsentFilter;
+          });
+        }
+
+        // Sort by date and time
+        filtered.sort((a, b) => {
+          const dateCompare = a.date.localeCompare(b.date);
+          if (dateCompare !== 0) return dateCompare;
+          const timeA = a.startTime ? a.startTime.split(':').map(Number) : [0, 0];
+          const timeB = b.startTime ? b.startTime.split(':').map(Number) : [0, 0];
+          return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+        });
+
+        setListAppointments(filtered);
+      }
+    } catch (error) {
+      console.error('Error loading list data:', error);
+      showToast(t('messages.loadError'), 'error');
+    } finally {
+      setListLoading(false);
+    }
+  }, [viewMode, listDateRange, categoryFilter, listSearchQuery, listStatusFilter, listConsentFilter, t]);
+
+  // Load list data when in list view
+  useEffect(() => {
+    if (viewMode === 'list') {
+      const debounceTimer = setTimeout(() => {
+        loadListData();
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [viewMode, loadListData]);
 
   // Show toast notification
   const showToast = (message, type = 'success') => {
@@ -187,18 +336,6 @@ const PlanningModule = () => {
     return grouped;
   }, [appointments]);
 
-  // Patient colors for visual distinction (alternating by day)
-  const PATIENT_COLORS = [
-    { bg: 'bg-blue-50', border: 'border-blue-300', accent: 'border-l-blue-500' },
-    { bg: 'bg-amber-50', border: 'border-amber-300', accent: 'border-l-amber-500' },
-    { bg: 'bg-emerald-50', border: 'border-emerald-300', accent: 'border-l-emerald-500' },
-    { bg: 'bg-violet-50', border: 'border-violet-300', accent: 'border-l-violet-500' },
-    { bg: 'bg-rose-50', border: 'border-rose-300', accent: 'border-l-rose-500' },
-    { bg: 'bg-cyan-50', border: 'border-cyan-300', accent: 'border-l-cyan-500' },
-    { bg: 'bg-orange-50', border: 'border-orange-300', accent: 'border-l-orange-500' },
-    { bg: 'bg-teal-50', border: 'border-teal-300', accent: 'border-l-teal-500' }
-  ];
-
   // Map patients to colors per day (same patient = same color within a day)
   const patientColorMap = useMemo(() => {
     const colorMap = {};
@@ -239,6 +376,75 @@ const PlanningModule = () => {
     setShowBookingModal(false);
     showToast(selectedAppointment ? t('messages.updateSuccess') : t('messages.createSuccess'));
     loadData();
+    if (viewMode === 'list') {
+      loadListData();
+    }
+  };
+
+  // List view: handle row selection
+  const handleRowSelect = (appointmentId) => {
+    setSelectedRows(prev =>
+      prev.includes(appointmentId)
+        ? prev.filter(id => id !== appointmentId)
+        : [...prev, appointmentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRows.length === listAppointments.length) {
+      setSelectedRows([]);
+    } else {
+      setSelectedRows(listAppointments.map(apt => apt.id));
+    }
+  };
+
+  // List view: handle send consent
+  const handleSendConsent = (appointment) => {
+    setConsentPatient(appointment.patient);
+    setConsentAppointmentId(appointment.id);
+    setShowConsentModal(true);
+    setActionMenuOpen(null);
+  };
+
+  const handleConsentSuccess = () => {
+    showToast(t('messages.confirmSuccess'));
+    setShowConsentModal(false);
+    setConsentPatient(null);
+    setConsentAppointmentId(null);
+    loadListData();
+  };
+
+  // List view: handle delete
+  const handleListDelete = async (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowBookingModal(true);
+    setActionMenuOpen(null);
+  };
+
+  // List view: format date for display
+  const formatListDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    });
+  };
+
+  // List view: get consent status badge
+  const getConsentBadge = (status) => {
+    const configs = {
+      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: t('list.consent.pending') },
+      sent: { bg: 'bg-blue-100', text: 'text-blue-800', label: t('list.consent.sent') },
+      signed: { bg: 'bg-green-100', text: 'text-green-800', label: t('list.consent.signed') },
+      notRequired: { bg: 'bg-gray-100', text: 'text-gray-600', label: t('list.consent.notRequired') }
+    };
+    const config = configs[status] || configs.notRequired;
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+        {config.label}
+      </span>
+    );
   };
 
   // Render appointment card with height proportional to duration
@@ -396,27 +602,34 @@ const PlanningModule = () => {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between bg-white rounded-lg border p-3">
-        {/* Navigation */}
+        {/* Navigation - only show for calendar views */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={navigatePrevious}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={goToToday}
-            className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            {t('calendar.today')}
-          </button>
-          <button
-            onClick={navigateNext}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          <span className="ml-2 font-medium text-gray-900">{formatDateRange()}</span>
+          {viewMode !== 'list' && (
+            <>
+              <button
+                onClick={navigatePrevious}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={goToToday}
+                className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                {t('calendar.today')}
+              </button>
+              <button
+                onClick={navigateNext}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <span className="ml-2 font-medium text-gray-900">{formatDateRange()}</span>
+            </>
+          )}
+          {viewMode === 'list' && (
+            <span className="font-medium text-gray-900">{t('list.title')}</span>
+          )}
         </div>
 
         {/* View mode & filters */}
@@ -453,6 +666,17 @@ const PlanningModule = () => {
                 {t(`calendar.${mode}`)}
               </button>
             ))}
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1 text-sm rounded-md transition-colors flex items-center gap-1 ${
+                viewMode === 'list'
+                  ? 'bg-white shadow text-gray-900'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <List className="w-4 h-4" />
+              {t('list.title')}
+            </button>
           </div>
 
           {/* More filters */}
@@ -467,8 +691,8 @@ const PlanningModule = () => {
         </div>
       </div>
 
-      {/* Extended filters */}
-      {showFilters && (
+      {/* Extended filters - only for calendar views */}
+      {showFilters && viewMode !== 'list' && (
         <div className="bg-white rounded-lg border p-4">
           <div className="grid grid-cols-4 gap-4">
             <div>
@@ -546,6 +770,236 @@ const PlanningModule = () => {
             Vue mensuelle - En développement
           </div>
         )}
+
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="p-4">
+            {/* List filters */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[250px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={listSearchQuery}
+                  onChange={(e) => setListSearchQuery(e.target.value)}
+                  placeholder={t('list.searchPatient')}
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+
+              {/* Period filter */}
+              <select
+                value={listPeriodFilter}
+                onChange={(e) => setListPeriodFilter(e.target.value)}
+                className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">{t('list.period.all')}</option>
+                <option value="today">{t('list.period.today')}</option>
+                <option value="thisWeek">{t('list.period.thisWeek')}</option>
+                <option value="thisMonth">{t('list.period.thisMonth')}</option>
+                <option value="nextWeek">{t('list.period.nextWeek')}</option>
+                <option value="nextMonth">{t('list.period.nextMonth')}</option>
+                <option value="past">{t('list.period.past')}</option>
+              </select>
+
+              {/* Status filter */}
+              <select
+                value={listStatusFilter}
+                onChange={(e) => setListStatusFilter(e.target.value)}
+                className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">{t('filters.status')}</option>
+                {Object.keys(STATUS_CONFIG).map(status => (
+                  <option key={status} value={status}>{t(`statuses.${status}`)}</option>
+                ))}
+              </select>
+
+              {/* Consent filter */}
+              <select
+                value={listConsentFilter}
+                onChange={(e) => setListConsentFilter(e.target.value)}
+                className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">{t('list.columns.consent')}</option>
+                <option value="pending">{t('list.consent.pending')}</option>
+                <option value="sent">{t('list.consent.sent')}</option>
+                <option value="signed">{t('list.consent.signed')}</option>
+                <option value="notRequired">{t('list.consent.notRequired')}</option>
+              </select>
+            </div>
+
+            {/* Selected rows actions */}
+            {selectedRows.length > 0 && (
+              <div className="flex items-center gap-3 mb-3 p-2 bg-blue-50 rounded-lg">
+                <span className="text-sm text-blue-700">
+                  {t('list.selected', { count: selectedRows.length })}
+                </span>
+                <button
+                  onClick={() => setSelectedRows([])}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {t('actions.cancel')}
+                </button>
+              </div>
+            )}
+
+            {/* Table */}
+            {listLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              </div>
+            ) : listAppointments.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>{t('list.noResults')}</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="px-3 py-2 text-left">
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.length === listAppointments.length && listAppointments.length > 0}
+                          onChange={handleSelectAll}
+                          className="rounded border-gray-300"
+                        />
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.date')}
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.time')}
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.patient')}
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.treatment')}
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.machine')}
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.status')}
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.consent')}
+                      </th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                        {t('list.columns.actions')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {listAppointments.map((apt) => {
+                      const statusConfig = STATUS_CONFIG[apt.status] || STATUS_CONFIG.scheduled;
+                      const StatusIcon = statusConfig.icon;
+                      const isLinked = apt.isLinked || apt.linkedAppointmentId || apt.linkSequence > 1;
+                      const consentStatus = apt.consentStatus || 'notRequired';
+
+                      return (
+                        <tr
+                          key={apt.id}
+                          className={`hover:bg-gray-50 ${selectedRows.includes(apt.id) ? 'bg-blue-50' : ''}`}
+                        >
+                          <td className="px-3 py-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedRows.includes(apt.id)}
+                              onChange={() => handleRowSelect(apt.id)}
+                              className="rounded border-gray-300"
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            {formatListDate(apt.date)}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-gray-400" />
+                              {apt.startTime} - {apt.endTime}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm text-gray-900">
+                                {apt.patient?.fullName || 'Patient'}
+                              </span>
+                              {isLinked && (
+                                <Link className="w-3 h-3 text-purple-500" title={t('appointment.linkedGroup')} />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-600">
+                            {apt.title || apt.service?.title || '-'}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-600">
+                            {apt.machine?.name || apt.provider?.fullName || '-'}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
+                              <StatusIcon className="w-3 h-3" />
+                              {t(`statuses.${apt.status}`)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            {getConsentBadge(consentStatus)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <div className="relative inline-block">
+                              <button
+                                onClick={() => setActionMenuOpen(actionMenuOpen === apt.id ? null : apt.id)}
+                                className="p-1 hover:bg-gray-100 rounded"
+                              >
+                                <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                              </button>
+
+                              {/* Action dropdown */}
+                              {actionMenuOpen === apt.id && (
+                                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
+                                  <button
+                                    onClick={() => {
+                                      handleAppointmentClick(apt);
+                                      setActionMenuOpen(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                  >
+                                    <Eye className="w-4 h-4 text-gray-500" />
+                                    {t('actions.viewDetails')}
+                                  </button>
+                                  {apt.patient && (
+                                    <button
+                                      onClick={() => handleSendConsent(apt)}
+                                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                    >
+                                      <Send className="w-4 h-4 text-blue-500" />
+                                      {t('actions.sendConsent')}
+                                    </button>
+                                  )}
+                                  {canEdit && (
+                                    <button
+                                      onClick={() => handleListDelete(apt)}
+                                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      {t('actions.delete')}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Booking Modal */}
@@ -569,6 +1023,29 @@ const PlanningModule = () => {
         >
           {toast.message}
         </div>
+      )}
+
+      {/* Send Consent Modal */}
+      {showConsentModal && consentPatient && (
+        <SendConsentRequestModal
+          isOpen={showConsentModal}
+          onClose={() => {
+            setShowConsentModal(false);
+            setConsentPatient(null);
+            setConsentAppointmentId(null);
+          }}
+          patient={consentPatient}
+          appointmentId={consentAppointmentId}
+          onSuccess={handleConsentSuccess}
+        />
+      )}
+
+      {/* Click outside handler for action menu */}
+      {actionMenuOpen && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => setActionMenuOpen(null)}
+        />
       )}
     </div>
   );
