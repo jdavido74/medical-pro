@@ -6,11 +6,282 @@
 
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight } from 'lucide-react';
+import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, Link, Edit3, Users, AlertTriangle } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { PatientContext } from '../../../contexts/PatientContext';
 import PatientSearchSelect from '../../common/PatientSearchSelect';
 import QuickPatientModal from '../../modals/QuickPatientModal';
+
+/**
+ * LinkedGroupChoiceModal - Sub-modal to choose between editing/deleting single, group, or all patient appointments
+ */
+const LinkedGroupChoiceModal = ({
+  isOpen,
+  onClose,
+  onChooseSingle,
+  onChooseGroup,
+  onChooseAllPatient,
+  mode,
+  groupCount,
+  completedCount,
+  patientName,
+  patientAppointmentsCount
+}) => {
+  const { t } = useTranslation('planning');
+
+  if (!isOpen) return null;
+
+  const isDelete = mode === 'delete';
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`p-2 rounded-full ${isDelete ? 'bg-red-100' : 'bg-blue-100'}`}>
+            <Link className={`w-5 h-5 ${isDelete ? 'text-red-600' : 'text-blue-600'}`} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">{t('linkedGroup.title')}</h3>
+            <p className="text-sm text-gray-500">
+              {t('linkedGroup.description', { count: groupCount })}
+            </p>
+          </div>
+        </div>
+
+        {completedCount > 0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-sm text-yellow-800">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {t('linkedGroup.completedHidden', { count: completedCount })}
+          </div>
+        )}
+
+        <p className="text-sm text-gray-600 mb-4">
+          {isDelete ? t('linkedGroup.deleteChoice') : t('linkedGroup.editChoice')}
+        </p>
+
+        <div className="space-y-2">
+          <button
+            onClick={onChooseSingle}
+            className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-left flex items-center gap-3"
+          >
+            <Edit3 className="w-5 h-5 text-gray-500" />
+            <div>
+              <div className="font-medium text-gray-900">
+                {isDelete ? t('linkedGroup.deleteSingle') : t('linkedGroup.editSingle')}
+              </div>
+              <div className="text-sm text-gray-500">
+                {isDelete ? t('linkedGroup.deleteSingleDesc') : t('linkedGroup.editSingleDesc')}
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={onChooseGroup}
+            className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all text-left flex items-center gap-3"
+          >
+            <Users className="w-5 h-5 text-purple-500" />
+            <div>
+              <div className="font-medium text-gray-900">
+                {isDelete ? t('linkedGroup.deleteGroup') : t('linkedGroup.editGroup')}
+              </div>
+              <div className="text-sm text-gray-500">
+                {isDelete ? t('linkedGroup.deleteGroupDesc') : t('linkedGroup.editGroupDesc')}
+              </div>
+            </div>
+          </button>
+
+          {/* Delete all patient appointments option (only in delete mode) */}
+          {isDelete && onChooseAllPatient && patientAppointmentsCount > groupCount && (
+            <button
+              onClick={onChooseAllPatient}
+              className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-red-300 hover:bg-red-50 transition-all text-left flex items-center gap-3"
+            >
+              <Trash2 className="w-5 h-5 text-red-500" />
+              <div>
+                <div className="font-medium text-gray-900">
+                  {t('linkedGroup.deleteAllPatient')}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t('linkedGroup.deleteAllPatientDesc', {
+                    count: patientAppointmentsCount,
+                    patient: patientName
+                  })}
+                </div>
+              </div>
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            {t('actions.cancel')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * DeleteConfirmModal - Confirmation modal for deletion with options for linked appointments
+ */
+const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, isLinked, onKeepGap, onRecalculate }) => {
+  const { t } = useTranslation('planning');
+  const [deleteOption, setDeleteOption] = useState('keepGap');
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 rounded-full bg-red-100">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">{t('appointment.deleteConfirm')}</h3>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-4">
+          {t('appointment.deleteConfirmMessage')}
+        </p>
+
+        {isLinked && (
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              {t('linkedGroup.deleteSingleOptions')}
+            </p>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="deleteOption"
+                  value="keepGap"
+                  checked={deleteOption === 'keepGap'}
+                  onChange={(e) => setDeleteOption(e.target.value)}
+                  className="text-blue-600"
+                />
+                <span className="text-sm">{t('linkedGroup.keepGap')}</span>
+              </label>
+              <label className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="deleteOption"
+                  value="recalculate"
+                  checked={deleteOption === 'recalculate'}
+                  onChange={(e) => setDeleteOption(e.target.value)}
+                  className="text-blue-600"
+                />
+                <span className="text-sm">{t('linkedGroup.recalculateChain')}</span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            {t('actions.cancel')}
+          </button>
+          <button
+            onClick={() => {
+              if (isLinked) {
+                if (deleteOption === 'keepGap') {
+                  onKeepGap();
+                } else {
+                  onRecalculate();
+                }
+              } else {
+                onConfirm();
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            {t('actions.delete')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * ConflictModal - Modal to handle slot conflicts when editing
+ */
+const ConflictModal = ({ isOpen, onClose, onOverlap, onCancel, conflictInfo }) => {
+  const { t } = useTranslation('planning');
+
+  if (!isOpen || !conflictInfo) return null;
+
+  const isSamePatient = conflictInfo.isSamePatient;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 rounded-full bg-orange-100">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">{t('linkedGroup.conflictWarning')}</h3>
+          </div>
+        </div>
+
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-700 mb-2">
+            {t('conflict.slotOccupied')}
+          </p>
+          <div className="text-sm">
+            <div className="flex justify-between py-1 border-b">
+              <span className="text-gray-500">{t('conflict.existingAppointment')}</span>
+              <span className="font-medium">{conflictInfo.existingTitle || 'RDV existant'}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b">
+              <span className="text-gray-500">{t('appointment.time')}</span>
+              <span className="font-medium">{conflictInfo.existingTime}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-gray-500">{t('appointment.patient')}</span>
+              <span className={`font-medium ${isSamePatient ? 'text-blue-600' : 'text-orange-600'}`}>
+                {conflictInfo.existingPatient}
+                {isSamePatient && (
+                  <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                    {t('conflict.samePatient')}
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-4">
+          {t('conflict.overlapQuestion')}
+        </p>
+
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            {t('conflict.chooseAnother')}
+          </button>
+          <button
+            onClick={onOverlap}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            {t('conflict.allowOverlap')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PlanningBookingModal = ({
   isOpen,
@@ -23,6 +294,13 @@ const PlanningBookingModal = ({
   const { t } = useTranslation('planning');
   const patientContext = useContext(PatientContext);
   const isEditMode = !!appointment;
+
+  // Linked group detection
+  const isLinkedAppointment = appointment && (
+    appointment.isLinked ||
+    appointment.linkedAppointmentId ||
+    (appointment.linkSequence && appointment.linkSequence >= 1)
+  );
 
   // Form state
   const [step, setStep] = useState(1);
@@ -42,6 +320,21 @@ const PlanningBookingModal = ({
   const [selectedTreatments, setSelectedTreatments] = useState([]);
   // Structure: [{ id, title, duration, categories, machines }]
 
+  // Linked group state
+  const [showLinkedChoiceModal, setShowLinkedChoiceModal] = useState(false);
+  const [linkedChoiceMode, setLinkedChoiceMode] = useState(null); // 'edit' or 'delete'
+  const [editMode, setEditMode] = useState('single'); // 'single' or 'group'
+  const [linkedGroup, setLinkedGroup] = useState(null);
+  const [loadingGroup, setLoadingGroup] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCompletedAppointments, setShowCompletedAppointments] = useState(false);
+  const [patientAppointmentsCount, setPatientAppointmentsCount] = useState(0);
+
+  // Conflict state
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictInfo, setConflictInfo] = useState(null);
+  const [pendingSaveData, setPendingSaveData] = useState(null);
+
   // Data state
   const [treatments, setTreatments] = useState([]);
   const [treatmentsByCategory, setTreatmentsByCategory] = useState([]);
@@ -56,9 +349,260 @@ const PlanningBookingModal = ({
   // Calculate total duration
   const totalDuration = selectedTreatments.reduce((sum, t) => sum + (t.duration || 30), 0);
 
+  // Get group ID for linked appointments
+  const groupId = appointment?.linkedAppointmentId || (appointment?.linkSequence === 1 ? appointment.id : null);
+
+  // Count completed appointments in group
+  const completedCount = linkedGroup?.appointments?.filter(a => a.status === 'completed').length || 0;
+  const activeAppointments = linkedGroup?.appointments?.filter(a => a.status !== 'completed') || [];
+
+  // Load linked group data
+  const loadLinkedGroup = useCallback(async () => {
+    if (!groupId) return;
+
+    setLoadingGroup(true);
+    try {
+      const response = await planningApi.getAppointmentGroup(groupId);
+      if (response.success) {
+        setLinkedGroup(response.data);
+      }
+    } catch (err) {
+      console.error('Error loading linked group:', err);
+    } finally {
+      setLoadingGroup(false);
+    }
+  }, [groupId]);
+
+  // Load patient appointments count
+  const loadPatientAppointmentsCount = useCallback(async () => {
+    if (!appointment?.patientId) return;
+
+    try {
+      // Get all appointments for this patient (future ones)
+      const today = new Date().toISOString().split('T')[0];
+      const response = await planningApi.getCalendar({
+        startDate: today,
+        endDate: '2099-12-31',
+        patientId: appointment.patientId
+      });
+      if (response.success) {
+        const activeAppts = (response.data || []).filter(a => a.status !== 'cancelled');
+        setPatientAppointmentsCount(activeAppts.length);
+      }
+    } catch (err) {
+      console.error('Error loading patient appointments:', err);
+    }
+  }, [appointment?.patientId]);
+
+  // Show choice modal for linked appointments in edit mode
+  useEffect(() => {
+    if (isEditMode && isLinkedAppointment && isOpen) {
+      setShowLinkedChoiceModal(true);
+      setLinkedChoiceMode('edit');
+      loadLinkedGroup();
+      loadPatientAppointmentsCount();
+    }
+  }, [isEditMode, isLinkedAppointment, isOpen, loadLinkedGroup, loadPatientAppointmentsCount]);
+
+  // Handle linked choice: edit single
+  const handleChooseSingleEdit = () => {
+    setEditMode('single');
+    setShowLinkedChoiceModal(false);
+  };
+
+  // Handle linked choice: edit group
+  const handleChooseGroupEdit = () => {
+    setEditMode('group');
+    setShowLinkedChoiceModal(false);
+    // Initialize form with group data
+    if (linkedGroup?.appointments) {
+      const groupTreatments = linkedGroup.appointments
+        .filter(a => a.status !== 'completed')
+        .map(a => ({
+          id: a.serviceId,
+          title: a.title || a.service?.title,
+          duration: a.duration || 30,
+          categories: [],
+          appointmentId: a.id,
+          machineId: a.machineId,
+          machineName: a.machine?.name
+        }));
+      setSelectedTreatments(groupTreatments);
+    }
+  };
+
+  // Handle delete button click
+  const handleDeleteClick = () => {
+    if (isLinkedAppointment) {
+      setShowLinkedChoiceModal(true);
+      setLinkedChoiceMode('delete');
+    } else {
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  // Handle linked choice: delete single
+  const handleChooseSingleDelete = () => {
+    setShowLinkedChoiceModal(false);
+    setShowDeleteConfirm(true);
+  };
+
+  // Handle linked choice: delete group
+  const handleChooseGroupDelete = async () => {
+    setShowLinkedChoiceModal(false);
+    setSaving(true);
+    try {
+      const response = await planningApi.cancelAppointmentGroup(groupId);
+      if (response.success) {
+        onSave({ deleted: true, groupDeleted: true });
+      } else {
+        setError(response.error?.message || t('messages.error'));
+      }
+    } catch (err) {
+      console.error('Error deleting group:', err);
+      setError(t('messages.error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle single delete confirm
+  const handleDeleteConfirm = async () => {
+    setShowDeleteConfirm(false);
+    setSaving(true);
+    try {
+      const response = await planningApi.cancelAppointment(appointment.id);
+      if (response.success) {
+        onSave({ deleted: true });
+      } else {
+        setError(response.error?.message || t('messages.error'));
+      }
+    } catch (err) {
+      console.error('Error deleting appointment:', err);
+      setError(t('messages.error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle delete with gap (for linked appointments)
+  const handleDeleteKeepGap = async () => {
+    setShowDeleteConfirm(false);
+    setSaving(true);
+    try {
+      const response = await planningApi.cancelAppointment(appointment.id);
+      if (response.success) {
+        onSave({ deleted: true, keptGap: true });
+      } else {
+        setError(response.error?.message || t('messages.error'));
+      }
+    } catch (err) {
+      console.error('Error deleting appointment:', err);
+      setError(t('messages.error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle delete with recalculation (for linked appointments)
+  const handleDeleteRecalculate = async () => {
+    setShowDeleteConfirm(false);
+    setSaving(true);
+    try {
+      // First cancel this appointment
+      await planningApi.cancelAppointment(appointment.id);
+
+      // Then recalculate the chain times
+      // Find appointments after this one and shift them
+      if (linkedGroup?.appointments) {
+        const currentSequence = appointment.linkSequence || 1;
+        const followingAppts = linkedGroup.appointments
+          .filter(a => (a.linkSequence || 1) > currentSequence && a.status !== 'completed');
+
+        if (followingAppts.length > 0) {
+          // Calculate new start time (this appointment's start time)
+          let newStartTime = appointment.startTime;
+
+          for (const apt of followingAppts) {
+            // Update each following appointment with new time
+            await planningApi.updateAppointment(apt.id, {
+              startTime: newStartTime,
+              date: apt.date
+            });
+
+            // Calculate next start time
+            const [hours, mins] = newStartTime.split(':').map(Number);
+            const newMins = hours * 60 + mins + (apt.duration || 30);
+            newStartTime = `${String(Math.floor(newMins / 60)).padStart(2, '0')}:${String(newMins % 60).padStart(2, '0')}`;
+          }
+        }
+      }
+
+      onSave({ deleted: true, recalculated: true });
+    } catch (err) {
+      console.error('Error recalculating chain:', err);
+      setError(t('messages.error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle delete all patient appointments
+  const handleDeleteAllPatient = async () => {
+    setShowLinkedChoiceModal(false);
+    setSaving(true);
+    try {
+      // Get all future appointments for this patient
+      const today = new Date().toISOString().split('T')[0];
+      const response = await planningApi.getCalendar({
+        startDate: today,
+        endDate: '2099-12-31',
+        patientId: appointment.patientId
+      });
+
+      if (response.success) {
+        const appointmentsToCancel = (response.data || [])
+          .filter(a => a.status !== 'cancelled' && a.status !== 'completed');
+
+        // Cancel all appointments
+        for (const apt of appointmentsToCancel) {
+          await planningApi.cancelAppointment(apt.id);
+        }
+
+        onSave({ deleted: true, allPatientDeleted: true, count: appointmentsToCancel.length });
+      } else {
+        setError(response.error?.message || t('messages.error'));
+      }
+    } catch (err) {
+      console.error('Error deleting all patient appointments:', err);
+      setError(t('messages.error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle conflict: allow overlap
+  const handleConflictOverlap = async () => {
+    setShowConflictModal(false);
+    if (pendingSaveData) {
+      // Proceed with save, forcing overlap
+      await executeSave(pendingSaveData, true);
+    }
+    setPendingSaveData(null);
+  };
+
+  // Handle conflict: cancel and choose another slot
+  const handleConflictCancel = () => {
+    setShowConflictModal(false);
+    setPendingSaveData(null);
+    // Go back to step 3 to choose another slot
+    setStep(3);
+    setSelectedSlot(null);
+  };
+
   // Initialize from existing appointment (edit mode)
   useEffect(() => {
-    if (isEditMode && appointment?.service) {
+    if (isEditMode && appointment?.service && !isLinkedAppointment) {
       setSelectedTreatments([{
         id: appointment.serviceId,
         title: appointment.service.title,
@@ -66,7 +610,7 @@ const PlanningBookingModal = ({
         categories: []
       }]);
     }
-  }, [isEditMode, appointment]);
+  }, [isEditMode, appointment, isLinkedAppointment]);
 
   // Search treatments with debounce
   useEffect(() => {
@@ -219,13 +763,64 @@ const PlanningBookingModal = ({
     }
   };
 
-  // Handle save
-  const handleSave = async () => {
-    if (!selectedSlot || !patientId) {
-      setError(t('validation.patientRequired'));
-      return;
+  // Check for conflicts with existing appointments
+  const checkForConflicts = async (saveData) => {
+    if (!isEditMode) return null; // Only check conflicts in edit mode
+
+    try {
+      // Get appointments for the same date and machine/provider
+      const response = await planningApi.getCalendar({
+        startDate: date,
+        endDate: date,
+        ...(category === 'treatment' && saveData.machineId ? { machineId: saveData.machineId } : {}),
+        ...(category === 'consultation' && saveData.providerId ? { providerId: saveData.providerId } : {})
+      });
+
+      if (response.success && response.data) {
+        const startTime = saveData.startTime;
+        const duration = saveData.duration || 30;
+        const endMinutes = timeToMinutes(startTime) + duration;
+
+        // Find conflicting appointments (excluding current one)
+        const conflicts = response.data.filter(apt => {
+          if (apt.id === appointment.id) return false;
+          if (apt.status === 'cancelled') return false;
+
+          const aptStartMins = timeToMinutes(apt.startTime);
+          const aptEndMins = aptStartMins + (apt.duration || 30);
+          const newStartMins = timeToMinutes(startTime);
+
+          // Check for overlap
+          return (newStartMins < aptEndMins && endMinutes > aptStartMins);
+        });
+
+        if (conflicts.length > 0) {
+          const conflict = conflicts[0];
+          return {
+            existingTitle: conflict.title || conflict.service?.title || 'Rendez-vous',
+            existingTime: `${conflict.startTime} - ${conflict.endTime}`,
+            existingPatient: conflict.patient?.fullName || 'Patient',
+            existingPatientId: conflict.patientId,
+            isSamePatient: conflict.patientId === patientId
+          };
+        }
+      }
+    } catch (err) {
+      console.error('Error checking conflicts:', err);
     }
 
+    return null;
+  };
+
+  // Helper to convert time string to minutes
+  const timeToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    const [hours, mins] = timeStr.split(':').map(Number);
+    return hours * 60 + mins;
+  };
+
+  // Execute the actual save
+  const executeSave = async (saveData, forceOverlap = false) => {
     setSaving(true);
     setError(null);
 
@@ -234,40 +829,22 @@ const PlanningBookingModal = ({
 
       if (category === 'treatment') {
         if (selectedTreatments.length === 1) {
-          // Single treatment - use standard endpoint
-          const data = {
-            category,
-            patientId,
-            date,
-            startTime: selectedSlot.start || selectedSlot.startTime,
-            duration: selectedTreatments[0].duration,
-            machineId: selectedSlot.machineId,
-            treatmentId: selectedTreatments[0].id,
-            serviceId: selectedTreatments[0].id,
-            priority,
-            reason,
-            notes
-          };
-
-          if (assistantId) data.assistantId = assistantId;
-          if (providerId) data.providerId = providerId;
-
           if (isEditMode) {
-            response = await planningApi.updateAppointment(appointment.id, data);
+            response = await planningApi.updateAppointment(appointment.id, saveData);
           } else {
-            response = await planningApi.createAppointment(data);
+            response = await planningApi.createAppointment(saveData);
           }
         } else {
-          // Multiple treatments - use multi-treatment endpoint
+          // Multiple treatments
           const treatments = selectedSlot.segments
             ? selectedSlot.segments.map(seg => ({
                 treatmentId: seg.treatmentId,
                 machineId: seg.machineId,
                 duration: seg.duration
               }))
-            : selectedTreatments.map((t, idx) => ({
+            : selectedTreatments.map((t) => ({
                 treatmentId: t.id,
-                machineId: selectedSlot.machineId, // Fallback if no segments
+                machineId: selectedSlot.machineId,
                 duration: t.duration
               }));
 
@@ -282,29 +859,22 @@ const PlanningBookingModal = ({
         }
       } else {
         // Consultation
-        const data = {
-          category,
-          patientId,
-          date,
-          startTime: selectedSlot.start || selectedSlot.startTime,
-          duration: selectedSlot.duration || 30,
-          providerId,
-          priority,
-          reason,
-          notes
-        };
-
         if (isEditMode) {
-          response = await planningApi.updateAppointment(appointment.id, data);
+          response = await planningApi.updateAppointment(appointment.id, saveData);
         } else {
-          response = await planningApi.createAppointment(data);
+          response = await planningApi.createAppointment(saveData);
         }
       }
 
       if (response.success) {
         onSave(response.data);
       } else {
-        setError(response.error?.message || t('messages.error'));
+        // Check if it's a conflict error from backend
+        if (response.error?.message?.includes('conflict') || response.error?.message?.includes('disponible')) {
+          setError(t('validation.slotConflict'));
+        } else {
+          setError(response.error?.message || t('messages.error'));
+        }
       }
     } catch (err) {
       console.error('Error saving appointment:', err);
@@ -312,6 +882,65 @@ const PlanningBookingModal = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  // Handle save with conflict detection
+  const handleSave = async () => {
+    if (!selectedSlot || !patientId) {
+      setError(t('validation.patientRequired'));
+      return;
+    }
+
+    // Build save data
+    const startTime = selectedSlot.start || selectedSlot.startTime;
+    let saveData;
+
+    if (category === 'treatment') {
+      saveData = {
+        category,
+        patientId,
+        date,
+        startTime,
+        duration: selectedTreatments[0]?.duration || 30,
+        machineId: selectedSlot.machineId,
+        treatmentId: selectedTreatments[0]?.id,
+        serviceId: selectedTreatments[0]?.id,
+        priority,
+        reason,
+        notes
+      };
+      if (assistantId) saveData.assistantId = assistantId;
+      if (providerId) saveData.providerId = providerId;
+    } else {
+      saveData = {
+        category,
+        patientId,
+        date,
+        startTime,
+        duration: selectedSlot.duration || 30,
+        providerId,
+        priority,
+        reason,
+        notes
+      };
+    }
+
+    // Check for conflicts in edit mode
+    if (isEditMode && editMode === 'single') {
+      setSaving(true);
+      const conflict = await checkForConflicts(saveData);
+      setSaving(false);
+
+      if (conflict) {
+        setConflictInfo(conflict);
+        setPendingSaveData(saveData);
+        setShowConflictModal(true);
+        return;
+      }
+    }
+
+    // No conflict, proceed with save
+    await executeSave(saveData);
   };
 
   if (!isOpen) return null;
@@ -322,11 +951,22 @@ const PlanningBookingModal = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               {isEditMode ? t('appointment.edit') : t('appointment.new')}
+              {isEditMode && editMode === 'group' && (
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Link className="w-3 h-3" />
+                  {t('multiTreatment.groupEdit')}
+                </span>
+              )}
             </h2>
             <p className="text-sm text-gray-500">
               {t(`booking.step${step}`)}
+              {isEditMode && isLinkedAppointment && editMode === 'single' && (
+                <span className="ml-2 text-purple-600">
+                  ({t('linkedGroup.position', { current: appointment.linkSequence || 1, total: linkedGroup?.count || '?' })})
+                </span>
+              )}
             </p>
           </div>
           <button
@@ -359,8 +999,61 @@ const PlanningBookingModal = ({
           ))}
         </div>
 
+        {/* Group overview when editing linked group */}
+        {isEditMode && editMode === 'group' && linkedGroup && (
+          <div className="px-6 py-3 bg-purple-50 border-b">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-purple-800 flex items-center gap-2">
+                <Link className="w-4 h-4" />
+                {t('linkedGroup.groupOverview')}
+              </h3>
+              {completedCount > 0 && (
+                <button
+                  onClick={() => setShowCompletedAppointments(!showCompletedAppointments)}
+                  className="text-xs text-purple-600 hover:text-purple-800"
+                >
+                  {showCompletedAppointments ? t('linkedGroup.hideCompleted') : t('linkedGroup.showCompleted')}
+                  ({completedCount})
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1 flex-wrap">
+              {linkedGroup.appointments
+                ?.filter(a => showCompletedAppointments || a.status !== 'completed')
+                .map((apt, idx) => (
+                  <div
+                    key={apt.id}
+                    className={`text-xs px-2 py-1 rounded border flex items-center gap-1 ${
+                      apt.status === 'completed'
+                        ? 'bg-gray-100 border-gray-300 text-gray-500'
+                        : apt.id === appointment?.id
+                        ? 'bg-purple-200 border-purple-400 text-purple-800'
+                        : 'bg-white border-purple-200 text-purple-700'
+                    }`}
+                  >
+                    <span className="font-medium">{apt.linkSequence || idx + 1}.</span>
+                    <span className="truncate max-w-[100px]">{apt.title || apt.service?.title || 'Traitement'}</span>
+                    <span className="text-purple-500">({apt.duration || 30}min)</span>
+                    {apt.status === 'completed' && (
+                      <Check className="w-3 h-3 text-green-500" />
+                    )}
+                  </div>
+                ))}
+            </div>
+            <div className="text-xs text-purple-600 mt-2">
+              {t('multiTreatment.totalDuration')}: {linkedGroup.totalDuration || totalDuration} min
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          {loadingGroup && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
               <AlertCircle className="w-5 h-5" />
@@ -854,12 +1547,26 @@ const PlanningBookingModal = ({
 
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50">
-          <button
-            onClick={() => step > 1 ? setStep(step - 1) : onClose()}
-            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            {step > 1 ? t('actions.previous') : t('actions.cancel')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => step > 1 ? setStep(step - 1) : onClose()}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {step > 1 ? t('actions.previous') : t('actions.cancel')}
+            </button>
+
+            {/* Delete button (only in edit mode) */}
+            {isEditMode && (
+              <button
+                onClick={handleDeleteClick}
+                disabled={saving}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {t('actions.delete')}
+              </button>
+            )}
+          </div>
 
           {step < 4 ? (
             <button
@@ -875,7 +1582,7 @@ const PlanningBookingModal = ({
               disabled={saving}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? t('actions.saving') : t('actions.create')}
+              {saving ? t('actions.saving') : (isEditMode ? t('actions.save') : t('actions.create'))}
             </button>
           )}
         </div>
@@ -890,6 +1597,45 @@ const PlanningBookingModal = ({
         }}
         onSave={handlePatientCreated}
         initialSearchQuery={quickPatientSearchQuery}
+      />
+
+      {/* Linked Group Choice Modal */}
+      <LinkedGroupChoiceModal
+        isOpen={showLinkedChoiceModal}
+        onClose={() => {
+          setShowLinkedChoiceModal(false);
+          if (linkedChoiceMode === 'edit') {
+            // If cancelled during edit choice, close the main modal
+            onClose();
+          }
+        }}
+        onChooseSingle={linkedChoiceMode === 'edit' ? handleChooseSingleEdit : handleChooseSingleDelete}
+        onChooseGroup={linkedChoiceMode === 'edit' ? handleChooseGroupEdit : handleChooseGroupDelete}
+        onChooseAllPatient={linkedChoiceMode === 'delete' ? handleDeleteAllPatient : undefined}
+        mode={linkedChoiceMode}
+        groupCount={linkedGroup?.count || linkedGroup?.appointments?.length || 0}
+        completedCount={completedCount}
+        patientName={appointment?.patient?.fullName}
+        patientAppointmentsCount={patientAppointmentsCount}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        isLinked={isLinkedAppointment && editMode === 'single'}
+        onKeepGap={handleDeleteKeepGap}
+        onRecalculate={handleDeleteRecalculate}
+      />
+
+      {/* Conflict Modal */}
+      <ConflictModal
+        isOpen={showConflictModal}
+        onClose={() => setShowConflictModal(false)}
+        onOverlap={handleConflictOverlap}
+        onCancel={handleConflictCancel}
+        conflictInfo={conflictInfo}
       />
     </div>
   );

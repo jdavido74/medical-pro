@@ -65,7 +65,11 @@
     "reason": "Motivo",
     "notes": "Notas",
     "priority": "Prioridad",
-    "status": "Estado"
+    "status": "Estado",
+    "linkedGroup": "Parte de una cadena",
+    "deleteConfirm": "Confirmar eliminación",
+    "deleteConfirmMessage": "¿Está seguro de que desea eliminar esta cita?",
+    "deleteGroupConfirmMessage": "¿Está seguro de que desea eliminar todas las citas de esta cadena?"
   },
 
   "priorities": {
@@ -143,6 +147,42 @@
     "noMachineAvailable": "No hay máquina disponible para este tratamiento",
     "conflictDetected": "Conflicto detectado para el tratamiento {{index}}",
     "allTreatmentsRequired": "Todos los tratamientos deben tener una máquina disponible"
+  },
+
+  "linkedGroup": {
+    "title": "Cita vinculada",
+    "description": "Esta cita forma parte de una cadena de {{count}} tratamientos",
+    "editChoice": "¿Qué desea modificar?",
+    "editSingle": "Solo este horario",
+    "editSingleDesc": "Los otros horarios no se modificarán",
+    "editGroup": "Toda la cadena",
+    "editGroupDesc": "Modificar todos los horarios simultáneamente",
+    "deleteChoice": "¿Qué desea eliminar?",
+    "deleteSingle": "Solo este horario",
+    "deleteSingleDesc": "Los otros horarios no se verán afectados",
+    "deleteGroup": "Toda la cadena",
+    "deleteGroupDesc": "Eliminar todos los horarios de la cadena",
+    "deleteAllPatient": "Todas las citas del paciente",
+    "deleteAllPatientDesc": "Eliminar las {{count}} citas de {{patient}}",
+    "deleteSingleOptions": "Opciones de eliminación",
+    "keepGap": "Mantener el hueco (no desplazar)",
+    "recalculateChain": "Recalcular la cadena",
+    "conflictWarning": "Conflicto detectado",
+    "overlapQuestion": "La máquina está ocupada en el siguiente horario. ¿Desea superponer los horarios?",
+    "completedHidden": "{{count}} tratamiento(s) completado(s) oculto(s)",
+    "showCompleted": "Mostrar completados",
+    "hideCompleted": "Ocultar completados",
+    "groupOverview": "Vista general de la cadena",
+    "position": "Posición {{current}}/{{total}}"
+  },
+
+  "conflict": {
+    "slotOccupied": "Este horario ya está ocupado por otra cita:",
+    "existingAppointment": "Cita existente",
+    "samePatient": "Mismo paciente",
+    "overlapQuestion": "¿Desea superponer los horarios de todos modos?",
+    "allowOverlap": "Superponer",
+    "chooseAnother": "Elegir otro horario"
   },
 
   "actions": {

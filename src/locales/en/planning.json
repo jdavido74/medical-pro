@@ -65,7 +65,11 @@
     "reason": "Reason",
     "notes": "Notes",
     "priority": "Priority",
-    "status": "Status"
+    "status": "Status",
+    "linkedGroup": "Part of a chain",
+    "deleteConfirm": "Confirm deletion",
+    "deleteConfirmMessage": "Are you sure you want to delete this appointment?",
+    "deleteGroupConfirmMessage": "Are you sure you want to delete all appointments in this chain?"
   },
 
   "priorities": {
@@ -143,6 +147,42 @@
     "noMachineAvailable": "No machine available for this treatment",
     "conflictDetected": "Conflict detected for treatment {{index}}",
     "allTreatmentsRequired": "All treatments must have an available machine"
+  },
+
+  "linkedGroup": {
+    "title": "Linked appointment",
+    "description": "This appointment is part of a chain of {{count}} treatments",
+    "editChoice": "What would you like to edit?",
+    "editSingle": "This slot only",
+    "editSingleDesc": "Other slots will not be modified",
+    "editGroup": "The entire chain",
+    "editGroupDesc": "Modify all slots simultaneously",
+    "deleteChoice": "What would you like to delete?",
+    "deleteSingle": "This slot only",
+    "deleteSingleDesc": "Other slots will not be affected",
+    "deleteGroup": "The entire chain",
+    "deleteGroupDesc": "Delete all slots in the chain",
+    "deleteAllPatient": "All patient appointments",
+    "deleteAllPatientDesc": "Delete all {{count}} appointments for {{patient}}",
+    "deleteSingleOptions": "Deletion options",
+    "keepGap": "Keep the gap (don't shift)",
+    "recalculateChain": "Recalculate the chain",
+    "conflictWarning": "Conflict detected",
+    "overlapQuestion": "The machine is busy at the next slot. Do you want to overlap the slots?",
+    "completedHidden": "{{count}} completed treatment(s) hidden",
+    "showCompleted": "Show completed",
+    "hideCompleted": "Hide completed",
+    "groupOverview": "Chain overview",
+    "position": "Position {{current}}/{{total}}"
+  },
+
+  "conflict": {
+    "slotOccupied": "This slot is already occupied by another appointment:",
+    "existingAppointment": "Existing appointment",
+    "samePatient": "Same patient",
+    "overlapQuestion": "Do you still want to overlap the slots?",
+    "allowOverlap": "Overlap",
+    "chooseAnother": "Choose another slot"
   },
 
   "actions": {

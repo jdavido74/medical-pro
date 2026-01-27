@@ -65,7 +65,11 @@
     "reason": "Motif",
     "notes": "Notes",
     "priority": "Priorité",
-    "status": "Statut"
+    "status": "Statut",
+    "linkedGroup": "Fait partie d'un enchaînement",
+    "deleteConfirm": "Confirmer la suppression",
+    "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer ce rendez-vous ?",
+    "deleteGroupConfirmMessage": "Êtes-vous sûr de vouloir supprimer tous les rendez-vous de cet enchaînement ?"
   },
 
   "priorities": {
@@ -143,6 +147,42 @@
     "noMachineAvailable": "Aucune machine disponible pour ce traitement",
     "conflictDetected": "Conflit détecté pour le traitement {{index}}",
     "allTreatmentsRequired": "Tous les traitements doivent avoir une machine disponible"
+  },
+
+  "linkedGroup": {
+    "title": "Rendez-vous lié",
+    "description": "Ce rendez-vous fait partie d'un enchaînement de {{count}} traitements",
+    "editChoice": "Que souhaitez-vous modifier ?",
+    "editSingle": "Ce créneau uniquement",
+    "editSingleDesc": "Les autres créneaux ne seront pas modifiés",
+    "editGroup": "Tout l'enchaînement",
+    "editGroupDesc": "Modifier tous les créneaux simultanément",
+    "deleteChoice": "Que souhaitez-vous supprimer ?",
+    "deleteSingle": "Ce créneau uniquement",
+    "deleteSingleDesc": "Les autres créneaux ne seront pas affectés",
+    "deleteGroup": "Tout l'enchaînement",
+    "deleteGroupDesc": "Supprimer tous les créneaux de l'enchaînement",
+    "deleteAllPatient": "Tous les RDV du patient",
+    "deleteAllPatientDesc": "Supprimer les {{count}} rendez-vous de {{patient}}",
+    "deleteSingleOptions": "Options de suppression",
+    "keepGap": "Laisser le trou (ne pas décaler)",
+    "recalculateChain": "Recalculer l'enchaînement",
+    "conflictWarning": "Conflit détecté",
+    "overlapQuestion": "La machine est occupée au créneau suivant. Voulez-vous superposer les créneaux ?",
+    "completedHidden": "{{count}} traitement(s) terminé(s) masqué(s)",
+    "showCompleted": "Afficher les terminés",
+    "hideCompleted": "Masquer les terminés",
+    "groupOverview": "Vue d'ensemble de l'enchaînement",
+    "position": "Position {{current}}/{{total}}"
+  },
+
+  "conflict": {
+    "slotOccupied": "Ce créneau est déjà occupé par un autre rendez-vous :",
+    "existingAppointment": "Rendez-vous existant",
+    "samePatient": "Même patient",
+    "overlapQuestion": "Voulez-vous quand même superposer les créneaux ?",
+    "allowOverlap": "Superposer",
+    "chooseAnother": "Choisir un autre créneau"
   },
 
   "actions": {
