@@ -19,6 +19,8 @@ import frAnalytics from './locales/fr/analytics.json';
 import frAdmin from './locales/fr/admin.json';
 import frOnboarding from './locales/fr/onboarding.json';
 import frCatalog from './locales/fr/catalog.json';
+import frMachines from './locales/fr/machines.json';
+import frPlanning from './locales/fr/planning.json';
 
 // Import English translations
 import enCommon from './locales/en/common.json';
@@ -36,6 +38,8 @@ import enAnalytics from './locales/en/analytics.json';
 import enAdmin from './locales/en/admin.json';
 import enOnboarding from './locales/en/onboarding.json';
 import enCatalog from './locales/en/catalog.json';
+import enMachines from './locales/en/machines.json';
+import enPlanning from './locales/en/planning.json';
 
 // Import Spanish translations
 import esCommon from './locales/es/common.json';
@@ -53,6 +57,8 @@ import esAnalytics from './locales/es/analytics.json';
 import esAdmin from './locales/es/admin.json';
 import esOnboarding from './locales/es/onboarding.json';
 import esCatalog from './locales/es/catalog.json';
+import esMachines from './locales/es/machines.json';
+import esPlanning from './locales/es/planning.json';
 
 /**
  * Detect language from URL locale first, then fall back to region detection
@@ -106,7 +112,9 @@ i18n
         analytics: frAnalytics,
         admin: frAdmin,
         onboarding: frOnboarding,
-        catalog: frCatalog
+        catalog: frCatalog,
+        machines: frMachines,
+        planning: frPlanning
       },
       en: {
         common: enCommon,
@@ -123,7 +131,9 @@ i18n
         analytics: enAnalytics,
         admin: enAdmin,
         onboarding: enOnboarding,
-        catalog: enCatalog
+        catalog: enCatalog,
+        machines: enMachines,
+        planning: enPlanning
       },
       es: {
         common: esCommon,
@@ -140,13 +150,15 @@ i18n
         analytics: esAnalytics,
         admin: esAdmin,
         onboarding: esOnboarding,
-        catalog: esCatalog
+        catalog: esCatalog,
+        machines: esMachines,
+        planning: esPlanning
       }
     },
     lng: defaultLanguage,
     fallbackLng: 'fr', // French as fallback for missing translations
     defaultNS: 'common',
-    ns: ['common', 'auth', 'nav', 'home', 'public', 'dashboard', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'analytics', 'admin', 'onboarding', 'catalog'],
+    ns: ['common', 'auth', 'nav', 'home', 'public', 'dashboard', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'analytics', 'admin', 'onboarding', 'catalog', 'machines', 'planning'],
 
     interpolation: {
       escapeValue: false // React already escapes values

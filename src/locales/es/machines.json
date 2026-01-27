@@ -1,0 +1,113 @@
+{
+  "title": "Máquinas",
+  "subtitle": "Gestione sus equipos y asigne tratamientos",
+
+  "fields": {
+    "name": "Nombre",
+    "description": "Descripción",
+    "color": "Color",
+    "location": "Ubicación",
+    "isActive": "Activo",
+    "treatments": "Tratamientos asignados",
+    "createdAt": "Creado el",
+    "updatedAt": "Actualizado el"
+  },
+
+  "placeholders": {
+    "name": "Nombre de la máquina",
+    "description": "Descripción (opcional)",
+    "location": "Ej: Sala 1, Consulta A",
+    "search": "Buscar máquinas...",
+    "selectTreatments": "Seleccionar tratamientos"
+  },
+
+  "actions": {
+    "add": "Añadir máquina",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "assignTreatments": "Gestionar tratamientos"
+  },
+
+  "treatments": {
+    "title": "Tratamientos asignados",
+    "description": "Seleccione los tratamientos que esta máquina puede realizar",
+    "noTreatments": "Sin tratamientos asignados",
+    "availableTreatments": "Tratamientos disponibles",
+    "assignedTreatments": "Tratamientos asignados",
+    "count": "{{count}} tratamiento",
+    "count_plural": "{{count}} tratamientos"
+  },
+
+  "status": {
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "all": "Todos los estados"
+  },
+
+  "filters": {
+    "status": "Estado",
+    "search": "Buscar",
+    "showInactive": "Mostrar inactivas"
+  },
+
+  "empty": {
+    "title": "Sin máquinas",
+    "description": "Empiece añadiendo sus equipos para programar citas",
+    "filteredTitle": "Sin resultados",
+    "filteredDescription": "Ninguna máquina coincide con sus criterios de búsqueda"
+  },
+
+  "modal": {
+    "createTitle": "Nueva máquina",
+    "editTitle": "Editar máquina",
+    "deleteTitle": "Eliminar máquina",
+    "deleteConfirm": "¿Está seguro de que desea eliminar \"{{name}}\"?",
+    "deleteWarning": "Esta acción no eliminará las citas existentes.",
+    "basicInfo": "Información general",
+    "treatmentsTab": "Tratamientos"
+  },
+
+  "validation": {
+    "name": {
+      "required": "El nombre es obligatorio",
+      "minLength": "El nombre debe tener al menos 1 carácter",
+      "maxLength": "El nombre no puede superar los 100 caracteres"
+    },
+    "color": {
+      "invalid": "Formato de color inválido (ej: #FF5733)"
+    },
+    "location": {
+      "maxLength": "La ubicación no puede superar los 200 caracteres"
+    }
+  },
+
+  "messages": {
+    "createSuccess": "Máquina creada con éxito",
+    "updateSuccess": "Máquina actualizada con éxito",
+    "deleteSuccess": "Máquina eliminada con éxito",
+    "activateSuccess": "Máquina activada",
+    "deactivateSuccess": "Máquina desactivada",
+    "treatmentsUpdateSuccess": "Tratamientos actualizados con éxito",
+    "error": "Se ha producido un error",
+    "loadError": "Error al cargar las máquinas"
+  },
+
+  "stats": {
+    "total": "Total",
+    "active": "Activas",
+    "inactive": "Inactivas"
+  },
+
+  "colors": {
+    "blue": "Azul",
+    "green": "Verde",
+    "red": "Rojo",
+    "yellow": "Amarillo",
+    "purple": "Morado",
+    "pink": "Rosa",
+    "orange": "Naranja",
+    "cyan": "Cian"
+  }
+}

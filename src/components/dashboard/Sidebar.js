@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, Users, Calendar, FileText, BarChart3, Settings,
-  LogOut, Heart, Shield, Package
+  LogOut, Heart, Shield, Package, Cpu, CalendarClock
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
@@ -64,6 +64,12 @@ const Sidebar = () => {
 
     // Catalogue (produits, traitements, services - admin, secrétaire)
     { id: 'catalog', path: '/catalog', icon: Package, permission: 'catalog.view', labelKey: 'catalog' },
+
+    // Machines (équipements pour rendez-vous - admin, secrétaire)
+    { id: 'machines', path: '/machines', icon: Cpu, permission: 'machines.view', labelKey: 'machines' },
+
+    // Planning (calendrier unifié traitements et consultations)
+    { id: 'planning', path: '/planning', icon: CalendarClock, permission: 'appointments.view', labelKey: 'planning' },
 
     // Statistiques (admin, direction)
     { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.view', labelKey: 'analytics' },

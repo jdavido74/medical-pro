@@ -1,0 +1,161 @@
+{
+  "title": "Planificación",
+  "subtitle": "Gestione sus citas de tratamiento y consulta",
+
+  "categories": {
+    "all": "Todos",
+    "treatment": "Tratamientos",
+    "consultation": "Consultas"
+  },
+
+  "filters": {
+    "category": "Categoría",
+    "machine": "Máquina",
+    "provider": "Profesional",
+    "patient": "Paciente",
+    "status": "Estado",
+    "date": "Fecha",
+    "today": "Hoy",
+    "week": "Esta semana",
+    "month": "Este mes"
+  },
+
+  "calendar": {
+    "today": "Hoy",
+    "day": "Día",
+    "week": "Semana",
+    "month": "Mes",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "noAppointments": "Sin citas",
+    "loading": "Cargando..."
+  },
+
+  "slots": {
+    "available": "Horarios disponibles",
+    "noSlots": "No hay horarios disponibles",
+    "selectSlot": "Seleccione un horario",
+    "machinesAvailable": "{{count}} máquina disponible",
+    "machinesAvailable_plural": "{{count}} máquinas disponibles"
+  },
+
+  "appointment": {
+    "new": "Nueva cita",
+    "edit": "Editar cita",
+    "details": "Detalles de la cita",
+    "category": "Tipo de cita",
+    "treatment": "Tratamiento",
+    "consultation": "Consulta",
+    "patient": "Paciente",
+    "selectPatient": "Seleccionar un paciente",
+    "searchPatient": "Buscar o crear un paciente...",
+    "patientRequired": "Por favor seleccione un paciente",
+    "date": "Fecha",
+    "time": "Hora",
+    "duration": "Duración",
+    "minutes": "minutos",
+    "machine": "Máquina",
+    "selectMachine": "Seleccionar una máquina",
+    "provider": "Profesional",
+    "selectProvider": "Seleccionar un profesional",
+    "assistant": "Asistente",
+    "selectAssistant": "Seleccionar un asistente (opcional)",
+    "service": "Servicio",
+    "selectService": "Seleccionar un servicio",
+    "reason": "Motivo",
+    "notes": "Notas",
+    "priority": "Prioridad",
+    "status": "Estado"
+  },
+
+  "priorities": {
+    "low": "Baja",
+    "normal": "Normal",
+    "high": "Alta",
+    "urgent": "Urgente"
+  },
+
+  "statuses": {
+    "scheduled": "Programada",
+    "confirmed": "Confirmada",
+    "in_progress": "En curso",
+    "completed": "Completada",
+    "cancelled": "Cancelada",
+    "no_show": "No asistió"
+  },
+
+  "resources": {
+    "machines": "Máquinas",
+    "providers": "Profesionales",
+    "noMachines": "No hay máquinas disponibles",
+    "noProviders": "No hay profesionales disponibles"
+  },
+
+  "validation": {
+    "patientRequired": "Por favor seleccione un paciente",
+    "dateRequired": "Por favor seleccione una fecha",
+    "timeRequired": "Por favor seleccione una hora",
+    "machineRequired": "Por favor seleccione una máquina",
+    "providerRequired": "Por favor seleccione un profesional",
+    "treatmentRequired": "Por favor seleccione un tratamiento",
+    "slotConflict": "Este horario ya no está disponible"
+  },
+
+  "messages": {
+    "createSuccess": "Cita creada con éxito",
+    "updateSuccess": "Cita actualizada",
+    "cancelSuccess": "Cita cancelada",
+    "confirmSuccess": "Cita confirmada",
+    "error": "Se ha producido un error",
+    "loadError": "Error al cargar los datos",
+    "conflictError": "Conflicto de horario detectado"
+  },
+
+  "empty": {
+    "title": "Sin citas",
+    "description": "Cree una nueva cita para comenzar",
+    "noResults": "Ninguna cita coincide con los filtros"
+  },
+
+  "booking": {
+    "step1": "Elegir tipo",
+    "step2": "Seleccionar paciente",
+    "step3": "Elegir fecha y hora",
+    "step4": "Confirmar",
+    "treatmentDescription": "Reserve un horario de máquina para un tratamiento",
+    "consultationDescription": "Reserve una consulta con un profesional",
+    "searchTreatment": "Buscar tratamiento...",
+    "noTreatmentsFound": "No se encontraron tratamientos",
+    "uncategorized": "Sin categoría"
+  },
+
+  "multiTreatment": {
+    "selectedTreatments": "Tratamientos seleccionados",
+    "addTreatment": "Agregar un tratamiento",
+    "removeTreatment": "Eliminar",
+    "totalDuration": "Duración total",
+    "treatmentChain": "Cadena de tratamientos",
+    "segment": "Segmento",
+    "segmentOf": "Segmento {{current}} de {{total}}",
+    "groupEdit": "Editar grupo",
+    "groupCancel": "Cancelar grupo",
+    "machineAssignment": "Asignación de máquinas",
+    "noMachineAvailable": "No hay máquina disponible para este tratamiento",
+    "conflictDetected": "Conflicto detectado para el tratamiento {{index}}",
+    "allTreatmentsRequired": "Todos los tratamientos deben tener una máquina disponible"
+  },
+
+  "actions": {
+    "create": "Crear",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar",
+    "complete": "Completar",
+    "reschedule": "Reprogramar",
+    "viewDetails": "Ver detalles",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "saving": "Guardando..."
+  }
+}

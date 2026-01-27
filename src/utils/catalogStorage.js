@@ -204,7 +204,6 @@ const search = (query, options = {}) => {
     const searchableText = [
       item.title,
       item.description,
-      item.provenance,
       item.sku
     ].filter(Boolean).join(' ').toLowerCase();
 

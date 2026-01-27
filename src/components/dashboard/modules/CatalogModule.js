@@ -60,6 +60,8 @@ const CatalogModule = () => {
   const [toast, setToast] = useState(null);
   // Legacy family/variant UI state (kept for UI compatibility)
   const [expandedFamilies, setExpandedFamilies] = useState(new Set());
+  // State for creating variant with pre-selected parent
+  const [createVariantParentId, setCreateVariantParentId] = useState(null);
 
   // Category manager state (lifted from renderCategoryManager to avoid hooks in render function)
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -123,7 +125,7 @@ const CatalogModule = () => {
 
   // Filter items based on current tab and filters
   const filteredItems = useMemo(() => {
-    return items.filter(item => {
+    const filtered = items.filter(item => {
       // Tab filter
       if (activeTab !== 'all' && activeTab !== 'categories') {
         const typeMap = {
@@ -145,8 +147,7 @@ const CatalogModule = () => {
         const query = searchQuery.toLowerCase();
         const searchText = [
           item.name,
-          item.description,
-          item.provenance
+          item.description
         ].filter(Boolean).join(' ').toLowerCase();
         if (!searchText.includes(query)) return false;
       }
@@ -156,11 +157,22 @@ const CatalogModule = () => {
 
       return true;
     });
+
+    // Sort: families first, then by name
+    return filtered.sort((a, b) => {
+      // Families come first
+      if (a.isFamily && !b.isFamily) return -1;
+      if (!a.isFamily && b.isFamily) return 1;
+      // Then sort by name
+      return (a.name || '').localeCompare(b.name || '');
+    });
   }, [items, activeTab, showInactive, selectedCategory, searchQuery]);
 
-  // Get variants for a family
+  // Get variants for a family (sorted by name)
   const getItemVariants = useCallback((familyId) => {
-    return items.filter(item => item.parentId === familyId && item.isVariant);
+    return items
+      .filter(item => item.parentId === familyId && item.isVariant)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [items]);
 
   // Toggle family expansion
@@ -179,6 +191,7 @@ const CatalogModule = () => {
   // Handle create new item
   const handleCreate = () => {
     setSelectedItem(null);
+    setCreateVariantParentId(null); // Reset parent when creating normal item
     setFormMode('create');
     setShowFormModal(true);
   };
@@ -190,11 +203,10 @@ const CatalogModule = () => {
     setShowFormModal(true);
   };
 
-  // Handle add variant (legacy - now use tags for grouping)
-  // eslint-disable-next-line no-unused-vars
+  // Handle add variant - pre-selects the parent family
   const handleAddVariant = (familyItem) => {
-    // With tags system, just create a new item and assign the same tag
     setSelectedItem(null);
+    setCreateVariantParentId(familyItem.id);
     setFormMode('create');
     setShowFormModal(true);
   };
@@ -942,12 +954,17 @@ const CatalogModule = () => {
       {showFormModal && (
         <CatalogFormModal
           isOpen={showFormModal}
-          onClose={() => setShowFormModal(false)}
+          onClose={() => {
+            setShowFormModal(false);
+            setCreateVariantParentId(null);
+          }}
           onSave={handleFormSave}
           item={selectedItem}
           availableTags={availableTags}
           mode={formMode}
           categories={categories}
+          allItems={items}
+          defaultParentId={createVariantParentId}
         />
       )}
 

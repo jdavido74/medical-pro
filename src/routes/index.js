@@ -37,6 +37,8 @@ import InvoicesModule from '../components/dashboard/modules/InvoicesModule';
 import ConsentManagementModule from '../components/dashboard/modules/ConsentManagementModule';
 import ConsentTemplatesModule from '../components/dashboard/modules/ConsentTemplatesModule';
 import CatalogModule from '../components/dashboard/modules/CatalogModule';
+import MachinesModule from '../components/dashboard/modules/MachinesModule';
+import PlanningModule from '../components/dashboard/modules/PlanningModule';
 import SettingsModule from '../components/dashboard/modules/SettingsModule';
 
 // Modules Admin
@@ -216,6 +218,26 @@ const dashboardRoutes = [
     )
   },
 
+  // Machines - équipements pour les rendez-vous
+  {
+    path: 'machines',
+    element: (
+      <PermissionRoute permission="machines.view">
+        <MachinesModule />
+      </PermissionRoute>
+    )
+  },
+
+  // Planning - calendrier unifié traitements et consultations
+  {
+    path: 'planning',
+    element: (
+      <PermissionRoute permission="appointments.view">
+        <PlanningModule />
+      </PermissionRoute>
+    )
+  },
+
   // Paramètres - accessible à tous les utilisateurs authentifiés
   { path: 'settings', element: <SettingsModule /> }
 ];
@@ -347,6 +369,8 @@ export const routes = [
   { path: '/consents', element: <LegacyRouteRedirect /> },
   { path: '/consent-templates', element: <LegacyRouteRedirect /> },
   { path: '/catalog', element: <LegacyRouteRedirect /> },
+  { path: '/machines', element: <LegacyRouteRedirect /> },
+  { path: '/planning', element: <LegacyRouteRedirect /> },
   { path: '/settings', element: <LegacyRouteRedirect /> },
 
   // Legacy admin routes

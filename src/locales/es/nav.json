@@ -19,6 +19,8 @@
     "quotes": "Presupuestos",
     "invoices": "Facturas",
     "catalog": "Catálogo",
+    "machines": "Máquinas",
+    "planning": "Planificación",
     "analytics": "Estadísticas",
     "admin": "Administración",
     "settings": "Configuración",
@@ -105,6 +107,14 @@
     "catalog": {
       "title": "Catálogo",
       "description": "Productos, tratamientos y servicios"
+    },
+    "machines": {
+      "title": "Máquinas",
+      "description": "Equipos para las citas"
+    },
+    "planning": {
+      "title": "Planificación",
+      "description": "Calendario unificado de tratamientos y consultas"
     }
   }
 }

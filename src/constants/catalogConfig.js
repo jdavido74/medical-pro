@@ -7,14 +7,14 @@
 export const CATALOG_TYPES = {
   medication: {
     id: 'medication',
-    fields: ['dosage', 'dosageUnit', 'provenance'],
+    fields: ['dosage', 'dosageUnit'],
     canHaveVariants: true,
     icon: 'Pill',
     defaultDuration: null
   },
   treatment: {
     id: 'treatment',
-    fields: ['dosage', 'dosageUnit', 'volume', 'provenance', 'duration'],
+    fields: ['dosage', 'dosageUnit', 'volume', 'duration'],
     canHaveVariants: true,
     impactsAppointments: true,
     icon: 'Syringe',
@@ -78,12 +78,6 @@ export const FIELD_CONFIG = {
     unit: 'ml',
     required: false,
     applicableTypes: ['treatment']
-  },
-  provenance: {
-    type: 'text',
-    maxLength: 100,
-    required: false,
-    applicableTypes: ['medication', 'treatment']
   },
   duration: {
     type: 'number',
@@ -149,7 +143,6 @@ export const getDefaultCatalogItem = (type = 'medication') => ({
   dosage: null,
   dosageUnit: null,
   volume: null,
-  provenance: null,
   duration: getDefaultDuration(type),
   prepBefore: 0,
   prepAfter: 0,

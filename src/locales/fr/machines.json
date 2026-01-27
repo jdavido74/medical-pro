@@ -1,0 +1,113 @@
+{
+  "title": "Machines",
+  "subtitle": "Gérez vos équipements et assignez les traitements",
+
+  "fields": {
+    "name": "Nom",
+    "description": "Description",
+    "color": "Couleur",
+    "location": "Emplacement",
+    "isActive": "Actif",
+    "treatments": "Traitements assignés",
+    "createdAt": "Créé le",
+    "updatedAt": "Modifié le"
+  },
+
+  "placeholders": {
+    "name": "Nom de la machine",
+    "description": "Description (optionnel)",
+    "location": "Ex: Salle 1, Cabinet A",
+    "search": "Rechercher une machine...",
+    "selectTreatments": "Sélectionner les traitements"
+  },
+
+  "actions": {
+    "add": "Ajouter une machine",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "assignTreatments": "Gérer les traitements"
+  },
+
+  "treatments": {
+    "title": "Traitements assignés",
+    "description": "Sélectionnez les traitements que cette machine peut effectuer",
+    "noTreatments": "Aucun traitement assigné",
+    "availableTreatments": "Traitements disponibles",
+    "assignedTreatments": "Traitements assignés",
+    "count": "{{count}} traitement",
+    "count_plural": "{{count}} traitements"
+  },
+
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "all": "Tous les statuts"
+  },
+
+  "filters": {
+    "status": "Statut",
+    "search": "Rechercher",
+    "showInactive": "Afficher les inactives"
+  },
+
+  "empty": {
+    "title": "Aucune machine",
+    "description": "Commencez par ajouter vos équipements pour planifier les rendez-vous",
+    "filteredTitle": "Aucun résultat",
+    "filteredDescription": "Aucune machine ne correspond à vos critères de recherche"
+  },
+
+  "modal": {
+    "createTitle": "Nouvelle machine",
+    "editTitle": "Modifier la machine",
+    "deleteTitle": "Supprimer la machine",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ?",
+    "deleteWarning": "Cette action ne supprimera pas les rendez-vous existants.",
+    "basicInfo": "Informations générales",
+    "treatmentsTab": "Traitements"
+  },
+
+  "validation": {
+    "name": {
+      "required": "Le nom est requis",
+      "minLength": "Le nom doit contenir au moins 1 caractère",
+      "maxLength": "Le nom ne peut pas dépasser 100 caractères"
+    },
+    "color": {
+      "invalid": "Format de couleur invalide (ex: #FF5733)"
+    },
+    "location": {
+      "maxLength": "L'emplacement ne peut pas dépasser 200 caractères"
+    }
+  },
+
+  "messages": {
+    "createSuccess": "Machine créée avec succès",
+    "updateSuccess": "Machine mise à jour avec succès",
+    "deleteSuccess": "Machine supprimée avec succès",
+    "activateSuccess": "Machine activée",
+    "deactivateSuccess": "Machine désactivée",
+    "treatmentsUpdateSuccess": "Traitements mis à jour avec succès",
+    "error": "Une erreur est survenue",
+    "loadError": "Erreur lors du chargement des machines"
+  },
+
+  "stats": {
+    "total": "Total",
+    "active": "Actives",
+    "inactive": "Inactives"
+  },
+
+  "colors": {
+    "blue": "Bleu",
+    "green": "Vert",
+    "red": "Rouge",
+    "yellow": "Jaune",
+    "purple": "Violet",
+    "pink": "Rose",
+    "orange": "Orange",
+    "cyan": "Cyan"
+  }
+}

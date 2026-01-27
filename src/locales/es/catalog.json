@@ -35,6 +35,8 @@
     "prepAfterHint": "Tiempo de limpieza/descanso después de la cita",
     "noPrepTime": "Ninguno",
     "family": "Familia",
+    "parentFamily": "Familia padre",
+    "parentFamilyHint": "Selecciona una familia para crear una variante",
     "variants": "Variantes",
     "tags": "Etiquetas",
     "createdAt": "Creado",
@@ -84,7 +86,14 @@
     "duration": "Ej: 30",
     "search": "Buscar en el catálogo...",
     "selectCategory": "Seleccionar una categoría",
-    "categoryName": "Nombre de la categoría"
+    "categoryName": "Nombre de la categoría",
+    "noFamily": "Ninguna (producto independiente)"
+  },
+
+  "labels": {
+    "variantOf": "Variante de",
+    "unknownFamily": "Familia desconocida",
+    "inheritanceHint": "El tipo, categoría e IVA se heredan del padre. La descripción vacía y los proveedores también se heredarán."
   },
 
   "actions": {
@@ -193,9 +202,56 @@
     "basicInfo": "Información básica",
     "pricingInfo": "Precios",
     "attributesInfo": "Atributos",
+    "supplierInfo": "Proveedores",
     "pricing": "Precios",
     "attributes": "Atributos",
+    "supplier": "Proveedores",
     "advanced": "Avanzado"
+  },
+
+  "supplier": {
+    "title": "Proveedores",
+    "description": "Asocia proveedores con este producto para trazabilidad y gestión de compras.",
+    "inheritanceNote": "Los proveedores de la familia padre se muestran en solo lectura. Puedes añadir proveedores específicos para esta variante.",
+    "noSuppliers": "No hay proveedores asociados",
+    "noSuppliersHint": "Busca y añade proveedores para este producto",
+    "searchPlaceholder": "Buscar un proveedor...",
+    "createNew": "Crear nuevo proveedor",
+    "create": "Crear proveedor",
+    "edit": "Editar proveedor",
+    "createDescription": "Añade un nuevo proveedor a tu base de datos",
+    "editDescription": "Edita la información del proveedor",
+    "primary": "Principal",
+    "inherited": "Heredado",
+    "setPrimary": "Establecer como principal",
+    "noResults": "No se encontraron proveedores",
+    "basicInfo": "Información básica",
+    "address": "Dirección",
+    "contactInfo": "Información de contacto",
+    "contactPerson": "Persona de contacto",
+    "notes": "Notas",
+    "name": "Nombre del proveedor",
+    "namePlaceholder": "Ej: Laboratorios Dupont",
+    "nameRequired": "El nombre del proveedor es obligatorio",
+    "taxId": "NIF / CIF",
+    "taxIdPlaceholder": "Ej: B12345678",
+    "addressLine1": "Dirección línea 1",
+    "addressLine2": "Dirección línea 2 (opcional)",
+    "city": "Ciudad",
+    "postalCode": "Código postal",
+    "state": "Provincia/Región",
+    "selectCountry": "Seleccionar un país",
+    "phone": "Teléfono",
+    "email": "Correo electrónico",
+    "website": "Sitio web",
+    "contactName": "Nombre del contacto",
+    "contactNamePlaceholder": "Ej: Juan García",
+    "contactEmail": "Correo del contacto",
+    "contactPhone": "Teléfono del contacto",
+    "notesPlaceholder": "Notas internas sobre este proveedor...",
+    "supplierSku": "Ref. proveedor",
+    "supplierSkuPlaceholder": "Código del producto en este proveedor",
+    "unitCost": "Coste unitario"
   },
 
   "validation": {

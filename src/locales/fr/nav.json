@@ -19,6 +19,8 @@
     "quotes": "Devis",
     "invoices": "Factures",
     "catalog": "Catalogue",
+    "machines": "Machines",
+    "planning": "Planning",
     "analytics": "Statistiques",
     "admin": "Administration",
     "settings": "Paramètres",
@@ -105,6 +107,14 @@
     "catalog": {
       "title": "Catalogue",
       "description": "Produits, traitements et services"
+    },
+    "machines": {
+      "title": "Machines",
+      "description": "Équipements pour les rendez-vous"
+    },
+    "planning": {
+      "title": "Planning",
+      "description": "Calendrier unifié traitements et consultations"
     }
   }
 }

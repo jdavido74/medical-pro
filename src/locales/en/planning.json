@@ -1,0 +1,161 @@
+{
+  "title": "Planning",
+  "subtitle": "Manage your treatment and consultation appointments",
+
+  "categories": {
+    "all": "All",
+    "treatment": "Treatments",
+    "consultation": "Consultations"
+  },
+
+  "filters": {
+    "category": "Category",
+    "machine": "Machine",
+    "provider": "Practitioner",
+    "patient": "Patient",
+    "status": "Status",
+    "date": "Date",
+    "today": "Today",
+    "week": "This week",
+    "month": "This month"
+  },
+
+  "calendar": {
+    "today": "Today",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "previous": "Previous",
+    "next": "Next",
+    "noAppointments": "No appointments",
+    "loading": "Loading..."
+  },
+
+  "slots": {
+    "available": "Available slots",
+    "noSlots": "No slots available",
+    "selectSlot": "Select a slot",
+    "machinesAvailable": "{{count}} machine available",
+    "machinesAvailable_plural": "{{count}} machines available"
+  },
+
+  "appointment": {
+    "new": "New appointment",
+    "edit": "Edit appointment",
+    "details": "Appointment details",
+    "category": "Appointment type",
+    "treatment": "Treatment",
+    "consultation": "Consultation",
+    "patient": "Patient",
+    "selectPatient": "Select a patient",
+    "searchPatient": "Search or create a patient...",
+    "patientRequired": "Please select a patient",
+    "date": "Date",
+    "time": "Time",
+    "duration": "Duration",
+    "minutes": "minutes",
+    "machine": "Machine",
+    "selectMachine": "Select a machine",
+    "provider": "Practitioner",
+    "selectProvider": "Select a practitioner",
+    "assistant": "Assistant",
+    "selectAssistant": "Select an assistant (optional)",
+    "service": "Service",
+    "selectService": "Select a service",
+    "reason": "Reason",
+    "notes": "Notes",
+    "priority": "Priority",
+    "status": "Status"
+  },
+
+  "priorities": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+
+  "statuses": {
+    "scheduled": "Scheduled",
+    "confirmed": "Confirmed",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "no_show": "No show"
+  },
+
+  "resources": {
+    "machines": "Machines",
+    "providers": "Practitioners",
+    "noMachines": "No machines available",
+    "noProviders": "No practitioners available"
+  },
+
+  "validation": {
+    "patientRequired": "Please select a patient",
+    "dateRequired": "Please select a date",
+    "timeRequired": "Please select a time",
+    "machineRequired": "Please select a machine",
+    "providerRequired": "Please select a practitioner",
+    "treatmentRequired": "Please select a treatment",
+    "slotConflict": "This slot is no longer available"
+  },
+
+  "messages": {
+    "createSuccess": "Appointment created successfully",
+    "updateSuccess": "Appointment updated",
+    "cancelSuccess": "Appointment cancelled",
+    "confirmSuccess": "Appointment confirmed",
+    "error": "An error occurred",
+    "loadError": "Error loading data",
+    "conflictError": "Slot conflict detected"
+  },
+
+  "empty": {
+    "title": "No appointments",
+    "description": "Create a new appointment to get started",
+    "noResults": "No appointments match the filters"
+  },
+
+  "booking": {
+    "step1": "Choose type",
+    "step2": "Select patient",
+    "step3": "Choose date and time",
+    "step4": "Confirm",
+    "treatmentDescription": "Book a machine slot for a treatment",
+    "consultationDescription": "Book a consultation with a practitioner",
+    "searchTreatment": "Search treatment...",
+    "noTreatmentsFound": "No treatments found",
+    "uncategorized": "Uncategorized"
+  },
+
+  "multiTreatment": {
+    "selectedTreatments": "Selected treatments",
+    "addTreatment": "Add a treatment",
+    "removeTreatment": "Remove",
+    "totalDuration": "Total duration",
+    "treatmentChain": "Treatment chain",
+    "segment": "Segment",
+    "segmentOf": "Segment {{current}} of {{total}}",
+    "groupEdit": "Edit group",
+    "groupCancel": "Cancel group",
+    "machineAssignment": "Machine assignment",
+    "noMachineAvailable": "No machine available for this treatment",
+    "conflictDetected": "Conflict detected for treatment {{index}}",
+    "allTreatmentsRequired": "All treatments must have an available machine"
+  },
+
+  "actions": {
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "complete": "Complete",
+    "reschedule": "Reschedule",
+    "viewDetails": "View details",
+    "previous": "Previous",
+    "next": "Next",
+    "saving": "Saving..."
+  }
+}

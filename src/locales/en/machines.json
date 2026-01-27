@@ -1,0 +1,113 @@
+{
+  "title": "Machines",
+  "subtitle": "Manage your equipment and assign treatments",
+
+  "fields": {
+    "name": "Name",
+    "description": "Description",
+    "color": "Color",
+    "location": "Location",
+    "isActive": "Active",
+    "treatments": "Assigned treatments",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at"
+  },
+
+  "placeholders": {
+    "name": "Machine name",
+    "description": "Description (optional)",
+    "location": "E.g.: Room 1, Office A",
+    "search": "Search machines...",
+    "selectTreatments": "Select treatments"
+  },
+
+  "actions": {
+    "add": "Add machine",
+    "edit": "Edit",
+    "delete": "Delete",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "assignTreatments": "Manage treatments"
+  },
+
+  "treatments": {
+    "title": "Assigned treatments",
+    "description": "Select the treatments this machine can perform",
+    "noTreatments": "No treatments assigned",
+    "availableTreatments": "Available treatments",
+    "assignedTreatments": "Assigned treatments",
+    "count": "{{count}} treatment",
+    "count_plural": "{{count}} treatments"
+  },
+
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "all": "All statuses"
+  },
+
+  "filters": {
+    "status": "Status",
+    "search": "Search",
+    "showInactive": "Show inactive"
+  },
+
+  "empty": {
+    "title": "No machines",
+    "description": "Start by adding your equipment to schedule appointments",
+    "filteredTitle": "No results",
+    "filteredDescription": "No machine matches your search criteria"
+  },
+
+  "modal": {
+    "createTitle": "New machine",
+    "editTitle": "Edit machine",
+    "deleteTitle": "Delete machine",
+    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"?",
+    "deleteWarning": "This action will not delete existing appointments.",
+    "basicInfo": "General information",
+    "treatmentsTab": "Treatments"
+  },
+
+  "validation": {
+    "name": {
+      "required": "Name is required",
+      "minLength": "Name must be at least 1 character",
+      "maxLength": "Name cannot exceed 100 characters"
+    },
+    "color": {
+      "invalid": "Invalid color format (e.g.: #FF5733)"
+    },
+    "location": {
+      "maxLength": "Location cannot exceed 200 characters"
+    }
+  },
+
+  "messages": {
+    "createSuccess": "Machine created successfully",
+    "updateSuccess": "Machine updated successfully",
+    "deleteSuccess": "Machine deleted successfully",
+    "activateSuccess": "Machine activated",
+    "deactivateSuccess": "Machine deactivated",
+    "treatmentsUpdateSuccess": "Treatments updated successfully",
+    "error": "An error occurred",
+    "loadError": "Error loading machines"
+  },
+
+  "stats": {
+    "total": "Total",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+
+  "colors": {
+    "blue": "Blue",
+    "green": "Green",
+    "red": "Red",
+    "yellow": "Yellow",
+    "purple": "Purple",
+    "pink": "Pink",
+    "orange": "Orange",
+    "cyan": "Cyan"
+  }
+}

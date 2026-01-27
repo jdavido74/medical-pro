@@ -35,6 +35,8 @@
     "prepAfterHint": "Temps de nettoyage/repos après le RDV",
     "noPrepTime": "Aucun",
     "family": "Famille",
+    "parentFamily": "Famille parente",
+    "parentFamilyHint": "Sélectionnez une famille pour créer une variante",
     "variants": "Variantes",
     "tags": "Tags",
     "createdAt": "Créé le",
@@ -84,7 +86,14 @@
     "duration": "Ex: 30",
     "search": "Rechercher dans le catalogue...",
     "selectCategory": "Sélectionner une catégorie",
-    "categoryName": "Nom de la catégorie"
+    "categoryName": "Nom de la catégorie",
+    "noFamily": "Aucune (produit autonome)"
+  },
+
+  "labels": {
+    "variantOf": "Variante de",
+    "unknownFamily": "Famille inconnue",
+    "inheritanceHint": "Le type, la catégorie et la TVA sont hérités du parent. La description vide et les fournisseurs seront aussi hérités."
   },
 
   "actions": {
@@ -193,9 +202,56 @@
     "basicInfo": "Informations générales",
     "pricingInfo": "Tarification",
     "attributesInfo": "Attributs",
+    "supplierInfo": "Fournisseurs",
     "pricing": "Tarification",
     "attributes": "Attributs",
+    "supplier": "Fournisseurs",
     "advanced": "Avancé"
+  },
+
+  "supplier": {
+    "title": "Fournisseurs",
+    "description": "Associez des fournisseurs à ce produit pour la traçabilité et la gestion des achats.",
+    "inheritanceNote": "Les fournisseurs de la famille parente sont affichés en lecture seule. Vous pouvez ajouter des fournisseurs spécifiques à cette variante.",
+    "noSuppliers": "Aucun fournisseur associé",
+    "noSuppliersHint": "Recherchez et ajoutez des fournisseurs pour ce produit",
+    "searchPlaceholder": "Rechercher un fournisseur...",
+    "createNew": "Créer un nouveau fournisseur",
+    "create": "Créer un fournisseur",
+    "edit": "Modifier le fournisseur",
+    "createDescription": "Ajoutez un nouveau fournisseur à votre base de données",
+    "editDescription": "Modifiez les informations du fournisseur",
+    "primary": "Principal",
+    "inherited": "Hérité",
+    "setPrimary": "Définir comme principal",
+    "noResults": "Aucun fournisseur trouvé",
+    "basicInfo": "Informations générales",
+    "address": "Adresse",
+    "contactInfo": "Coordonnées",
+    "contactPerson": "Personne de contact",
+    "notes": "Notes",
+    "name": "Nom du fournisseur",
+    "namePlaceholder": "Ex: Laboratoires Dupont",
+    "nameRequired": "Le nom du fournisseur est requis",
+    "taxId": "N° TVA / SIRET",
+    "taxIdPlaceholder": "Ex: FR12345678901",
+    "addressLine1": "Adresse ligne 1",
+    "addressLine2": "Adresse ligne 2 (optionnel)",
+    "city": "Ville",
+    "postalCode": "Code postal",
+    "state": "Région/Province",
+    "selectCountry": "Sélectionner un pays",
+    "phone": "Téléphone",
+    "email": "Email",
+    "website": "Site web",
+    "contactName": "Nom du contact",
+    "contactNamePlaceholder": "Ex: Jean Martin",
+    "contactEmail": "Email du contact",
+    "contactPhone": "Téléphone du contact",
+    "notesPlaceholder": "Notes internes sur ce fournisseur...",
+    "supplierSku": "Réf. fournisseur",
+    "supplierSkuPlaceholder": "Code produit chez ce fournisseur",
+    "unitCost": "Coût unitaire"
   },
 
   "validation": {

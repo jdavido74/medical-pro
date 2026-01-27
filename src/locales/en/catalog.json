@@ -35,6 +35,8 @@
     "prepAfterHint": "Cleanup/rest time after appointment",
     "noPrepTime": "None",
     "family": "Family",
+    "parentFamily": "Parent Family",
+    "parentFamilyHint": "Select a family to create a variant",
     "variants": "Variants",
     "tags": "Tags",
     "createdAt": "Created",
@@ -84,7 +86,14 @@
     "duration": "E.g.: 30",
     "search": "Search catalog...",
     "selectCategory": "Select a category",
-    "categoryName": "Category name"
+    "categoryName": "Category name",
+    "noFamily": "None (standalone product)"
+  },
+
+  "labels": {
+    "variantOf": "Variant of",
+    "unknownFamily": "Unknown family",
+    "inheritanceHint": "Type, category, and VAT are inherited from parent. Empty description and suppliers will also be inherited."
   },
 
   "actions": {
@@ -193,9 +202,56 @@
     "basicInfo": "Basic information",
     "pricingInfo": "Pricing",
     "attributesInfo": "Attributes",
+    "supplierInfo": "Suppliers",
     "pricing": "Pricing",
     "attributes": "Attributes",
+    "supplier": "Suppliers",
     "advanced": "Advanced"
+  },
+
+  "supplier": {
+    "title": "Suppliers",
+    "description": "Associate suppliers with this product for traceability and purchasing management.",
+    "inheritanceNote": "Suppliers from the parent family are shown read-only. You can add specific suppliers for this variant.",
+    "noSuppliers": "No suppliers associated",
+    "noSuppliersHint": "Search and add suppliers for this product",
+    "searchPlaceholder": "Search for a supplier...",
+    "createNew": "Create new supplier",
+    "create": "Create supplier",
+    "edit": "Edit supplier",
+    "createDescription": "Add a new supplier to your database",
+    "editDescription": "Edit supplier information",
+    "primary": "Primary",
+    "inherited": "Inherited",
+    "setPrimary": "Set as primary",
+    "noResults": "No suppliers found",
+    "basicInfo": "Basic information",
+    "address": "Address",
+    "contactInfo": "Contact information",
+    "contactPerson": "Contact person",
+    "notes": "Notes",
+    "name": "Supplier name",
+    "namePlaceholder": "E.g.: Dupont Laboratories",
+    "nameRequired": "Supplier name is required",
+    "taxId": "Tax ID / VAT number",
+    "taxIdPlaceholder": "E.g.: GB123456789",
+    "addressLine1": "Address line 1",
+    "addressLine2": "Address line 2 (optional)",
+    "city": "City",
+    "postalCode": "Postal code",
+    "state": "State/Province",
+    "selectCountry": "Select a country",
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "contactName": "Contact name",
+    "contactNamePlaceholder": "E.g.: John Smith",
+    "contactEmail": "Contact email",
+    "contactPhone": "Contact phone",
+    "notesPlaceholder": "Internal notes about this supplier...",
+    "supplierSku": "Supplier SKU",
+    "supplierSkuPlaceholder": "Product code at this supplier",
+    "unitCost": "Unit cost"
   },
 
   "validation": {

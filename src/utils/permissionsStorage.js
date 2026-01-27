@@ -145,7 +145,13 @@ export const PERMISSIONS = {
   CATALOG_VIEW: 'catalog.view',
   CATALOG_CREATE: 'catalog.create',
   CATALOG_EDIT: 'catalog.edit',
-  CATALOG_DELETE: 'catalog.delete'
+  CATALOG_DELETE: 'catalog.delete',
+
+  // Machines (équipements pour rendez-vous)
+  MACHINES_VIEW: 'machines.view',
+  MACHINES_CREATE: 'machines.create',
+  MACHINES_EDIT: 'machines.edit',
+  MACHINES_DELETE: 'machines.delete'
 };
 
 // ============================================================================
@@ -227,7 +233,9 @@ export const DEFAULT_ROLES = {
       // Paramètres
       PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC, PERMISSIONS.SETTINGS_SECURITY,
       // Catalogue
-      PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT, PERMISSIONS.CATALOG_DELETE
+      PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT, PERMISSIONS.CATALOG_DELETE,
+      // Machines
+      PERMISSIONS.MACHINES_VIEW, PERMISSIONS.MACHINES_CREATE, PERMISSIONS.MACHINES_EDIT, PERMISSIONS.MACHINES_DELETE
     ],
     color: 'purple'
   },
@@ -274,7 +282,9 @@ export const DEFAULT_ROLES = {
       // Paramètres
       PERMISSIONS.SETTINGS_VIEW, PERMISSIONS.SETTINGS_EDIT, PERMISSIONS.SETTINGS_CLINIC,
       // Catalogue
-      PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT, PERMISSIONS.CATALOG_DELETE
+      PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT, PERMISSIONS.CATALOG_DELETE,
+      // Machines
+      PERMISSIONS.MACHINES_VIEW, PERMISSIONS.MACHINES_CREATE, PERMISSIONS.MACHINES_EDIT, PERMISSIONS.MACHINES_DELETE
     ],
     color: 'blue'
   },
@@ -369,6 +379,8 @@ export const DEFAULT_ROLES = {
       PERMISSIONS.QUOTES_VIEW, PERMISSIONS.QUOTES_CREATE, PERMISSIONS.QUOTES_EDIT,
       // Catalogue (lecture seule pour secrétaire)
       PERMISSIONS.CATALOG_VIEW,
+      // Machines (lecture seule pour planification des RDV)
+      PERMISSIONS.MACHINES_VIEW,
       // Paramètres
       PERMISSIONS.SETTINGS_VIEW
     ],
@@ -572,6 +584,16 @@ export const PERMISSION_CATEGORIES = {
     permissions: [
       PERMISSIONS.CATALOG_VIEW, PERMISSIONS.CATALOG_CREATE, PERMISSIONS.CATALOG_EDIT,
       PERMISSIONS.CATALOG_DELETE
+    ]
+  },
+  machines: {
+    name: 'Machines',
+    icon: 'Cpu',
+    description: 'Gestion des équipements pour les rendez-vous',
+    isMedicalData: false,
+    permissions: [
+      PERMISSIONS.MACHINES_VIEW, PERMISSIONS.MACHINES_CREATE, PERMISSIONS.MACHINES_EDIT,
+      PERMISSIONS.MACHINES_DELETE
     ]
   }
 };
@@ -988,7 +1010,13 @@ export const permissionsStorage = {
       [PERMISSIONS.CATALOG_VIEW]: 'Voir le catalogue',
       [PERMISSIONS.CATALOG_CREATE]: 'Créer des éléments catalogue',
       [PERMISSIONS.CATALOG_EDIT]: 'Modifier le catalogue',
-      [PERMISSIONS.CATALOG_DELETE]: 'Supprimer du catalogue'
+      [PERMISSIONS.CATALOG_DELETE]: 'Supprimer du catalogue',
+
+      // Machines
+      [PERMISSIONS.MACHINES_VIEW]: 'Voir les machines',
+      [PERMISSIONS.MACHINES_CREATE]: 'Créer des machines',
+      [PERMISSIONS.MACHINES_EDIT]: 'Modifier les machines',
+      [PERMISSIONS.MACHINES_DELETE]: 'Supprimer des machines'
     };
 
     return labels[permission] || permission;

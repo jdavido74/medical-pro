@@ -6,11 +6,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  X, Package, Pill, Syringe, Stethoscope
+  X, Package, Pill, Syringe, Stethoscope, Building2
 } from 'lucide-react';
 import { catalogStorage } from '../../../utils/catalogStorage';
 import tagsApi from '../../../api/tagsApi';
+import suppliersApi from '../../../api/suppliersApi';
 import TagSelector from '../../common/TagSelector';
+import SupplierSelector from '../../common/SupplierSelector';
+import SupplierFormModal from '../../modals/SupplierFormModal';
 import {
   CATALOG_TYPES,
   DOSAGE_UNITS,
@@ -36,7 +39,9 @@ const CatalogFormModal = ({
   item = null,
   mode = 'create', // 'create', 'edit'
   categories = {},
-  availableTags = []
+  availableTags = [],
+  allItems = [], // All catalog items to find families
+  defaultParentId = null // Pre-selected parent for creating variants
 }) => {
   const { t } = useTranslation('catalog');
   const { user } = useAuth();
@@ -97,6 +102,12 @@ const CatalogFormModal = ({
   const [selectedTags, setSelectedTags] = useState([]);
   const [localTags, setLocalTags] = useState(availableTags);
 
+  // Supplier state
+  const [selectedSuppliers, setSelectedSuppliers] = useState([]);
+  const [inheritedSuppliers, setInheritedSuppliers] = useState([]);
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+
   // Track if modal was previously open to detect fresh opens
   const wasOpenRef = useRef(false);
 
@@ -109,17 +120,102 @@ const CatalogFormModal = ({
   useEffect(() => {
     // Only reset form when transitioning from closed to open
     if (isOpen && !wasOpenRef.current) {
-      setFormData(getInitialFormData());
+      const initialData = getInitialFormData();
+
+      // If defaultParentId is provided, pre-select the parent (creating a variant)
+      if (defaultParentId && mode === 'create') {
+        const parentItem = allItems.find(i => i.id === defaultParentId);
+        if (parentItem) {
+          initialData.parentId = defaultParentId;
+          initialData.isVariant = true;
+          initialData.isFamily = false;
+          // Inherit type from parent
+          if (parentItem.type) {
+            initialData.type = parentItem.type;
+          }
+          // Inherit category from parent
+          if (parentItem.category) {
+            initialData.category = parentItem.category;
+          }
+          // Inherit description if parent has one
+          if (parentItem.description) {
+            initialData.description = parentItem.description;
+          }
+          // Inherit VAT rate from parent
+          if (parentItem.vatRate !== undefined) {
+            initialData.vatRate = parentItem.vatRate;
+          }
+        }
+      }
+
+      setFormData(initialData);
       setErrors({});
       setIsSubmitting(false);
       setActiveSection('basic');
       // Initialize selected tags from item if editing
       setSelectedTags(item?.tags?.map(t => t.id) || []);
+      // Reset suppliers
+      setSelectedSuppliers([]);
+      setInheritedSuppliers([]);
     }
     // Update the ref to track current state
     wasOpenRef.current = isOpen;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, defaultParentId]);
+
+  // Load suppliers when editing an existing item
+  useEffect(() => {
+    const loadSuppliers = async () => {
+      if (isOpen && mode === 'edit' && item?.id) {
+        try {
+          const response = await suppliersApi.getProductSuppliers(item.id);
+          if (response.success && response.data) {
+            setSelectedSuppliers(response.data.map(ps => ({
+              supplierId: ps.supplierId,
+              supplier: ps.supplier,
+              isPrimary: ps.isPrimary,
+              supplierSku: ps.supplierSku || '',
+              unitCost: ps.unitCost,
+              currency: ps.currency || 'EUR',
+              notes: ps.notes || '',
+              isInherited: false
+            })));
+          }
+        } catch (err) {
+          console.error('Error loading suppliers:', err);
+        }
+      }
+    };
+    loadSuppliers();
+  }, [isOpen, mode, item?.id]);
+
+  // Load inherited suppliers when parent changes
+  useEffect(() => {
+    const loadInheritedSuppliers = async () => {
+      if (formData.parentId) {
+        try {
+          const response = await suppliersApi.getProductSuppliers(formData.parentId);
+          if (response.success && response.data) {
+            setInheritedSuppliers(response.data.map(ps => ({
+              supplierId: ps.supplierId,
+              supplier: ps.supplier,
+              isPrimary: ps.isPrimary,
+              supplierSku: ps.supplierSku || '',
+              unitCost: ps.unitCost,
+              currency: ps.currency || 'EUR',
+              notes: ps.notes || '',
+              isInherited: true
+            })));
+          }
+        } catch (err) {
+          console.error('Error loading inherited suppliers:', err);
+        }
+      } else {
+        setInheritedSuppliers([]);
+      }
+    };
+    loadInheritedSuppliers();
+  }, [formData.parentId]);
 
   // Handle new tag created from TagSelector
   const handleTagCreated = (newTag) => {
@@ -130,6 +226,18 @@ const CatalogFormModal = ({
   const typeCategories = useMemo(() => {
     return categories[formData.type] || [];
   }, [categories, formData.type]);
+
+  // Get available families for current type (items that are families or could be families)
+  const availableFamilies = useMemo(() => {
+    return allItems
+      .filter(i =>
+        i.type === formData.type && // Same type
+        i.isFamily && // Is already a family
+        i.id !== item?.id && // Not the current item
+        i.isActive // Only active items
+      )
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [allItems, formData.type, item?.id]);
 
   // Handle input change
   const handleChange = (field, value) => {
@@ -154,9 +262,94 @@ const CatalogFormModal = ({
       ...prev,
       type: newType,
       category: '', // Reset category when type changes
+      parentId: null, // Reset family when type changes
+      isVariant: false,
       duration: CATALOG_TYPES[newType]?.defaultDuration || null
     }));
   };
+
+  // Handle family/parent change - inherit properties from parent
+  const handleFamilyChange = (parentId) => {
+    if (parentId) {
+      // Find the parent item to inherit properties
+      const parentItem = allItems.find(i => i.id === parentId);
+
+      setFormData(prev => {
+        const updates = {
+          ...prev,
+          parentId,
+          isVariant: true,
+          isFamily: false // A variant cannot be a family
+        };
+
+        // Inherit type from parent
+        if (parentItem?.type) {
+          updates.type = parentItem.type;
+        }
+
+        // Inherit category from parent
+        if (parentItem?.category) {
+          updates.category = parentItem.category;
+        }
+
+        // Inherit description if current is empty
+        if (!prev.description && parentItem?.description) {
+          updates.description = parentItem.description;
+        }
+
+        // Inherit VAT rate from parent
+        if (parentItem?.vatRate !== undefined) {
+          updates.vatRate = parentItem.vatRate;
+        }
+
+        return updates;
+      });
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        parentId: null,
+        isVariant: false
+      }));
+    }
+  };
+
+  // Handle opening supplier creation modal
+  const handleCreateSupplier = (name) => {
+    setNewSupplierName(name);
+    setShowSupplierModal(true);
+  };
+
+  // Handle supplier saved from modal
+  const handleSupplierSaved = (newSupplier) => {
+    // Add the new supplier to selected list
+    const newSupplierEntry = {
+      supplierId: newSupplier.id,
+      supplier: newSupplier,
+      isPrimary: selectedSuppliers.length === 0,
+      supplierSku: '',
+      unitCost: null,
+      currency: 'EUR',
+      notes: '',
+      isInherited: false
+    };
+    setSelectedSuppliers(prev => [...prev, newSupplierEntry]);
+    setShowSupplierModal(false);
+    setNewSupplierName('');
+  };
+
+  // Get combined suppliers (inherited + own) for display
+  const allSuppliers = useMemo(() => {
+    // If variant, show inherited suppliers (read-only) + own suppliers
+    // If not variant, show only own suppliers
+    if (formData.isVariant && inheritedSuppliers.length > 0) {
+      // Filter out inherited that are already in selected (override)
+      const inheritedIds = inheritedSuppliers.map(s => s.supplierId);
+      const selectedIds = selectedSuppliers.map(s => s.supplierId);
+      const filteredInherited = inheritedSuppliers.filter(s => !selectedIds.includes(s.supplierId));
+      return [...filteredInherited, ...selectedSuppliers];
+    }
+    return selectedSuppliers;
+  }, [formData.isVariant, inheritedSuppliers, selectedSuppliers]);
 
   // Validate form
   const validate = () => {
@@ -214,7 +407,6 @@ const CatalogFormModal = ({
         dosage: formData.dosage || null,
         dosageUnit: formData.dosageUnit || null,
         volume: formData.volume || null,
-        provenance: formData.provenance || null,
 
         // Family/Variant
         parentId: formData.parentId || null,
@@ -229,8 +421,9 @@ const CatalogFormModal = ({
       }
 
       if (result.success) {
-        // Update tags for the product
         const productId = result.item?.id || item?.id;
+
+        // Update tags for the product
         if (productId && selectedTags.length > 0) {
           try {
             await tagsApi.setProductTags(productId, selectedTags);
@@ -239,6 +432,50 @@ const CatalogFormModal = ({
             // Don't fail the whole operation for tag errors
           }
         }
+
+        // Update suppliers for the product (only non-inherited ones)
+        if (productId) {
+          try {
+            // Get current suppliers to determine what to add/remove
+            const currentResponse = await suppliersApi.getProductSuppliers(productId);
+            const currentSupplierIds = (currentResponse.data || []).map(s => s.supplierId);
+
+            // Add new suppliers
+            for (const supplierEntry of selectedSuppliers) {
+              if (!currentSupplierIds.includes(supplierEntry.supplierId)) {
+                await suppliersApi.addProductSupplier(productId, {
+                  supplierId: supplierEntry.supplierId,
+                  isPrimary: supplierEntry.isPrimary,
+                  supplierSku: supplierEntry.supplierSku,
+                  unitCost: supplierEntry.unitCost,
+                  currency: supplierEntry.currency,
+                  notes: supplierEntry.notes
+                });
+              } else {
+                // Update existing
+                await suppliersApi.updateProductSupplier(productId, supplierEntry.supplierId, {
+                  isPrimary: supplierEntry.isPrimary,
+                  supplierSku: supplierEntry.supplierSku,
+                  unitCost: supplierEntry.unitCost,
+                  currency: supplierEntry.currency,
+                  notes: supplierEntry.notes
+                });
+              }
+            }
+
+            // Remove suppliers that were removed
+            const selectedIds = selectedSuppliers.map(s => s.supplierId);
+            for (const currentId of currentSupplierIds) {
+              if (!selectedIds.includes(currentId)) {
+                await suppliersApi.removeProductSupplier(productId, currentId);
+              }
+            }
+          } catch (supplierError) {
+            console.error('Error setting suppliers:', supplierError);
+            // Don't fail the whole operation for supplier errors
+          }
+        }
+
         onSave();
       } else {
         setErrors(result.errors || { general: t('messages.error') });
@@ -291,7 +528,7 @@ const CatalogFormModal = ({
 
             {/* Section tabs */}
             <div className="mt-4 flex gap-4 border-b border-gray-200 -mb-4">
-              {['basic', 'pricing', 'attributes'].map(section => (
+              {['basic', 'pricing', 'attributes', 'supplier'].map(section => (
                 <button
                   key={section}
                   onClick={() => setActiveSection(section)}
@@ -391,6 +628,44 @@ const CatalogFormModal = ({
                       ))}
                     </select>
                   </div>
+
+                  {/* Family/Parent selector - only show if there are families for this type */}
+                  {availableFamilies.length > 0 && !formData.isFamily && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('fields.parentFamily', 'Famille parente')}
+                      </label>
+                      <select
+                        value={formData.parentId || ''}
+                        onChange={(e) => handleFamilyChange(e.target.value || null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="">{t('placeholders.noFamily', 'Aucune (produit autonome)')}</option>
+                        {availableFamilies.map(family => (
+                          <option key={family.id} value={family.id}>
+                            {family.name}
+                            {family.dosage ? ` - Base: ${family.dosage}${family.dosageUnit || ''}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {t('fields.parentFamilyHint', 'Sélectionnez une famille pour créer une variante')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Show current family info if this is a variant */}
+                  {formData.isVariant && formData.parentId && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        <span className="font-medium">{t('labels.variantOf', 'Variante de')}:</span>{' '}
+                        {availableFamilies.find(f => f.id === formData.parentId)?.name || t('labels.unknownFamily', 'Famille inconnue')}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        {t('labels.inheritanceHint', 'Le type, la catégorie, la TVA et la provenance sont hérités du parent. La description vide sera aussi héritée.')}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Tags section */}
                   <div className="border-t border-gray-200 pt-4">
@@ -540,22 +815,6 @@ const CatalogFormModal = ({
                     </div>
                   )}
 
-                  {/* Provenance - for medications and treatments */}
-                  {shouldShowField('provenance', formData.type) && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('fields.provenance')}
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.provenance || ''}
-                        onChange={(e) => handleChange('provenance', e.target.value)}
-                        placeholder={t('placeholders.provenance')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      />
-                    </div>
-                  )}
-
                   {/* Duration - for services and treatments */}
                   {shouldShowField('duration', formData.type) && (
                     <div>
@@ -641,11 +900,57 @@ const CatalogFormModal = ({
                   {/* No attributes message */}
                   {!shouldShowField('dosage', formData.type) &&
                    !shouldShowField('volume', formData.type) &&
-                   !shouldShowField('provenance', formData.type) &&
                    !shouldShowField('duration', formData.type) && (
                     <p className="text-sm text-gray-500 text-center py-8">
                       {t('empty.title')}
                     </p>
+                  )}
+                </div>
+              )}
+
+              {/* Supplier Section */}
+              {activeSection === 'supplier' && (
+                <div className="space-y-4">
+                  {/* Description */}
+                  <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <Building2 className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-blue-800">
+                        {t('supplier.description')}
+                      </p>
+                      {formData.isVariant && inheritedSuppliers.length > 0 && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          {t('supplier.inheritanceNote')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Supplier selector */}
+                  <SupplierSelector
+                    selectedSuppliers={allSuppliers}
+                    onChange={(suppliers) => {
+                      // Only update non-inherited suppliers
+                      const nonInherited = suppliers.filter(s => !s.isInherited);
+                      setSelectedSuppliers(nonInherited);
+                    }}
+                    multiple={true}
+                    showDetails={true}
+                    allowCreate={true}
+                    onCreateNew={handleCreateSupplier}
+                  />
+
+                  {/* Empty state */}
+                  {allSuppliers.length === 0 && (
+                    <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
+                      <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">
+                        {t('supplier.noSuppliers')}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {t('supplier.noSuppliersHint')}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -685,6 +990,17 @@ const CatalogFormModal = ({
           </form>
         </div>
       </div>
+
+      {/* Supplier creation modal */}
+      <SupplierFormModal
+        isOpen={showSupplierModal}
+        onClose={() => {
+          setShowSupplierModal(false);
+          setNewSupplierName('');
+        }}
+        onSave={handleSupplierSaved}
+        initialName={newSupplierName}
+      />
     </div>
   );
 };

@@ -1,0 +1,161 @@
+{
+  "title": "Planning",
+  "subtitle": "Gérez vos rendez-vous traitements et consultations",
+
+  "categories": {
+    "all": "Tous",
+    "treatment": "Traitements",
+    "consultation": "Consultations"
+  },
+
+  "filters": {
+    "category": "Catégorie",
+    "machine": "Machine",
+    "provider": "Praticien",
+    "patient": "Patient",
+    "status": "Statut",
+    "date": "Date",
+    "today": "Aujourd'hui",
+    "week": "Cette semaine",
+    "month": "Ce mois"
+  },
+
+  "calendar": {
+    "today": "Aujourd'hui",
+    "day": "Jour",
+    "week": "Semaine",
+    "month": "Mois",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "noAppointments": "Aucun rendez-vous",
+    "loading": "Chargement..."
+  },
+
+  "slots": {
+    "available": "Créneaux disponibles",
+    "noSlots": "Aucun créneau disponible",
+    "selectSlot": "Sélectionnez un créneau",
+    "machinesAvailable": "{{count}} machine disponible",
+    "machinesAvailable_plural": "{{count}} machines disponibles"
+  },
+
+  "appointment": {
+    "new": "Nouveau rendez-vous",
+    "edit": "Modifier le rendez-vous",
+    "details": "Détails du rendez-vous",
+    "category": "Type de rendez-vous",
+    "treatment": "Traitement",
+    "consultation": "Consultation",
+    "patient": "Patient",
+    "selectPatient": "Sélectionner un patient",
+    "searchPatient": "Rechercher ou créer un patient...",
+    "patientRequired": "Veuillez sélectionner un patient",
+    "date": "Date",
+    "time": "Heure",
+    "duration": "Durée",
+    "minutes": "minutes",
+    "machine": "Machine",
+    "selectMachine": "Sélectionner une machine",
+    "provider": "Praticien",
+    "selectProvider": "Sélectionner un praticien",
+    "assistant": "Assistant",
+    "selectAssistant": "Sélectionner un assistant (optionnel)",
+    "service": "Prestation",
+    "selectService": "Sélectionner une prestation",
+    "reason": "Motif",
+    "notes": "Notes",
+    "priority": "Priorité",
+    "status": "Statut"
+  },
+
+  "priorities": {
+    "low": "Basse",
+    "normal": "Normale",
+    "high": "Haute",
+    "urgent": "Urgente"
+  },
+
+  "statuses": {
+    "scheduled": "Planifié",
+    "confirmed": "Confirmé",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "cancelled": "Annulé",
+    "no_show": "Absent"
+  },
+
+  "resources": {
+    "machines": "Machines",
+    "providers": "Praticiens",
+    "noMachines": "Aucune machine disponible",
+    "noProviders": "Aucun praticien disponible"
+  },
+
+  "validation": {
+    "patientRequired": "Veuillez sélectionner un patient",
+    "dateRequired": "Veuillez sélectionner une date",
+    "timeRequired": "Veuillez sélectionner un horaire",
+    "machineRequired": "Veuillez sélectionner une machine",
+    "providerRequired": "Veuillez sélectionner un praticien",
+    "treatmentRequired": "Veuillez sélectionner un traitement",
+    "slotConflict": "Ce créneau n'est plus disponible"
+  },
+
+  "messages": {
+    "createSuccess": "Rendez-vous créé avec succès",
+    "updateSuccess": "Rendez-vous mis à jour",
+    "cancelSuccess": "Rendez-vous annulé",
+    "confirmSuccess": "Rendez-vous confirmé",
+    "error": "Une erreur est survenue",
+    "loadError": "Erreur lors du chargement",
+    "conflictError": "Conflit de créneau détecté"
+  },
+
+  "empty": {
+    "title": "Aucun rendez-vous",
+    "description": "Créez un nouveau rendez-vous pour commencer",
+    "noResults": "Aucun rendez-vous ne correspond aux filtres"
+  },
+
+  "booking": {
+    "step1": "Choisir le type",
+    "step2": "Sélectionner le patient",
+    "step3": "Choisir la date et l'heure",
+    "step4": "Confirmer",
+    "treatmentDescription": "Réservez un créneau machine pour un traitement",
+    "consultationDescription": "Réservez une consultation avec un praticien",
+    "searchTreatment": "Rechercher un traitement...",
+    "noTreatmentsFound": "Aucun traitement trouvé",
+    "uncategorized": "Sans catégorie"
+  },
+
+  "multiTreatment": {
+    "selectedTreatments": "Traitements sélectionnés",
+    "addTreatment": "Ajouter un traitement",
+    "removeTreatment": "Retirer",
+    "totalDuration": "Durée totale",
+    "treatmentChain": "Chaîne de traitements",
+    "segment": "Segment",
+    "segmentOf": "Segment {{current}} sur {{total}}",
+    "groupEdit": "Modifier le groupe",
+    "groupCancel": "Annuler le groupe",
+    "machineAssignment": "Affectation des machines",
+    "noMachineAvailable": "Aucune machine disponible pour ce traitement",
+    "conflictDetected": "Conflit détecté pour le traitement {{index}}",
+    "allTreatmentsRequired": "Tous les traitements doivent avoir une machine disponible"
+  },
+
+  "actions": {
+    "create": "Créer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "confirm": "Confirmer",
+    "complete": "Terminer",
+    "reschedule": "Reprogrammer",
+    "viewDetails": "Voir les détails",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "saving": "Enregistrement..."
+  }
+}
