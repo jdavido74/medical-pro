@@ -202,23 +202,31 @@ const PlanningModule = () => {
     loadData();
   };
 
-  // Render appointment card
+  // Render appointment card with height proportional to duration
   const renderAppointment = (apt) => {
     const colors = CATEGORY_COLORS[apt.category] || CATEGORY_COLORS.consultation;
     const statusColor = STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled;
+
+    // Calculate height based on duration (minimum 60px, 1.5px per minute)
+    const duration = apt.duration || 30;
+    const minHeight = Math.max(60, duration * 1.5);
 
     return (
       <div
         key={apt.id}
         onClick={() => handleAppointmentClick(apt)}
         className={`p-2 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${colors.bg} ${colors.border}`}
-        style={apt.color ? { borderLeftColor: apt.color, borderLeftWidth: '4px' } : {}}
+        style={{
+          minHeight: `${minHeight}px`,
+          ...(apt.color ? { borderLeftColor: apt.color, borderLeftWidth: '4px' } : {})
+        }}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between h-full">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
               <Clock className="w-3 h-3" />
               <span>{apt.startTime} - {apt.endTime}</span>
+              <span className="text-gray-400">({duration} min)</span>
             </div>
             <div className={`font-medium text-sm truncate ${colors.text}`}>
               {apt.patient?.fullName || 'Patient'}
@@ -233,6 +241,11 @@ const PlanningModule = () => {
               <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
                 <User className="w-3 h-3" />
                 <span>{apt.provider.fullName}</span>
+              </div>
+            )}
+            {apt.title && (
+              <div className="text-xs text-gray-500 mt-1 truncate">
+                {apt.title}
               </div>
             )}
           </div>
