@@ -66,7 +66,7 @@ const SendConsentRequestModal = ({
       try {
         setLoadingTemplates(true);
         const response = await baseClient.get('/consent-templates', {
-          params: { status: 'active', limit: 100 }
+          query: { status: 'active', limit: 100 }
         });
         setTemplates(response.data?.data || []);
       } catch (err) {
