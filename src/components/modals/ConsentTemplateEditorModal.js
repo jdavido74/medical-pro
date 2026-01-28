@@ -265,7 +265,7 @@ const ConsentTemplateEditorModal = ({
     const errors = {};
 
     if (!formData.title?.trim()) errors.title = 'Titre requis';
-    if (!formData.description?.trim()) errors.description = 'Description requise';
+    // Description is optional
     if (!formData.content?.trim()) errors.content = 'Contenu requis';
     if (!formData.consentType) errors.consentType = 'Type de consentement requis';
     if (!formData.speciality) errors.speciality = 'Spécialité requise';
@@ -597,9 +597,9 @@ const ConsentTemplateEditorModal = ({
       // Cases à cocher
       .replace(/☐/g, '<span class="inline-block w-4 h-4 border-2 border-gray-400 rounded mr-1 align-middle"></span>')
       // Listes à puces
-      .replace(/^• (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+      .replace(/^• (.+)$/gm, '<span class="block ml-4">• $1</span>')
       // Listes numérotées
-      .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 list-decimal">$1. $2</li>')
+      .replace(/^(\d+)\. (.+)$/gm, '<span class="block ml-4">$1. $2</span>')
       // Sauts de ligne
       .replace(/\n/g, '<br>');
 
@@ -900,20 +900,15 @@ const ConsentTemplateEditorModal = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description *
+                      Description
                     </label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       rows={3}
-                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        validationErrors.description ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Description du modèle"
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Description du modèle (optionnel)"
                     />
-                    {validationErrors.description && (
-                      <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>
-                    )}
                   </div>
 
                   <div>
