@@ -418,6 +418,73 @@ const ConsentTemplateEditorModal = ({
     });
   }, [formData.content]);
 
+  // Appliquer un formatage au texte sélectionné (gras, italique, souligné)
+  const applyFormatting = useCallback((prefix, suffix) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const scrollTop = textarea.scrollTop;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = formData.content;
+    const selectedText = text.substring(start, end);
+
+    let newContent;
+    let newCursorStart;
+    let newCursorEnd;
+
+    if (selectedText) {
+      // Du texte est sélectionné - l'envelopper avec le formatage
+      const before = text.substring(0, start);
+      const after = text.substring(end);
+      newContent = before + prefix + selectedText + suffix + after;
+      newCursorStart = start + prefix.length;
+      newCursorEnd = newCursorStart + selectedText.length;
+    } else {
+      // Pas de sélection - insérer le marqueur avec placeholder
+      const before = text.substring(0, start);
+      const after = text.substring(start);
+      const placeholder = 'texte';
+      newContent = before + prefix + placeholder + suffix + after;
+      newCursorStart = start + prefix.length;
+      newCursorEnd = newCursorStart + placeholder.length;
+    }
+
+    setFormData(prev => ({ ...prev, content: newContent }));
+
+    requestAnimationFrame(() => {
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(newCursorStart, newCursorEnd);
+        textarea.scrollTop = scrollTop;
+      }
+    });
+  }, [formData.content]);
+
+  // Insérer un élément à la position du curseur (liste, checkbox, etc.)
+  const insertAtCursor = useCallback((textToInsert) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const scrollTop = textarea.scrollTop;
+    const start = textarea.selectionStart;
+    const text = formData.content;
+    const before = text.substring(0, start);
+    const after = text.substring(start);
+    const newContent = before + textToInsert + after;
+    const newCursorPos = start + textToInsert.length;
+
+    setFormData(prev => ({ ...prev, content: newContent }));
+
+    requestAnimationFrame(() => {
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        textarea.scrollTop = scrollTop;
+      }
+    });
+  }, [formData.content]);
+
   // Variables prédéfinies organisées par catégorie
   const variableCategories = {
     patient: {
@@ -426,21 +493,36 @@ const ConsentTemplateEditorModal = ({
       variables: [
         { name: 'NOM_PATIENT', label: 'Nom' },
         { name: 'PRÉNOM_PATIENT', label: 'Prénom' },
+        { name: 'NOM_COMPLET_PATIENT', label: 'Nom complet' },
         { name: 'EMAIL_PATIENT', label: 'Email' },
         { name: 'TÉLÉPHONE_PATIENT', label: 'Téléphone' },
         { name: 'DATE_NAISSANCE', label: 'Date de naissance' },
         { name: 'ADRESSE_PATIENT', label: 'Adresse' },
+        { name: 'NUMÉRO_DOCUMENT', label: 'N° Document (NIF/Passeport)' },
         { name: 'NUMÉRO_SÉCU', label: 'N° Sécurité sociale' }
+      ]
+    },
+    clinique: {
+      label: 'Clinique',
+      icon: MapPin,
+      variables: [
+        { name: 'NOM_CLINIQUE', label: 'Nom de la clinique' },
+        { name: 'ADRESSE_CLINIQUE', label: 'Adresse complète' },
+        { name: 'TÉLÉPHONE_CLINIQUE', label: 'Téléphone' },
+        { name: 'EMAIL_CLINIQUE', label: 'Email' },
+        { name: 'LOGO_CLINIQUE', label: 'Logo (image)' },
+        { name: 'NIF_CLINIQUE', label: 'NIF/CIF clinique' }
       ]
     },
     praticien: {
       label: 'Praticien',
       icon: Stethoscope,
       variables: [
-        { name: 'NOM_PRATICIEN', label: 'Nom' },
+        { name: 'NOM_PRATICIEN', label: 'Nom complet' },
+        { name: 'TITRE_PRATICIEN', label: 'Titre (Dr., etc.)' },
         { name: 'SPÉCIALITÉ_PRATICIEN', label: 'Spécialité' },
-        { name: 'ÉTABLISSEMENT', label: 'Établissement' },
-        { name: 'SIGNATURE_PRATICIEN', label: 'Signature praticien' }
+        { name: 'NUMÉRO_ORDRE', label: 'N° Ordre des médecins' },
+        { name: 'SIGNATURE_PRATICIEN', label: 'Zone signature' }
       ]
     },
     intervention: {
@@ -1023,45 +1105,32 @@ const ConsentTemplateEditorModal = ({
                     <span className="text-xs text-gray-500 mr-2">Formatage:</span>
                     <button
                       type="button"
-                      onClick={() => insertVariable('**texte en gras**')}
+                      onClick={() => applyFormatting('**', '**')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Gras"
+                      title="Gras - Sélectionnez du texte puis cliquez"
                     >
                       <Bold className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => insertVariable('_texte en italique_')}
+                      onClick={() => applyFormatting('_', '_')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Italique"
+                      title="Italique - Sélectionnez du texte puis cliquez"
                     >
                       <Italic className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => insertVariable('__texte souligné__')}
+                      onClick={() => applyFormatting('__', '__')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Souligné"
+                      title="Souligné - Sélectionnez du texte puis cliquez"
                     >
                       <Underline className="h-4 w-4" />
                     </button>
                     <div className="w-px h-5 bg-gray-300 mx-1" />
                     <button
                       type="button"
-                      onClick={() => {
-                        const textarea = textareaRef.current;
-                        if (textarea) {
-                          const scrollTop = textarea.scrollTop;
-                          const start = textarea.selectionStart;
-                          const newContent = formData.content.substring(0, start) + '\n• ' + formData.content.substring(start);
-                          setFormData(prev => ({ ...prev, content: newContent }));
-                          requestAnimationFrame(() => {
-                            textarea.focus();
-                            textarea.setSelectionRange(start + 3, start + 3);
-                            textarea.scrollTop = scrollTop;
-                          });
-                        }
-                      }}
+                      onClick={() => insertAtCursor('\n• ')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
                       title="Liste à puces"
                     >
@@ -1069,20 +1138,7 @@ const ConsentTemplateEditorModal = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        const textarea = textareaRef.current;
-                        if (textarea) {
-                          const scrollTop = textarea.scrollTop;
-                          const start = textarea.selectionStart;
-                          const newContent = formData.content.substring(0, start) + '\n1. ' + formData.content.substring(start);
-                          setFormData(prev => ({ ...prev, content: newContent }));
-                          requestAnimationFrame(() => {
-                            textarea.focus();
-                            textarea.setSelectionRange(start + 4, start + 4);
-                            textarea.scrollTop = scrollTop;
-                          });
-                        }
-                      }}
+                      onClick={() => insertAtCursor('\n1. ')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
                       title="Liste numérotée"
                     >
@@ -1091,20 +1147,7 @@ const ConsentTemplateEditorModal = ({
                     <div className="w-px h-5 bg-gray-300 mx-1" />
                     <button
                       type="button"
-                      onClick={() => {
-                        const textarea = textareaRef.current;
-                        if (textarea) {
-                          const scrollTop = textarea.scrollTop;
-                          const start = textarea.selectionStart;
-                          const newContent = formData.content.substring(0, start) + '\n☐ ' + formData.content.substring(start);
-                          setFormData(prev => ({ ...prev, content: newContent }));
-                          requestAnimationFrame(() => {
-                            textarea.focus();
-                            textarea.setSelectionRange(start + 3, start + 3);
-                            textarea.scrollTop = scrollTop;
-                          });
-                        }
-                      }}
+                      onClick={() => insertAtCursor('\n☐ ')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
                       title="Case à cocher"
                     >
@@ -1112,20 +1155,7 @@ const ConsentTemplateEditorModal = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        const textarea = textareaRef.current;
-                        if (textarea) {
-                          const scrollTop = textarea.scrollTop;
-                          const start = textarea.selectionStart;
-                          const newContent = formData.content.substring(0, start) + '\n☐ Oui    ☐ Non' + formData.content.substring(start);
-                          setFormData(prev => ({ ...prev, content: newContent }));
-                          requestAnimationFrame(() => {
-                            textarea.focus();
-                            textarea.setSelectionRange(start + 16, start + 16);
-                            textarea.scrollTop = scrollTop;
-                          });
-                        }
-                      }}
+                      onClick={() => insertAtCursor('\n☐ Oui    ☐ Non')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
                       title="Oui/Non"
                     >
@@ -1134,25 +1164,20 @@ const ConsentTemplateEditorModal = ({
                     <div className="w-px h-5 bg-gray-300 mx-1" />
                     <button
                       type="button"
-                      onClick={() => {
-                        const textarea = textareaRef.current;
-                        if (textarea) {
-                          const scrollTop = textarea.scrollTop;
-                          const start = textarea.selectionStart;
-                          const line = '═'.repeat(40);
-                          const newContent = formData.content.substring(0, start) + `\n${line}\n` + formData.content.substring(start);
-                          setFormData(prev => ({ ...prev, content: newContent }));
-                          requestAnimationFrame(() => {
-                            textarea.focus();
-                            textarea.setSelectionRange(start + line.length + 2, start + line.length + 2);
-                            textarea.scrollTop = scrollTop;
-                          });
-                        }
-                      }}
+                      onClick={() => insertAtCursor('\n' + '═'.repeat(40) + '\n')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
                       title="Ligne de séparation"
                     >
                       ―――
+                    </button>
+                    <div className="w-px h-5 bg-gray-300 mx-1" />
+                    <button
+                      type="button"
+                      onClick={() => insertAtCursor('\n\n[LOGO_CLINIQUE]\n[NOM_CLINIQUE]\n[ADRESSE_CLINIQUE]\nTél: [TÉLÉPHONE_CLINIQUE] | Email: [EMAIL_CLINIQUE]\n' + '═'.repeat(50) + '\n\n')}
+                      className="p-1.5 rounded hover:bg-gray-100 text-blue-600 text-xs font-medium"
+                      title="Insérer en-tête clinique"
+                    >
+                      En-tête
                     </button>
                   </div>
                 </div>
