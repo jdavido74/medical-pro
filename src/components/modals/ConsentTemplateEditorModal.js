@@ -1105,6 +1105,23 @@ const ConsentTemplateEditorModal = ({
                     <span className="text-xs text-gray-500 mr-2">Formatage:</span>
                     <button
                       type="button"
+                      onClick={() => applyFormatting('\n# ', '\n')}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
+                      title="Titre 1 - Sélectionnez du texte puis cliquez"
+                    >
+                      H1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyFormatting('\n## ', '\n')}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
+                      title="Titre 2 - Sélectionnez du texte puis cliquez"
+                    >
+                      H2
+                    </button>
+                    <div className="w-px h-5 bg-gray-300 mx-1" />
+                    <button
+                      type="button"
                       onClick={() => applyFormatting('**', '**')}
                       className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
                       title="Gras - Sélectionnez du texte puis cliquez"
