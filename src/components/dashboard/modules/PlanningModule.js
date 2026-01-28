@@ -56,81 +56,115 @@ const minutesToTime = (minutes) => {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
 
-// Calculate layout for overlapping appointments
-// Keeps consecutive appointments of the same patient in the same column
+// FACTORIZED: Group consecutive same-patient appointments together
+// Returns array of groups, each group contains consecutive appointments for one patient
+// Used by both week view and day view
+const groupConsecutivePatientAppointments = (appointments) => {
+  if (!appointments || appointments.length === 0) return [];
+
+  // Add patientId and time in minutes for easier processing
+  const items = appointments.map(apt => ({
+    ...apt,
+    patientId: apt.patientId || apt.patient?.id,
+    startMinutes: timeToMinutes(apt.startTime),
+    endMinutes: timeToMinutes(apt.endTime) || (timeToMinutes(apt.startTime) + (apt.duration || 30))
+  }));
+
+  // Sort by start time
+  items.sort((a, b) => a.startMinutes - b.startMinutes);
+
+  const groups = [];
+  const processed = new Set();
+
+  for (const apt of items) {
+    if (processed.has(apt.id)) continue;
+
+    const group = [{ ...apt, isConsecutive: false }];
+    processed.add(apt.id);
+
+    if (apt.patientId) {
+      // Find all consecutive appointments for this patient
+      let lastEndMinutes = apt.endMinutes;
+      let foundMore = true;
+
+      while (foundMore) {
+        foundMore = false;
+        for (const other of items) {
+          if (processed.has(other.id)) continue;
+          if (other.patientId === apt.patientId && other.startMinutes === lastEndMinutes) {
+            group.push({ ...other, isConsecutive: true });
+            processed.add(other.id);
+            lastEndMinutes = other.endMinutes;
+            foundMore = true;
+            break;
+          }
+        }
+      }
+    }
+
+    groups.push({
+      appointments: group,
+      startMinutes: apt.startMinutes,
+      patientId: apt.patientId
+    });
+  }
+
+  // Sort groups by start time
+  groups.sort((a, b) => a.startMinutes - b.startMinutes);
+
+  return groups;
+};
+
+// Calculate layout for overlapping appointments (day view)
+// Uses groupConsecutivePatientAppointments and adds column positioning
 const calculateDayViewLayout = (appointments) => {
   if (!appointments || appointments.length === 0) return [];
 
-  // Convert appointments to layout items with start/end in minutes
-  const items = appointments.map(apt => ({
-    ...apt,
-    startMinutes: timeToMinutes(apt.startTime),
-    endMinutes: timeToMinutes(apt.endTime) || (timeToMinutes(apt.startTime) + (apt.duration || 30)),
-    patientId: apt.patientId || apt.patient?.id
-  }));
+  const groups = groupConsecutivePatientAppointments(appointments);
 
-  // Sort by start time, then by patient (to group same patient), then by duration
-  items.sort((a, b) => {
-    if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
-    // Same start time: group by patient
-    if (a.patientId && b.patientId && a.patientId !== b.patientId) {
-      return a.patientId.localeCompare(b.patientId);
-    }
-    return (b.endMinutes - b.startMinutes) - (a.endMinutes - a.startMinutes);
-  });
+  // Flatten groups while preserving isConsecutive flag
+  const items = groups.flatMap(g => g.appointments);
 
   // Find collision groups (appointments that overlap with each other)
-  const groups = [];
+  const collisionGroups = [];
   let currentGroup = [];
   let groupEnd = 0;
 
   for (const item of items) {
     if (currentGroup.length === 0 || item.startMinutes < groupEnd) {
-      // Add to current group
       currentGroup.push(item);
       groupEnd = Math.max(groupEnd, item.endMinutes);
     } else {
-      // Start new group
       if (currentGroup.length > 0) {
-        groups.push([...currentGroup]);
+        collisionGroups.push([...currentGroup]);
       }
       currentGroup = [item];
       groupEnd = item.endMinutes;
     }
   }
   if (currentGroup.length > 0) {
-    groups.push(currentGroup);
+    collisionGroups.push(currentGroup);
   }
 
-  // Assign columns within each group
-  // Keep track of patient -> column mapping to keep same patient in same column
+  // Assign columns within each collision group
   const result = [];
 
-  for (const group of groups) {
-    // columns[i] = { endMinutes, patientId, lastItem } - track which patient owns each column
+  for (const group of collisionGroups) {
     const columns = [];
-    // Map patient ID to their assigned column within this group
     const patientColumns = new Map();
 
     for (const item of group) {
       let columnIndex = -1;
-      let isConsecutive = false;
 
-      // First, check if this patient already has a column assigned
+      // Check if this patient already has a column
       if (item.patientId && patientColumns.has(item.patientId)) {
         const existingCol = patientColumns.get(item.patientId);
-        // Use existing column if this appointment starts when/after the previous one ends
         if (columns[existingCol].endMinutes <= item.startMinutes) {
           columnIndex = existingCol;
-          // Check if truly consecutive (no gap)
-          if (columns[existingCol].endMinutes === item.startMinutes &&
-              columns[existingCol].patientId === item.patientId) {
-            isConsecutive = true;
-          }
         }
       }
 
-      // If no existing column for this patient, find the first available column
+      // Find first available column
       if (columnIndex === -1) {
         columnIndex = 0;
         while (columnIndex < columns.length && columns[columnIndex].endMinutes > item.startMinutes) {
@@ -146,7 +180,6 @@ const calculateDayViewLayout = (appointments) => {
         columns[columnIndex].patientId = item.patientId;
       }
 
-      // Remember this patient's column for consecutive appointments
       if (item.patientId) {
         patientColumns.set(item.patientId, columnIndex);
       }
@@ -154,12 +187,11 @@ const calculateDayViewLayout = (appointments) => {
       result.push({
         ...item,
         column: columnIndex,
-        totalColumns: 1, // Will be updated below
-        isConsecutive
+        totalColumns: 1
       });
     }
 
-    // Update totalColumns for all items in the group
+    // Update totalColumns
     const maxCols = Math.min(MAX_COLUMNS, columns.length);
     for (let i = result.length - group.length; i < result.length; i++) {
       result[i].totalColumns = maxCols;
@@ -812,67 +844,12 @@ const PlanningModule = () => {
     );
   };
 
-  // Group consecutive same-patient appointments together for week view
-  // Returns array of groups, where each group is { appointments: [...], startTime }
-  const groupConsecutiveAppointments = (appointments) => {
-    if (!appointments || appointments.length === 0) return [];
-
-    // Sort by start time first
-    const sorted = [...appointments].sort((a, b) => {
-      const timeA = a.startTime || '00:00';
-      const timeB = b.startTime || '00:00';
-      return timeA.localeCompare(timeB);
-    });
-
-    const groups = [];
-    const processed = new Set();
-
-    for (const apt of sorted) {
-      if (processed.has(apt.id)) continue;
-
-      const patientId = apt.patientId || apt.patient?.id;
-      const group = [apt];
-      processed.add(apt.id);
-
-      if (patientId) {
-        // Find all consecutive appointments for this patient
-        let lastEndTime = apt.endTime;
-        let foundMore = true;
-
-        while (foundMore) {
-          foundMore = false;
-          for (const other of sorted) {
-            if (processed.has(other.id)) continue;
-            const otherId = other.patientId || other.patient?.id;
-            if (otherId === patientId && other.startTime === lastEndTime) {
-              group.push(other);
-              processed.add(other.id);
-              lastEndTime = other.endTime;
-              foundMore = true;
-              break;
-            }
-          }
-        }
-      }
-
-      groups.push({
-        appointments: group,
-        startTime: apt.startTime
-      });
-    }
-
-    // Sort groups by start time of first appointment
-    groups.sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-    return groups;
-  };
-
   // Render day content for week view
-  // Groups consecutive same-patient appointments together
+  // Uses factorized groupConsecutivePatientAppointments function
   const renderDayContent = (day) => {
     const dateStr = formatDateLocal(day);
     const dayAppointments = appointmentsByDate[dateStr] || [];
-    const groups = groupConsecutiveAppointments(dayAppointments);
+    const groups = groupConsecutivePatientAppointments(dayAppointments);
 
     return (
       <div key={`content-${dateStr}`} className="flex-1 min-w-[140px] border-r last:border-r-0 p-2">
@@ -883,12 +860,12 @@ const PlanningModule = () => {
         ) : (
           groups.map((group, groupIndex) => (
             <div key={`group-${groupIndex}`} className={groupIndex > 0 ? 'mt-2' : ''}>
-              {group.appointments.map((apt, aptIndex) => (
+              {group.appointments.map((apt) => (
                 <div
                   key={apt.id}
-                  className={aptIndex > 0 ? '-mt-1' : ''}
+                  className={apt.isConsecutive ? '-mt-1' : ''}
                 >
-                  {renderAppointment(apt, dateStr, aptIndex > 0)}
+                  {renderAppointment(apt, dateStr, apt.isConsecutive)}
                 </div>
               ))}
             </div>
