@@ -21,6 +21,21 @@
     "deletePendingSignature": "This consent is pending signature. Are you sure you want to delete it?",
     "deleteSigned": "This consent has been signed. Are you sure you want to delete it? This action cannot be undone."
   },
+  "deleteModal": {
+    "title": "Confirm deletion",
+    "pendingSignatureTitle": "Delete pending request?",
+    "pendingSignatureMessage": "This consent is awaiting the patient's signature. The signature request will be cancelled.",
+    "signedTitle": "Delete signed consent?",
+    "signedMessage": "This consent has been electronically signed by the patient.",
+    "patient": "Patient",
+    "consent": "Consent",
+    "status": "Status",
+    "untitled": "Untitled",
+    "irreversibleWarning": "Warning: This action cannot be undone. The signed consent will be permanently deleted and cannot be recovered.",
+    "cancel": "Cancel",
+    "confirm": "Delete",
+    "deleting": "Deleting..."
+  },
   "status": {
     "pendingSignature": "Pending signature",
     "revoked": "Revoked",

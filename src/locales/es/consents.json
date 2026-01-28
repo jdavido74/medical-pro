@@ -21,6 +21,21 @@
     "deletePendingSignature": "Este consentimiento está pendiente de firma. ¿Está seguro de que desea eliminarlo?",
     "deleteSigned": "Este consentimiento ha sido firmado. ¿Está seguro de que desea eliminarlo? Esta acción es irreversible."
   },
+  "deleteModal": {
+    "title": "Confirmar eliminación",
+    "pendingSignatureTitle": "¿Eliminar solicitud pendiente?",
+    "pendingSignatureMessage": "Este consentimiento está pendiente de la firma del paciente. La solicitud de firma será cancelada.",
+    "signedTitle": "¿Eliminar consentimiento firmado?",
+    "signedMessage": "Este consentimiento ha sido firmado electrónicamente por el paciente.",
+    "patient": "Paciente",
+    "consent": "Consentimiento",
+    "status": "Estado",
+    "untitled": "Sin título",
+    "irreversibleWarning": "Atención: Esta acción es irreversible. El consentimiento firmado será eliminado permanentemente y no podrá ser recuperado.",
+    "cancel": "Cancelar",
+    "confirm": "Eliminar",
+    "deleting": "Eliminando..."
+  },
   "status": {
     "pendingSignature": "Pendiente de firma",
     "revoked": "Revocado",

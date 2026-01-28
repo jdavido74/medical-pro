@@ -62,6 +62,9 @@ const ConsentManagementModule = () => {
   const [editingConsent, setEditingConsent] = useState(null);
   const [selectedConsentDetails, setSelectedConsentDetails] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [consentToDelete, setConsentToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // État de chargement combiné
   const loading = consentsLoading || signingLoading;
@@ -285,7 +288,7 @@ const ConsentManagementModule = () => {
     }
   };
 
-  const handleDeleteConsent = async (consentId) => {
+  const handleDeleteConsent = (consentId) => {
     // Find the consent to check its status
     const consent = combinedConsents.find(c => c.id === consentId);
 
@@ -298,17 +301,18 @@ const ConsentManagementModule = () => {
       consent.status === 'granted'
     );
 
-    // Show confirmation only for pending/signed consents
+    // Show confirmation modal only for pending/signed consents
     if (requiresConfirmation) {
-      const confirmMessage = consent.isPendingSignature || consent.status === 'pending_signature'
-        ? t('confirm.deletePendingSignature')
-        : t('confirm.deleteSigned');
-
-      if (!window.confirm(confirmMessage)) {
-        return;
-      }
+      setConsentToDelete(consent);
+      setIsDeleteModalOpen(true);
+    } else {
+      // Direct deletion for revoked/expired/cancelled consents
+      performDelete(consentId);
     }
+  };
 
+  const performDelete = async (consentId) => {
+    setIsDeleting(true);
     try {
       // Check if this is a signing request (prefixed with "signing-")
       if (consentId.startsWith('signing-')) {
@@ -321,10 +325,24 @@ const ConsentManagementModule = () => {
         // Regular consent - use context method (optimistic update included)
         await deleteConsent(consentId);
       }
+      setIsDeleteModalOpen(false);
+      setConsentToDelete(null);
     } catch (err) {
       console.error('[ConsentManagementModule] Error deleting consent:', err);
-      alert(t('errors.delete'));
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleConfirmDelete = () => {
+    if (consentToDelete) {
+      performDelete(consentToDelete.id);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setConsentToDelete(null);
   };
 
   const handleSaveConsent = () => {
@@ -910,6 +928,17 @@ const ConsentManagementModule = () => {
           patientName={getPatientName(selectedConsentDetails.patientId)}
         />
       )}
+
+      {/* Modal de confirmation de suppression */}
+      {isDeleteModalOpen && consentToDelete && (
+        <ConfirmDeleteModal
+          consent={consentToDelete}
+          patientName={getPatientName(consentToDelete.patientId)}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 };
@@ -1051,6 +1080,110 @@ const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
           >
             {t('actions.close')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modal de confirmation de suppression
+const ConfirmDeleteModal = ({ consent, patientName, onConfirm, onCancel, isDeleting }) => {
+  const { t } = useTranslation('consents');
+
+  const isPendingSignature = consent.isPendingSignature || consent.status === 'pending_signature';
+  const isSigned = consent.status === 'signed' || consent.status === 'accepted' || consent.status === 'granted';
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+        {/* Header */}
+        <div className="bg-red-600 text-white px-6 py-4 flex items-center">
+          <AlertTriangle className="h-6 w-6 mr-3" />
+          <h2 className="text-xl font-semibold">{t('deleteModal.title')}</h2>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Warning icon */}
+          <div className="flex justify-center mb-4">
+            <div className="bg-red-100 rounded-full p-4">
+              <Trash2 className="h-10 w-10 text-red-600" />
+            </div>
+          </div>
+
+          {/* Message */}
+          <div className="text-center mb-6">
+            <p className="text-gray-900 font-medium mb-2">
+              {isPendingSignature
+                ? t('deleteModal.pendingSignatureTitle')
+                : t('deleteModal.signedTitle')}
+            </p>
+            <p className="text-gray-600 text-sm">
+              {isPendingSignature
+                ? t('deleteModal.pendingSignatureMessage')
+                : t('deleteModal.signedMessage')}
+            </p>
+          </div>
+
+          {/* Consent info */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('deleteModal.patient')}</span>
+                <span className="font-medium text-gray-900">{patientName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('deleteModal.consent')}</span>
+                <span className="font-medium text-gray-900">{consent.title || t('deleteModal.untitled')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('deleteModal.status')}</span>
+                <span className={`font-medium ${isPendingSignature ? 'text-blue-600' : 'text-green-600'}`}>
+                  {isPendingSignature ? t('status.pendingSignature') : t('status.active')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning for signed consents */}
+          {isSigned && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-800">
+                  {t('deleteModal.irreversibleWarning')}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {t('deleteModal.cancel')}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+          >
+            {isDeleting ? (
+              <>
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                {t('deleteModal.deleting')}
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t('deleteModal.confirm')}
+              </>
+            )}
           </button>
         </div>
       </div>

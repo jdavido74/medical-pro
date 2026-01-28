@@ -21,6 +21,21 @@
     "deletePendingSignature": "Ce consentement est en attente de signature. Êtes-vous sûr de vouloir le supprimer ?",
     "deleteSigned": "Ce consentement a été signé. Êtes-vous sûr de vouloir le supprimer ? Cette action est irréversible."
   },
+  "deleteModal": {
+    "title": "Confirmer la suppression",
+    "pendingSignatureTitle": "Supprimer une demande en attente ?",
+    "pendingSignatureMessage": "Ce consentement est en attente de signature par le patient. La demande de signature sera annulée.",
+    "signedTitle": "Supprimer un consentement signé ?",
+    "signedMessage": "Ce consentement a été signé électroniquement par le patient.",
+    "patient": "Patient",
+    "consent": "Consentement",
+    "status": "Statut",
+    "untitled": "Sans titre",
+    "irreversibleWarning": "Attention : Cette action est irréversible. Le consentement signé sera définitivement supprimé et ne pourra pas être récupéré.",
+    "cancel": "Annuler",
+    "confirm": "Supprimer",
+    "deleting": "Suppression..."
+  },
   "status": {
     "pendingSignature": "En attente de signature",
     "revoked": "Révoqué",
