@@ -288,8 +288,17 @@ const ConsentManagementModule = () => {
   const handleDeleteConsent = async (consentId) => {
     if (window.confirm(t('confirm.delete'))) {
       try {
-        // Utiliser la méthode du contexte (optimistic update inclus)
-        await deleteConsent(consentId);
+        // Check if this is a signing request (prefixed with "signing-")
+        if (consentId.startsWith('signing-')) {
+          // Extract the real signing request ID
+          const signingRequestId = consentId.replace('signing-', '');
+          await consentSigningApi.deleteRequest(signingRequestId);
+          // Refresh signing requests after deletion
+          await loadSigningRequests();
+        } else {
+          // Regular consent - use context method (optimistic update included)
+          await deleteConsent(consentId);
+        }
       } catch (err) {
         console.error('[ConsentManagementModule] Error deleting consent:', err);
         alert(t('errors.delete'));
