@@ -82,6 +82,10 @@ const SendConsentRequestModal = ({
     if (isOpen) {
       fetchTemplates();
       setRecipientEmail(patient?.email || '');
+      // Use patient's preferred language if available
+      if (patient?.preferredLanguage) {
+        setLanguageCode(patient.preferredLanguage);
+      }
     }
   }, [isOpen, patient, t]);
 
