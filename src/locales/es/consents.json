@@ -17,7 +17,9 @@
   },
   "confirm": {
     "delete": "¿Está seguro de que desea eliminar este consentimiento?",
-    "deleteTemplate": "¿Está seguro de que desea eliminar esta plantilla?"
+    "deleteTemplate": "¿Está seguro de que desea eliminar esta plantilla?",
+    "deletePendingSignature": "Este consentimiento está pendiente de firma. ¿Está seguro de que desea eliminarlo?",
+    "deleteSigned": "Este consentimiento ha sido firmado. ¿Está seguro de que desea eliminarlo? Esta acción es irreversible."
   },
   "status": {
     "pendingSignature": "Pendiente de firma",

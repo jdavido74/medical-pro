@@ -17,7 +17,9 @@
   },
   "confirm": {
     "delete": "Êtes-vous sûr de vouloir supprimer ce consentement ?",
-    "deleteTemplate": "Êtes-vous sûr de vouloir supprimer ce modèle ?"
+    "deleteTemplate": "Êtes-vous sûr de vouloir supprimer ce modèle ?",
+    "deletePendingSignature": "Ce consentement est en attente de signature. Êtes-vous sûr de vouloir le supprimer ?",
+    "deleteSigned": "Ce consentement a été signé. Êtes-vous sûr de vouloir le supprimer ? Cette action est irréversible."
   },
   "status": {
     "pendingSignature": "En attente de signature",

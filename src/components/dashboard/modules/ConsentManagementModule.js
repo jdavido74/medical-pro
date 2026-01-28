@@ -286,23 +286,44 @@ const ConsentManagementModule = () => {
   };
 
   const handleDeleteConsent = async (consentId) => {
-    if (window.confirm(t('confirm.delete'))) {
-      try {
-        // Check if this is a signing request (prefixed with "signing-")
-        if (consentId.startsWith('signing-')) {
-          // Extract the real signing request ID
-          const signingRequestId = consentId.replace('signing-', '');
-          await consentSigningApi.deleteRequest(signingRequestId);
-          // Refresh signing requests after deletion
-          await loadSigningRequests();
-        } else {
-          // Regular consent - use context method (optimistic update included)
-          await deleteConsent(consentId);
-        }
-      } catch (err) {
-        console.error('[ConsentManagementModule] Error deleting consent:', err);
-        alert(t('errors.delete'));
+    // Find the consent to check its status
+    const consent = combinedConsents.find(c => c.id === consentId);
+
+    // Check if consent requires confirmation (pending signature or signed)
+    const requiresConfirmation = consent && (
+      consent.status === 'pending_signature' ||
+      consent.isPendingSignature ||
+      consent.status === 'signed' ||
+      consent.status === 'accepted' ||
+      consent.status === 'granted'
+    );
+
+    // Show confirmation only for pending/signed consents
+    if (requiresConfirmation) {
+      const confirmMessage = consent.isPendingSignature || consent.status === 'pending_signature'
+        ? t('confirm.deletePendingSignature')
+        : t('confirm.deleteSigned');
+
+      if (!window.confirm(confirmMessage)) {
+        return;
       }
+    }
+
+    try {
+      // Check if this is a signing request (prefixed with "signing-")
+      if (consentId.startsWith('signing-')) {
+        // Extract the real signing request ID
+        const signingRequestId = consentId.replace('signing-', '');
+        await consentSigningApi.deleteRequest(signingRequestId);
+        // Refresh signing requests after deletion
+        await loadSigningRequests();
+      } else {
+        // Regular consent - use context method (optimistic update included)
+        await deleteConsent(consentId);
+      }
+    } catch (err) {
+      console.error('[ConsentManagementModule] Error deleting consent:', err);
+      alert(t('errors.delete'));
     }
   };
 
