@@ -8,7 +8,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, Filter,
-  Cpu, User, Clock, Check,
+  Cpu, User, Clock, Check, X, Edit2, Bell, FileText,
   CircleDot, CheckCircle2, PlayCircle, XCircle, AlertTriangle, Link,
   List, Search, Send, Eye, MoreHorizontal, Trash2
 } from 'lucide-react';
@@ -107,13 +107,14 @@ const calculateDayViewLayout = (appointments) => {
   const result = [];
 
   for (const group of groups) {
-    // columns[i] = { endMinutes, patientId } - track which patient owns each column
+    // columns[i] = { endMinutes, patientId, lastItem } - track which patient owns each column
     const columns = [];
     // Map patient ID to their assigned column within this group
     const patientColumns = new Map();
 
     for (const item of group) {
       let columnIndex = -1;
+      let isConsecutive = false;
 
       // First, check if this patient already has a column assigned
       if (item.patientId && patientColumns.has(item.patientId)) {
@@ -121,6 +122,11 @@ const calculateDayViewLayout = (appointments) => {
         // Use existing column if this appointment starts when/after the previous one ends
         if (columns[existingCol].endMinutes <= item.startMinutes) {
           columnIndex = existingCol;
+          // Check if truly consecutive (no gap)
+          if (columns[existingCol].endMinutes === item.startMinutes &&
+              columns[existingCol].patientId === item.patientId) {
+            isConsecutive = true;
+          }
         }
       }
 
@@ -148,7 +154,8 @@ const calculateDayViewLayout = (appointments) => {
       result.push({
         ...item,
         column: columnIndex,
-        totalColumns: 1 // Will be updated below
+        totalColumns: 1, // Will be updated below
+        isConsecutive
       });
     }
 
@@ -193,6 +200,8 @@ const PlanningModule = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [toast, setToast] = useState(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryAppointment, setSummaryAppointment] = useState(null);
 
   // List view specific state
   const [listSearchQuery, setListSearchQuery] = useState('');
@@ -506,6 +515,45 @@ const PlanningModule = () => {
     setShowBookingModal(true);
   };
 
+  // Summary modal handlers
+  const handleAppointmentSummaryClick = (appointment) => {
+    setSummaryAppointment(appointment);
+    setShowSummaryModal(true);
+  };
+
+  const handleSummaryEdit = () => {
+    setShowSummaryModal(false);
+    setSelectedAppointment(summaryAppointment);
+    setShowBookingModal(true);
+  };
+
+  const handleSummaryDelete = () => {
+    setShowSummaryModal(false);
+    setSelectedAppointment(summaryAppointment);
+    setShowBookingModal(true);
+    // The booking modal handles delete
+  };
+
+  const handleSummarySendConsent = () => {
+    if (summaryAppointment?.patient) {
+      setShowSummaryModal(false);
+      setConsentPatient(summaryAppointment.patient);
+      setConsentAppointmentId(summaryAppointment.id);
+      setShowConsentModal(true);
+    }
+  };
+
+  const handleSummarySendReminder = async () => {
+    if (!summaryAppointment) return;
+    try {
+      // TODO: Implement reminder API call
+      showToast(t('messages.reminderSent'), 'success');
+      setShowSummaryModal(false);
+    } catch (error) {
+      showToast(t('messages.reminderError'), 'error');
+    }
+  };
+
   const handleBookingSave = async () => {
     setShowBookingModal(false);
     showToast(selectedAppointment ? t('messages.updateSuccess') : t('messages.createSuccess'));
@@ -597,21 +645,47 @@ const PlanningModule = () => {
     return { statusConfig, patientColors, duration, isLinked, categoryIndicator };
   };
 
+  // Get initials from a name (e.g., "Machine Laser 1" -> "ML1", "Dr. Jean Dupont" -> "JD")
+  const getInitials = (name) => {
+    if (!name) return '';
+    // Remove common prefixes
+    const cleaned = name.replace(/^(Dr\.?|Machine|Mme\.?|M\.?)\s*/i, '');
+    // Get first letter of each word + any numbers
+    const parts = cleaned.split(/\s+/);
+    let initials = parts.map(p => {
+      const letters = p.match(/^[A-Za-zÀ-ÿ]/);
+      const numbers = p.match(/\d+/);
+      return (letters ? letters[0].toUpperCase() : '') + (numbers ? numbers[0] : '');
+    }).join('');
+    return initials || name.substring(0, 3).toUpperCase();
+  };
+
   // Render appointment content (factorized - used by both week and day views)
   // height parameter controls which elements are shown:
   // - < 35px: time + icons only (ultra compact)
   // - 35-50px: + patient name
-  // - 50-70px: + treatment title
-  // - > 70px: + machine/provider
-  const renderAppointmentContent = (apt, displayData, height = 100) => {
+  // - >= 50px: + treatment title with resource initials
+  // hidePatientName: for consecutive same-patient appointments
+  const renderAppointmentContent = (apt, displayData, height = 100, hidePatientName = false) => {
     const { statusConfig, isLinked, categoryIndicator, duration } = displayData;
     const StatusIcon = statusConfig.icon;
     const CategoryIcon = categoryIndicator.icon;
 
-    const showPatient = height >= 35;
+    const showPatient = height >= 35 && !hidePatientName;
     const showTitle = height >= 50;
-    const showResource = height >= 70;
     const showDuration = height >= 60;
+
+    // Get resource initials
+    const resourceInitials = apt.category === 'treatment' && apt.machine
+      ? getInitials(apt.machine.name)
+      : apt.category === 'consultation' && apt.provider
+        ? getInitials(apt.provider.fullName)
+        : '';
+
+    // Build title with resource initials
+    const titleWithResource = apt.title
+      ? resourceInitials ? `${apt.title} (${resourceInitials})` : apt.title
+      : resourceInitials ? `(${resourceInitials})` : '';
 
     return (
       <div className="flex flex-col h-full overflow-hidden">
@@ -639,26 +713,10 @@ const PlanningModule = () => {
           </div>
         )}
 
-        {/* Treatment title */}
-        {showTitle && apt.title && (
+        {/* Treatment title with resource initials */}
+        {showTitle && titleWithResource && (
           <div className="text-xs text-gray-700 truncate leading-tight">
-            {apt.title}
-          </div>
-        )}
-
-        {/* Machine (for treatments) */}
-        {showResource && apt.category === 'treatment' && apt.machine && (
-          <div className="flex items-center gap-1 text-xs text-gray-500 mt-auto">
-            <Cpu className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">{apt.machine.name}</span>
-          </div>
-        )}
-
-        {/* Provider (for consultations) */}
-        {showResource && apt.category === 'consultation' && apt.provider && (
-          <div className="flex items-center gap-1 text-xs text-gray-500 mt-auto">
-            <User className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">{apt.provider.fullName}</span>
+            {titleWithResource}
           </div>
         )}
       </div>
@@ -683,11 +741,11 @@ const PlanningModule = () => {
     return (
       <div
         key={apt.id}
-        onClick={() => handleAppointmentClick(apt)}
+        onClick={() => handleAppointmentSummaryClick(apt)}
         className={`p-2 ${borderRadius} border-l-4 border cursor-pointer hover:shadow-md transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
         style={{ height: `${calculatedHeight}px` }}
       >
-        {renderAppointmentContent(apt, displayData, contentHeight)}
+        {renderAppointmentContent(apt, displayData, contentHeight, isConsecutive)}
       </div>
     );
   };
@@ -710,11 +768,17 @@ const PlanningModule = () => {
     // Content height = card height - padding (2*6px = 12px)
     const contentHeight = height - 12;
 
+    // isConsecutive is set by calculateDayViewLayout
+    const isConsecutive = item.isConsecutive || false;
+
+    // Adjust border radius for consecutive appointments
+    const borderRadius = isConsecutive ? 'rounded-b border-t-0' : 'rounded';
+
     return (
       <div
         key={item.id}
-        onClick={() => handleAppointmentClick(item)}
-        className={`absolute p-1.5 rounded border-l-4 border cursor-pointer hover:shadow-lg hover:z-20 transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
+        onClick={() => handleAppointmentSummaryClick(item)}
+        className={`absolute p-1.5 ${borderRadius} border-l-4 border cursor-pointer hover:shadow-lg hover:z-20 transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
         style={{
           top: `${top}px`,
           height: `${height}px`,
@@ -723,7 +787,7 @@ const PlanningModule = () => {
           zIndex: 10
         }}
       >
-        {renderAppointmentContent(item, displayData, contentHeight)}
+        {renderAppointmentContent(item, displayData, contentHeight, isConsecutive)}
       </div>
     );
   };
@@ -748,39 +812,87 @@ const PlanningModule = () => {
     );
   };
 
-  // Check if two appointments are consecutive (same patient, no gap)
-  const areConsecutive = (apt1, apt2) => {
-    if (!apt1 || !apt2) return false;
-    const patient1 = apt1.patientId || apt1.patient?.id;
-    const patient2 = apt2.patientId || apt2.patient?.id;
-    return patient1 && patient2 && patient1 === patient2 && apt1.endTime === apt2.startTime;
+  // Group consecutive same-patient appointments together for week view
+  // Returns array of groups, where each group is { appointments: [...], startTime }
+  const groupConsecutiveAppointments = (appointments) => {
+    if (!appointments || appointments.length === 0) return [];
+
+    // Sort by start time first
+    const sorted = [...appointments].sort((a, b) => {
+      const timeA = a.startTime || '00:00';
+      const timeB = b.startTime || '00:00';
+      return timeA.localeCompare(timeB);
+    });
+
+    const groups = [];
+    const processed = new Set();
+
+    for (const apt of sorted) {
+      if (processed.has(apt.id)) continue;
+
+      const patientId = apt.patientId || apt.patient?.id;
+      const group = [apt];
+      processed.add(apt.id);
+
+      if (patientId) {
+        // Find all consecutive appointments for this patient
+        let lastEndTime = apt.endTime;
+        let foundMore = true;
+
+        while (foundMore) {
+          foundMore = false;
+          for (const other of sorted) {
+            if (processed.has(other.id)) continue;
+            const otherId = other.patientId || other.patient?.id;
+            if (otherId === patientId && other.startTime === lastEndTime) {
+              group.push(other);
+              processed.add(other.id);
+              lastEndTime = other.endTime;
+              foundMore = true;
+              break;
+            }
+          }
+        }
+      }
+
+      groups.push({
+        appointments: group,
+        startTime: apt.startTime
+      });
+    }
+
+    // Sort groups by start time of first appointment
+    groups.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    return groups;
   };
 
   // Render day content for week view
+  // Groups consecutive same-patient appointments together
   const renderDayContent = (day) => {
     const dateStr = formatDateLocal(day);
     const dayAppointments = appointmentsByDate[dateStr] || [];
+    const groups = groupConsecutiveAppointments(dayAppointments);
 
     return (
       <div key={`content-${dateStr}`} className="flex-1 min-w-[140px] border-r last:border-r-0 p-2">
-        {dayAppointments.length === 0 ? (
+        {groups.length === 0 ? (
           <div className="text-xs text-gray-400 text-center py-4">
             {t('calendar.noAppointments')}
           </div>
         ) : (
-          dayAppointments.map((apt, index) => {
-            const prevApt = index > 0 ? dayAppointments[index - 1] : null;
-            const isConsecutive = areConsecutive(prevApt, apt);
-
-            return (
-              <div
-                key={apt.id}
-                className={isConsecutive ? '-mt-1' : index > 0 ? 'mt-2' : ''}
-              >
-                {renderAppointment(apt, dateStr, isConsecutive)}
-              </div>
-            );
-          })
+          groups.map((group, groupIndex) => (
+            <div key={`group-${groupIndex}`} className={groupIndex > 0 ? 'mt-2' : ''}>
+              {group.appointments.map((apt, aptIndex) => (
+                <div
+                  key={apt.id}
+                  className={aptIndex > 0 ? '-mt-1' : ''}
+                >
+                  {renderAppointment(apt, dateStr, aptIndex > 0)}
+                </div>
+              ))}
+            </div>
+          ))
         )}
       </div>
     );
@@ -1220,7 +1332,7 @@ const PlanningModule = () => {
                                 <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
                                   <button
                                     onClick={() => {
-                                      handleAppointmentClick(apt);
+                                      handleAppointmentSummaryClick(apt);
                                       setActionMenuOpen(null);
                                     }}
                                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
@@ -1260,6 +1372,136 @@ const PlanningModule = () => {
           </div>
         )}
       </div>
+
+      {/* Appointment Summary Modal */}
+      {showSummaryModal && summaryAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowSummaryModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                <h3 className="font-semibold text-gray-900">{t('summary.title')}</h3>
+              </div>
+              <button
+                onClick={() => setShowSummaryModal(false)}
+                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="px-5 py-4 space-y-3">
+              {/* Time */}
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-gray-400" />
+                <div>
+                  <span className="font-medium text-gray-900">
+                    {summaryAppointment.startTime} - {summaryAppointment.endTime}
+                  </span>
+                  <span className="text-gray-500 ml-2">
+                    ({summaryAppointment.duration || 30} min)
+                  </span>
+                </div>
+              </div>
+
+              {/* Patient */}
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-gray-400" />
+                <span className="text-gray-900">
+                  {summaryAppointment.patient?.fullName || 'Patient'}
+                </span>
+              </div>
+
+              {/* Treatment */}
+              {summaryAppointment.title && (
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-900">{summaryAppointment.title}</span>
+                </div>
+              )}
+
+              {/* Machine or Provider */}
+              {summaryAppointment.category === 'treatment' && summaryAppointment.machine && (
+                <div className="flex items-center gap-3">
+                  <Cpu className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-900">{summaryAppointment.machine.name}</span>
+                </div>
+              )}
+              {summaryAppointment.category === 'consultation' && summaryAppointment.provider && (
+                <div className="flex items-center gap-3">
+                  <User className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-900">{summaryAppointment.provider.fullName}</span>
+                </div>
+              )}
+
+              {/* Status */}
+              <div className="flex items-center gap-3">
+                {(() => {
+                  const statusConfig = STATUS_CONFIG[summaryAppointment.status] || STATUS_CONFIG.scheduled;
+                  const StatusIcon = statusConfig.icon;
+                  return (
+                    <>
+                      <StatusIcon className={`w-5 h-5 ${statusConfig.color}`} />
+                      <span className={`px-2 py-0.5 rounded-full text-sm ${statusConfig.bg} ${statusConfig.color}`}>
+                        {t(`statuses.${summaryAppointment.status}`)}
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-5 py-4 border-t bg-gray-50">
+              <div className="grid grid-cols-2 gap-2">
+                {canEdit && (
+                  <button
+                    onClick={handleSummaryEdit}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    {t('actions.edit')}
+                  </button>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={handleSummaryDelete}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {t('actions.delete')}
+                  </button>
+                )}
+                {summaryAppointment.patient && (
+                  <button
+                    onClick={handleSummarySendConsent}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+                  >
+                    <Send className="w-4 h-4" />
+                    {t('actions.sendConsent')}
+                  </button>
+                )}
+                <button
+                  onClick={handleSummarySendReminder}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors"
+                >
+                  <Bell className="w-4 h-4" />
+                  {t('actions.sendReminder')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Booking Modal */}
       {showBookingModal && (

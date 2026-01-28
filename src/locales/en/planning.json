@@ -112,7 +112,9 @@
     "confirmSuccess": "Appointment confirmed",
     "error": "An error occurred",
     "loadError": "Error loading data",
-    "conflictError": "Slot conflict detected"
+    "conflictError": "Slot conflict detected",
+    "reminderSent": "Reminder sent successfully",
+    "reminderError": "Error sending reminder"
   },
 
   "empty": {
@@ -197,7 +199,13 @@
     "previous": "Previous",
     "next": "Next",
     "saving": "Saving...",
-    "sendConsent": "Send consent"
+    "sendConsent": "Send consent",
+    "edit": "Edit",
+    "sendReminder": "Send reminder"
+  },
+
+  "summary": {
+    "title": "Appointment summary"
   },
 
   "list": {

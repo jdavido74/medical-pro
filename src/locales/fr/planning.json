@@ -112,7 +112,9 @@
     "confirmSuccess": "Rendez-vous confirmé",
     "error": "Une erreur est survenue",
     "loadError": "Erreur lors du chargement",
-    "conflictError": "Conflit de créneau détecté"
+    "conflictError": "Conflit de créneau détecté",
+    "reminderSent": "Rappel envoyé avec succès",
+    "reminderError": "Erreur lors de l'envoi du rappel"
   },
 
   "empty": {
@@ -197,7 +199,13 @@
     "previous": "Précédent",
     "next": "Suivant",
     "saving": "Enregistrement...",
-    "sendConsent": "Envoyer consentement"
+    "sendConsent": "Envoyer consentement",
+    "edit": "Modifier",
+    "sendReminder": "Envoyer rappel"
+  },
+
+  "summary": {
+    "title": "Résumé du rendez-vous"
   },
 
   "list": {

@@ -112,7 +112,9 @@
     "confirmSuccess": "Cita confirmada",
     "error": "Se ha producido un error",
     "loadError": "Error al cargar los datos",
-    "conflictError": "Conflicto de horario detectado"
+    "conflictError": "Conflicto de horario detectado",
+    "reminderSent": "Recordatorio enviado con éxito",
+    "reminderError": "Error al enviar el recordatorio"
   },
 
   "empty": {
@@ -197,7 +199,13 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "saving": "Guardando...",
-    "sendConsent": "Enviar consentimiento"
+    "sendConsent": "Enviar consentimiento",
+    "edit": "Editar",
+    "sendReminder": "Enviar recordatorio"
+  },
+
+  "summary": {
+    "title": "Resumen de la cita"
   },
 
   "list": {
