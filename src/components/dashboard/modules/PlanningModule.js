@@ -732,8 +732,12 @@ const PlanningModule = () => {
   // Render appointment content (factorized - used by both week and day views)
   // height parameter controls which elements are shown:
   // - < 35px: time + icons only (ultra compact)
+  // Adaptive content display based on available height:
+  // - < 35px: time + icons only
   // - 35-50px: + patient name
-  // - >= 50px: + treatment title with resource initials
+  // - 50-80px: + treatment title with resource initials
+  // - 80-100px: + full resource name (machine or provider)
+  // - >= 100px: + notes/reason
   // hidePatientName: for consecutive same-patient appointments
   const renderAppointmentContent = (apt, displayData, height = 100, hidePatientName = false) => {
     const { statusConfig, isLinked, categoryIndicator, duration } = displayData;
@@ -743,18 +747,28 @@ const PlanningModule = () => {
     const showPatient = height >= 35 && !hidePatientName;
     const showTitle = height >= 50;
     const showDuration = height >= 60;
+    const showResource = height >= 80;
+    const showNotes = height >= 100;
 
-    // Get resource initials
-    const resourceInitials = apt.category === 'treatment' && apt.machine
-      ? getInitials(apt.machine.name)
+    // Get resource info
+    const resourceName = apt.category === 'treatment' && apt.machine
+      ? apt.machine.name
       : apt.category === 'consultation' && apt.provider
-        ? getInitials(apt.provider.fullName)
+        ? apt.provider.fullName
         : '';
 
-    // Build title with resource initials
-    const titleWithResource = apt.title
-      ? resourceInitials ? `${apt.title} (${resourceInitials})` : apt.title
-      : resourceInitials ? `(${resourceInitials})` : '';
+    const resourceInitials = resourceName ? getInitials(resourceName) : '';
+
+    // Build title - include initials only if we're not showing full resource name
+    const titleDisplay = apt.title || apt.service?.title || '';
+    const titleWithInitials = showResource
+      ? titleDisplay
+      : titleDisplay
+        ? resourceInitials ? `${titleDisplay} (${resourceInitials})` : titleDisplay
+        : resourceInitials ? `(${resourceInitials})` : '';
+
+    // Notes or reason to display
+    const notesText = apt.notes || apt.reason || '';
 
     return (
       <div className="flex flex-col h-full overflow-hidden">
@@ -782,10 +796,29 @@ const PlanningModule = () => {
           </div>
         )}
 
-        {/* Treatment title with resource initials */}
-        {showTitle && titleWithResource && (
+        {/* Treatment/Service title */}
+        {showTitle && titleWithInitials && (
           <div className="text-xs text-gray-700 truncate leading-tight">
-            {titleWithResource}
+            {titleWithInitials}
+          </div>
+        )}
+
+        {/* Full resource name (machine or provider) */}
+        {showResource && resourceName && (
+          <div className="text-xs text-gray-500 truncate leading-tight flex items-center gap-1">
+            {apt.category === 'treatment' ? (
+              <Cpu className="w-3 h-3 flex-shrink-0" />
+            ) : (
+              <User className="w-3 h-3 flex-shrink-0" />
+            )}
+            {resourceName}
+          </div>
+        )}
+
+        {/* Notes or reason */}
+        {showNotes && notesText && (
+          <div className="text-xs text-gray-400 truncate leading-tight mt-auto italic">
+            {notesText}
           </div>
         )}
       </div>
