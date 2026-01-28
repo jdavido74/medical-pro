@@ -39,6 +39,9 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 → [Migration i18n](./features/I18N_MIGRATION.md)
 → [Support multilingue](./features/MULTILINGUAL_EMAILS.md)
 
+### Je travaille sur les consentements
+→ [Gestion des consentements](./features/CONSENT_MANAGEMENT.md)
+
 ---
 
 ## 📂 **Par catégorie**
@@ -71,6 +74,7 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 - **[Vérification email](./security/EMAIL_VERIFICATION.md)** - Processus de vérification email
 
 ### 🌍 Fonctionnalités & I18N
+- **[Gestion des consentements](./features/CONSENT_MANAGEMENT.md)** - Consentements RGPD et médicaux
 - **[Support multilingue](./features/MULTILINGUAL_EMAILS.md)** - Emails en FR/ES/EN
 - **[Implémentation i18n](./features/I18N_IMPLEMENTATION.md)** - Intégration du système de traductions
 - **[Migration i18n](./features/I18N_MIGRATION.md)** - Migration vers i18n
@@ -110,5 +114,5 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 
 ---
 
-**Dernière mise à jour**: Décembre 2025
-**Organisation**: 6 catégories, 33 documents
+**Dernière mise à jour**: Janvier 2026
+**Organisation**: 6 catégories, 34 documents
