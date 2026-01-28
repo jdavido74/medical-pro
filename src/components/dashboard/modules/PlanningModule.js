@@ -13,6 +13,7 @@ import {
   List, Search, Send, Eye, MoreHorizontal, Trash2
 } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
+import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
 import { usePermissions } from '../../auth/PermissionGuard';
 import PlanningBookingModal from '../modals/PlanningBookingModal';
 import SendConsentRequestModal from '../../modals/SendConsentRequestModal';
@@ -224,6 +225,7 @@ const PlanningModule = () => {
   // State
   const [appointments, setAppointments] = useState([]);
   const [resources, setResources] = useState({ machines: [], providers: [] });
+  const [clinicSettings, setClinicSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('week'); // day, week, month, list
@@ -305,6 +307,19 @@ const PlanningModule = () => {
     loadData();
   }, [loadData]);
 
+  // Load clinic settings once
+  useEffect(() => {
+    const loadClinicSettings = async () => {
+      try {
+        const settings = await clinicSettingsApi.getClinicSettings();
+        setClinicSettings(settings);
+      } catch (error) {
+        console.error('Error loading clinic settings:', error);
+      }
+    };
+    loadClinicSettings();
+  }, []);
+
   // List view: calculate date range based on period filter
   const listDateRange = useMemo(() => {
     const today = new Date();
@@ -357,6 +372,28 @@ const PlanningModule = () => {
       end: formatDateLocal(end)
     };
   }, [listPeriodFilter]);
+
+  // Check if a date is a closed day (not an operating day or in closedDates)
+  const isClosedDay = useCallback((date) => {
+    if (!clinicSettings) return false;
+
+    const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ...
+    const dateStr = formatDateLocal(date);
+
+    // Check if it's not an operating day
+    const operatingDays = clinicSettings.operatingDays || [1, 2, 3, 4, 5]; // Default Mon-Fri
+    if (!operatingDays.includes(dayOfWeek)) {
+      return true;
+    }
+
+    // Check if it's in the closed dates list
+    const closedDates = clinicSettings.closedDates || [];
+    if (closedDates.some(cd => cd.date === dateStr || cd === dateStr)) {
+      return true;
+    }
+
+    return false;
+  }, [clinicSettings]);
 
   // Load list view data
   const loadListData = useCallback(async () => {
@@ -828,18 +865,29 @@ const PlanningModule = () => {
   const renderDayHeader = (day) => {
     const dateStr = formatDateLocal(day);
     const isToday = dateStr === formatDateLocal(new Date());
+    const isClosed = isClosedDay(day);
+
+    let bgClass = 'bg-gray-50';
+    if (isClosed) {
+      bgClass = 'bg-gray-200';
+    } else if (isToday) {
+      bgClass = 'bg-blue-50';
+    }
 
     return (
       <div
         key={`header-${dateStr}`}
-        className={`flex-1 min-w-[140px] p-2 text-center border-r last:border-r-0 ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}
+        className={`flex-1 min-w-[140px] p-2 text-center border-r last:border-r-0 ${bgClass}`}
       >
-        <div className="text-xs text-gray-500">
+        <div className={`text-xs ${isClosed ? 'text-gray-400' : 'text-gray-500'}`}>
           {day.toLocaleDateString('fr-FR', { weekday: 'short' })}
         </div>
-        <div className={`text-lg font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+        <div className={`text-lg font-semibold ${isClosed ? 'text-gray-400' : isToday ? 'text-blue-600' : 'text-gray-900'}`}>
           {day.getDate()}
         </div>
+        {isClosed && (
+          <div className="text-xs text-gray-400 font-medium">{t('calendar.closed')}</div>
+        )}
       </div>
     );
   };
@@ -850,10 +898,22 @@ const PlanningModule = () => {
     const dateStr = formatDateLocal(day);
     const dayAppointments = appointmentsByDate[dateStr] || [];
     const groups = groupConsecutivePatientAppointments(dayAppointments);
+    const isClosed = isClosedDay(day);
 
     return (
-      <div key={`content-${dateStr}`} className="flex-1 min-w-[140px] border-r last:border-r-0 p-2">
-        {groups.length === 0 ? (
+      <div
+        key={`content-${dateStr}`}
+        className={`flex-1 min-w-[140px] border-r last:border-r-0 p-2 ${isClosed ? 'bg-gray-100 bg-stripes' : ''}`}
+        style={isClosed ? {
+          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px)'
+        } : {}}
+      >
+        {isClosed ? (
+          <div className="text-xs text-gray-400 text-center py-8">
+            <X className="w-5 h-5 mx-auto mb-1 opacity-30" />
+            {t('calendar.clinicClosed')}
+          </div>
+        ) : groups.length === 0 ? (
           <div className="text-xs text-gray-400 text-center py-4">
             {t('calendar.noAppointments')}
           </div>
@@ -1058,10 +1118,16 @@ const PlanningModule = () => {
                 return (
                   <div
                     key={hour}
-                    className="h-[90px] border-b border-gray-200 pr-2 text-right text-xs text-gray-500 pt-0"
+                    className="relative border-b border-gray-200"
                     style={{ height: `${60 * PIXELS_PER_MINUTE}px` }}
                   >
-                    {hour.toString().padStart(2, '0')}:00
+                    {/* Hour label positioned at top, aligned with grid line */}
+                    <span
+                      className="absolute right-2 text-xs text-gray-500 font-medium"
+                      style={{ top: '-0.5em' }}
+                    >
+                      {hour.toString().padStart(2, '0')}:00
+                    </span>
                   </div>
                 );
               })}
@@ -1076,9 +1142,19 @@ const PlanningModule = () => {
                 const totalHeight = (DAY_END_HOUR - DAY_START_HOUR + 1) * 60 * PIXELS_PER_MINUTE;
                 const hasOverflow = layoutItems.some(item => item.column >= MAX_COLUMNS);
                 const containerMinWidth = hasOverflow ? `${Math.max(...layoutItems.map(i => i.column + 1)) * 180}px` : '100%';
+                const isClosed = isClosedDay(currentDate);
 
                 return (
-                  <div className="relative" style={{ height: `${totalHeight}px`, minWidth: containerMinWidth }}>
+                  <div
+                    className={`relative ${isClosed ? 'bg-gray-100' : ''}`}
+                    style={{
+                      height: `${totalHeight}px`,
+                      minWidth: containerMinWidth,
+                      ...(isClosed ? {
+                        backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px)'
+                      } : {})
+                    }}
+                  >
                     {/* Hour grid lines */}
                     {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => (
                       <div
@@ -1097,15 +1173,25 @@ const PlanningModule = () => {
                       />
                     ))}
 
+                    {/* Closed day message */}
+                    {isClosed && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-gray-400 text-center">
+                          <X className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p className="text-lg font-medium">{t('calendar.clinicClosed')}</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* No appointments message */}
-                    {layoutItems.length === 0 && (
+                    {!isClosed && layoutItems.length === 0 && (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-500">
                         {t('calendar.noAppointments')}
                       </div>
                     )}
 
                     {/* Appointment cards */}
-                    {layoutItems.map(item => renderDayViewAppointment(item, dayDateStr))}
+                    {!isClosed && layoutItems.map(item => renderDayViewAppointment(item, dayDateStr))}
                   </div>
                 );
               })()}

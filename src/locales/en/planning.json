@@ -28,7 +28,9 @@
     "previous": "Previous",
     "next": "Next",
     "noAppointments": "No appointments",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "closed": "Closed",
+    "clinicClosed": "Clinic closed"
   },
 
   "slots": {

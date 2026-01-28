@@ -28,7 +28,9 @@
     "previous": "Précédent",
     "next": "Suivant",
     "noAppointments": "Aucun rendez-vous",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "closed": "Fermé",
+    "clinicClosed": "Clinique fermée"
   },
 
   "slots": {

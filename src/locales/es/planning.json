@@ -28,7 +28,9 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "noAppointments": "Sin citas",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "closed": "Cerrado",
+    "clinicClosed": "Clínica cerrada"
   },
 
   "slots": {
