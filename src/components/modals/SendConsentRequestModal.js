@@ -68,7 +68,9 @@ const SendConsentRequestModal = ({
         const response = await baseClient.get('/consent-templates', {
           query: { status: 'active', limit: 100 }
         });
-        setTemplates(response.data?.data || []);
+        // response = { success, data: [...], pagination }
+        // response.data is the array of templates
+        setTemplates(response.data || []);
       } catch (err) {
         console.error('Error loading templates:', err);
         setError(t('common:errors.loadError'));
