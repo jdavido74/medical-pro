@@ -13,7 +13,12 @@ Le module de gestion des consentements permet de gérer les consentements RGPD e
 ## Architecture
 
 ### Frontend
-- **Module principal** : `src/components/dashboard/modules/ConsentManagementModule.js`
+- **Module consentements** : `src/components/dashboard/modules/ConsentManagementModule.js`
+  - Composant `ConfirmDeleteModal` - Modale de suppression de consentement
+  - Composant `ConsentDetailsModal` - Détails d'un consentement
+- **Module modèles** : `src/components/dashboard/modules/ConsentTemplatesModule.js`
+  - Composant `ConfirmDeleteTemplateModal` - Modale de suppression de modèle
+  - Composant `TemplateDetailsModal` - Détails d'un modèle
 - **Contexte** : `src/contexts/ConsentContext.js`
 - **API clients** :
   - `src/api/consentsApi.js` - Consentements signés
@@ -89,13 +94,88 @@ Le module de gestion des consentements permet de gérer les consentements RGPD e
 
 ### Suppression des consentements
 
-| Statut | Comportement | Message de confirmation |
-|--------|--------------|-------------------------|
-| **En attente de signature** | Confirmation requise | "Ce consentement est en attente de signature. Êtes-vous sûr de vouloir le supprimer ?" |
-| **Signé / Accepté** | Confirmation requise avec avertissement | "Ce consentement a été signé. Êtes-vous sûr de vouloir le supprimer ? Cette action est irréversible." |
+Une modale de confirmation personnalisée s'affiche selon le statut du consentement :
+
+| Statut | Comportement | Modale de confirmation |
+|--------|--------------|------------------------|
+| **En attente de signature** | Confirmation requise | Modale avec informations patient/consentement |
+| **Signé / Accepté** | Confirmation requise avec avertissement | Modale avec avertissement d'irréversibilité |
 | **Révoqué** | Suppression directe | Aucune confirmation |
 | **Expiré** | Suppression directe | Aucune confirmation |
 | **Annulé** | Suppression directe | Aucune confirmation |
+
+#### Modale de suppression de consentement
+
+La modale `ConfirmDeleteModal` affiche :
+- **Header rouge** avec icône d'avertissement
+- **Icône de corbeille** centrale
+- **Message adapté** selon le statut (en attente / signé)
+- **Informations du consentement** : patient, titre, statut
+- **Avertissement d'irréversibilité** pour les consentements signés
+- **Boutons** : Annuler / Supprimer (avec état de chargement)
+
+```
+┌─────────────────────────────────────┐
+│ ⚠️ Confirmer la suppression        │  ← Header rouge
+├─────────────────────────────────────┤
+│                                     │
+│            🗑️                       │  ← Icône centrale
+│                                     │
+│   Supprimer un consentement signé ? │
+│   Ce consentement a été signé...    │
+│                                     │
+│   ┌─────────────────────────────┐   │
+│   │ Patient: Jean Dupont        │   │  ← Infos consentement
+│   │ Consentement: Traitement    │   │
+│   │ Statut: Signé               │   │
+│   └─────────────────────────────┘   │
+│                                     │
+│   ⚠️ Attention : Cette action est  │  ← Avertissement (si signé)
+│   irréversible...                   │
+│                                     │
+├─────────────────────────────────────┤
+│              [Annuler] [Supprimer]  │  ← Actions
+└─────────────────────────────────────┘
+```
+
+### Suppression des modèles de consentements
+
+Une modale de confirmation s'affiche systématiquement pour les modèles :
+
+| Statut du modèle | Comportement |
+|------------------|--------------|
+| **Actif** | Avertissement si utilisé pour des consentements existants |
+| **Brouillon** | Confirmation simple |
+| **Inactif** | Confirmation simple |
+
+#### Modale de suppression de modèle
+
+La modale `ConfirmDeleteTemplateModal` affiche :
+- **Informations du modèle** : nom, catégorie, statut, nombre d'utilisations
+- **Avertissement spécial** pour les modèles actifs ayant été utilisés
+
+```
+┌─────────────────────────────────────┐
+│ 🗑️ Supprimer le modèle             │
+├─────────────────────────────────────┤
+│                                     │
+│   Supprimer un modèle actif ?       │
+│                                     │
+│   ┌─────────────────────────────┐   │
+│   │ Modèle: Consentement RGPD   │   │
+│   │ Catégorie: Données          │   │
+│   │ Statut: Actif               │   │
+│   │ Utilisations: 15 fois       │   │
+│   └─────────────────────────────┘   │
+│                                     │
+│   ⚠️ Ce modèle a été utilisé 15    │  ← Si utilisé
+│   fois. Les consentements existants │
+│   ne seront pas affectés...         │
+│                                     │
+├─────────────────────────────────────┤
+│              [Annuler] [Supprimer]  │
+└─────────────────────────────────────┘
+```
 
 ### Gestion des IDs combinés
 
@@ -305,5 +385,7 @@ Les fichiers de traduction se trouvent dans :
 
 | Date | Version | Description |
 |------|---------|-------------|
+| 2026-01-28 | 1.3 | Ajout modale de suppression personnalisée pour les modèles |
+| 2026-01-28 | 1.2 | Remplacement alert() par modale personnalisée pour consentements |
 | 2026-01-28 | 1.1 | Ajout confirmation conditionnelle à la suppression |
 | 2026-01-28 | 1.0 | Documentation initiale |
