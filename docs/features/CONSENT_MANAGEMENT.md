@@ -257,16 +257,98 @@ await consentSigningApi.sendReminder(requestId);
 
 ### Variables disponibles
 
-Les modèles supportent des variables qui sont remplacées lors de la génération :
+Les modèles supportent des variables qui sont remplacées lors de la génération. Les variables utilisent la syntaxe `[NOM_VARIABLE]`.
+
+#### Variables Patient
 
 | Variable | Description |
 |----------|-------------|
-| `{{patientName}}` | Nom complet du patient |
-| `{{patientFirstName}}` | Prénom du patient |
-| `{{patientLastName}}` | Nom de famille du patient |
-| `{{procedureDate}}` | Date de la procédure |
-| `{{doctorName}}` | Nom du praticien |
-| `{{clinicName}}` | Nom de la clinique |
+| `[NOM_PATIENT]` | Nom de famille |
+| `[PRÉNOM_PATIENT]` | Prénom |
+| `[NOM_COMPLET_PATIENT]` | Nom complet (Prénom + Nom) |
+| `[EMAIL_PATIENT]` | Adresse email |
+| `[TÉLÉPHONE_PATIENT]` | Numéro de téléphone |
+| `[DATE_NAISSANCE]` | Date de naissance |
+| `[ADRESSE_PATIENT]` | Adresse complète |
+| `[NUMÉRO_DOCUMENT]` | N° Document d'identité (NIF/Passeport) |
+| `[NUMÉRO_SÉCU]` | N° Sécurité sociale |
+
+#### Variables Clinique
+
+| Variable | Description |
+|----------|-------------|
+| `[NOM_CLINIQUE]` | Nom de la clinique |
+| `[ADRESSE_CLINIQUE]` | Adresse complète |
+| `[TÉLÉPHONE_CLINIQUE]` | Téléphone de contact |
+| `[EMAIL_CLINIQUE]` | Email de contact |
+| `[LOGO_CLINIQUE]` | Logo (sera remplacé par l'image) |
+| `[NIF_CLINIQUE]` | NIF/CIF de la clinique |
+
+#### Variables Praticien
+
+| Variable | Description |
+|----------|-------------|
+| `[NOM_PRATICIEN]` | Nom complet du praticien |
+| `[TITRE_PRATICIEN]` | Titre (Dr., Prof., etc.) |
+| `[SPÉCIALITÉ_PRATICIEN]` | Spécialité médicale |
+| `[NUMÉRO_ORDRE]` | N° Ordre des médecins |
+| `[SIGNATURE_PRATICIEN]` | Zone de signature praticien |
+
+#### Variables Intervention
+
+| Variable | Description |
+|----------|-------------|
+| `[DESCRIPTION_INTERVENTION]` | Description de l'intervention |
+| `[RISQUES_SPÉCIFIQUES]` | Risques associés |
+| `[BÉNÉFICES_ATTENDUS]` | Bénéfices attendus |
+| `[ALTERNATIVES_DISPONIBLES]` | Alternatives possibles |
+| `[TRAITEMENT]` | Nom du traitement |
+| `[PRODUIT_SERVICE]` | Produit ou service concerné |
+
+#### Variables Dates et Signatures
+
+| Variable | Description |
+|----------|-------------|
+| `[DATE]` | Date actuelle |
+| `[DATE_HEURE]` | Date et heure |
+| `[DURÉE]` | Durée prévue |
+| `[SIGNATURE_PATIENT]` | Zone de signature patient |
+
+#### Cases à cocher
+
+| Variable | Description |
+|----------|-------------|
+| `[CASE_À_COCHER]` | ☐ Case simple |
+| `[CASE_OUI_NON]` | ☐ Oui / ☐ Non |
+| `[INITIALES]` | Initiales: ____ |
+
+### Barre de formatage
+
+L'éditeur de modèles dispose d'une barre d'outils :
+
+| Bouton | Action |
+|--------|--------|
+| **G** | Gras - enveloppe le texte sélectionné avec `**texte**` |
+| *I* | Italique - enveloppe avec `_texte_` |
+| <u>S</u> | Souligné - enveloppe avec `__texte__` |
+| • | Liste à puces |
+| 1. | Liste numérotée |
+| ☐ | Case à cocher |
+| ☐/☐ | Oui/Non |
+| ――― | Ligne de séparation |
+| **En-tête** | Insère l'en-tête clinique complet (logo, nom, adresse, contact) |
+
+### En-tête clinique automatique
+
+Le bouton "En-tête" insère automatiquement :
+
+```
+[LOGO_CLINIQUE]
+[NOM_CLINIQUE]
+[ADRESSE_CLINIQUE]
+Tél: [TÉLÉPHONE_CLINIQUE] | Email: [EMAIL_CLINIQUE]
+══════════════════════════════════════════════════
+```
 
 ---
 
@@ -385,6 +467,7 @@ Les fichiers de traduction se trouvent dans :
 
 | Date | Version | Description |
 |------|---------|-------------|
+| 2026-01-28 | 1.4 | Correction barre formatage, ajout variables clinique/document, bouton en-tête |
 | 2026-01-28 | 1.3 | Ajout modale de suppression personnalisée pour les modèles |
 | 2026-01-28 | 1.2 | Remplacement alert() par modale personnalisée pour consentements |
 | 2026-01-28 | 1.1 | Ajout confirmation conditionnelle à la suppression |
