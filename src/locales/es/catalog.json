@@ -323,5 +323,19 @@
     "billingItem": "Este elemento se puede añadir a presupuestos y facturas",
     "linkedAppointments": "Citas vinculadas",
     "linkedInvoices": "Facturas vinculadas"
+  },
+
+  "consents": {
+    "title": "Consentimientos requeridos",
+    "infoText": "Seleccione los consentimientos que deben ser firmados por el paciente antes de este tratamiento. Estos consentimientos se enviarán automáticamente cuando se confirme la cita.",
+    "associated": "Consentimientos asociados",
+    "noAssociations": "No hay consentimientos asociados",
+    "noAssociationsHint": "Añada plantillas de consentimiento para que los pacientes puedan firmar antes de su cita.",
+    "addMore": "Añadir consentimientos",
+    "available": "disponible(s)",
+    "searchPlaceholder": "Buscar consentimiento...",
+    "required": "Obligatorio",
+    "remove": "Eliminar",
+    "noTemplatesAvailable": "No hay plantillas de consentimiento disponibles. Créelas primero en el módulo Consentimientos."
   }
 }

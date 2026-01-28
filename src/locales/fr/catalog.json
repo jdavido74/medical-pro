@@ -323,5 +323,19 @@
     "billingItem": "Cet élément peut être ajouté aux devis et factures",
     "linkedAppointments": "Rendez-vous liés",
     "linkedInvoices": "Factures liées"
+  },
+
+  "consents": {
+    "title": "Consentements requis",
+    "infoText": "Sélectionnez les consentements qui doivent être signés par le patient avant ce traitement. Ces consentements seront automatiquement envoyés lors de la confirmation du rendez-vous.",
+    "associated": "Consentements associés",
+    "noAssociations": "Aucun consentement associé",
+    "noAssociationsHint": "Ajoutez des modèles de consentement pour que les patients puissent signer avant leur rendez-vous.",
+    "addMore": "Ajouter des consentements",
+    "available": "disponible(s)",
+    "searchPlaceholder": "Rechercher un consentement...",
+    "required": "Obligatoire",
+    "remove": "Retirer",
+    "noTemplatesAvailable": "Aucun modèle de consentement disponible. Créez-en d'abord dans le module Consentements."
   }
 }

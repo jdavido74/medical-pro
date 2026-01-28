@@ -28,6 +28,140 @@ const STATUS_CONFIG = {
   no_show: { icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100', title: 'no_show' }
 };
 
+// Time grid constants for day view
+const DAY_START_HOUR = 7;  // 7:00
+const DAY_END_HOUR = 21;   // 21:00
+const PIXELS_PER_MINUTE = 1.5; // Height scale
+const MAX_COLUMNS = 6;     // Maximum columns before horizontal scroll
+
+// Format date to YYYY-MM-DD without timezone conversion issues
+const formatDateLocal = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Convert time string "HH:MM" to minutes since midnight
+const timeToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+// Convert minutes since midnight to "HH:MM"
+const minutesToTime = (minutes) => {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+};
+
+// Calculate layout for overlapping appointments
+// Keeps consecutive appointments of the same patient in the same column
+const calculateDayViewLayout = (appointments) => {
+  if (!appointments || appointments.length === 0) return [];
+
+  // Convert appointments to layout items with start/end in minutes
+  const items = appointments.map(apt => ({
+    ...apt,
+    startMinutes: timeToMinutes(apt.startTime),
+    endMinutes: timeToMinutes(apt.endTime) || (timeToMinutes(apt.startTime) + (apt.duration || 30)),
+    patientId: apt.patientId || apt.patient?.id
+  }));
+
+  // Sort by start time, then by patient (to group same patient), then by duration
+  items.sort((a, b) => {
+    if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
+    // Same start time: group by patient
+    if (a.patientId && b.patientId && a.patientId !== b.patientId) {
+      return a.patientId.localeCompare(b.patientId);
+    }
+    return (b.endMinutes - b.startMinutes) - (a.endMinutes - a.startMinutes);
+  });
+
+  // Find collision groups (appointments that overlap with each other)
+  const groups = [];
+  let currentGroup = [];
+  let groupEnd = 0;
+
+  for (const item of items) {
+    if (currentGroup.length === 0 || item.startMinutes < groupEnd) {
+      // Add to current group
+      currentGroup.push(item);
+      groupEnd = Math.max(groupEnd, item.endMinutes);
+    } else {
+      // Start new group
+      if (currentGroup.length > 0) {
+        groups.push([...currentGroup]);
+      }
+      currentGroup = [item];
+      groupEnd = item.endMinutes;
+    }
+  }
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  // Assign columns within each group
+  // Keep track of patient -> column mapping to keep same patient in same column
+  const result = [];
+
+  for (const group of groups) {
+    // columns[i] = { endMinutes, patientId } - track which patient owns each column
+    const columns = [];
+    // Map patient ID to their assigned column within this group
+    const patientColumns = new Map();
+
+    for (const item of group) {
+      let columnIndex = -1;
+
+      // First, check if this patient already has a column assigned
+      if (item.patientId && patientColumns.has(item.patientId)) {
+        const existingCol = patientColumns.get(item.patientId);
+        // Use existing column if this appointment starts when/after the previous one ends
+        if (columns[existingCol].endMinutes <= item.startMinutes) {
+          columnIndex = existingCol;
+        }
+      }
+
+      // If no existing column for this patient, find the first available column
+      if (columnIndex === -1) {
+        columnIndex = 0;
+        while (columnIndex < columns.length && columns[columnIndex].endMinutes > item.startMinutes) {
+          columnIndex++;
+        }
+      }
+
+      // Assign column
+      if (columnIndex >= columns.length) {
+        columns.push({ endMinutes: item.endMinutes, patientId: item.patientId });
+      } else {
+        columns[columnIndex].endMinutes = item.endMinutes;
+        columns[columnIndex].patientId = item.patientId;
+      }
+
+      // Remember this patient's column for consecutive appointments
+      if (item.patientId) {
+        patientColumns.set(item.patientId, columnIndex);
+      }
+
+      result.push({
+        ...item,
+        column: columnIndex,
+        totalColumns: 1 // Will be updated below
+      });
+    }
+
+    // Update totalColumns for all items in the group
+    const maxCols = Math.min(MAX_COLUMNS, columns.length);
+    for (let i = result.length - group.length; i < result.length; i++) {
+      result[i].totalColumns = maxCols;
+    }
+  }
+
+  return result;
+};
+
 // Patient colors for visual distinction (alternating by day)
 const PATIENT_COLORS = [
   { bg: 'bg-blue-50', border: 'border-blue-300', accent: 'border-l-blue-500' },
@@ -93,8 +227,8 @@ const PlanningModule = () => {
     }
 
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+      start: formatDateLocal(start),
+      end: formatDateLocal(end)
     };
   }, [currentDate, viewMode]);
 
@@ -178,8 +312,8 @@ const PlanningModule = () => {
     }
 
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+      start: formatDateLocal(start),
+      end: formatDateLocal(end)
     };
   }, [listPeriodFilter]);
 
@@ -447,98 +581,157 @@ const PlanningModule = () => {
     );
   };
 
-  // Render appointment card with height proportional to duration
-  const renderAppointment = (apt, dateStr) => {
+  // Get appointment display data (factorized for both views)
+  const getAppointmentDisplayData = (apt, dateStr) => {
     const statusConfig = STATUS_CONFIG[apt.status] || STATUS_CONFIG.scheduled;
-    const StatusIcon = statusConfig.icon;
-
-    // Get patient color for this day
     const patientId = apt.patientId || apt.patient?.id;
     const colorKey = `${dateStr || apt.date}-${patientId}`;
     const colorIndex = patientColorMap[colorKey] ?? 0;
     const patientColors = PATIENT_COLORS[colorIndex];
-
-    // Calculate height based on duration
-    // Scale: 1.8px per minute, minimum 75px for readability
-    // 30min = 75px, 45min = 81px, 60min = 108px, 90min = 162px
     const duration = apt.duration || 30;
-    const calculatedHeight = Math.max(75, Math.round(duration * 1.8));
-
-    // Check if part of a linked group
     const isLinked = apt.isLinked || apt.linkedAppointmentId || apt.linkSequence > 1;
-
-    // Category indicator
     const categoryIndicator = apt.category === 'treatment'
       ? { icon: Cpu, color: 'text-blue-600' }
       : { icon: User, color: 'text-purple-600' };
 
+    return { statusConfig, patientColors, duration, isLinked, categoryIndicator };
+  };
+
+  // Render appointment content (factorized - used by both week and day views)
+  // height parameter controls which elements are shown:
+  // - < 35px: time + icons only (ultra compact)
+  // - 35-50px: + patient name
+  // - 50-70px: + treatment title
+  // - > 70px: + machine/provider
+  const renderAppointmentContent = (apt, displayData, height = 100) => {
+    const { statusConfig, isLinked, categoryIndicator, duration } = displayData;
+    const StatusIcon = statusConfig.icon;
     const CategoryIcon = categoryIndicator.icon;
+
+    const showPatient = height >= 35;
+    const showTitle = height >= 50;
+    const showResource = height >= 70;
+    const showDuration = height >= 60;
+
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Header: time + icons */}
+        <div className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
+          <Clock className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{apt.startTime}-{apt.endTime}</span>
+          {showDuration && <span className="text-gray-400 flex-shrink-0">({duration}min)</span>}
+          <div className="flex items-center gap-0.5 ml-auto flex-shrink-0">
+            <CategoryIcon className={`w-3 h-3 ${categoryIndicator.color}`} title={t(`categories.${apt.category}`)} />
+            {isLinked && (
+              <Link className="w-3 h-3 text-purple-500" title={t('appointment.linkedGroup')} />
+            )}
+            <StatusIcon
+              className={`w-3.5 h-3.5 ${statusConfig.color}`}
+              title={t(`statuses.${apt.status}`)}
+            />
+          </div>
+        </div>
+
+        {/* Patient name */}
+        {showPatient && (
+          <div className="font-medium text-sm text-gray-900 truncate leading-tight">
+            {apt.patient?.fullName || 'Patient'}
+          </div>
+        )}
+
+        {/* Treatment title */}
+        {showTitle && apt.title && (
+          <div className="text-xs text-gray-700 truncate leading-tight">
+            {apt.title}
+          </div>
+        )}
+
+        {/* Machine (for treatments) */}
+        {showResource && apt.category === 'treatment' && apt.machine && (
+          <div className="flex items-center gap-1 text-xs text-gray-500 mt-auto">
+            <Cpu className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">{apt.machine.name}</span>
+          </div>
+        )}
+
+        {/* Provider (for consultations) */}
+        {showResource && apt.category === 'consultation' && apt.provider && (
+          <div className="flex items-center gap-1 text-xs text-gray-500 mt-auto">
+            <User className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">{apt.provider.fullName}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render appointment card for week view (height proportional to duration)
+  // isConsecutive: true if this follows a same-patient appointment with no gap
+  const renderAppointment = (apt, dateStr, isConsecutive = false) => {
+    const displayData = getAppointmentDisplayData(apt, dateStr);
+    const { patientColors, duration } = displayData;
+
+    // Calculate height based on duration
+    // Scale: 1.8px per minute, minimum 75px for readability
+    const calculatedHeight = Math.max(75, Math.round(duration * 1.8));
+    // Content height = card height - padding (2*8px = 16px)
+    const contentHeight = calculatedHeight - 16;
+
+    // Adjust border radius for consecutive appointments
+    const borderRadius = isConsecutive ? 'rounded-b-lg rounded-t-none' : 'rounded-lg';
 
     return (
       <div
         key={apt.id}
         onClick={() => handleAppointmentClick(apt)}
-        className={`p-2 rounded-lg border-l-4 border cursor-pointer hover:shadow-md transition-shadow ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
+        className={`p-2 ${borderRadius} border-l-4 border cursor-pointer hover:shadow-md transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
+        style={{ height: `${calculatedHeight}px` }}
+      >
+        {renderAppointmentContent(apt, displayData, contentHeight)}
+      </div>
+    );
+  };
+
+  // Render appointment card for day view (absolute positioning with collision handling)
+  const renderDayViewAppointment = (item, dateStr) => {
+    const displayData = getAppointmentDisplayData(item, dateStr);
+    const { patientColors } = displayData;
+
+    // Position calculations
+    const startFromDayStart = item.startMinutes - (DAY_START_HOUR * 60);
+    const durationMinutes = item.endMinutes - item.startMinutes;
+    const top = startFromDayStart * PIXELS_PER_MINUTE;
+    const height = Math.max(durationMinutes * PIXELS_PER_MINUTE, 30); // Min 30px
+
+    // Width and left position based on columns
+    const columnWidth = 100 / item.totalColumns;
+    const left = item.column * columnWidth;
+
+    // Content height = card height - padding (2*6px = 12px)
+    const contentHeight = height - 12;
+
+    return (
+      <div
+        key={item.id}
+        onClick={() => handleAppointmentClick(item)}
+        className={`absolute p-1.5 rounded border-l-4 border cursor-pointer hover:shadow-lg hover:z-20 transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
         style={{
-          height: `${calculatedHeight}px`
+          top: `${top}px`,
+          height: `${height}px`,
+          left: `calc(${left}% + 2px)`,
+          width: `calc(${columnWidth}% - 4px)`,
+          zIndex: 10
         }}
       >
-        <div className="flex items-start justify-between h-full">
-          <div className="flex-1 min-w-0">
-            {/* Header: time + category icon + status icon + link icon */}
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Clock className="w-3 h-3 flex-shrink-0" />
-              <span>{apt.startTime} - {apt.endTime}</span>
-              <span className="text-gray-400">({duration} min)</span>
-              <div className="flex items-center gap-0.5 ml-auto">
-                <CategoryIcon className={`w-3 h-3 ${categoryIndicator.color}`} title={t(`categories.${apt.category}`)} />
-                {isLinked && (
-                  <Link className="w-3 h-3 text-purple-500" title={t('appointment.linkedGroup')} />
-                )}
-                <StatusIcon
-                  className={`w-4 h-4 ${statusConfig.color}`}
-                  title={t(`statuses.${apt.status}`)}
-                />
-              </div>
-            </div>
-
-            {/* Patient name */}
-            <div className="font-medium text-sm text-gray-900 mt-1">
-              {apt.patient?.fullName || 'Patient'}
-            </div>
-
-            {/* Treatment title */}
-            {apt.title && (
-              <div className="text-xs text-gray-700 mt-0.5">
-                {apt.title}
-              </div>
-            )}
-
-            {/* Machine (for treatments) */}
-            {apt.category === 'treatment' && apt.machine && (
-              <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                <Cpu className="w-3 h-3 flex-shrink-0" />
-                <span>{apt.machine.name}</span>
-              </div>
-            )}
-
-            {/* Provider (for consultations) */}
-            {apt.category === 'consultation' && apt.provider && (
-              <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                <User className="w-3 h-3 flex-shrink-0" />
-                <span>{apt.provider.fullName}</span>
-              </div>
-            )}
-          </div>
-        </div>
+        {renderAppointmentContent(item, displayData, contentHeight)}
       </div>
     );
   };
 
   // Render day header for week view
   const renderDayHeader = (day) => {
-    const dateStr = day.toISOString().split('T')[0];
-    const isToday = dateStr === new Date().toISOString().split('T')[0];
+    const dateStr = formatDateLocal(day);
+    const isToday = dateStr === formatDateLocal(new Date());
 
     return (
       <div
@@ -555,19 +748,39 @@ const PlanningModule = () => {
     );
   };
 
+  // Check if two appointments are consecutive (same patient, no gap)
+  const areConsecutive = (apt1, apt2) => {
+    if (!apt1 || !apt2) return false;
+    const patient1 = apt1.patientId || apt1.patient?.id;
+    const patient2 = apt2.patientId || apt2.patient?.id;
+    return patient1 && patient2 && patient1 === patient2 && apt1.endTime === apt2.startTime;
+  };
+
   // Render day content for week view
   const renderDayContent = (day) => {
-    const dateStr = day.toISOString().split('T')[0];
+    const dateStr = formatDateLocal(day);
     const dayAppointments = appointmentsByDate[dateStr] || [];
 
     return (
-      <div key={`content-${dateStr}`} className="flex-1 min-w-[140px] border-r last:border-r-0 p-2 space-y-2">
+      <div key={`content-${dateStr}`} className="flex-1 min-w-[140px] border-r last:border-r-0 p-2">
         {dayAppointments.length === 0 ? (
           <div className="text-xs text-gray-400 text-center py-4">
             {t('calendar.noAppointments')}
           </div>
         ) : (
-          dayAppointments.map(apt => renderAppointment(apt, dateStr))
+          dayAppointments.map((apt, index) => {
+            const prevApt = index > 0 ? dayAppointments[index - 1] : null;
+            const isConsecutive = areConsecutive(prevApt, apt);
+
+            return (
+              <div
+                key={apt.id}
+                className={isConsecutive ? '-mt-1' : index > 0 ? 'mt-2' : ''}
+              >
+                {renderAppointment(apt, dateStr, isConsecutive)}
+              </div>
+            );
+          })
         )}
       </div>
     );
@@ -748,20 +961,66 @@ const PlanningModule = () => {
         )}
 
         {viewMode === 'day' && (
-          <div className="p-4">
-            {(() => {
-              const dayDateStr = currentDate.toISOString().split('T')[0];
-              const dayAppts = appointmentsByDate[dayDateStr] || [];
-              return dayAppts.length > 0 ? (
-                <div className="space-y-2">
-                  {dayAppts.map(apt => renderAppointment(apt, dayDateStr))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  {t('calendar.noAppointments')}
-                </div>
-              );
-            })()}
+          <div className="flex max-h-[calc(100vh-300px)] overflow-y-auto">
+            {/* Time column */}
+            <div className="flex-shrink-0 w-16 bg-gray-50 border-r sticky left-0 z-10">
+              {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => {
+                const hour = DAY_START_HOUR + i;
+                return (
+                  <div
+                    key={hour}
+                    className="h-[90px] border-b border-gray-200 pr-2 text-right text-xs text-gray-500 pt-0"
+                    style={{ height: `${60 * PIXELS_PER_MINUTE}px` }}
+                  >
+                    {hour.toString().padStart(2, '0')}:00
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Appointments grid */}
+            <div className="flex-1 overflow-x-auto">
+              {(() => {
+                const dayDateStr = formatDateLocal(currentDate);
+                const dayAppts = appointmentsByDate[dayDateStr] || [];
+                const layoutItems = calculateDayViewLayout(dayAppts);
+                const totalHeight = (DAY_END_HOUR - DAY_START_HOUR + 1) * 60 * PIXELS_PER_MINUTE;
+                const hasOverflow = layoutItems.some(item => item.column >= MAX_COLUMNS);
+                const containerMinWidth = hasOverflow ? `${Math.max(...layoutItems.map(i => i.column + 1)) * 180}px` : '100%';
+
+                return (
+                  <div className="relative" style={{ height: `${totalHeight}px`, minWidth: containerMinWidth }}>
+                    {/* Hour grid lines */}
+                    {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => (
+                      <div
+                        key={`grid-${i}`}
+                        className="absolute left-0 right-0 border-b border-gray-100"
+                        style={{ top: `${i * 60 * PIXELS_PER_MINUTE}px` }}
+                      />
+                    ))}
+
+                    {/* Half-hour lines (lighter) */}
+                    {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => (
+                      <div
+                        key={`grid-half-${i}`}
+                        className="absolute left-0 right-0 border-b border-gray-50"
+                        style={{ top: `${(i * 60 + 30) * PIXELS_PER_MINUTE}px` }}
+                      />
+                    ))}
+
+                    {/* No appointments message */}
+                    {layoutItems.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                        {t('calendar.noAppointments')}
+                      </div>
+                    )}
+
+                    {/* Appointment cards */}
+                    {layoutItems.map(item => renderDayViewAppointment(item, dayDateStr))}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         )}
 
@@ -1010,7 +1269,7 @@ const PlanningModule = () => {
           onSave={handleBookingSave}
           appointment={selectedAppointment}
           resources={resources}
-          initialDate={currentDate.toISOString().split('T')[0]}
+          initialDate={formatDateLocal(currentDate)}
         />
       )}
 

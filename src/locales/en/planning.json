@@ -236,5 +236,68 @@
     "bulkActions": "Bulk actions",
     "deleteSelected": "Delete selected",
     "sendConsentSelected": "Send consents"
+  },
+
+  "actionTypes": {
+    "confirmation_email": "Confirmation email",
+    "whatsapp_reminder": "WhatsApp reminder",
+    "send_quote": "Send quote",
+    "send_consent": "Send consents",
+    "prepare_invoice": "Prepare invoice"
+  },
+
+  "actionStatus": {
+    "pending": "Pending",
+    "scheduled": "Scheduled",
+    "validated": "Validated",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+
+  "triggerTypes": {
+    "automatic": "Automatic",
+    "manual": "Manual",
+    "patient_action": "Patient action"
+  },
+
+  "automatedActions": {
+    "title": "Automated actions",
+    "noActions": "No actions for this appointment",
+    "pending": "pending",
+    "failed": "failed",
+    "showAll": "Show all ({{count}})",
+    "showPending": "Show pending",
+    "completedCount": "{{count}} action(s) completed",
+    "scheduledFor": "Scheduled for {{date}}",
+    "createdAt": "Created on {{date}}",
+    "needsValidation": "Needs validation",
+    "triggerType": "Trigger",
+    "executedAt": "Executed at",
+    "validatedAt": "Validated at",
+    "retries": "Retries",
+    "error": "Error",
+    "result": "Result",
+    "validate": "Validate",
+    "execute": "Execute",
+    "retry": "Retry",
+    "cancel": "Cancel"
+  },
+
+  "widget": {
+    "pendingActions": "Pending actions",
+    "actionsNeedingAttention": "Actions needing your attention",
+    "noActionsRequired": "No pending actions",
+    "refresh": "Refresh",
+    "scheduled": "Scheduled",
+    "completed": "Completed",
+    "failed": "Failed",
+    "andMore": "+{{count}} more"
+  },
+
+  "alerts": {
+    "missingConsent": "Missing consent",
+    "configure": "Configure"
   }
 }

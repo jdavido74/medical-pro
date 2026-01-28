@@ -236,5 +236,68 @@
     "bulkActions": "Actions groupées",
     "deleteSelected": "Supprimer sélection",
     "sendConsentSelected": "Envoyer consentements"
+  },
+
+  "actionTypes": {
+    "confirmation_email": "Email de confirmation",
+    "whatsapp_reminder": "Rappel WhatsApp",
+    "send_quote": "Envoi du devis",
+    "send_consent": "Envoi des consentements",
+    "prepare_invoice": "Préparation de facture"
+  },
+
+  "actionStatus": {
+    "pending": "En attente",
+    "scheduled": "Planifié",
+    "validated": "Validé",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "cancelled": "Annulé"
+  },
+
+  "triggerTypes": {
+    "automatic": "Automatique",
+    "manual": "Manuel",
+    "patient_action": "Action patient"
+  },
+
+  "automatedActions": {
+    "title": "Actions automatisées",
+    "noActions": "Aucune action pour ce rendez-vous",
+    "pending": "en attente",
+    "failed": "échouée(s)",
+    "showAll": "Voir tout ({{count}})",
+    "showPending": "Voir en attente",
+    "completedCount": "{{count}} action(s) terminée(s)",
+    "scheduledFor": "Planifié pour {{date}}",
+    "createdAt": "Créé le {{date}}",
+    "needsValidation": "À valider",
+    "triggerType": "Déclencheur",
+    "executedAt": "Exécuté le",
+    "validatedAt": "Validé le",
+    "retries": "Tentatives",
+    "error": "Erreur",
+    "result": "Résultat",
+    "validate": "Valider",
+    "execute": "Exécuter",
+    "retry": "Réessayer",
+    "cancel": "Annuler"
+  },
+
+  "widget": {
+    "pendingActions": "Actions en attente",
+    "actionsNeedingAttention": "Actions nécessitant votre attention",
+    "noActionsRequired": "Aucune action en attente",
+    "refresh": "Actualiser",
+    "scheduled": "Planifiées",
+    "completed": "Terminées",
+    "failed": "Échouées",
+    "andMore": "+{{count}} autre(s)"
+  },
+
+  "alerts": {
+    "missingConsent": "Consentement manquant",
+    "configure": "Configurer"
   }
 }

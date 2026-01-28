@@ -323,5 +323,19 @@
     "billingItem": "This item can be added to quotes and invoices",
     "linkedAppointments": "Linked appointments",
     "linkedInvoices": "Linked invoices"
+  },
+
+  "consents": {
+    "title": "Required consents",
+    "infoText": "Select the consents that must be signed by the patient before this treatment. These consents will be automatically sent when the appointment is confirmed.",
+    "associated": "Associated consents",
+    "noAssociations": "No associated consents",
+    "noAssociationsHint": "Add consent templates so patients can sign before their appointment.",
+    "addMore": "Add consents",
+    "available": "available",
+    "searchPlaceholder": "Search consent...",
+    "required": "Required",
+    "remove": "Remove",
+    "noTemplatesAvailable": "No consent templates available. Create some first in the Consents module."
   }
 }
