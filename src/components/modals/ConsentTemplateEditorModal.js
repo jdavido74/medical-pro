@@ -234,6 +234,7 @@ const ConsentTemplateEditorModal = ({
         terms: formData.content,
         version: formData.version || '1.0',
         consentType: formData.consentType,
+        status: formData.status,
         isMandatory: formData.isMandatory || false,
         autoSend: formData.autoSend || false,
         validFrom: formData.validFrom || new Date().toISOString()
