@@ -571,6 +571,47 @@ const ConsentTemplateEditorModal = ({
     }
   };
 
+  // Fonction pour convertir le contenu en HTML pour l'aperçu
+  const renderPreviewContent = (content) => {
+    if (!content) return '';
+
+    let html = content
+      // Échapper les caractères HTML dangereux
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // Titres (doivent être traités avant les autres)
+      .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold text-gray-800 mt-6 mb-3 border-b pb-2">$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold text-gray-900 mt-6 mb-4 border-b-2 pb-2">$1</h1>')
+      // Gras **texte**
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold">$1</strong>')
+      // Italique _texte_
+      .replace(/(?<![_\w])_([^_]+)_(?![_\w])/g, '<em class="italic">$1</em>')
+      // Souligné __texte__
+      .replace(/__(.+?)__/g, '<span class="underline">$1</span>')
+      // Lignes de séparation
+      .replace(/^[═]{10,}$/gm, '<hr class="my-4 border-t-2 border-gray-300">')
+      .replace(/^[-]{10,}$/gm, '<hr class="my-4 border-t border-gray-200">')
+      // Variables [VARIABLE]
+      .replace(/\[([^\]]+)\]/g, '<span class="bg-yellow-200 text-yellow-800 px-1 py-0.5 rounded text-sm font-mono">[$1]</span>')
+      // Cases à cocher
+      .replace(/☐/g, '<span class="inline-block w-4 h-4 border-2 border-gray-400 rounded mr-1 align-middle"></span>')
+      // Listes à puces
+      .replace(/^• (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+      // Listes numérotées
+      .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 list-decimal">$1. $2</li>')
+      // Sauts de ligne
+      .replace(/\n/g, '<br>');
+
+    // Nettoyer les <br> après les titres et hr
+    html = html
+      .replace(/<\/h1><br>/g, '</h1>')
+      .replace(/<\/h2><br>/g, '</h2>')
+      .replace(/<hr([^>]*)><br>/g, '<hr$1>');
+
+    return html;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -1078,12 +1119,9 @@ const ConsentTemplateEditorModal = ({
                   </div>
                   <div className="bg-white border rounded-lg p-6 prose max-w-none">
                     <div
-                      className="whitespace-pre-wrap"
+                      className="leading-relaxed"
                       dangerouslySetInnerHTML={{
-                        __html: formData.content.replace(
-                          /\[([^\]]+)\]/g,
-                          '<span class="bg-yellow-200 px-1 rounded">[$1]</span>'
-                        )
+                        __html: renderPreviewContent(formData.content)
                       }}
                     />
                   </div>
