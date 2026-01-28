@@ -36,6 +36,21 @@
     "confirm": "Eliminar",
     "deleting": "Eliminando..."
   },
+  "deleteTemplateModal": {
+    "title": "Eliminar plantilla",
+    "activeTitle": "¿Eliminar una plantilla activa?",
+    "activeMessage": "Esta plantilla está actualmente activa y puede utilizarse para crear nuevos consentimientos.",
+    "inactiveTitle": "¿Eliminar esta plantilla?",
+    "inactiveMessage": "Esta plantilla será eliminada permanentemente.",
+    "template": "Plantilla",
+    "category": "Categoría",
+    "status": "Estado",
+    "usage": "Usos",
+    "usageWarning": "Esta plantilla ha sido utilizada {{count}} veces. Los consentimientos existentes no se verán afectados, pero ya no podrá crear nuevos consentimientos con esta plantilla.",
+    "cancel": "Cancelar",
+    "confirm": "Eliminar",
+    "deleting": "Eliminando..."
+  },
   "status": {
     "pendingSignature": "Pendiente de firma",
     "revoked": "Revocado",

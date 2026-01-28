@@ -36,6 +36,21 @@
     "confirm": "Delete",
     "deleting": "Deleting..."
   },
+  "deleteTemplateModal": {
+    "title": "Delete template",
+    "activeTitle": "Delete an active template?",
+    "activeMessage": "This template is currently active and can be used to create new consents.",
+    "inactiveTitle": "Delete this template?",
+    "inactiveMessage": "This template will be permanently deleted.",
+    "template": "Template",
+    "category": "Category",
+    "status": "Status",
+    "usage": "Usage",
+    "usageWarning": "This template has been used {{count}} times. Existing consents will not be affected, but you will no longer be able to create new consents with this template.",
+    "cancel": "Cancel",
+    "confirm": "Delete",
+    "deleting": "Deleting..."
+  },
   "status": {
     "pendingSignature": "Pending signature",
     "revoked": "Revoked",

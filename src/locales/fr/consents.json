@@ -36,6 +36,21 @@
     "confirm": "Supprimer",
     "deleting": "Suppression..."
   },
+  "deleteTemplateModal": {
+    "title": "Supprimer le modèle",
+    "activeTitle": "Supprimer un modèle actif ?",
+    "activeMessage": "Ce modèle est actuellement actif et peut être utilisé pour créer de nouveaux consentements.",
+    "inactiveTitle": "Supprimer ce modèle ?",
+    "inactiveMessage": "Ce modèle sera définitivement supprimé.",
+    "template": "Modèle",
+    "category": "Catégorie",
+    "status": "Statut",
+    "usage": "Utilisations",
+    "usageWarning": "Ce modèle a été utilisé {{count}} fois. Les consentements existants ne seront pas affectés, mais vous ne pourrez plus créer de nouveaux consentements avec ce modèle.",
+    "cancel": "Annuler",
+    "confirm": "Supprimer",
+    "deleting": "Suppression..."
+  },
   "status": {
     "pendingSignature": "En attente de signature",
     "revoked": "Révoqué",

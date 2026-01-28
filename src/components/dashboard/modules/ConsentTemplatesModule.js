@@ -41,6 +41,9 @@ const ConsentTemplatesModule = () => {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showTemplateDetails, setShowTemplateDetails] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Statistics
   const [statistics, setStatistics] = useState({});
@@ -212,16 +215,33 @@ const ConsentTemplatesModule = () => {
     }
   };
 
-  const handleDeleteTemplate = async (templateId) => {
-    if (window.confirm(t('confirm.deleteTemplate'))) {
-      try {
-        await consentTemplatesApi.deleteConsentTemplate(templateId);
-        loadData();
-      } catch (err) {
-        console.error('[ConsentTemplatesModule] Error deleting template:', err);
-        alert(t('errors.delete'));
-      }
+  const handleDeleteTemplate = (templateId) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      setTemplateToDelete(template);
+      setIsDeleteModalOpen(true);
     }
+  };
+
+  const performDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await consentTemplatesApi.deleteConsentTemplate(templateToDelete.id);
+      setIsDeleteModalOpen(false);
+      setTemplateToDelete(null);
+      loadData();
+    } catch (err) {
+      console.error('[ConsentTemplatesModule] Error deleting template:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setTemplateToDelete(null);
   };
 
   const handleExportTemplate = (template) => {
@@ -782,6 +802,16 @@ const ConsentTemplatesModule = () => {
           }}
         />
       )}
+
+      {/* Modal de confirmation de suppression */}
+      {isDeleteModalOpen && templateToDelete && (
+        <ConfirmDeleteTemplateModal
+          template={templateToDelete}
+          onConfirm={performDeleteTemplate}
+          onCancel={handleCancelDelete}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 };
@@ -1000,6 +1030,114 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             {t('actions.edit')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modal de confirmation de suppression de modèle
+const ConfirmDeleteTemplateModal = ({ template, onConfirm, onCancel, isDeleting }) => {
+  const { t } = useTranslation('consents');
+
+  const isActive = template.status === 'active' || !template.status;
+  const hasUsage = (template.usage?.timesUsed || 0) > 0;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+        {/* Header */}
+        <div className="bg-red-600 text-white px-6 py-4 flex items-center">
+          <AlertTriangle className="h-6 w-6 mr-3" />
+          <h2 className="text-xl font-semibold">{t('deleteTemplateModal.title')}</h2>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Warning icon */}
+          <div className="flex justify-center mb-4">
+            <div className="bg-red-100 rounded-full p-4">
+              <Trash2 className="h-10 w-10 text-red-600" />
+            </div>
+          </div>
+
+          {/* Message */}
+          <div className="text-center mb-6">
+            <p className="text-gray-900 font-medium mb-2">
+              {isActive ? t('deleteTemplateModal.activeTitle') : t('deleteTemplateModal.inactiveTitle')}
+            </p>
+            <p className="text-gray-600 text-sm">
+              {isActive ? t('deleteTemplateModal.activeMessage') : t('deleteTemplateModal.inactiveMessage')}
+            </p>
+          </div>
+
+          {/* Template info */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('deleteTemplateModal.template')}</span>
+                <span className="font-medium text-gray-900">{template.title}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('deleteTemplateModal.category')}</span>
+                <span className="font-medium text-gray-900">
+                  {TEMPLATE_CATEGORIES[template.category?.toUpperCase()]?.name || template.category || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('deleteTemplateModal.status')}</span>
+                <span className={`font-medium ${isActive ? 'text-green-600' : 'text-gray-600'}`}>
+                  {isActive ? t('status.active') : t('status.inactive')}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('deleteTemplateModal.usage')}</span>
+                <span className="font-medium text-gray-900">
+                  {template.usage?.timesUsed || 0} {t('table.times')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning for active templates with usage */}
+          {isActive && hasUsage && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-800">
+                  {t('deleteTemplateModal.usageWarning', { count: template.usage?.timesUsed || 0 })}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {t('deleteTemplateModal.cancel')}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+          >
+            {isDeleting ? (
+              <>
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                {t('deleteTemplateModal.deleting')}
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t('deleteTemplateModal.confirm')}
+              </>
+            )}
           </button>
         </div>
       </div>
