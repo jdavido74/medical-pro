@@ -16,9 +16,9 @@ import PatientSearchSelect from '../common/PatientSearchSelect';
 import QuickPatientModal from './QuickPatientModal';
 import { useLocale } from '../../contexts/LocaleContext';
 import { useFormErrors } from '../../hooks/useFormErrors';
+import { useAppointmentTypes, usePriorities } from '../../hooks/useSystemCategories';
 import {
   APPOINTMENT_TYPES,
-  APPOINTMENT_TYPE_KEYS,
   APPOINTMENT_PRIORITIES,
   getAppointmentDuration,
   getAppointmentTypeColor,
@@ -79,20 +79,37 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     getFieldError
   } = useFormErrors();
 
-  // Generate appointment types from constants with translation
-  const appointmentTypes = APPOINTMENT_TYPE_KEYS.map(key => ({
-    value: key,
-    label: t(`appointments.types.${key}`, APPOINTMENT_TYPES[key]?.label || key),
-    duration: getAppointmentDuration(key),
-    color: getAppointmentTypeColor(key)
-  }));
+  // Dynamic appointment types and priorities from API
+  const { categories: dynamicAppointmentTypes, loading: appointmentTypesLoading, getTranslatedName: getAppointmentTypeName } = useAppointmentTypes();
+  const { categories: dynamicPriorities, loading: prioritiesLoading, getTranslatedName: getPriorityName } = usePriorities();
 
-  // Generate priorities from constants with translation
-  const priorities = APPOINTMENT_PRIORITIES.map(priority => ({
-    value: priority,
-    label: t(`appointments.priorities.${priority}`, priority),
-    color: getPriorityColor(priority)
-  }));
+  // Generate appointment types - use dynamic data if available, fallback to constants
+  const appointmentTypes = dynamicAppointmentTypes.length > 0
+    ? dynamicAppointmentTypes.map(type => ({
+        value: type.code,
+        label: getAppointmentTypeName(type),
+        duration: type.metadata?.duration || getAppointmentDuration(type.code),
+        color: getAppointmentTypeColor(type.code)
+      }))
+    : Object.keys(APPOINTMENT_TYPES).map(key => ({
+        value: key,
+        label: t(`appointments.types.${key}`, APPOINTMENT_TYPES[key]?.label || key),
+        duration: getAppointmentDuration(key),
+        color: getAppointmentTypeColor(key)
+      }));
+
+  // Generate priorities - use dynamic data if available, fallback to constants
+  const priorities = dynamicPriorities.length > 0
+    ? dynamicPriorities.map(priority => ({
+        value: priority.code,
+        label: getPriorityName(priority),
+        color: getPriorityColor(priority.code)
+      }))
+    : APPOINTMENT_PRIORITIES.map(priority => ({
+        value: priority,
+        label: t(`appointments.priorities.${priority}`, priority),
+        color: getPriorityColor(priority)
+      }));
 
   // Day name mapping for clinic operating hours
   const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];

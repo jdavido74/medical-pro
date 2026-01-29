@@ -23,7 +23,8 @@ import { useTranslation } from 'react-i18next';
 import { useConsents } from '../../../contexts/ConsentContext';
 import { usePatients } from '../../../contexts/PatientContext';
 import { consentSigningApi } from '../../../api/consentSigningApi';
-import { CONSENT_TYPES, COLLECTION_METHODS } from '../../../utils/consentsStorage';
+import { COLLECTION_METHODS } from '../../../utils/consentsStorage';
+import { useConsentTypes } from '../../../hooks/useSystemCategories';
 import ConsentFormModal from '../../modals/ConsentFormModal';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -42,6 +43,9 @@ const ConsentManagementModule = () => {
   } = useConsents();
 
   const { patients } = usePatients();
+
+  // Dynamic consent types from API
+  const { categories: consentTypes, loading: consentTypesLoading, getTranslatedName, getByCode } = useConsentTypes();
 
   // État local pour les données combinées (consents + signing requests)
   const [combinedConsents, setCombinedConsents] = useState([]);
@@ -455,8 +459,8 @@ const ConsentManagementModule = () => {
   };
 
   const getTypeDisplayName = (type) => {
-    const typeInfo = Object.values(CONSENT_TYPES).find(t => t.id === type);
-    return typeInfo ? typeInfo.name : type;
+    const typeInfo = getByCode(type);
+    return typeInfo ? getTranslatedName(typeInfo) : type;
   };
 
   const StatCard = ({ title, value, subtitle, icon: Icon, color = 'blue' }) => (
@@ -641,13 +645,18 @@ const ConsentManagementModule = () => {
                       value={selectedType}
                       onChange={(e) => setSelectedType(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={consentTypesLoading}
                     >
                       <option value="">{t('filters.allTypes')}</option>
-                      {Object.values(CONSENT_TYPES).map(type => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
-                        </option>
-                      ))}
+                      {consentTypesLoading ? (
+                        <option disabled>Chargement...</option>
+                      ) : (
+                        consentTypes.map(type => (
+                          <option key={type.code} value={type.code}>
+                            {getTranslatedName(type)}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>

@@ -47,6 +47,7 @@ import RoleManagementModule from '../components/admin/RoleManagementModule';
 import TeamManagementModule from '../components/admin/TeamManagementModule';
 import AuditManagementModule from '../components/admin/AuditManagementModule';
 import ClinicConfigurationModule from '../components/admin/ClinicConfigurationModule';
+import SystemCategoriesModule from '../components/admin/SystemCategoriesModule';
 
 // Admin Pages
 import AdminOverview from '../pages/admin/AdminOverview';
@@ -251,7 +252,8 @@ const adminRoutes = [
   { path: 'users', element: <UserManagementModule /> },
   { path: 'roles', element: <RoleManagementModule /> },
   { path: 'teams', element: <TeamManagementModule /> },
-  { path: 'audit', element: <AuditManagementModule /> }
+  { path: 'audit', element: <AuditManagementModule /> },
+  { path: 'categories', element: <SystemCategoriesModule /> }
 ];
 
 /**

@@ -2,11 +2,14 @@
 // Dashboard d'administration pour les administrateurs de CLINIQUE uniquement
 // Les super_admin doivent utiliser le SaasAdminDashboard
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Users, Settings, Shield, BarChart3,
   Stethoscope, Activity, Calendar, UserCheck
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+// Use 'admin' namespace for translations
 import { useAuth } from '../../hooks/useAuth';
 import { useDynamicTranslations } from '../../contexts/DynamicTranslationsContext';
 import { canAccessAdministration } from '../../utils/userRoles';
@@ -16,6 +19,7 @@ import RoleManagementModule from './RoleManagementModule';
 import TeamManagementModule from './TeamManagementModule';
 import AuditManagementModule from './AuditManagementModule';
 import ClinicConfigurationModule from './ClinicConfigurationModule';
+import SystemCategoriesModule from './SystemCategoriesModule';
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { patientsStorage } from '../../utils/patientsStorage';
 import { appointmentsStorage } from '../../utils/appointmentsStorage';
@@ -23,10 +27,30 @@ import auditStorage from '../../utils/auditStorage';
 import { getUserStats } from '../../utils/userRoles';
 
 const AdminDashboard = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('admin');
   const { user, company } = useAuth();
   const { isLoading: translationsLoading, getAvailableSpecialties } = useDynamicTranslations();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+
+  // Sync tab state with URL parameters
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'overview') {
+      searchParams.delete('tab');
+    } else {
+      searchParams.set('tab', tabId);
+    }
+    setSearchParams(searchParams);
+  };
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -57,13 +81,13 @@ const AdminDashboard = () => {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const appointments = appointmentsStorage.search({
-        startDate: startOfMonth,
-        endDate: endOfMonth
+      const appointments = appointmentsStorage.search('', {
+        dateFrom: startOfMonth.toISOString().split('T')[0],
+        dateTo: endOfMonth.toISOString().split('T')[0]
       });
 
       // 4. Charger l'activité récente depuis l'audit
-      const auditLogs = auditStorage.getAll({ limit: 5 });
+      const auditLogs = (auditStorage.getAllLogs() || []).slice(0, 5);
       const formattedActivity = auditLogs.map((log, index) => ({
         id: index + 1,
         type: log.eventType,
@@ -115,10 +139,10 @@ const AdminDashboard = () => {
         <div className="text-center">
           <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">
-            {t('admin.accessDenied')}
+            {t('accessDenied')}
           </h2>
           <p className="text-gray-600">
-            {t('admin.noPermissionClinic')}
+            {t('noPermissionClinic')}
           </p>
         </div>
       </div>
@@ -128,38 +152,44 @@ const AdminDashboard = () => {
   const tabsConfig = [
     {
       id: 'overview',
-      label: t('admin.overview'),
+      label: t('overview'),
       icon: BarChart3,
       visible: true
     },
     {
       id: 'clinic-config',
-      label: t('admin.clinicConfig'),
+      label: t('clinicConfig'),
       icon: Calendar,
       visible: true
     },
     {
       id: 'users',
-      label: t('admin.users'),
+      label: t('users'),
       icon: Users,
       visible: true
     },
     {
       id: 'roles',
-      label: t('admin.roles'),
+      label: t('roles'),
       icon: Shield,
       visible: true
     },
     {
       id: 'teams',
-      label: t('admin.teams'),
+      label: t('teams'),
       icon: Users,
       visible: true
     },
     {
       id: 'audit',
-      label: t('admin.audit'),
+      label: t('audit'),
       icon: Activity,
+      visible: true
+    },
+    {
+      id: 'categories',
+      label: t('systemCategories', 'Catégories'),
+      icon: Settings,
       visible: true
     }
   ];
@@ -177,11 +207,11 @@ const AdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
-                {t('admin.totalUsers')}
+                {t('totalUsers')}
               </p>
               <p className="text-2xl font-bold text-gray-900">{dashboardStats.totalUsers}</p>
               <p className="text-xs text-green-600 mt-1">
-                {dashboardStats.activeUsers} {t('admin.active')}
+                {dashboardStats.activeUsers} {t('active')}
               </p>
             </div>
           </div>
@@ -194,7 +224,7 @@ const AdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
-                {t('admin.practitioners')}
+                {t('practitioners')}
               </p>
               <p className="text-2xl font-bold text-gray-900">{dashboardStats.practitioners}</p>
             </div>
@@ -208,7 +238,7 @@ const AdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">
-                {t('admin.appointmentsMonth')}
+                {t('appointmentsMonth')}
               </p>
               <p className="text-2xl font-bold text-gray-900">{dashboardStats.appointmentsThisMonth}</p>
             </div>
@@ -221,7 +251,7 @@ const AdminDashboard = () => {
         {/* Especialidades configuradas */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('admin.configuredSpecialties')}
+            {t('configuredSpecialties')}
           </h3>
           {translationsLoading ? (
             <div className="animate-pulse space-y-2">
@@ -238,13 +268,13 @@ const AdminDashboard = () => {
                     <span className="font-medium text-gray-900">{specialty.name}</span>
                   </div>
                   <span className="text-sm text-gray-500">
-                    {t('admin.active')}
+                    {t('active')}
                   </span>
                 </div>
               ))}
               {getAvailableSpecialties().length > 5 && (
                 <div className="text-sm text-blue-600 font-medium">
-                  +{getAvailableSpecialties().length - 5} {t('admin.moreSpecialties')}
+                  +{getAvailableSpecialties().length - 5} {t('moreSpecialties')}
                 </div>
               )}
             </div>
@@ -254,7 +284,7 @@ const AdminDashboard = () => {
         {/* Actividad reciente */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {t('admin.recentActivity')}
+            {t('recentActivity')}
           </h3>
           <div className="space-y-3">
             {recentActivity.map(activity => (
@@ -263,7 +293,7 @@ const AdminDashboard = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900">{activity.message}</p>
                   <p className="text-xs text-gray-500">
-                    {t('admin.timeAgo', { time: activity.time })}
+                    {t('timeAgo', { time: activity.time })}
                   </p>
                 </div>
               </div>
@@ -275,7 +305,7 @@ const AdminDashboard = () => {
       {/* Información del usuario actual */}
       <div className="bg-white rounded-lg border p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          {t('admin.yourInfo')}
+          {t('yourInfo')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -289,13 +319,13 @@ const AdminDashboard = () => {
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('admin.role')}:</span>
+                <span className="text-sm text-gray-600">{t('role')}:</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {t('admin.clinicAdmin')}
+                  {t('clinicAdmin')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">{t('admin.clinic')}:</span>
+                <span className="text-sm text-gray-600">{t('clinic')}:</span>
                 <span className="text-sm font-medium text-gray-900">
                   {company?.name || user?.companyName || 'N/A'}
                 </span>
@@ -305,24 +335,24 @@ const AdminDashboard = () => {
 
           <div>
             <h5 className="font-medium text-gray-900 mb-3">
-              {t('admin.adminPermissions')}
+              {t('adminPermissions')}
             </h5>
             <div className="space-y-2">
               <div className="flex items-center text-sm text-green-600">
                 <Users className="h-4 w-4 mr-2" />
-                {t('admin.manageClinicUsers')}
+                {t('manageClinicUsers')}
               </div>
               <div className="flex items-center text-sm text-green-600">
                 <Stethoscope className="h-4 w-4 mr-2" />
-                {t('admin.assignSpecialties')}
+                {t('assignSpecialties')}
               </div>
               <div className="flex items-center text-sm text-green-600">
                 <Calendar className="h-4 w-4 mr-2" />
-                {t('admin.manageAvailability')}
+                {t('manageAvailability')}
               </div>
               <div className="flex items-center text-sm text-green-600">
                 <Shield className="h-4 w-4 mr-2" />
-                {t('admin.manageRoles')}
+                {t('manageRoles')}
               </div>
             </div>
           </div>
@@ -345,6 +375,8 @@ const AdminDashboard = () => {
         return <TeamManagementModule />;
       case 'audit':
         return <AuditManagementModule />;
+      case 'categories':
+        return <SystemCategoriesModule />;
       default:
         return renderOverview();
     }
@@ -358,17 +390,17 @@ const AdminDashboard = () => {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {t('admin.clinicAdminPanel')}
+                {t('clinicAdminPanel')}
               </h1>
               <p className="text-gray-600">
-                {company?.name || user?.companyName || t('admin.clinicManagement')}
+                {company?.name || user?.companyName || t('clinicManagement')}
               </p>
             </div>
 
             <div className="flex items-center space-x-4">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 <Shield className="h-4 w-4 mr-1" />
-                {t('admin.clinicAdmin')}
+                {t('clinicAdmin')}
               </span>
             </div>
           </div>
@@ -384,7 +416,7 @@ const AdminDashboard = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

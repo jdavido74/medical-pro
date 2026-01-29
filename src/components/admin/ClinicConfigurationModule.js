@@ -88,24 +88,32 @@ const ClinicConfigurationModule = () => {
     if (!config) return '';
 
     const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-    // Priorité à operatingHours si défini, sinon fallback sur operatingDays
-    if (config.operatingHours && Object.keys(config.operatingHours).length > 0) {
-      const openDays = dayKeys
-        .map((key, index) => ({ key, index, config: config.operatingHours[key] }))
-        .filter(day => day.config?.enabled)
-        .map(day => dayNames[day.index]);
-      return openDays.length > 0 ? openDays.join(', ') : 'Aucun jour configuré';
-    }
-
-    // Fallback sur operatingDays
-    if (config.operatingDays) {
-      const openDays = config.operatingDays.map(dayIndex => dayNames[dayIndex]);
+    // operatingDays est un tableau de numéros de jour (0=Dim, 1=Lun, etc.)
+    if (config.operatingDays && config.operatingDays.length > 0) {
+      // Trier les jours dans l'ordre de la semaine (Lun-Dim)
+      const sortedDays = [...config.operatingDays].sort((a, b) => {
+        // Convertir dimanche (0) à 7 pour le tri
+        const aVal = a === 0 ? 7 : a;
+        const bVal = b === 0 ? 7 : b;
+        return aVal - bVal;
+      });
+      const openDays = sortedDays.map(dayIndex => dayNames[dayIndex]);
       return openDays.join(', ');
     }
 
     return 'Non configuré';
+  };
+
+  // Compte les jours ouverts
+  const getOpenDaysCount = () => {
+    if (!config) return 0;
+
+    if (config.operatingDays && config.operatingDays.length > 0) {
+      return config.operatingDays.length;
+    }
+
+    return 0;
   };
 
   // Utiliser l'utilitaire centralisé pour filtrer les praticiens
@@ -232,23 +240,29 @@ const ClinicConfigurationModule = () => {
           <div className="space-y-3">
             <div>
               <span className="text-sm font-medium text-gray-700">Jours d'ouverture:</span>
-              <p className="text-sm text-gray-900 mt-1">{getOperatingDaysText()}</p>
+              <p className="text-sm text-gray-900 mt-1">
+                {getOpenDaysCount()} jours ({getOperatingDaysText()})
+              </p>
             </div>
 
             <div>
-              <span className="text-sm font-medium text-gray-700">Durée des créneaux:</span>
-              <p className="text-sm text-gray-900 mt-1">{config.slotSettings.defaultDuration} minutes</p>
+              <span className="text-sm font-medium text-gray-700">Durée par défaut:</span>
+              <p className="text-sm text-gray-900 mt-1">
+                {config.slotSettings?.defaultDuration || 30} min (variable selon type RDV)
+              </p>
             </div>
 
             <div>
               <span className="text-sm font-medium text-gray-700">Temps de battement:</span>
-              <p className="text-sm text-gray-900 mt-1">{config.slotSettings.bufferTime} minutes</p>
+              <p className="text-sm text-gray-900 mt-1">
+                {config.slotSettings?.bufferTime || 0} minutes
+              </p>
             </div>
 
             <div>
-              <span className="text-sm font-medium text-gray-700">Jours de fermeture:</span>
+              <span className="text-sm font-medium text-gray-700">Fermetures exceptionnelles:</span>
               <p className="text-sm text-gray-900 mt-1">
-                {config.closedDates?.length || 0} configurés
+                {config.closedDates?.length || 0} configurées
               </p>
             </div>
           </div>
@@ -283,21 +297,14 @@ const ClinicConfigurationModule = () => {
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Médecins:</span>
               <span className="text-sm font-medium text-gray-900">
-                {getPractitionersByType('doctor').length}
+                {getPractitionersByType('physician')}
               </span>
             </div>
 
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Spécialistes:</span>
+              <span className="text-sm text-gray-600">Autres praticiens:</span>
               <span className="text-sm font-medium text-gray-900">
-                {getPractitionersByType('specialist').length}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Infirmiers:</span>
-              <span className="text-sm font-medium text-gray-900">
-                {getPractitionersByType('nurse').length}
+                {getPractitionersByType('practitioner')}
               </span>
             </div>
           </div>

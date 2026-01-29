@@ -9,6 +9,7 @@
   "roles": "Roles and Permissions",
   "teams": "Teams and Branches",
   "audit": "Audit and Logs",
+  "systemCategories": "Categories",
   "totalUsers": "Total Users",
   "active": "active",
   "clinic": "Practice",
@@ -849,5 +850,57 @@
     "practitionerAvailability": "Practitioner availability",
     "selectPractitioner": "Select a practitioner",
     "noProviderSelected": "Select a practitioner to view their availability"
+  },
+  "systemCategories": {
+    "title": "System Categories",
+    "subtitle": "Manage consent types, appointment types, specialties, and departments",
+    "tabs": {
+      "consentTypes": "Consent Types",
+      "appointmentTypes": "Appointment Types",
+      "specialties": "Specialties",
+      "departments": "Departments",
+      "priorities": "Priorities"
+    },
+    "createCategory": "New Category",
+    "editCategory": "Edit Category",
+    "code": "Code",
+    "codeHelp": "Alphanumeric with underscores, lowercase",
+    "translations": "Translations",
+    "metadata": "Configuration",
+    "color": "Color",
+    "icon": "Icon",
+    "required": "Required",
+    "renewable": "Renewable",
+    "defaultDuration": "Default duration (days)",
+    "duration": "Duration (minutes)",
+    "priority": "Priority",
+    "isActive": "Active",
+    "system": "System",
+    "inactive": "Inactive",
+    "noCategories": "No categories found",
+    "namePlaceholder": "Name",
+    "descriptionPlaceholder": "Description (optional)",
+    "deleteConfirm": "Are you sure you want to delete this category?",
+    "deleteSystemError": "System categories cannot be deleted",
+    "validation": {
+      "codeRequired": "Code is required",
+      "nameRequired": "Spanish name is required"
+    }
+  },
+  "treatmentConsents": {
+    "title": "Required Consents",
+    "noConsents": "No consent templates configured",
+    "count": "{{count}} consent template(s)",
+    "noConsentsWarning": "No consents",
+    "saveTreatmentFirst": "Save the treatment first to configure consents",
+    "removeConfirm": "Remove this consent template from the treatment?",
+    "required": "Required",
+    "optional": "Optional",
+    "filterByType": "Filter by type",
+    "allTypes": "All types",
+    "noAvailableTemplates": "No available templates",
+    "addTemplate": "Add Consent Template",
+    "noConsentTemplates": "No consent templates associated with this treatment",
+    "addTemplateHint": "Add templates that patients must sign before this treatment"
   }
 }

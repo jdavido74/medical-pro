@@ -8,17 +8,8 @@ import {
   Globe, Trash2, Languages, Check, Loader
 } from 'lucide-react';
 import { consentTemplatesApi } from '../../api/consentTemplatesApi';
-import {
-  CONSENT_TYPES,
-  MEDICAL_SPECIALITIES
-} from '../../utils/consentTemplatesStorage';
+import { useConsentTypes, useSpecialties } from '../../hooks/useSystemCategories';
 import { useAuth } from '../../hooks/useAuth';
-
-// Helper function to find consent type name by id
-const getConsentTypeName = (typeId) => {
-  const type = Object.values(CONSENT_TYPES).find(t => t.id === typeId);
-  return type?.name || typeId;
-};
 
 // Available languages for translations
 const AVAILABLE_LANGUAGES = [
@@ -37,6 +28,10 @@ const ConsentTemplateEditorModal = ({
   const { user } = useAuth();
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Dynamic categories from API
+  const { categories: consentTypes, loading: consentTypesLoading, getTranslatedName: getConsentTypeName } = useConsentTypes();
+  const { categories: specialties, loading: specialtiesLoading, getTranslatedName: getSpecialtyName } = useSpecialties();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -361,8 +356,8 @@ const ConsentTemplateEditorModal = ({
         <p>${formData.description}</p>
     </div>
     <div class="template-meta">
-        <p><strong>Type:</strong> ${getConsentTypeName(formData.consentType)}</p>
-        <p><strong>Spécialité:</strong> ${MEDICAL_SPECIALITIES[formData.speciality.toUpperCase()]?.name || formData.speciality}</p>
+        <p><strong>Type:</strong> ${getConsentTypeName(consentTypes.find(t => t.code === formData.consentType)) || formData.consentType}</p>
+        <p><strong>Spécialité:</strong> ${getSpecialtyName(specialties.find(s => s.code === formData.speciality)) || formData.speciality}</p>
         <p><strong>Variables détectées:</strong> ${detectedVariables.join(', ')}</p>
     </div>
     <div class="template-content">
@@ -922,12 +917,17 @@ const ConsentTemplateEditorModal = ({
                       className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         validationErrors.consentType ? 'border-red-500' : 'border-gray-300'
                       }`}
+                      disabled={consentTypesLoading}
                     >
-                      {Object.values(CONSENT_TYPES).map(type => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
-                        </option>
-                      ))}
+                      {consentTypesLoading ? (
+                        <option>Chargement...</option>
+                      ) : (
+                        consentTypes.map(type => (
+                          <option key={type.code} value={type.code}>
+                            {getConsentTypeName(type)}
+                          </option>
+                        ))
+                      )}
                     </select>
                     {validationErrors.consentType && (
                       <p className="text-red-500 text-sm mt-1">{validationErrors.consentType}</p>
@@ -942,12 +942,17 @@ const ConsentTemplateEditorModal = ({
                       value={formData.speciality}
                       onChange={(e) => setFormData(prev => ({ ...prev, speciality: e.target.value }))}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={specialtiesLoading}
                     >
-                      {Object.values(MEDICAL_SPECIALITIES).map(speciality => (
-                        <option key={speciality.id} value={speciality.id}>
-                          {speciality.name}
-                        </option>
-                      ))}
+                      {specialtiesLoading ? (
+                        <option>Chargement...</option>
+                      ) : (
+                        specialties.map(specialty => (
+                          <option key={specialty.code} value={specialty.code}>
+                            {getSpecialtyName(specialty)}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -1109,8 +1114,8 @@ const ConsentTemplateEditorModal = ({
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">{formData.title}</h2>
                     <p className="text-gray-600 mb-2">{formData.description}</p>
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Type: {getConsentTypeName(formData.consentType)}</span>
-                      <span>Spécialité: {MEDICAL_SPECIALITIES[formData.speciality.toUpperCase()]?.name}</span>
+                      <span>Type: {getConsentTypeName(consentTypes.find(t => t.code === formData.consentType)) || formData.consentType}</span>
+                      <span>Spécialité: {getSpecialtyName(specialties.find(s => s.code === formData.speciality)) || formData.speciality}</span>
                     </div>
                   </div>
                   <div className="bg-white border rounded-lg p-6 prose max-w-none">

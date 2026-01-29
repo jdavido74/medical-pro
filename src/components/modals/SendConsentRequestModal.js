@@ -30,7 +30,8 @@ import {
 } from 'lucide-react';
 import { consentSigningApi } from '../../api/consentSigningApi';
 import { baseClient } from '../../api/baseClient';
-import { CONSENT_TYPES, getConsentTypeName, filterTemplatesByType } from '../../utils/consentTypes';
+import { filterTemplatesByType } from '../../utils/consentTypes';
+import { useConsentTypes } from '../../hooks/useSystemCategories';
 import ConsentPreviewModal from './ConsentPreviewModal';
 
 const SendConsentRequestModal = ({
@@ -41,6 +42,16 @@ const SendConsentRequestModal = ({
   onSuccess
 }) => {
   const { t, i18n } = useTranslation(['common', 'admin']);
+
+  // Dynamic consent types from API
+  const { categories: consentTypes, loading: consentTypesLoading, getTranslatedName, getByCode } = useConsentTypes();
+
+  // Helper function to get consent type name by code
+  const getConsentTypeName = (typeCode) => {
+    if (!typeCode) return typeCode;
+    const type = getByCode(typeCode);
+    return type ? getTranslatedName(type) : typeCode;
+  };
 
   // Form state
   const [templates, setTemplates] = useState([]);
@@ -266,13 +277,18 @@ const SendConsentRequestModal = ({
                       setSelectedTemplate(''); // Reset template selection when filter changes
                     }}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    disabled={consentTypesLoading}
                   >
                     <option value="">{t('admin:consents.allTypes')}</option>
-                    {Object.values(CONSENT_TYPES).map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name}
-                      </option>
-                    ))}
+                    {consentTypesLoading ? (
+                      <option disabled>Chargement...</option>
+                    ) : (
+                      consentTypes.map((type) => (
+                        <option key={type.code} value={type.code}>
+                          {getTranslatedName(type)}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 

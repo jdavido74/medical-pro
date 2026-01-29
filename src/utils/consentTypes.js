@@ -1,14 +1,42 @@
 /**
  * Unified Consent Types Configuration
  *
- * SOURCE UNIQUE DE VÉRITÉ pour les types de consentement
- * Utilisé par tous les composants frontend et synchronisé avec le backend
+ * This file provides consent types with dynamic loading from the API
+ * and fallback to static data if the API is unavailable.
  *
- * Backend route: /var/www/medical-pro-backend/src/routes/consent-templates.js
- * Backend route: /var/www/medical-pro-backend/src/routes/consents.js
+ * MIGRATION NOTE: This file is being deprecated in favor of useSystemCategories hook.
+ * New components should use: import { useConsentTypes } from '../hooks/useSystemCategories';
+ *
+ * For legacy compatibility, this file still exports:
+ * - Static CONSENT_TYPES object
+ * - Utility functions with dynamic loading support
+ *
+ * Backend routes:
+ * - /var/www/medical-pro-backend/src/routes/system-categories.js (new)
+ * - /var/www/medical-pro-backend/src/routes/consent-templates.js
+ * - /var/www/medical-pro-backend/src/routes/consents.js
  */
 
-// Types de consentement unifiés (synchronisés avec le backend)
+import systemCategoriesApi from '../api/systemCategoriesApi';
+
+// Cache for dynamic consent types
+let cachedConsentTypes = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Listen for category updates to clear cache
+const CATEGORY_UPDATE_EVENT = 'systemCategoriesUpdated';
+if (typeof window !== 'undefined') {
+  window.addEventListener(CATEGORY_UPDATE_EVENT, (event) => {
+    const updatedType = event.detail?.type;
+    if (!updatedType || updatedType === 'consent_type') {
+      cachedConsentTypes = null;
+      cacheTimestamp = 0;
+    }
+  });
+}
+
+// Types de consentement unifiés (fallback/synchronisés avec le backend)
 export const CONSENT_TYPES = {
   MEDICAL_TREATMENT: {
     id: 'medical_treatment',
@@ -272,10 +300,125 @@ export function getCollectionMethodsOptions() {
   }));
 }
 
+// ============================================
+// DYNAMIC LOADING FUNCTIONS
+// ============================================
+
+/**
+ * Load consent types from API (with caching)
+ * @returns {Promise<Array>} List of consent types
+ */
+export async function loadConsentTypesFromApi() {
+  const now = Date.now();
+
+  // Return cached data if still valid
+  if (cachedConsentTypes && (now - cacheTimestamp) < CACHE_TTL) {
+    return cachedConsentTypes;
+  }
+
+  try {
+    const response = await systemCategoriesApi.getConsentTypes();
+    if (response.data && Array.isArray(response.data)) {
+      cachedConsentTypes = response.data;
+      cacheTimestamp = now;
+      return cachedConsentTypes;
+    }
+  } catch (error) {
+    console.warn('[consentTypes] API unavailable, using static data:', error.message);
+  }
+
+  // Fallback to static data
+  return Object.values(CONSENT_TYPES);
+}
+
+/**
+ * Get consent type by ID (with API fallback)
+ * @param {string} typeId - ID of the type
+ * @param {string} lang - Language for translations
+ * @returns {Promise<Object|null>} Consent type or null
+ */
+export async function getConsentTypeByIdAsync(typeId, lang = 'es') {
+  if (!typeId) return null;
+
+  try {
+    const types = await loadConsentTypesFromApi();
+    const apiType = types.find(t => t.code === typeId);
+
+    if (apiType) {
+      return {
+        id: apiType.code,
+        name: apiType.translations?.[lang]?.name || apiType.translations?.es?.name || apiType.code,
+        description: apiType.translations?.[lang]?.description || apiType.translations?.es?.description || '',
+        required: apiType.metadata?.required || false,
+        renewable: apiType.metadata?.renewable || false,
+        defaultDuration: apiType.metadata?.defaultDuration || null,
+        icon: apiType.metadata?.icon || 'FileText',
+        color: apiType.metadata?.color || 'blue'
+      };
+    }
+  } catch (error) {
+    console.warn('[consentTypes] getConsentTypeByIdAsync failed:', error.message);
+  }
+
+  // Fallback to static
+  return getConsentTypeById(typeId);
+}
+
+/**
+ * Get consent type name (with API fallback)
+ * @param {string} typeId - ID of the type
+ * @param {string} lang - Language for translations
+ * @returns {Promise<string>} Type name
+ */
+export async function getConsentTypeNameAsync(typeId, lang = 'es') {
+  const type = await getConsentTypeByIdAsync(typeId, lang);
+  return type ? type.name : typeId;
+}
+
+/**
+ * Get all consent types as options (with API fallback)
+ * @param {boolean} includeAll - Include "All types" option
+ * @param {string} lang - Language for translations
+ * @returns {Promise<Array>} List of options
+ */
+export async function getConsentTypesOptionsAsync(includeAll = false, lang = 'es') {
+  try {
+    const types = await loadConsentTypesFromApi();
+
+    const options = types.map(type => ({
+      value: type.code,
+      label: type.translations?.[lang]?.name || type.translations?.es?.name || type.code,
+      description: type.translations?.[lang]?.description || type.translations?.es?.description || '',
+      required: type.metadata?.required || false
+    }));
+
+    if (includeAll) {
+      options.unshift({ value: '', label: 'Tous les types', description: '' });
+    }
+
+    return options;
+  } catch (error) {
+    console.warn('[consentTypes] getConsentTypesOptionsAsync failed:', error.message);
+  }
+
+  // Fallback to static
+  return getConsentTypesOptions(includeAll);
+}
+
+/**
+ * Clear the consent types cache
+ * Call this after updating consent types in the admin panel
+ */
+export function clearConsentTypesCache() {
+  cachedConsentTypes = null;
+  cacheTimestamp = 0;
+}
+
 export default {
   CONSENT_TYPES,
   CONSENT_TYPE_IDS,
   COLLECTION_METHODS,
+  // Synchronous functions (static data)
   getConsentTypeById,
   getConsentTypeName,
   getConsentTypeDescription,
@@ -284,5 +427,11 @@ export default {
   getConsentTypesOptions,
   filterTemplatesByType,
   getCollectionMethodName,
-  getCollectionMethodsOptions
+  getCollectionMethodsOptions,
+  // Async functions (API with fallback)
+  loadConsentTypesFromApi,
+  getConsentTypeByIdAsync,
+  getConsentTypeNameAsync,
+  getConsentTypesOptionsAsync,
+  clearConsentTypesCache
 };

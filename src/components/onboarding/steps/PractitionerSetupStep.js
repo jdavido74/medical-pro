@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import PhoneInput from '../../common/PhoneInput';
 import { useLocale } from '../../../contexts/LocaleContext';
+import { useSpecialties } from '../../../hooks/useSystemCategories';
 import {
   ONBOARDING_PRACTITIONER_ROLES,
   MEDICAL_SPECIALTY_KEYS
@@ -27,6 +28,9 @@ import {
 const PractitionerSetupStep = ({ onComplete, onBack, canGoBack, isLastStep, isCompleting }) => {
   const { t } = useTranslation('onboarding');
   const { country: localeCountry } = useLocale();
+
+  // Dynamic specialties from API
+  const { categories: dynamicSpecialties, loading: specialtiesLoading, getTranslatedName: getSpecialtyName } = useSpecialties();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -266,14 +270,24 @@ const PractitionerSetupStep = ({ onComplete, onBack, canGoBack, isLastStep, isCo
             value={formData.specialty}
             onChange={(e) => handleChange('specialty', e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isLoading || success}
+            disabled={isLoading || success || specialtiesLoading}
           >
             <option value="">-- Optionnel --</option>
-            {MEDICAL_SPECIALTY_KEYS.map(specialty => (
-              <option key={specialty} value={specialty}>
-                {t(`onboarding.steps.practitioner.specialties.${specialty}`)}
-              </option>
-            ))}
+            {specialtiesLoading ? (
+              <option disabled>Chargement...</option>
+            ) : dynamicSpecialties.length > 0 ? (
+              dynamicSpecialties.map(specialty => (
+                <option key={specialty.code} value={specialty.code}>
+                  {getSpecialtyName(specialty)}
+                </option>
+              ))
+            ) : (
+              MEDICAL_SPECIALTY_KEYS.map(specialty => (
+                <option key={specialty} value={specialty}>
+                  {t(`onboarding.steps.practitioner.specialties.${specialty}`)}
+                </option>
+              ))
+            )}
           </select>
         </div>
       </div>

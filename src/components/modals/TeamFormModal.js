@@ -4,6 +4,7 @@ import { X, Users, User, Building, Clock, Shield, Trash2 } from 'lucide-react';
 import { usersStorage } from '../../utils/usersStorage';
 import { permissionsStorage } from '../../utils/permissionsStorage';
 import { useTranslation } from 'react-i18next';
+import { useDepartments, useSpecialties } from '../../hooks/useSystemCategories';
 import {
   DEPARTMENT_KEYS,
   getSpecialtiesForDepartment
@@ -11,6 +12,10 @@ import {
 
 const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) => {
   const { t } = useTranslation(['admin', 'common']);
+
+  // Dynamic categories from API
+  const { categories: departments, loading: departmentsLoading, getTranslatedName: getDepartmentName } = useDepartments();
+  const { categories: specialties, loading: specialtiesLoading, getTranslatedName: getSpecialtyName } = useSpecialties();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -222,7 +227,14 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
   };
 
   const getAvailableSpecialties = () => {
-    return getSpecialtiesForDepartment(formData.department);
+    // Use dynamic specialties if available, otherwise fallback to static
+    if (specialties.length > 0) {
+      return specialties.map(s => ({
+        code: s.code,
+        name: getSpecialtyName(s)
+      }));
+    }
+    return getSpecialtiesForDepartment(formData.department).map(s => ({ code: s, name: s }));
   };
 
   const getUserDisplayName = (userId) => {
@@ -300,11 +312,20 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                     handleInputChange('specialties', []); // Reset specialties
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={departmentsLoading}
                 >
                   <option value="">{t('common:select', 'Sélectionner un département')}</option>
-                  {DEPARTMENT_KEYS.map(dept => (
-                    <option key={dept} value={dept}>{t(`admin:departments.${dept}`, dept)}</option>
-                  ))}
+                  {departmentsLoading ? (
+                    <option disabled>Chargement...</option>
+                  ) : departments.length > 0 ? (
+                    departments.map(dept => (
+                      <option key={dept.code} value={dept.code}>{getDepartmentName(dept)}</option>
+                    ))
+                  ) : (
+                    DEPARTMENT_KEYS.map(dept => (
+                      <option key={dept} value={dept}>{t(`admin:departments.${dept}`, dept)}</option>
+                    ))
+                  )}
                 </select>
               </div>
 

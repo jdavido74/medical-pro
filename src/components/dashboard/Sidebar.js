@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, Users, Calendar, FileText, BarChart3, Settings,
-  LogOut, Heart, Shield, Package, Cpu, CalendarClock
+  LogOut, Heart, Shield, Package, Cpu, CalendarClock, Tags
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
@@ -76,6 +76,9 @@ const Sidebar = () => {
 
     // Administration clinique (admin, super_admin, direction, clinic_admin)
     { id: 'admin', path: '/admin', icon: Shield, permission: null, adminOnly: true, labelKey: 'admin' },
+
+    // Catégories système (admin uniquement)
+    { id: 'categories', path: '/admin/categories', icon: Tags, permission: null, adminOnly: true, labelKey: 'categories' },
 
     // Paramètres personnels (tous)
     { id: 'settings', path: '/settings', icon: Settings, permission: null, labelKey: 'settings' }

@@ -9,6 +9,7 @@
   "roles": "Rôles et permissions",
   "teams": "Équipes et délégations",
   "audit": "Audit et journaux",
+  "systemCategories": "Catégories",
   "totalUsers": "Utilisateurs totaux",
   "active": "actifs",
   "clinic": "Cabinet",
@@ -849,5 +850,57 @@
     "practitionerAvailability": "Disponibilités du praticien",
     "selectPractitioner": "Sélectionner un praticien",
     "noProviderSelected": "Sélectionnez un praticien pour voir ses disponibilités"
+  },
+  "systemCategories": {
+    "title": "Catégories Système",
+    "subtitle": "Gérez les types de consentement, types de rendez-vous, spécialités et départements",
+    "tabs": {
+      "consentTypes": "Types de Consentement",
+      "appointmentTypes": "Types de RDV",
+      "specialties": "Spécialités",
+      "departments": "Départements",
+      "priorities": "Priorités"
+    },
+    "createCategory": "Nouvelle Catégorie",
+    "editCategory": "Modifier la Catégorie",
+    "code": "Code",
+    "codeHelp": "Alphanumérique avec underscores, minuscules",
+    "translations": "Traductions",
+    "metadata": "Configuration",
+    "color": "Couleur",
+    "icon": "Icône",
+    "required": "Obligatoire",
+    "renewable": "Renouvelable",
+    "defaultDuration": "Durée par défaut (jours)",
+    "duration": "Durée (minutes)",
+    "priority": "Priorité",
+    "isActive": "Actif",
+    "system": "Système",
+    "inactive": "Inactif",
+    "noCategories": "Aucune catégorie trouvée",
+    "namePlaceholder": "Nom",
+    "descriptionPlaceholder": "Description (optionnelle)",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette catégorie ?",
+    "deleteSystemError": "Les catégories système ne peuvent pas être supprimées",
+    "validation": {
+      "codeRequired": "Le code est obligatoire",
+      "nameRequired": "Le nom en espagnol est obligatoire"
+    }
+  },
+  "treatmentConsents": {
+    "title": "Consentements Requis",
+    "noConsents": "Aucun modèle de consentement configuré",
+    "count": "{{count}} modèle(s) de consentement",
+    "noConsentsWarning": "Aucun consentement",
+    "saveTreatmentFirst": "Enregistrez d'abord le traitement pour configurer les consentements",
+    "removeConfirm": "Retirer ce modèle de consentement du traitement ?",
+    "required": "Obligatoire",
+    "optional": "Optionnel",
+    "filterByType": "Filtrer par type",
+    "allTypes": "Tous les types",
+    "noAvailableTemplates": "Aucun modèle disponible",
+    "addTemplate": "Ajouter un Modèle de Consentement",
+    "noConsentTemplates": "Aucun modèle de consentement associé à ce traitement",
+    "addTemplateHint": "Ajoutez les modèles que les patients doivent signer avant ce traitement"
   }
 }

@@ -47,13 +47,13 @@ const AdminOverview = () => {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const appointments = appointmentsStorage.search({
-        startDate: startOfMonth,
-        endDate: endOfMonth
+      const appointments = appointmentsStorage.search('', {
+        dateFrom: startOfMonth.toISOString().split('T')[0],
+        dateTo: endOfMonth.toISOString().split('T')[0]
       });
 
       // 4. Charger l'activité récente depuis l'audit
-      const auditLogs = auditStorage.getAll({ limit: 5 });
+      const auditLogs = (auditStorage.getAllLogs() || []).slice(0, 5);
       const formattedActivity = auditLogs.map((log, index) => ({
         id: index + 1,
         type: log.eventType,

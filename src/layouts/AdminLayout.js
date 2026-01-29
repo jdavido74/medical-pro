@@ -7,7 +7,7 @@ import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import {
   Users, Shield, BarChart3,
-  Calendar, Activity
+  Calendar, Activity, Tags
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '../contexts/LocaleContext';
@@ -22,7 +22,8 @@ const AdminLayout = () => {
     { id: 'users', path: buildUrl('/admin/users'), label: t('admin.users'), icon: Users },
     { id: 'roles', path: buildUrl('/admin/roles'), label: t('admin.roles'), icon: Shield },
     { id: 'teams', path: buildUrl('/admin/teams'), label: t('admin.teams'), icon: Users },
-    { id: 'audit', path: buildUrl('/admin/audit'), label: t('admin.audit'), icon: Activity }
+    { id: 'audit', path: buildUrl('/admin/audit'), label: t('admin.audit'), icon: Activity },
+    { id: 'categories', path: buildUrl('/admin/categories'), label: t('admin.systemCategories', 'Catégories'), icon: Tags }
   ];
 
   return (

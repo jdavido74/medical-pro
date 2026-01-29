@@ -9,6 +9,7 @@
   "roles": "Roles y permisos",
   "teams": "Equipos y delegaciones",
   "audit": "Auditoría y registros",
+  "systemCategories": "Categorías",
   "totalUsers": "Usuarios totales",
   "active": "activos",
   "clinic": "Consulta",
@@ -849,5 +850,57 @@
     "practitionerAvailability": "Disponibilidad del profesional",
     "selectPractitioner": "Seleccionar un profesional",
     "noProviderSelected": "Seleccione un profesional para ver su disponibilidad"
+  },
+  "systemCategories": {
+    "title": "Categor\u00edas del Sistema",
+    "subtitle": "Gestione tipos de consentimiento, tipos de cita, especialidades y departamentos",
+    "tabs": {
+      "consentTypes": "Tipos de Consentimiento",
+      "appointmentTypes": "Tipos de Cita",
+      "specialties": "Especialidades",
+      "departments": "Departamentos",
+      "priorities": "Prioridades"
+    },
+    "createCategory": "Nueva Categor\u00eda",
+    "editCategory": "Editar Categor\u00eda",
+    "code": "C\u00f3digo",
+    "codeHelp": "Alfanum\u00e9rico con guiones bajos, min\u00fasculas",
+    "translations": "Traducciones",
+    "metadata": "Configuraci\u00f3n",
+    "color": "Color",
+    "icon": "Icono",
+    "required": "Obligatorio",
+    "renewable": "Renovable",
+    "defaultDuration": "Duraci\u00f3n predeterminada (d\u00edas)",
+    "duration": "Duraci\u00f3n (minutos)",
+    "priority": "Prioridad",
+    "isActive": "Activo",
+    "system": "Sistema",
+    "inactive": "Inactivo",
+    "noCategories": "No se encontraron categor\u00edas",
+    "namePlaceholder": "Nombre",
+    "descriptionPlaceholder": "Descripci\u00f3n (opcional)",
+    "deleteConfirm": "\u00bfEst\u00e1 seguro de que desea eliminar esta categor\u00eda?",
+    "deleteSystemError": "Las categor\u00edas del sistema no se pueden eliminar",
+    "validation": {
+      "codeRequired": "El c\u00f3digo es obligatorio",
+      "nameRequired": "El nombre en espa\u00f1ol es obligatorio"
+    }
+  },
+  "treatmentConsents": {
+    "title": "Consentimientos Requeridos",
+    "noConsents": "No hay plantillas de consentimiento configuradas",
+    "count": "{{count}} plantilla(s) de consentimiento",
+    "noConsentsWarning": "Sin consentimientos",
+    "saveTreatmentFirst": "Guarde el tratamiento primero para configurar los consentimientos",
+    "removeConfirm": "\u00bfEliminar esta plantilla de consentimiento del tratamiento?",
+    "required": "Obligatorio",
+    "optional": "Opcional",
+    "filterByType": "Filtrar por tipo",
+    "allTypes": "Todos los tipos",
+    "noAvailableTemplates": "No hay plantillas disponibles",
+    "addTemplate": "A\u00f1adir Plantilla de Consentimiento",
+    "noConsentTemplates": "No hay plantillas de consentimiento asociadas a este tratamiento",
+    "addTemplateHint": "A\u00f1ada plantillas que los pacientes deben firmar antes de este tratamiento"
   }
 }

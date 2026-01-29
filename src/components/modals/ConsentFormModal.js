@@ -5,7 +5,8 @@ import { X, FileText, Shield, AlertCircle, Clock, CheckCircle, User, Calendar, S
 import { consentsApi } from '../../api/consentsApi';
 import { patientsApi } from '../../api/patientsApi';
 import { consentTemplatesApi } from '../../api/consentTemplatesApi';
-import { CONSENT_TYPES, COLLECTION_METHODS, getConsentTypeName, filterTemplatesByType } from '../../utils/consentTypes';
+import { COLLECTION_METHODS, filterTemplatesByType } from '../../utils/consentTypes';
+import { useConsentTypes } from '../../hooks/useSystemCategories';
 import { consentVariableMapper } from '../../utils/consentVariableMapper';
 import { useAuth } from '../../hooks/useAuth';
 import ConsentPreviewModal from './ConsentPreviewModal';
@@ -20,6 +21,16 @@ const ConsentFormModal = ({
 }) => {
   const { t } = useTranslation(['common', 'admin']);
   const { user } = useAuth();
+
+  // Dynamic consent types from API
+  const { categories: consentTypes, loading: consentTypesLoading, getTranslatedName, getByCode } = useConsentTypes();
+
+  // Helper to get consent type name by code
+  const getConsentTypeName = (typeCode) => {
+    if (!typeCode) return typeCode;
+    const type = getByCode(typeCode);
+    return type ? getTranslatedName(type) : typeCode;
+  };
   const [formData, setFormData] = useState({
     patientId: patientId || '',
     type: preselectedType || '',
@@ -128,21 +139,22 @@ const ConsentFormModal = ({
 
   // Mettre à jour le titre et la description selon le type
   useEffect(() => {
-    if (formData.type && CONSENT_TYPES[formData.type.toUpperCase()]) {
-      const typeInfo = CONSENT_TYPES[formData.type.toUpperCase()];
-      if (!editingConsent) { // Ne pas écraser si on édite
+    if (formData.type && consentTypes.length > 0) {
+      const typeInfo = getByCode(formData.type);
+      if (typeInfo && !editingConsent) { // Ne pas écraser si on édite
+        const metadata = typeInfo.metadata || {};
         setFormData(prev => ({
           ...prev,
-          title: typeInfo.name,
-          description: typeInfo.description,
-          isRequired: typeInfo.required,
-          expiresAt: typeInfo.defaultDuration ?
-            new Date(Date.now() + typeInfo.defaultDuration * 24 * 60 * 60 * 1000).toISOString().split('T')[0] :
+          title: getTranslatedName(typeInfo),
+          description: typeInfo.translations?.es?.description || typeInfo.translations?.fr?.description || '',
+          isRequired: metadata.required || false,
+          expiresAt: metadata.defaultDuration ?
+            new Date(Date.now() + metadata.defaultDuration * 24 * 60 * 60 * 1000).toISOString().split('T')[0] :
             ''
         }));
       }
     }
-  }, [formData.type, editingConsent]);
+  }, [formData.type, editingConsent, consentTypes, getByCode, getTranslatedName]);
 
   // Préremplir automatiquement avec un modèle
   const handleTemplateSelection = (templateId) => {
@@ -378,13 +390,18 @@ const ConsentFormModal = ({
                   className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     validationErrors.type ? 'border-red-500' : 'border-gray-300'
                   }`}
+                  disabled={consentTypesLoading}
                 >
                   <option value="">Sélectionner un type</option>
-                  {Object.values(CONSENT_TYPES).map(type => (
-                    <option key={type.id} value={type.id}>
-                      {type.name} {type.required ? '(Obligatoire)' : ''}
-                    </option>
-                  ))}
+                  {consentTypesLoading ? (
+                    <option disabled>Chargement...</option>
+                  ) : (
+                    consentTypes.map(type => (
+                      <option key={type.code} value={type.code}>
+                        {getTranslatedName(type)} {type.metadata?.required ? '(Obligatoire)' : ''}
+                      </option>
+                    ))
+                  )}
                 </select>
                 {validationErrors.type && (
                   <p className="text-red-500 text-sm mt-1">{validationErrors.type}</p>
