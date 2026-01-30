@@ -624,11 +624,14 @@ const PlanningModule = () => {
   };
 
   const handleBookingSave = async () => {
+    const isUpdate = !!selectedAppointment;
     setShowBookingModal(false);
-    showToast(selectedAppointment ? t('messages.updateSuccess') : t('messages.createSuccess'));
-    loadData();
+    setSelectedAppointment(null);
+    setSummaryAppointment(null);
+    showToast(isUpdate ? t('messages.updateSuccess') : t('messages.createSuccess'));
+    await loadData();
     if (viewMode === 'list') {
-      loadListData();
+      await loadListData();
     }
   };
 
