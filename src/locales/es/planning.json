@@ -38,7 +38,11 @@
     "noSlots": "No hay horarios disponibles",
     "selectSlot": "Seleccione un horario",
     "machinesAvailable": "{{count}} máquina disponible",
-    "machinesAvailable_plural": "{{count}} máquinas disponibles"
+    "machinesAvailable_plural": "{{count}} máquinas disponibles",
+    "currentSlot": "Horario actual",
+    "current": "Actual",
+    "alternatives": "Otros horarios disponibles",
+    "noAlternatives": "No hay otros horarios disponibles"
   },
 
   "appointment": {

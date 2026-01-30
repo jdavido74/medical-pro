@@ -1572,8 +1572,90 @@ const PlanningBookingModal = ({
               )}
 
               <div>
+                {/* Current slot display in edit mode */}
+                {isEditMode && appointment && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('slots.currentSlot')}
+                    </label>
+                    {(() => {
+                      const currentStart = appointment.startTime;
+                      const currentEnd = appointment.endTime;
+                      const currentSlotKey = `${currentStart}-${currentEnd}`;
+                      const selectedKey = selectedSlot ? `${selectedSlot.startTime || selectedSlot.start}-${selectedSlot.endTime || selectedSlot.end}` : null;
+                      const isCurrentSelected = currentSlotKey === selectedKey;
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => handleSlotSelect({
+                            start: currentStart,
+                            end: currentEnd,
+                            startTime: currentStart,
+                            endTime: currentEnd,
+                            machineId: appointment.machineId,
+                            duration: appointment.duration || totalDuration
+                          })}
+                          className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                            isCurrentSelected
+                              ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
+                              : 'border-gray-300 bg-gray-50 hover:border-green-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {isCurrentSelected ? (
+                                <Check className="w-5 h-5 text-green-600" />
+                              ) : (
+                                <Clock className="w-5 h-5 text-gray-400" />
+                              )}
+                              <div>
+                                <span className={`font-medium ${isCurrentSelected ? 'text-green-700' : 'text-gray-700'}`}>
+                                  {currentStart} - {currentEnd}
+                                </span>
+                                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                                  isCurrentSelected ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'
+                                }`}>
+                                  {t('slots.current')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right text-sm text-gray-500">
+                              {appointment.machine?.name && (
+                                <span>{appointment.machine.name}</span>
+                              )}
+                              {appointment.duration && (
+                                <span className="ml-2 text-xs text-gray-400">({appointment.duration} min)</span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Show linked group segments if editing group */}
+                          {editMode === 'group' && linkedGroup?.appointments && (
+                            <div className="mt-2 space-y-1">
+                              {linkedGroup.appointments
+                                .filter(a => a.status !== 'completed')
+                                .map((apt, idx) => (
+                                  <div key={apt.id} className={`flex items-center text-xs ${isCurrentSelected ? 'text-green-800' : 'text-gray-600'}`}>
+                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 text-[10px] ${isCurrentSelected ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
+                                      {idx + 1}
+                                    </span>
+                                    <span className="flex-1 truncate font-medium">{apt.title || apt.service?.title}</span>
+                                    <span className="mx-2 text-gray-400">•</span>
+                                    <span>{apt.machine?.name}</span>
+                                    <span className="mx-2 text-gray-400">•</span>
+                                    <span className="font-mono">{apt.startTime}-{apt.endTime}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('slots.available')}
+                  {isEditMode ? t('slots.alternatives') : t('slots.available')}
                 </label>
                 {loadingSlots ? (
                   <div className="text-center py-8 text-gray-500">
@@ -1581,8 +1663,8 @@ const PlanningBookingModal = ({
                     {t('calendar.loading')}
                   </div>
                 ) : availableSlots.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    {t('slots.noSlots')}
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    {isEditMode ? t('slots.noAlternatives') : t('slots.noSlots')}
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">

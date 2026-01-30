@@ -38,7 +38,11 @@
     "noSlots": "No slots available",
     "selectSlot": "Select a slot",
     "machinesAvailable": "{{count}} machine available",
-    "machinesAvailable_plural": "{{count}} machines available"
+    "machinesAvailable_plural": "{{count}} machines available",
+    "currentSlot": "Current slot",
+    "current": "Current",
+    "alternatives": "Other available slots",
+    "noAlternatives": "No other slots available"
   },
 
   "appointment": {

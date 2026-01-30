@@ -38,7 +38,11 @@
     "noSlots": "Aucun créneau disponible",
     "selectSlot": "Sélectionnez un créneau",
     "machinesAvailable": "{{count}} machine disponible",
-    "machinesAvailable_plural": "{{count}} machines disponibles"
+    "machinesAvailable_plural": "{{count}} machines disponibles",
+    "currentSlot": "Créneau actuel",
+    "current": "Actuel",
+    "alternatives": "Autres créneaux disponibles",
+    "noAlternatives": "Aucun autre créneau disponible"
   },
 
   "appointment": {
