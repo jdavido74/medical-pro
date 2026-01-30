@@ -309,5 +309,23 @@
   "alerts": {
     "missingConsent": "Consentement manquant",
     "configure": "Configurer"
+  },
+
+  "staffAssignment": {
+    "title": "Attribution du personnel",
+    "subtitle": "Attribuez un praticien et/ou assistant (optionnel)",
+    "practitioner": "Praticien",
+    "assistant": "Assistant",
+    "selectPractitioner": "Sélectionner un praticien",
+    "selectAssistant": "Sélectionner un assistant",
+    "none": "Aucun",
+    "applyToAll": "Appliquer à tous les créneaux",
+    "perSlot": "Attribution par créneau",
+    "slot": "Créneau {{number}}",
+    "checking": "Vérification de la disponibilité...",
+    "available": "Disponible",
+    "consultationConflict": "Consultation en cours sur ce créneau — attribution bloquée",
+    "treatmentConflict": "{{count}} traitement(s) en parallèle sur ce créneau",
+    "treatmentConflictWarning": "Ce praticien a déjà des traitements sur ce créneau"
   }
 }

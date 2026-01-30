@@ -309,5 +309,23 @@
   "alerts": {
     "missingConsent": "Consentimiento faltante",
     "configure": "Configurar"
+  },
+
+  "staffAssignment": {
+    "title": "Asignación de personal",
+    "subtitle": "Asigne un profesional y/o asistente (opcional)",
+    "practitioner": "Profesional",
+    "assistant": "Asistente",
+    "selectPractitioner": "Seleccionar un profesional",
+    "selectAssistant": "Seleccionar un asistente",
+    "none": "Ninguno",
+    "applyToAll": "Aplicar a todas las citas",
+    "perSlot": "Asignación por cita",
+    "slot": "Cita {{number}}",
+    "checking": "Verificando disponibilidad...",
+    "available": "Disponible",
+    "consultationConflict": "Consulta en curso en esta cita — asignación bloqueada",
+    "treatmentConflict": "{{count}} tratamiento(s) en paralelo en esta cita",
+    "treatmentConflictWarning": "Este profesional ya tiene tratamientos en esta cita"
   }
 }

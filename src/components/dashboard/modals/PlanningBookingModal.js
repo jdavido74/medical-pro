@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, Link, Edit3, Users, AlertTriangle } from 'lucide-react';
+import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { PatientContext } from '../../../contexts/PatientContext';
 import PatientSearchSelect from '../../common/PatientSearchSelect';
@@ -316,6 +316,14 @@ const PlanningBookingModal = ({
   const [notes, setNotes] = useState(appointment?.notes || '');
   const [priority, setPriority] = useState(appointment?.priority || 'normal');
 
+  // Staff assignment state
+  const [providers, setProviders] = useState([]);
+  const [providerConflict, setProviderConflict] = useState(null);
+  const [checkingProvider, setCheckingProvider] = useState(false);
+  const [applyStaffToAll, setApplyStaffToAll] = useState(true);
+  const [treatmentStaffOverrides, setTreatmentStaffOverrides] = useState({});
+  // { [treatmentIndex]: { providerId, assistantId } }
+
   // Multi-treatment state
   const [selectedTreatments, setSelectedTreatments] = useState([]);
   // Structure: [{ id, title, duration, categories, machines }]
@@ -416,18 +424,23 @@ const PlanningBookingModal = ({
     setShowLinkedChoiceModal(false);
     // Initialize form with group data
     if (linkedGroup?.appointments) {
-      const groupTreatments = linkedGroup.appointments
-        .filter(a => a.status !== 'completed')
-        .map(a => ({
-          id: a.serviceId,
-          title: a.title || a.service?.title,
-          duration: a.duration || 30,
-          categories: [],
-          appointmentId: a.id,
-          machineId: a.machineId,
-          machineName: a.machine?.name
-        }));
+      const activeAppts = linkedGroup.appointments.filter(a => a.status !== 'completed');
+      const groupTreatments = activeAppts.map(a => ({
+        id: a.serviceId,
+        title: a.title || a.service?.title,
+        duration: a.duration || 30,
+        categories: [],
+        appointmentId: a.id,
+        machineId: a.machineId,
+        machineName: a.machine?.name
+      }));
       setSelectedTreatments(groupTreatments);
+
+      // Pre-fill provider/assistant from the first appointment that has them
+      const firstWithProvider = activeAppts.find(a => a.providerId);
+      const firstWithAssistant = activeAppts.find(a => a.assistantId);
+      if (firstWithProvider) setProviderId(firstWithProvider.providerId);
+      if (firstWithAssistant) setAssistantId(firstWithAssistant.assistantId);
     }
   };
 
@@ -599,6 +612,26 @@ const PlanningBookingModal = ({
     setStep(3);
     setSelectedSlot(null);
   };
+
+  // Load providers from resources
+  useEffect(() => {
+    if (isOpen && resources?.providers) {
+      setProviders(resources.providers);
+    } else if (isOpen) {
+      // Fallback: load resources if not provided
+      const loadResources = async () => {
+        try {
+          const response = await planningApi.getResources();
+          if (response.success) {
+            setProviders(response.data?.providers || []);
+          }
+        } catch (err) {
+          console.error('Error loading providers:', err);
+        }
+      };
+      loadResources();
+    }
+  }, [isOpen, resources]);
 
   // Initialize from existing appointment (edit mode)
   useEffect(() => {
@@ -812,6 +845,75 @@ const PlanningBookingModal = ({
     return null;
   };
 
+  // Check provider availability when provider is selected
+  const checkProviderConflicts = useCallback(async (selectedProviderId) => {
+    if (!selectedProviderId || !date || !selectedSlot) {
+      setProviderConflict(null);
+      return;
+    }
+
+    const startTime = selectedSlot.start || selectedSlot.startTime;
+    const endTime = selectedSlot.end || selectedSlot.endTime;
+    if (!startTime || !endTime) return;
+
+    setCheckingProvider(true);
+    try {
+      const params = { date, startTime, endTime };
+      if (isEditMode && appointment?.id) {
+        params.excludeAppointmentId = appointment.id;
+      }
+      const response = await planningApi.checkProviderAvailability(selectedProviderId, params);
+      if (response.success) {
+        setProviderConflict(response.data);
+      }
+    } catch (err) {
+      console.error('Error checking provider availability:', err);
+    } finally {
+      setCheckingProvider(false);
+    }
+  }, [date, selectedSlot, isEditMode, appointment?.id]);
+
+  // Handle provider selection change
+  const handleProviderChange = useCallback((newProviderId) => {
+    setProviderId(newProviderId);
+    if (newProviderId) {
+      checkProviderConflicts(newProviderId);
+    } else {
+      setProviderConflict(null);
+    }
+  }, [checkProviderConflicts]);
+
+  // Handle assistant selection change
+  const handleAssistantChange = useCallback((newAssistantId) => {
+    setAssistantId(newAssistantId);
+  }, []);
+
+  // Handle per-slot staff override change
+  const handleSlotStaffChange = useCallback((index, field, value) => {
+    setTreatmentStaffOverrides(prev => ({
+      ...prev,
+      [index]: {
+        ...prev[index],
+        [field]: value || null
+      }
+    }));
+  }, []);
+
+  // Re-check conflicts when slot changes and provider is already selected
+  useEffect(() => {
+    if (providerId && selectedSlot && step === 4) {
+      checkProviderConflicts(providerId);
+    }
+  }, [selectedSlot, step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Filter providers by role for practitioner dropdown
+  const practitionerProviders = providers.filter(p =>
+    !p.role || p.role === 'physician' || p.role === 'practitioner' || p.role === 'doctor'
+  );
+
+  // All providers for assistant dropdown
+  const assistantProviders = providers;
+
   // Helper to convert time string to minutes
   const timeToMinutes = (timeStr) => {
     if (!timeStr) return 0;
@@ -848,11 +950,25 @@ const PlanningBookingModal = ({
                 duration: t.duration
               }));
 
+          // Add per-slot staff overrides if not applying to all
+          const treatmentsWithStaff = treatments.map((t, idx) => {
+            if (!applyStaffToAll && treatmentStaffOverrides[idx]) {
+              return {
+                ...t,
+                ...(treatmentStaffOverrides[idx].providerId && { providerId: treatmentStaffOverrides[idx].providerId }),
+                ...(treatmentStaffOverrides[idx].assistantId && { assistantId: treatmentStaffOverrides[idx].assistantId })
+              };
+            }
+            return t;
+          });
+
           response = await planningApi.createMultiTreatmentAppointment({
             patientId,
             date,
             startTime: selectedSlot.startTime || selectedSlot.start,
-            treatments,
+            providerId: applyStaffToAll ? (providerId || null) : null,
+            assistantId: applyStaffToAll ? (assistantId || null) : null,
+            treatments: treatmentsWithStaff,
             notes,
             priority
           });
@@ -923,6 +1039,32 @@ const PlanningBookingModal = ({
         reason,
         notes
       };
+    }
+
+    // Handle group edit: update the entire group with provider/assistant
+    if (isEditMode && editMode === 'group' && groupId) {
+      setSaving(true);
+      setError(null);
+      try {
+        const groupUpdateData = {
+          notes,
+          priority,
+          providerId: providerId || null,
+          assistantId: assistantId || null
+        };
+        const response = await planningApi.updateAppointmentGroup(groupId, groupUpdateData);
+        if (response.success) {
+          onSave(response.data);
+        } else {
+          setError(response.error?.message || t('messages.error'));
+        }
+      } catch (err) {
+        console.error('Error updating group:', err);
+        setError(t('messages.error'));
+      } finally {
+        setSaving(false);
+      }
+      return;
     }
 
     // Check for conflicts in edit mode
@@ -1502,6 +1644,151 @@ const PlanningBookingModal = ({
                   </div>
                 </div>
               )}
+
+              {/* Staff Assignment Section */}
+              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <UserCheck className="w-4 h-4 text-gray-500" />
+                  <h4 className="text-sm font-medium text-gray-700">{t('staffAssignment.title')}</h4>
+                  <span className="text-xs text-gray-400">({t('staffAssignment.subtitle')})</span>
+                </div>
+
+                {/* Practitioner dropdown */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {t('staffAssignment.practitioner')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={providerId || ''}
+                      onChange={(e) => handleProviderChange(e.target.value || null)}
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">{t('staffAssignment.none')}</option>
+                      {practitionerProviders.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}{p.specialty ? ` — ${p.specialty}` : ''}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Conflict indicator */}
+                    {checkingProvider && (
+                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      </span>
+                    )}
+                    {!checkingProvider && providerId && providerConflict && (
+                      <>
+                        {providerConflict.hasConsultationConflict && (
+                          <span className="flex items-center gap-1 text-xs text-red-600" title={t('staffAssignment.consultationConflict')}>
+                            <ShieldAlert className="w-4 h-4" />
+                          </span>
+                        )}
+                        {!providerConflict.hasConsultationConflict && providerConflict.hasTreatmentConflict && (
+                          <span className="flex items-center gap-1 text-xs text-orange-500" title={t('staffAssignment.treatmentConflictWarning')}>
+                            <AlertTriangle className="w-4 h-4" />
+                          </span>
+                        )}
+                        {!providerConflict.hasConsultationConflict && !providerConflict.hasTreatmentConflict && (
+                          <span className="flex items-center gap-1 text-xs text-green-600" title={t('staffAssignment.available')}>
+                            <ShieldCheck className="w-4 h-4" />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Conflict details */}
+                  {!checkingProvider && providerId && providerConflict?.hasConsultationConflict && (
+                    <div className="mt-1 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center gap-1">
+                      <ShieldAlert className="w-3 h-3 flex-shrink-0" />
+                      {t('staffAssignment.consultationConflict')}
+                    </div>
+                  )}
+                  {!checkingProvider && providerId && providerConflict?.hasTreatmentConflict && !providerConflict?.hasConsultationConflict && (
+                    <div className="mt-1 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                      {t('staffAssignment.treatmentConflict', { count: providerConflict.conflicts?.length || 1 })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Assistant dropdown */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {t('staffAssignment.assistant')}
+                  </label>
+                  <select
+                    value={assistantId || ''}
+                    onChange={(e) => handleAssistantChange(e.target.value || null)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">{t('staffAssignment.none')}</option>
+                    {assistantProviders.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}{p.profession ? ` — ${p.profession}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Apply to all toggle (only for multi-treatment) */}
+                {category === 'treatment' && selectedTreatments.length > 1 && (
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={applyStaffToAll}
+                        onChange={(e) => {
+                          setApplyStaffToAll(e.target.checked);
+                          if (e.target.checked) {
+                            setTreatmentStaffOverrides({});
+                          }
+                        }}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{t('staffAssignment.applyToAll')}</span>
+                    </label>
+
+                    {/* Per-slot overrides */}
+                    {!applyStaffToAll && (
+                      <div className="mt-3 space-y-2 pl-2 border-l-2 border-gray-200">
+                        <p className="text-xs font-medium text-gray-500 uppercase">{t('staffAssignment.perSlot')}</p>
+                        {selectedTreatments.map((treatment, idx) => (
+                          <div key={treatment.id} className="p-2 bg-gray-50 rounded-lg space-y-1">
+                            <div className="text-xs font-medium text-gray-700">
+                              {t('staffAssignment.slot', { number: idx + 1 })} — {treatment.title}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <select
+                                value={treatmentStaffOverrides[idx]?.providerId || ''}
+                                onChange={(e) => handleSlotStaffChange(idx, 'providerId', e.target.value)}
+                                className="px-2 py-1 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="">{t('staffAssignment.selectPractitioner')}</option>
+                                {practitionerProviders.map(p => (
+                                  <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                              </select>
+                              <select
+                                value={treatmentStaffOverrides[idx]?.assistantId || ''}
+                                onChange={(e) => handleSlotStaffChange(idx, 'assistantId', e.target.value)}
+                                className="px-2 py-1 border rounded text-xs focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="">{t('staffAssignment.selectAssistant')}</option>
+                                {assistantProviders.map(p => (
+                                  <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

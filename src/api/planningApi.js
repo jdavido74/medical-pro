@@ -132,6 +132,19 @@ export const cancelAppointmentGroup = async (groupId) => {
   return baseClient.delete(`${ENDPOINT}/appointments/group/${groupId}`);
 };
 
+/**
+ * Check provider availability for a given time slot
+ * @param {string} providerId - Provider ID
+ * @param {Object} params - Query parameters
+ * @param {string} params.date - Date (YYYY-MM-DD)
+ * @param {string} params.startTime - Start time (HH:MM)
+ * @param {string} params.endTime - End time (HH:MM)
+ * @param {string} params.excludeAppointmentId - Optional appointment ID to exclude
+ */
+export const checkProviderAvailability = async (providerId, params) => {
+  return baseClient.get(`${ENDPOINT}/providers/${providerId}/check-availability`, { query: params });
+};
+
 export default {
   getSlots,
   getCalendar,
@@ -145,5 +158,6 @@ export default {
   createMultiTreatmentAppointment,
   getAppointmentGroup,
   updateAppointmentGroup,
-  cancelAppointmentGroup
+  cancelAppointmentGroup,
+  checkProviderAvailability
 };

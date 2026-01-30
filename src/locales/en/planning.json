@@ -309,5 +309,23 @@
   "alerts": {
     "missingConsent": "Missing consent",
     "configure": "Configure"
+  },
+
+  "staffAssignment": {
+    "title": "Staff Assignment",
+    "subtitle": "Assign a practitioner and/or assistant (optional)",
+    "practitioner": "Practitioner",
+    "assistant": "Assistant",
+    "selectPractitioner": "Select a practitioner",
+    "selectAssistant": "Select an assistant",
+    "none": "None",
+    "applyToAll": "Apply to all slots",
+    "perSlot": "Per-slot assignment",
+    "slot": "Slot {{number}}",
+    "checking": "Checking availability...",
+    "available": "Available",
+    "consultationConflict": "Consultation in progress on this slot — assignment blocked",
+    "treatmentConflict": "{{count}} treatment(s) in parallel on this slot",
+    "treatmentConflictWarning": "This practitioner already has treatments on this slot"
   }
 }
