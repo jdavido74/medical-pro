@@ -1611,6 +1611,7 @@ const PlanningModule = () => {
           appointment={selectedAppointment}
           resources={resources}
           initialDate={formatDateLocal(currentDate)}
+          clinicSettings={clinicSettings}
         />
       )}
 

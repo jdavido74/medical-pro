@@ -4,11 +4,12 @@
  * Supports multi-treatment bookings with chained appointments
  */
 
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { PatientContext } from '../../../contexts/PatientContext';
+import { useAuth } from '../../../hooks/useAuth';
 import PatientSearchSelect from '../../common/PatientSearchSelect';
 import QuickPatientModal from '../../modals/QuickPatientModal';
 
@@ -289,10 +290,12 @@ const PlanningBookingModal = ({
   onSave,
   appointment,
   resources,
-  initialDate
+  initialDate,
+  clinicSettings
 }) => {
   const { t } = useTranslation('planning');
   const patientContext = useContext(PatientContext);
+  const { company } = useAuth();
   const isEditMode = !!appointment;
 
   // Linked group detection
@@ -356,6 +359,42 @@ const PlanningBookingModal = ({
 
   // Calculate total duration
   const totalDuration = selectedTreatments.reduce((sum, t) => sum + (t.duration || 30), 0);
+
+  // Clinic closed day detection
+  const clinicName = company?.name || '';
+  const closedDayInfo = useMemo(() => {
+    if (!date || !clinicSettings) return null;
+
+    const dateObj = new Date(date + 'T00:00:00');
+    const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1=Monday, ...
+
+    // Check if it's not an operating day
+    const operatingDays = clinicSettings.operatingDays || [1, 2, 3, 4, 5];
+    if (!operatingDays.includes(dayOfWeek)) {
+      return { isClosed: true, reason: 'nonOperatingDay' };
+    }
+
+    // Check if it's in the closed dates list
+    const closedDates = clinicSettings.closedDates || [];
+    const closedEntry = closedDates.find(cd => (cd.date || cd) === date);
+    if (closedEntry) {
+      return {
+        isClosed: true,
+        reason: 'closedDay',
+        closedReason: closedEntry.reason || null
+      };
+    }
+
+    // Check if the day is disabled in operating hours
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    const dayHours = clinicSettings.operatingHours?.[dayName];
+    if (dayHours && dayHours.enabled === false) {
+      return { isClosed: true, reason: 'nonOperatingDay' };
+    }
+
+    return null;
+  }, [date, clinicSettings]);
 
   // Get group ID for linked appointments
   const groupId = appointment?.linkedAppointmentId || (appointment?.linkSequence === 1 ? appointment.id : null);
@@ -717,6 +756,12 @@ const PlanningBookingModal = ({
   const loadSlots = useCallback(async () => {
     if (!date) return;
 
+    // Don't load slots if clinic is closed on this date
+    if (closedDayInfo?.isClosed) {
+      setAvailableSlots([]);
+      return;
+    }
+
     if (category === 'treatment' && selectedTreatments.length === 0) return;
     if (category === 'consultation' && !providerId) return;
 
@@ -775,7 +820,7 @@ const PlanningBookingModal = ({
     } finally {
       setLoadingSlots(false);
     }
-  }, [date, category, selectedTreatments, providerId]);
+  }, [date, category, selectedTreatments, providerId, closedDayInfo]);
 
   useEffect(() => {
     if (step === 3) {
@@ -1547,8 +1592,37 @@ const PlanningBookingModal = ({
                 />
               </div>
 
+              {/* Clinic closed day message */}
+              {closedDayInfo?.isClosed && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                    <span className="font-semibold text-red-700">
+                      {clinicName
+                        ? t('clinicClosed.title', { name: clinicName })
+                        : t('clinicClosed.titleDefault')
+                      }
+                    </span>
+                  </div>
+                  <p className="text-sm text-red-600">
+                    {closedDayInfo.reason === 'closedDay'
+                      ? t('clinicClosed.closedDay')
+                      : t('clinicClosed.nonOperatingDay')
+                    }
+                  </p>
+                  {closedDayInfo.closedReason && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {t('clinicClosed.closedReason', { reason: closedDayInfo.closedReason })}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-2">
+                    {t('clinicClosed.selectAnotherDate')}
+                  </p>
+                </div>
+              )}
+
               {/* Multi-treatment info */}
-              {category === 'treatment' && selectedTreatments.length > 1 && (
+              {!closedDayInfo?.isClosed && category === 'treatment' && selectedTreatments.length > 1 && (
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="text-sm font-medium text-blue-800 mb-2">
                     {t('multiTreatment.treatmentChain')}
@@ -1571,6 +1645,7 @@ const PlanningBookingModal = ({
                 </div>
               )}
 
+              {!closedDayInfo?.isClosed && (
               <div>
                 {/* Current slot display in edit mode */}
                 {isEditMode && appointment && (
@@ -1726,6 +1801,7 @@ const PlanningBookingModal = ({
                   </div>
                 )}
               </div>
+              )}
             </div>
           )}
 

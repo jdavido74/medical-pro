@@ -315,6 +315,15 @@
     "configure": "Configurar"
   },
 
+  "clinicClosed": {
+    "title": "{{name}} está cerrado/a",
+    "titleDefault": "Establecimiento cerrado",
+    "closedDay": "La clínica está cerrada en esta fecha.",
+    "nonOperatingDay": "La clínica no abre este día de la semana.",
+    "closedReason": "Motivo: {{reason}}",
+    "selectAnotherDate": "Por favor seleccione otra fecha."
+  },
+
   "staffAssignment": {
     "title": "Asignación de personal",
     "subtitle": "Asigne un profesional y/o asistente (opcional)",
