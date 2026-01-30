@@ -355,6 +355,21 @@ const ConsentTemplatesModule = () => {
 
   return (
     <div className="space-y-6">
+      {/* En-tete : Titre + Bouton */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">{t('templates.title')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('templates.subtitle')}</p>
+        </div>
+        <button
+          onClick={handleCreateTemplate}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          {t('actions.newTemplate')}
+        </button>
+      </div>
+
       {/* Error banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
@@ -367,6 +382,51 @@ const ConsentTemplatesModule = () => {
           </button>
         </div>
       )}
+
+      {/* Barre de filtres */}
+      <div className="bg-white rounded-lg border p-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder={t('search.templatesPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            <option value="">{t('filters.allCategories')}</option>
+            {Object.values(TEMPLATE_CATEGORIES).map(category => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            <option value="">{t('filters.allStatus')}</option>
+            <option value="active">{t('status.active')}</option>
+            <option value="draft">{t('status.draft')}</option>
+            <option value="inactive">{t('status.inactive')}</option>
+          </select>
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
 
       {/* Header avec statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -441,80 +501,6 @@ const ConsentTemplatesModule = () => {
         <div className="p-6">
           {activeTab === 'templates' && (
             <>
-              {/* Barre d'outils */}
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 mb-6">
-                <div className="flex-1 flex flex-col sm:flex-row gap-4">
-                  {/* Recherche */}
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <input
-                      type="text"
-                      placeholder={t('search.templatesPlaceholder')}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Filtres */}
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">{t('filters.allCategories')}</option>
-                      {Object.values(TEMPLATE_CATEGORIES).map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={selectedSpeciality}
-                      onChange={(e) => setSelectedSpeciality(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">{t('filters.allSpecialties')}</option>
-                      {Object.values(MEDICAL_SPECIALITIES).map(speciality => (
-                        <option key={speciality.id} value={speciality.id}>
-                          {speciality.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">{t('filters.allStatus')}</option>
-                      <option value="active">{t('status.active')}</option>
-                      <option value="draft">{t('status.draft')}</option>
-                      <option value="inactive">{t('status.inactive')}</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={loadData}
-                    disabled={loading}
-                    className="px-3 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  </button>
-                  <button
-                    onClick={handleCreateTemplate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('actions.newTemplate')}
-                  </button>
-                </div>
-              </div>
-
               {/* Tri */}
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-sm text-gray-600">{t('sort.label')}</span>

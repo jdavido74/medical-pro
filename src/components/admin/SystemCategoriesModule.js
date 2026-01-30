@@ -334,22 +334,13 @@ const SystemCategoriesModule = () => {
             {t('systemCategories.subtitle', 'Manage consent types, appointment types, specialties, and departments')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={loadCategories}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg dark:text-gray-400 dark:hover:bg-gray-700"
-            title={t('common.refresh', 'Refresh')}
-          >
-            <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t('systemCategories.createCategory', 'New Category')}
-          </button>
-        </div>
+        <button
+          onClick={handleCreate}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          {t('systemCategories.createCategory', 'New Category')}
+        </button>
       </div>
 
       {/* Tabs */}
@@ -369,6 +360,22 @@ const SystemCategoriesModule = () => {
             </button>
           ))}
         </nav>
+      </div>
+
+      {/* Barre de filtres */}
+      <div className="bg-white rounded-lg border p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 text-sm text-gray-500">
+            {categories.length} {t('systemCategories.categoriesCount', 'categories')}
+          </div>
+          <button
+            onClick={loadCategories}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+            title={t('common.refresh', 'Refresh')}
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Error message */}

@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, Users, Calendar, FileText, BarChart3, Settings,
-  LogOut, Heart, Shield, Package, Cpu, CalendarClock, Tags
+  LogOut, Heart, Shield, Package, Cpu, CalendarClock
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
@@ -47,6 +47,9 @@ const Sidebar = () => {
     // Rendez-vous (secrétaire, admin, soignants)
     { id: 'appointments', path: '/appointments', icon: Calendar, permission: 'appointments.view', labelKey: 'appointments' },
 
+    // Planning (calendrier unifié traitements et consultations)
+    { id: 'planning', path: '/planning', icon: CalendarClock, permission: 'appointments.view', labelKey: 'planning' },
+
     // Dossiers médicaux - SECRET MÉDICAL (médecin, praticien, infirmier uniquement)
     { id: 'medical-records', path: '/medical-records', icon: FileText, permission: 'medical_records.view', medicalOnly: true, labelKey: 'medicalRecords' },
 
@@ -65,20 +68,14 @@ const Sidebar = () => {
     // Catalogue (produits, traitements, services - admin, secrétaire)
     { id: 'catalog', path: '/catalog', icon: Package, permission: 'catalog.view', labelKey: 'catalog' },
 
-    // Machines (équipements pour rendez-vous - admin, secrétaire)
-    { id: 'machines', path: '/machines', icon: Cpu, permission: 'machines.view', labelKey: 'machines' },
-
-    // Planning (calendrier unifié traitements et consultations)
-    { id: 'planning', path: '/planning', icon: CalendarClock, permission: 'appointments.view', labelKey: 'planning' },
+    // Équipements (machines pour rendez-vous - admin, secrétaire)
+    { id: 'machines', path: '/machines', icon: Cpu, permission: 'machines.view', labelKey: 'equipment' },
 
     // Statistiques (admin, direction)
     { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.view', labelKey: 'analytics' },
 
     // Administration clinique (admin, super_admin, direction, clinic_admin)
     { id: 'admin', path: '/admin', icon: Shield, permission: null, adminOnly: true, labelKey: 'admin' },
-
-    // Catégories système (admin uniquement)
-    { id: 'categories', path: '/admin/categories', icon: Tags, permission: null, adminOnly: true, labelKey: 'categories' },
 
     // Paramètres personnels (tous)
     { id: 'settings', path: '/settings', icon: Settings, permission: null, labelKey: 'settings' }

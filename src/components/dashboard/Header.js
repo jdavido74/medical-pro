@@ -86,28 +86,17 @@ const Header = () => {
   return (
     <header className="bg-white shadow-sm border-b px-6 py-4">
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-6">
-          {/* Informations du module */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {getModuleTitle(activeModule)}
-            </h2>
-            <div className="flex items-center space-x-4 mt-1">
-              <p className="text-sm text-gray-600">
-                {getModuleDescription(activeModule)}
-              </p>
-              {user?.provider && user.provider !== 'demo' && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                  {t('nav.header.connectedVia')} {getProviderText(user.provider)}
-                </span>
-              )}
-              {user?.isDemo && (
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                  {t('nav.header.demoMode')}
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="flex items-center space-x-4">
+          {user?.provider && user.provider !== 'demo' && (
+            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+              {t('nav.header.connectedVia')} {getProviderText(user.provider)}
+            </span>
+          )}
+          {user?.isDemo && (
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+              {t('nav.header.demoMode')}
+            </span>
+          )}
         </div>
         
         <div className="flex items-center space-x-4">

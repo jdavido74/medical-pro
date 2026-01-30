@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Cpu, Plus, Search, Edit, Trash2,
-  ToggleLeft, ToggleRight, MapPin, Syringe
+  ToggleLeft, ToggleRight, MapPin, Syringe, RefreshCw
 } from 'lucide-react';
 import machinesApi from '../../../api/machinesApi';
 import { usePermissions } from '../../auth/PermissionGuard';
@@ -314,8 +314,8 @@ const MachinesModule = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{t('title')}</h1>
-          <p className="text-gray-600">{t('subtitle')}</p>
+          <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
         </div>
         {canCreate && (
           <button
@@ -326,6 +326,36 @@ const MachinesModule = () => {
             {t('actions.add')}
           </button>
         )}
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg border p-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('placeholders.search')}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Show inactive toggle */}
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+              className="rounded text-blue-600 focus:ring-blue-500"
+            />
+            {t('filters.showInactive')}
+          </label>
+
+          <button onClick={loadData} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"><RefreshCw className="w-4 h-4" /></button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -342,32 +372,6 @@ const MachinesModule = () => {
           <div className="text-2xl font-semibold text-gray-400">{stats.inactive}</div>
           <div className="text-sm text-gray-600">{t('stats.inactive')}</div>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-4 flex-wrap">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('placeholders.search')}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        {/* Show inactive toggle */}
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={(e) => setShowInactive(e.target.checked)}
-            className="rounded text-blue-600 focus:ring-blue-500"
-          />
-          {t('filters.showInactive')}
-        </label>
       </div>
 
       {/* Machine Grid */}

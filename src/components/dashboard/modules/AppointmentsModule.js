@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import {
   Plus, Search, Calendar, Filter, Edit2, Trash2, Clock,
   User, Phone, ChevronUp, ChevronDown, MapPin, AlertCircle,
-  Check, X, Bell, MoreVertical
+  Check, X, Bell, MoreVertical, RefreshCw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../hooks/useAuth';
@@ -366,36 +366,41 @@ const AppointmentsModule = ({ navigateToPatient }) => {
 
   return (
     <div className="space-y-4">
-      {/* Actions et navigation - sur une seule ligne */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-3">
-          {/* Navigation par onglets */}
-          <div className="flex items-center bg-gray-100 rounded-lg">
-            <button
-              onClick={() => setActiveTab('appointments')}
-              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                activeTab === 'appointments' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
-              }`}
-            >
-              {t('appointments:tabs.appointments')}
-            </button>
-            <button
-              onClick={() => setActiveTab('availability')}
-              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                activeTab === 'availability' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
-              }`}
-            >
-              {t('appointments:tabs.availability')}
-            </button>
-          </div>
+      {/* En-tete : Titre + Bouton */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">{t('appointments:title')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('appointments:subtitle')}</p>
         </div>
         <button
           onClick={handleNewAppointment}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="w-4 h-4" />
           <span>{t('appointments:newAppointment')}</span>
         </button>
+      </div>
+
+      {/* Navigation par onglets */}
+      <div className="flex items-center">
+        <div className="flex items-center bg-gray-100 rounded-lg">
+          <button
+            onClick={() => setActiveTab('appointments')}
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+              activeTab === 'appointments' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+            }`}
+          >
+            {t('appointments:tabs.appointments')}
+          </button>
+          <button
+            onClick={() => setActiveTab('availability')}
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+              activeTab === 'availability' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+            }`}
+          >
+            {t('appointments:tabs.availability')}
+          </button>
+        </div>
       </div>
 
       {/* Contenu conditionnel selon l'onglet */}
@@ -410,7 +415,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
             <input
               type="text"
               placeholder={t('appointments:list.search')}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -433,7 +438,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none bg-white"
+              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
             >
               <option value="all">{t('appointments:filters.allStatuses')}</option>
               <option value="scheduled">{t('appointments:statuses.scheduled')}</option>
@@ -473,6 +478,9 @@ const AppointmentsModule = ({ navigateToPatient }) => {
               {t('appointments:thisMonth')}
             </button>
           </div>
+          <button onClick={loadData} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -696,7 +704,7 @@ const AppointmentsModule = ({ navigateToPatient }) => {
           </p>
           <button
             onClick={handleNewAppointment}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             {t('appointments:newAppointment')}
           </button>

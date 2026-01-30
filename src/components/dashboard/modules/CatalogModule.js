@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Package, Plus, Search, Edit, Trash2, Copy,
   ChevronDown, ChevronRight, Pill, Syringe, Stethoscope, Tag,
-  ToggleLeft, ToggleRight, X, Check
+  ToggleLeft, ToggleRight, X, Check, RefreshCw
 } from 'lucide-react';
 import { catalogStorage } from '../../../utils/catalogStorage';
 import categoriesApi from '../../../api/categoriesApi';
@@ -629,7 +629,7 @@ const CatalogModule = () => {
           <select
             value={categoryManagerType}
             onChange={(e) => setCategoryManagerType(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             {Object.keys(CATALOG_TYPES).map(type => (
               <option key={type} value={type}>{t(`types.${type}`)}</option>
@@ -645,7 +645,7 @@ const CatalogModule = () => {
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               placeholder={t('placeholders.categoryName')}
-              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
             <input
               type="color"
@@ -656,7 +656,7 @@ const CatalogModule = () => {
             <button
               onClick={handleAddCategory}
               disabled={!newCategoryName.trim()}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -685,7 +685,7 @@ const CatalogModule = () => {
                     onChange={(e) => setEditingCategoryName(e.target.value)}
                     onKeyDown={handleEditKeyPress}
                     autoFocus
-                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <button
                     onClick={saveEditingCategory}
@@ -755,56 +755,31 @@ const CatalogModule = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Package className="h-7 w-7 text-green-600" />
+          <h2 className="text-xl font-semibold text-gray-900">
             {t('title')}
-          </h1>
-          <p className="text-gray-500 mt-1">{t('subtitle')}</p>
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
         </div>
 
         <div className="flex items-center gap-3">
           {canCreate && (
             <button
               onClick={() => handleCreate()}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="w-4 h-4" />
               {t('actions.addItem')}
             </button>
           )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-500">{t('stats.total')}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-          <div className="text-sm text-gray-500">{t('stats.active')}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-400">{stats.inactive}</div>
-          <div className="text-sm text-gray-500">{t('stats.inactive')}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-amber-600">{stats.families}</div>
-          <div className="text-sm text-gray-500">{t('stats.families')}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-blue-600">{stats.variants}</div>
-          <div className="text-sm text-gray-500">{t('stats.variants')}</div>
-        </div>
-      </div>
-
       {/* Tabs */}
-      <div className="bg-white rounded-lg border border-gray-200 mb-6">
+      <div className="bg-white rounded-lg border">
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px">
             {['all', 'medications', 'treatments', 'services', 'categories'].map(tab => (
@@ -820,7 +795,7 @@ const CatalogModule = () => {
                 }}
                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab
-                    ? 'border-green-500 text-green-600'
+                    ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -828,6 +803,30 @@ const CatalogModule = () => {
               </button>
             ))}
           </nav>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-5 gap-4 p-4">
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="text-2xl font-semibold text-gray-900">{stats.total}</div>
+            <div className="text-sm text-gray-500">{t('stats.total')}</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="text-2xl font-semibold text-green-600">{stats.active}</div>
+            <div className="text-sm text-gray-500">{t('stats.active')}</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="text-2xl font-semibold text-gray-400">{stats.inactive}</div>
+            <div className="text-sm text-gray-500">{t('stats.inactive')}</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="text-2xl font-semibold text-amber-600">{stats.families}</div>
+            <div className="text-sm text-gray-500">{t('stats.families')}</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="text-2xl font-semibold text-blue-600">{stats.variants}</div>
+            <div className="text-sm text-gray-500">{t('stats.variants')}</div>
+          </div>
         </div>
 
         {showCategoryManager ? (
@@ -838,13 +837,13 @@ const CatalogModule = () => {
             <div className="p-4 border-b border-gray-200 flex items-center gap-4">
               {/* Search */}
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('placeholders.search')}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -852,7 +851,7 @@ const CatalogModule = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">{t('filters.category')}</option>
                 {Object.values(categories).flat().map(cat => (
@@ -866,10 +865,18 @@ const CatalogModule = () => {
                   type="checkbox"
                   checked={showInactive}
                   onChange={(e) => setShowInactive(e.target.checked)}
-                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 {t('filters.showInactive')}
               </label>
+
+              {/* Refresh */}
+              <button
+                onClick={loadData}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
 
               {/* Clear filters */}
               {(searchQuery || selectedCategory || showInactive) && (
@@ -890,7 +897,7 @@ const CatalogModule = () => {
             <div className="overflow-x-auto">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="text-center py-12">
@@ -905,9 +912,9 @@ const CatalogModule = () => {
                     <div className="mt-6">
                       <button
                         onClick={() => handleCreate()}
-                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                       >
-                        <Plus className="h-5 w-5 mr-2" />
+                        <Plus className="w-4 h-4" />
                         {t('actions.addItem')}
                       </button>
                     </div>
