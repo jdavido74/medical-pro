@@ -852,9 +852,21 @@ const PlanningBookingModal = ({
       return;
     }
 
+    // Normalize slot time properties (single slots use start/end, multi-treatment uses startTime/endTime)
     const startTime = selectedSlot.start || selectedSlot.startTime;
-    const endTime = selectedSlot.end || selectedSlot.endTime;
-    if (!startTime || !endTime) return;
+    let endTime = selectedSlot.end || selectedSlot.endTime;
+
+    // Fallback: compute endTime from startTime + totalDuration if missing
+    if (startTime && !endTime && totalDuration > 0) {
+      const [h, m] = startTime.split(':').map(Number);
+      const endMins = h * 60 + m + totalDuration;
+      endTime = `${String(Math.floor(endMins / 60)).padStart(2, '0')}:${String(endMins % 60).padStart(2, '0')}`;
+    }
+
+    if (!startTime || !endTime) {
+      setProviderConflict(null);
+      return;
+    }
 
     setCheckingProvider(true);
     try {
@@ -865,13 +877,16 @@ const PlanningBookingModal = ({
       const response = await planningApi.checkProviderAvailability(selectedProviderId, params);
       if (response.success) {
         setProviderConflict(response.data);
+      } else {
+        setProviderConflict(null);
       }
     } catch (err) {
       console.error('Error checking provider availability:', err);
+      setProviderConflict(null);
     } finally {
       setCheckingProvider(false);
     }
-  }, [date, selectedSlot, isEditMode, appointment?.id]);
+  }, [date, selectedSlot, totalDuration, isEditMode, appointment?.id]);
 
   // Handle provider selection change
   const handleProviderChange = useCallback((newProviderId) => {
