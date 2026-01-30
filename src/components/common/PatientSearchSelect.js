@@ -110,8 +110,9 @@ const PatientSearchSelect = ({
   const allPatients = patientContext?.patients || [];
   const selectedPatient = value ? allPatients.find(p => p.id === value) : null;
 
-  // Afficher un message "Créer nouveau" si la recherche ne correspond à aucun patient
-  const canCreateNew = searchQuery.trim().length > 0 && filteredPatients.length === 0;
+  // Always allow creating a new patient when searching (even if results exist)
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  const noResults = hasSearchQuery && filteredPatients.length === 0;
 
   return (
     <div className="space-y-2">
@@ -170,7 +171,7 @@ const PatientSearchSelect = ({
                     key={patient.id}
                     type="button"
                     onClick={() => handleSelectPatient(patient)}
-                    className={`w-full text-left px-4 py-3 border-b last:border-b-0 transition-colors ${
+                    className={`w-full text-left px-4 py-3 border-b transition-colors ${
                       index === highlightedIndex
                         ? 'bg-blue-50 border-l-4 border-l-blue-500'
                         : 'hover:bg-gray-50'
@@ -201,23 +202,39 @@ const PatientSearchSelect = ({
                     </div>
                   </button>
                 ))}
+                {/* Create new patient — always visible at bottom of results */}
+                {onCreateNew && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onCreateNew(searchQuery);
+                    }}
+                    className="w-full flex items-center px-4 py-3 text-green-700 hover:bg-green-50 transition-colors border-t border-gray-200"
+                  >
+                    <Plus className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="text-sm font-medium">{t('common.patientSearch.createNewPatient')}</span>
+                  </button>
+                )}
               </div>
-            ) : canCreateNew ? (
+            ) : noResults ? (
               <div className="p-4 text-center">
                 <p className="text-sm text-gray-600 mb-3">
                   {t('common.patientSearch.noPatientFound', { query: searchQuery })}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    onCreateNew(searchQuery);
-                  }}
-                  className="flex items-center justify-center w-full px-4 py-2 bg-green-50 text-green-700 border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('common.patientSearch.createNewPatient')}
-                </button>
+                {onCreateNew && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onCreateNew(searchQuery);
+                    }}
+                    className="flex items-center justify-center w-full px-4 py-2 bg-green-50 text-green-700 border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('common.patientSearch.createNewPatient')}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="p-4 text-center text-sm text-gray-500">

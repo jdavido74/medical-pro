@@ -416,6 +416,18 @@ const PlanningBookingModal = ({
   const handleChooseSingleEdit = () => {
     setEditMode('single');
     setShowLinkedChoiceModal(false);
+    // Jump to confirmation step, pre-fill slot
+    if (appointment?.startTime && appointment?.endTime) {
+      setSelectedSlot({
+        start: appointment.startTime,
+        end: appointment.endTime,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        machineId: appointment.machineId,
+        duration: appointment.duration || 30
+      });
+    }
+    setStep(4);
   };
 
   // Handle linked choice: edit group
@@ -441,7 +453,21 @@ const PlanningBookingModal = ({
       const firstWithAssistant = activeAppts.find(a => a.assistantId);
       if (firstWithProvider) setProviderId(firstWithProvider.providerId);
       if (firstWithAssistant) setAssistantId(firstWithAssistant.assistantId);
+
+      // Pre-fill slot from first appointment
+      const first = activeAppts[0];
+      if (first) {
+        setSelectedSlot({
+          start: first.startTime || appointment?.startTime,
+          end: activeAppts[activeAppts.length - 1]?.endTime || first.endTime || appointment?.endTime,
+          startTime: first.startTime || appointment?.startTime,
+          endTime: activeAppts[activeAppts.length - 1]?.endTime || first.endTime || appointment?.endTime,
+          machineId: first.machineId,
+          duration: activeAppts.reduce((sum, a) => sum + (a.duration || 30), 0)
+        });
+      }
     }
+    setStep(4);
   };
 
   // Handle delete button click
@@ -644,6 +670,24 @@ const PlanningBookingModal = ({
       }]);
     }
   }, [isEditMode, appointment, isLinkedAppointment]);
+
+  // In edit mode (non-linked), jump directly to step 4 (confirmation) and pre-fill slot
+  useEffect(() => {
+    if (isEditMode && isOpen && !isLinkedAppointment && appointment) {
+      // Pre-fill slot from appointment data so step 4 can render
+      if (appointment.startTime && appointment.endTime) {
+        setSelectedSlot({
+          start: appointment.startTime,
+          end: appointment.endTime,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime,
+          machineId: appointment.machineId,
+          duration: appointment.duration || 30
+        });
+      }
+      setStep(4);
+    }
+  }, [isEditMode, isOpen, isLinkedAppointment, appointment]);
 
   // Search treatments with debounce
   useEffect(() => {
@@ -1134,26 +1178,39 @@ const PlanningBookingModal = ({
           </button>
         </div>
 
-        {/* Steps indicator */}
+        {/* Steps indicator — clickable in edit mode for direct navigation */}
         <div className="flex items-center justify-center gap-2 py-3 bg-gray-50 border-b">
-          {[1, 2, 3, 4].map(s => (
-            <div key={s} className="flex items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  s < step
-                    ? 'bg-green-500 text-white'
-                    : s === step
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-500'
-                }`}
-              >
-                {s < step ? <Check className="w-4 h-4" /> : s}
+          {[1, 2, 3, 4].map(s => {
+            const isCompleted = s < step;
+            const isCurrent = s === step;
+            // In edit mode, allow clicking any step. In create mode, only allow clicking completed steps.
+            const isClickable = isEditMode || isCompleted;
+
+            return (
+              <div key={s} className="flex items-center">
+                <button
+                  type="button"
+                  disabled={!isClickable}
+                  onClick={() => isClickable && setStep(s)}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                    isCompleted
+                      ? 'bg-green-500 text-white'
+                      : isCurrent
+                      ? 'bg-blue-600 text-white'
+                      : isEditMode
+                      ? 'bg-gray-300 text-gray-600 hover:bg-blue-200'
+                      : 'bg-gray-200 text-gray-500'
+                  } ${isClickable ? 'cursor-pointer hover:ring-2 hover:ring-blue-300' : 'cursor-default'}`}
+                  title={isClickable ? t(`booking.step${s}`) : undefined}
+                >
+                  {isCompleted ? <Check className="w-4 h-4" /> : s}
+                </button>
+                {s < 4 && (
+                  <div className={`w-12 h-1 mx-1 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />
+                )}
               </div>
-              {s < 4 && (
-                <div className={`w-12 h-1 mx-1 ${s < step ? 'bg-green-500' : 'bg-gray-200'}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Group overview when editing linked group */}
