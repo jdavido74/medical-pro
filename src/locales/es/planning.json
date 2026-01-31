@@ -190,7 +190,10 @@
     "samePatient": "Mismo paciente",
     "overlapQuestion": "¿Desea superponer los horarios de todos modos?",
     "allowOverlap": "Superponer",
-    "chooseAnother": "Elegir otro horario"
+    "chooseAnother": "Elegir otro horario",
+    "patientOverlapWarning": "Superposición de citas del paciente",
+    "patientAlreadyBooked": "Este paciente ya tiene una cita en este horario:",
+    "multipleOverlaps": "{{count}} superposición(es) detectada(s)."
   },
 
   "actions": {

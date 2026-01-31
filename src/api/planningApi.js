@@ -145,6 +145,20 @@ export const checkProviderAvailability = async (providerId, params) => {
   return baseClient.get(`${ENDPOINT}/providers/${providerId}/check-availability`, { query: params });
 };
 
+/**
+ * Check if a patient already has appointments overlapping the given time
+ * @param {string} patientId - Patient ID
+ * @param {Object} params - Query parameters
+ * @param {string} params.date - Date (YYYY-MM-DD)
+ * @param {string} [params.startTime] - Start time (HH:MM) for single slot
+ * @param {string} [params.endTime] - End time (HH:MM) for single slot
+ * @param {string} [params.segments] - JSON array of { startTime, endTime } for multi-treatment
+ * @param {string} [params.excludeAppointmentIds] - Comma-separated appointment IDs to exclude
+ */
+export const checkPatientOverlap = async (patientId, params) => {
+  return baseClient.get(`${ENDPOINT}/patients/${patientId}/check-overlap`, { query: params });
+};
+
 export default {
   getSlots,
   getCalendar,
@@ -159,5 +173,6 @@ export default {
   getAppointmentGroup,
   updateAppointmentGroup,
   cancelAppointmentGroup,
-  checkProviderAvailability
+  checkProviderAvailability,
+  checkPatientOverlap
 };

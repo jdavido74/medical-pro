@@ -190,7 +190,10 @@
     "samePatient": "Same patient",
     "overlapQuestion": "Do you still want to overlap the slots?",
     "allowOverlap": "Overlap",
-    "chooseAnother": "Choose another slot"
+    "chooseAnother": "Choose another slot",
+    "patientOverlapWarning": "Patient appointment overlap",
+    "patientAlreadyBooked": "This patient already has an appointment during this time slot:",
+    "multipleOverlaps": "{{count}} overlap(s) detected."
   },
 
   "actions": {

@@ -220,23 +220,26 @@ const ConflictModal = ({ isOpen, onClose, onOverlap, onCancel, conflictInfo }) =
 
   if (!isOpen || !conflictInfo) return null;
 
+  const isPatientConflict = conflictInfo.conflictType === 'patient';
   const isSamePatient = conflictInfo.isSamePatient;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-full bg-orange-100">
-            <AlertTriangle className="w-5 h-5 text-orange-600" />
+          <div className={`p-2 rounded-full ${isPatientConflict ? 'bg-amber-100' : 'bg-orange-100'}`}>
+            <AlertTriangle className={`w-5 h-5 ${isPatientConflict ? 'text-amber-600' : 'text-orange-600'}`} />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{t('linkedGroup.conflictWarning')}</h3>
+            <h3 className="font-semibold text-gray-900">
+              {isPatientConflict ? t('conflict.patientOverlapWarning') : t('linkedGroup.conflictWarning')}
+            </h3>
           </div>
         </div>
 
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-700 mb-2">
-            {t('conflict.slotOccupied')}
+            {isPatientConflict ? t('conflict.patientAlreadyBooked') : t('conflict.slotOccupied')}
           </p>
           <div className="text-sm">
             <div className="flex justify-between py-1 border-b">
@@ -247,18 +250,37 @@ const ConflictModal = ({ isOpen, onClose, onOverlap, onCancel, conflictInfo }) =
               <span className="text-gray-500">{t('appointment.time')}</span>
               <span className="font-medium">{conflictInfo.existingTime}</span>
             </div>
-            <div className="flex justify-between py-1">
-              <span className="text-gray-500">{t('appointment.patient')}</span>
-              <span className={`font-medium ${isSamePatient ? 'text-blue-600' : 'text-orange-600'}`}>
-                {conflictInfo.existingPatient}
-                {isSamePatient && (
-                  <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                    {t('conflict.samePatient')}
-                  </span>
-                )}
-              </span>
-            </div>
+            {isPatientConflict && conflictInfo.existingMachine && (
+              <div className="flex justify-between py-1 border-b">
+                <span className="text-gray-500">{t('appointment.machine')}</span>
+                <span className="font-medium">{conflictInfo.existingMachine}</span>
+              </div>
+            )}
+            {isPatientConflict && conflictInfo.existingProvider && (
+              <div className="flex justify-between py-1 border-b">
+                <span className="text-gray-500">{t('appointment.provider')}</span>
+                <span className="font-medium">{conflictInfo.existingProvider}</span>
+              </div>
+            )}
+            {!isPatientConflict && (
+              <div className="flex justify-between py-1">
+                <span className="text-gray-500">{t('appointment.patient')}</span>
+                <span className={`font-medium ${isSamePatient ? 'text-blue-600' : 'text-orange-600'}`}>
+                  {conflictInfo.existingPatient}
+                  {isSamePatient && (
+                    <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                      {t('conflict.samePatient')}
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
+          {isPatientConflict && conflictInfo.totalConflicts > 1 && (
+            <p className="text-xs text-amber-700 mt-2 font-medium">
+              {t('conflict.multipleOverlaps', { count: conflictInfo.totalConflicts })}
+            </p>
+          )}
         </div>
 
         <p className="text-sm text-gray-600 mb-4">
@@ -274,7 +296,7 @@ const ConflictModal = ({ isOpen, onClose, onOverlap, onCancel, conflictInfo }) =
           </button>
           <button
             onClick={onOverlap}
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            className={`px-4 py-2 text-white rounded-lg transition-colors ${isPatientConflict ? 'bg-amber-600 hover:bg-amber-700' : 'bg-orange-600 hover:bg-orange-700'}`}
           >
             {t('conflict.allowOverlap')}
           </button>
@@ -885,45 +907,84 @@ const PlanningBookingModal = ({
     }
   };
 
-  // Check for conflicts with existing appointments
+  // Check for conflicts with existing appointments (resource + patient overlap)
   const checkForConflicts = async (saveData) => {
-    if (!isEditMode) return null; // Only check conflicts in edit mode
-
     try {
-      // Get appointments for the same date and machine/provider
-      const response = await planningApi.getCalendar({
-        startDate: date,
-        endDate: date,
-        ...(category === 'treatment' && saveData.machineId ? { machineId: saveData.machineId } : {}),
-        ...(category === 'consultation' && saveData.providerId ? { providerId: saveData.providerId } : {})
-      });
+      const startTime = saveData.startTime;
+      const duration = saveData.duration || 30;
+      const startMins = timeToMinutes(startTime);
+      const endTime = `${String(Math.floor((startMins + duration) / 60)).padStart(2, '0')}:${String((startMins + duration) % 60).padStart(2, '0')}`;
 
-      if (response.success && response.data) {
-        const startTime = saveData.startTime;
-        const duration = saveData.duration || 30;
-        const endMinutes = timeToMinutes(startTime) + duration;
-
-        // Find conflicting appointments (excluding current one)
-        const conflicts = response.data.filter(apt => {
-          if (apt.id === appointment.id) return false;
-          if (apt.status === 'cancelled') return false;
-
-          const aptStartMins = timeToMinutes(apt.startTime);
-          const aptEndMins = aptStartMins + (apt.duration || 30);
-          const newStartMins = timeToMinutes(startTime);
-
-          // Check for overlap
-          return (newStartMins < aptEndMins && endMinutes > aptStartMins);
+      // --- Resource conflict check (edit mode only, existing behaviour) ---
+      if (isEditMode) {
+        const response = await planningApi.getCalendar({
+          startDate: date,
+          endDate: date,
+          ...(category === 'treatment' && saveData.machineId ? { machineId: saveData.machineId } : {}),
+          ...(category === 'consultation' && saveData.providerId ? { providerId: saveData.providerId } : {})
         });
 
-        if (conflicts.length > 0) {
-          const conflict = conflicts[0];
+        if (response.success && response.data) {
+          const endMinutes = startMins + duration;
+          const conflicts = response.data.filter(apt => {
+            if (apt.id === appointment.id) return false;
+            if (apt.status === 'cancelled') return false;
+            const aptStartMins = timeToMinutes(apt.startTime);
+            const aptEndMins = aptStartMins + (apt.duration || 30);
+            return (startMins < aptEndMins && endMinutes > aptStartMins);
+          });
+
+          if (conflicts.length > 0) {
+            const conflict = conflicts[0];
+            return {
+              conflictType: 'resource',
+              existingTitle: conflict.title || conflict.service?.title || 'Rendez-vous',
+              existingTime: `${conflict.startTime} - ${conflict.endTime}`,
+              existingPatient: conflict.patient?.fullName || 'Patient',
+              existingPatientId: conflict.patientId,
+              isSamePatient: conflict.patientId === patientId
+            };
+          }
+        }
+      }
+
+      // --- Patient overlap check (both create and edit) ---
+      if (patientId) {
+        // Build segments for multi-treatment or single slot
+        let segments;
+        if (selectedTreatments.length > 1 && selectedSlot?.segments) {
+          segments = selectedSlot.segments.map(seg => ({
+            startTime: seg.startTime,
+            endTime: seg.endTime
+          }));
+        } else {
+          segments = [{ startTime, endTime }];
+        }
+
+        const excludeIds = isEditMode && appointment?.id ? [appointment.id] : [];
+        // For linked groups in edit mode, exclude all group appointment ids
+        if (isEditMode && appointment?.linkedAppointmentId) {
+          excludeIds.push(appointment.linkedAppointmentId);
+        }
+
+        const params = {
+          date,
+          segments: JSON.stringify(segments),
+          ...(excludeIds.length > 0 ? { excludeAppointmentIds: excludeIds.join(',') } : {})
+        };
+
+        const patientResponse = await planningApi.checkPatientOverlap(patientId, params);
+        if (patientResponse.success && patientResponse.data?.hasConflict) {
+          const pConflicts = patientResponse.data.conflicts;
+          const first = pConflicts[0];
           return {
-            existingTitle: conflict.title || conflict.service?.title || 'Rendez-vous',
-            existingTime: `${conflict.startTime} - ${conflict.endTime}`,
-            existingPatient: conflict.patient?.fullName || 'Patient',
-            existingPatientId: conflict.patientId,
-            isSamePatient: conflict.patientId === patientId
+            conflictType: 'patient',
+            totalConflicts: pConflicts.length,
+            existingTitle: first.title || 'Rendez-vous',
+            existingTime: `${first.startTime} - ${first.endTime}`,
+            existingMachine: first.machineName || null,
+            existingProvider: first.providerName || null,
+            conflicts: pConflicts
           };
         }
       }
@@ -1030,15 +1091,18 @@ const PlanningBookingModal = ({
     setSaving(true);
     setError(null);
 
+    // When user forces through a patient overlap warning, flag the payload
+    const payload = forceOverlap ? { ...saveData, skipPatientOverlapCheck: true } : saveData;
+
     try {
       let response;
 
       if (category === 'treatment') {
         if (selectedTreatments.length === 1) {
           if (isEditMode) {
-            response = await planningApi.updateAppointment(appointment.id, saveData);
+            response = await planningApi.updateAppointment(appointment.id, payload);
           } else {
-            response = await planningApi.createAppointment(saveData);
+            response = await planningApi.createAppointment(payload);
           }
         } else {
           // Multiple treatments
@@ -1074,15 +1138,16 @@ const PlanningBookingModal = ({
             assistantId: applyStaffToAll ? (assistantId || null) : null,
             treatments: treatmentsWithStaff,
             notes,
-            priority
+            priority,
+            ...(forceOverlap ? { skipPatientOverlapCheck: true } : {})
           });
         }
       } else {
         // Consultation
         if (isEditMode) {
-          response = await planningApi.updateAppointment(appointment.id, saveData);
+          response = await planningApi.updateAppointment(appointment.id, payload);
         } else {
-          response = await planningApi.createAppointment(saveData);
+          response = await planningApi.createAppointment(payload);
         }
       }
 
@@ -1171,8 +1236,8 @@ const PlanningBookingModal = ({
       return;
     }
 
-    // Check for conflicts in edit mode
-    if (isEditMode && editMode === 'single') {
+    // Check for conflicts (patient overlap in create & edit, resource in edit)
+    if (!isEditMode || (isEditMode && editMode === 'single')) {
       setSaving(true);
       const conflict = await checkForConflicts(saveData);
       setSaving(false);

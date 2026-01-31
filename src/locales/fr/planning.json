@@ -190,7 +190,10 @@
     "samePatient": "Même patient",
     "overlapQuestion": "Voulez-vous quand même superposer les créneaux ?",
     "allowOverlap": "Superposer",
-    "chooseAnother": "Choisir un autre créneau"
+    "chooseAnother": "Choisir un autre créneau",
+    "patientOverlapWarning": "Chevauchement de rendez-vous patient",
+    "patientAlreadyBooked": "Ce patient a déjà un rendez-vous sur ce créneau :",
+    "multipleOverlaps": "{{count}} chevauchement(s) au total."
   },
 
   "actions": {
