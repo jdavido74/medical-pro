@@ -1,24 +1,19 @@
 // components/dashboard/modules/QuotesModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, Search, FileText, Filter, Download, Edit2, Trash2, MoreVertical,
+  Plus, Search, FileText, Download, Edit2, Trash2,
   Clock, Send, CheckCircle, XCircle, ArrowRight, Copy, Eye, ChevronUp, ChevronDown,
-  RefreshCw
+  RefreshCw, AlertCircle
 } from 'lucide-react';
-import { getStatistics } from '../../../utils/storage';
+import {
+  getDocuments, deleteDocument, sendDocument, duplicateDocument, convertToInvoice,
+  acceptDocument, rejectDocument, getDocumentStats, getBillingSettings,
+  buildDocumentPayload, createDocument, updateDocument, transformDocumentForDisplay
+} from '../../../api/documentsApi';
+import { patientsApi } from '../../../api/patientsApi';
 import QuoteFormModal from '../modals/QuoteFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
 import { useLocale } from '../../../contexts/LocaleContext';
-
-// Import des fonctions utilitaires
-const generateInvoiceNumber = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const timestamp = Date.now().toString().slice(-4);
-  return `FACT-${year}${month}${day}-${timestamp}`;
-};
 
 const QuotesModule = ({ navigateToClient }) => {
   const { locale } = useLocale();
@@ -30,227 +25,78 @@ const QuotesModule = ({ navigateToClient }) => {
   const [editingQuote, setEditingQuote] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({});
-  
-  // États pour PDF
+  const [billingSettings, setBillingSettings] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [error, setError] = useState(null);
+
+  // PDF states
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
   const [selectedQuoteForPDF, setSelectedQuoteForPDF] = useState(null);
 
-  // États pour le tri
+  // Sort states
   const [sortField, setSortField] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
 
-  // Utilitaires localStorage pour les devis
-  const quoteStorage = {
-    getAll: () => {
-      try {
-        const quotes = localStorage.getItem('clinicmanager_quotes');
-        return quotes ? JSON.parse(quotes) : [];
-      } catch (error) {
-        console.error('Erreur lecture devis:', error);
-        return [];
-      }
-    },
-
-    save: (quotes) => {
-      try {
-        localStorage.setItem('clinicmanager_quotes', JSON.stringify(quotes));
-        return true;
-      } catch (error) {
-        console.error('Erreur sauvegarde devis:', error);
-        return false;
-      }
-    },
-
-    add: (quoteData) => {
-      const quotes = quoteStorage.getAll();
-      const newQuote = {
-        id: Date.now().toString(),
-        number: generateQuoteNumber(),
-        ...quoteData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      quotes.push(newQuote);
-      quoteStorage.save(quotes);
-      return newQuote;
-    },
-
-    update: (id, quoteData) => {
-      const quotes = quoteStorage.getAll();
-      const index = quotes.findIndex(quote => quote.id === id);
-      
-      if (index === -1) {
-        throw new Error('Devis non trouvé');
-      }
-      
-      quotes[index] = {
-        ...quotes[index],
-        ...quoteData,
-        updatedAt: new Date().toISOString()
-      };
-      
-      quoteStorage.save(quotes);
-      return quotes[index];
-    },
-
-    delete: (id) => {
-      const quotes = quoteStorage.getAll();
-      const filteredQuotes = quotes.filter(quote => quote.id !== id);
-
-      if (quotes.length === filteredQuotes.length) {
-        throw new Error('Devis non trouvé');
-      }
-
-      quoteStorage.save(filteredQuotes);
-      return true;
-    },
-
-    // US6.3: Transformer un devis validé en facture
-    transformToInvoice: (quoteId) => {
-      const quotes = quoteStorage.getAll();
-      const quote = quotes.find(q => q.id === quoteId);
-
-      if (!quote) {
-        throw new Error('Devis non trouvé');
-      }
-
-      if (quote.status !== 'validated') {
-        throw new Error('Seuls les devis validés peuvent être transformés en facture');
-      }
-
-      // Créer la facture à partir du devis
-      const invoiceData = {
-        quoteId: quote.id,
-        quoteNumber: quote.number,
-        patientId: quote.clientId,
-        patientName: quote.clientName,
-        items: quote.items,
-        subtotal: quote.subtotal,
-        taxAmount: quote.taxAmount,
-        total: quote.total,
-        status: 'draft',
-        type: 'medical_record' // Adaptation médicale
-      };
-
-      // Importer le storage des factures
-      const invoices = JSON.parse(localStorage.getItem('clinicmanager_medical_records') || '[]');
-      const newInvoice = {
-        id: Date.now().toString(),
-        number: generateInvoiceNumber(),
-        ...invoiceData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      invoices.push(newInvoice);
-      localStorage.setItem('clinicmanager_medical_records', JSON.stringify(invoices));
-
-      // Marquer le devis comme facturé
-      quote.status = 'invoiced';
-      quote.invoiceId = newInvoice.id;
-      quote.updatedAt = new Date().toISOString();
-      quoteStorage.save(quotes);
-
-      return newInvoice;
-    },
-
-    // US6.7: Validation/refus patient
-    updateValidationStatus: (quoteId, status, comment = '') => {
-      const quotes = quoteStorage.getAll();
-      const index = quotes.findIndex(q => q.id === quoteId);
-
-      if (index === -1) {
-        throw new Error('Devis non trouvé');
-      }
-
-      if (!['validated', 'rejected'].includes(status)) {
-        throw new Error('Statut invalide');
-      }
-
-      quotes[index].validationStatus = status;
-      quotes[index].validationComment = comment;
-      quotes[index].validationDate = new Date().toISOString();
-      quotes[index].updatedAt = new Date().toISOString();
-
-      // Si validé, mettre le statut principal à "validated"
-      if (status === 'validated') {
-        quotes[index].status = 'validated';
-      }
-
-      quoteStorage.save(quotes);
-
-      // US6.8: Ici on pourrait déclencher une notification
-      console.log(`Devis ${quotes[index].number} ${status === 'validated' ? 'validé' : 'refusé'} par le patient`);
-
-      return quotes[index];
+  // Load quotes from backend
+  const loadQuotes = useCallback(async () => {
+    try {
+      setError(null);
+      const response = await getDocuments({ documentType: 'quote', limit: 200 });
+      const data = response.data || response || [];
+      const docs = Array.isArray(data) ? data : [];
+      setQuotes(docs.map(transformDocumentForDisplay));
+    } catch (err) {
+      console.error('Erreur chargement devis:', err);
+      setError('Impossible de charger les devis');
+      setQuotes([]);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Génération numéro de devis
-  const generateQuoteNumber = () => {
-    const quotes = quoteStorage.getAll();
-    const counter = quotes.length + 1;
-    const now = new Date();
-    const year = now.getFullYear();
-    
-    return `DEV-${year}-${String(counter).padStart(4, '0')}`;
-  };
+  // Load stats from backend
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await getDocumentStats({ documentType: 'quote' });
+      const s = response.data || response || {};
+      setStats({
+        totalQuotes: s.totalCount || 0,
+        totalValue: s.totalAmount || 0,
+        acceptedValue: s.acceptedTotal || 0,
+        pendingValue: s.pendingTotal || s.sentTotal || 0,
+        acceptedCount: s.acceptedCount || 0,
+        rejectedCount: s.rejectedCount || 0,
+        convertedCount: s.convertedCount || 0,
+        thisMonthQuotes: s.thisMonthCount || 0
+      });
+    } catch (err) {
+      console.error('Erreur chargement stats:', err);
+    }
+  }, []);
 
-  // Charger les devis au montage
+  // Load billing settings and patients
+  const loadSettings = useCallback(async () => {
+    try {
+      const [settingsResp, patientsResp] = await Promise.all([
+        getBillingSettings().catch(() => ({ data: null })),
+        patientsApi.getPatients({ limit: 500 }).catch(() => ({ patients: [] }))
+      ]);
+      setBillingSettings(settingsResp.data || settingsResp || null);
+      setPatients(patientsResp.patients || []);
+    } catch (err) {
+      console.error('Erreur chargement paramètres:', err);
+    }
+  }, []);
+
+  // Initial load
   useEffect(() => {
     loadQuotes();
     loadStats();
-  }, []);
+    loadSettings();
+  }, [loadQuotes, loadStats, loadSettings]);
 
-  // Filtrer les devis quand la recherche, le filtre ou le tri change
+  // Filter and sort
   useEffect(() => {
-    filterQuotes();
-  }, [quotes, searchQuery, filterStatus, sortField, sortDirection]);
-
-  const loadQuotes = () => {
-    try {
-      const quotesData = quoteStorage.getAll();
-      setQuotes(quotesData);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Erreur chargement devis:', error);
-      setIsLoading(false);
-    }
-  };
-
-  const loadStats = () => {
-    const quotes = quoteStorage.getAll();
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
-    const thisMonthQuotes = quotes.filter(quote => {
-      const quoteDate = new Date(quote.createdAt);
-      return quoteDate.getMonth() === currentMonth && 
-             quoteDate.getFullYear() === currentYear;
-    });
-    
-    const totalValue = quotes.reduce((sum, quote) => sum + (quote.total || 0), 0);
-    const acceptedValue = quotes
-      .filter(quote => quote.status === 'accepted')
-      .reduce((sum, quote) => sum + (quote.total || 0), 0);
-    const pendingValue = quotes
-      .filter(quote => ['sent', 'draft'].includes(quote.status))
-      .reduce((sum, quote) => sum + (quote.total || 0), 0);
-    
-    setStats({
-      totalQuotes: quotes.length,
-      thisMonthQuotes: thisMonthQuotes.length,
-      totalValue,
-      acceptedValue,
-      pendingValue,
-      acceptedCount: quotes.filter(q => q.status === 'accepted').length,
-      rejectedCount: quotes.filter(q => q.status === 'rejected').length,
-      convertedCount: quotes.filter(q => q.status === 'converted').length
-    });
-  };
-
-  const filterQuotes = () => {
     let filtered = quotes;
 
     if (filterStatus !== 'all') {
@@ -265,22 +111,19 @@ const QuotesModule = ({ navigateToClient }) => {
       );
     }
 
-    // Appliquer le tri
     if (sortField) {
-      filtered = filtered.sort((a, b) => {
+      filtered = [...filtered].sort((a, b) => {
         let aValue = a[sortField];
         let bValue = b[sortField];
 
-        // Gestion spéciale pour les dates
         if (sortField === 'quoteDate' || sortField === 'validUntil') {
           aValue = new Date(aValue);
           bValue = new Date(bValue);
         }
 
-        // Tri par défaut (string)
         if (typeof aValue === 'string') {
           aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
+          bValue = (bValue || '').toLowerCase();
         }
 
         let comparison = 0;
@@ -292,9 +135,8 @@ const QuotesModule = ({ navigateToClient }) => {
     }
 
     setFilteredQuotes(filtered);
-  };
+  }, [quotes, searchQuery, filterStatus, sortField, sortDirection]);
 
-  // Fonction pour gérer le tri par colonne
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -304,13 +146,9 @@ const QuotesModule = ({ navigateToClient }) => {
     }
   };
 
-  // Fonction pour naviguer vers la fiche client
   const handleClientClick = (clientId, clientName) => {
     if (navigateToClient && clientId) {
       navigateToClient(clientId);
-    } else {
-      // Fallback si la navigation n'est pas disponible
-      alert(`Navigation vers la fiche client: ${clientName}\nID: ${clientId}`);
     }
   };
 
@@ -330,85 +168,86 @@ const QuotesModule = ({ navigateToClient }) => {
     }
 
     try {
-      quoteStorage.delete(quoteId);
+      await deleteDocument(quoteId);
       loadQuotes();
       loadStats();
-    } catch (error) {
-      console.error('Erreur suppression devis:', error);
-      alert('Erreur lors de la suppression du devis');
+    } catch (err) {
+      console.error('Erreur suppression devis:', err);
+      alert(err.message || 'Erreur lors de la suppression. Seuls les brouillons peuvent être supprimés.');
     }
   };
 
-  const handleSaveQuote = async (quoteData) => {
+  const handleSaveQuote = async (formData) => {
     try {
-      if (editingQuote) {
-        quoteStorage.update(editingQuote.id, quoteData);
+      const selectedClient = patients.find(p => p.id === formData.clientId) || null;
+      const payload = buildDocumentPayload('quote', formData, billingSettings, selectedClient);
+
+      if (editingQuote?.id) {
+        await updateDocument(editingQuote.id, payload);
       } else {
-        quoteStorage.add(quoteData);
+        await createDocument(payload);
       }
-      
+
       loadQuotes();
       loadStats();
       setIsModalOpen(false);
-    } catch (error) {
-      console.error('Erreur sauvegarde devis:', error);
-      throw error;
+    } catch (err) {
+      console.error('Erreur sauvegarde devis:', err);
+      throw err;
     }
   };
 
   const handleConvertToInvoice = async (quote) => {
-    // Epic 6 - US6.3: Transformer un devis validé en facture
-    if (!window.confirm(`¿Convertir el presupuesto ${quote.number} en factura?`)) {
+    if (!window.confirm(`Convertir le devis ${quote.number} en facture ?`)) {
       return;
     }
 
     try {
-      // Utiliser notre nouvelle méthode de transformation
-      const newInvoice = quoteStorage.transformToInvoice(quote.id);
-
-      // Recharger les devis pour rafraîchir l'interface
+      const result = await convertToInvoice(quote.id);
       loadQuotes();
       loadStats();
-
-      // Notifier le succès (Epic 6 - US6.8)
-      alert(`✅ Presupuesto ${quote.number} convertido a factura ${newInvoice.number} exitosamente`);
-    } catch (error) {
-      console.error('Erreur conversion devis:', error);
-      alert('Erreur lors de la conversion');
+      const newNumber = result?.data?.documentNumber || result?.data?.document_number || '';
+      alert(`Devis ${quote.number} converti en facture ${newNumber}`);
+    } catch (err) {
+      console.error('Erreur conversion devis:', err);
+      alert(err.message || 'Erreur lors de la conversion');
     }
   };
 
-  const handleDuplicateQuote = (quote) => {
-    const duplicatedQuote = {
-      ...quote,
-      id: undefined,
-      number: undefined,
-      status: 'draft',
-      quoteDate: new Date().toISOString().split('T')[0],
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    };
-    
-    setEditingQuote(duplicatedQuote);
-    setIsModalOpen(true);
+  const handleDuplicateQuote = async (quote) => {
+    try {
+      await duplicateDocument(quote.id);
+      loadQuotes();
+      loadStats();
+    } catch (err) {
+      console.error('Erreur duplication devis:', err);
+      alert('Erreur lors de la duplication');
+    }
   };
 
-  // NOUVEAU : Gestion aperçu PDF pour devis
   const handleShowPDF = (quote) => {
     setSelectedQuoteForPDF(quote);
     setIsPDFModalOpen(true);
   };
 
-  const handleSendQuote = (quote) => {
-    // Marquer comme envoyé et ouvrir PDF
-    if (quote.status === 'draft') {
-      quoteStorage.update(quote.id, { 
-        status: 'sent',
-        sentAt: new Date().toISOString()
-      });
-      loadQuotes();
-      loadStats();
+  const handleSendQuote = async (quote) => {
+    try {
+      if (quote.status === 'draft') {
+        await sendDocument(quote.id);
+        loadQuotes();
+        loadStats();
+      }
+      handleShowPDF(quote);
+    } catch (err) {
+      console.error('Erreur envoi devis:', err);
+      alert('Erreur lors de l\'envoi');
     }
-    handleShowPDF(quote);
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    loadQuotes();
+    loadStats();
   };
 
   const getStatusColor = (status) => {
@@ -447,16 +286,16 @@ const QuotesModule = ({ navigateToClient }) => {
   const QuoteActions = ({ quote }) => {
     return (
       <div className="flex items-center space-x-1">
-        {/* Modifier */}
-        <button
-          onClick={() => handleEditQuote(quote)}
-          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-          title="Modifier"
-        >
-          <Edit2 className="h-4 w-4" />
-        </button>
+        {quote.status === 'draft' && (
+          <button
+            onClick={() => handleEditQuote(quote)}
+            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+            title="Modifier"
+          >
+            <Edit2 className="h-4 w-4" />
+          </button>
+        )}
 
-        {/* Dupliquer */}
         <button
           onClick={() => handleDuplicateQuote(quote)}
           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -465,7 +304,6 @@ const QuotesModule = ({ navigateToClient }) => {
           <Copy className="h-4 w-4" />
         </button>
 
-        {/* Aperçu PDF */}
         <button
           onClick={() => handleShowPDF(quote)}
           className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
@@ -474,7 +312,6 @@ const QuotesModule = ({ navigateToClient }) => {
           <Eye className="h-4 w-4" />
         </button>
 
-        {/* Envoyer par email - pour tous statuts sauf converti */}
         {quote.status !== 'converted' && (
           <button
             onClick={() => handleSendQuote(quote)}
@@ -485,8 +322,7 @@ const QuotesModule = ({ navigateToClient }) => {
           </button>
         )}
 
-        {/* Convertir en facture - seulement pour devis validés (Epic 6 - US6.3) */}
-        {quote.status === 'validated' && (
+        {quote.status === 'accepted' && (
           <button
             onClick={() => handleConvertToInvoice(quote)}
             className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
@@ -496,11 +332,9 @@ const QuotesModule = ({ navigateToClient }) => {
           </button>
         )}
 
-        {/* Télécharger PDF */}
         <button
           onClick={() => {
             handleShowPDF(quote);
-            // Auto-download après 2 secondes
             setTimeout(() => {
               const downloadBtn = document.querySelector('[title="Télécharger"]');
               if (downloadBtn) downloadBtn.click();
@@ -512,14 +346,15 @@ const QuotesModule = ({ navigateToClient }) => {
           <Download className="h-4 w-4" />
         </button>
 
-        {/* Supprimer */}
-        <button
-          onClick={() => handleDeleteQuote(quote.id)}
-          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-          title="Supprimer"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {quote.status === 'draft' && (
+          <button
+            onClick={() => handleDeleteQuote(quote.id)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            title="Supprimer"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
     );
   };
@@ -534,7 +369,18 @@ const QuotesModule = ({ navigateToClient }) => {
 
   return (
     <div className="space-y-6">
-      {/* En-tête : Titre + Bouton */}
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+          <p className="text-red-700 text-sm">{error}</p>
+          <button onClick={handleRefresh} className="ml-auto text-red-600 hover:text-red-800 text-sm font-medium">
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Devis</h2>
@@ -549,7 +395,7 @@ const QuotesModule = ({ navigateToClient }) => {
         </button>
       </div>
 
-      {/* Barre de filtres */}
+      {/* Filters */}
       <div className="bg-white rounded-lg border p-4">
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
@@ -574,13 +420,16 @@ const QuotesModule = ({ navigateToClient }) => {
             <option value="rejected">Refusés</option>
             <option value="converted">Convertis</option>
           </select>
-          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+          <button
+            onClick={handleRefresh}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+          >
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Statistiques rapides remontées */}
+      {/* Stats */}
       <div className="grid md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <h4 className="font-semibold text-gray-900 mb-2">Total devis</h4>
@@ -607,7 +456,7 @@ const QuotesModule = ({ navigateToClient }) => {
         </div>
       </div>
 
-      {/* Liste des devis */}
+      {/* Quotes list */}
       <div className="bg-white rounded-xl shadow-sm border overflow-visible">
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
@@ -618,7 +467,7 @@ const QuotesModule = ({ navigateToClient }) => {
             </span>
           </div>
         </div>
-        
+
         {filteredQuotes.length === 0 ? (
           <div className="p-12 text-center">
             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -626,13 +475,13 @@ const QuotesModule = ({ navigateToClient }) => {
               {searchQuery ? 'Aucun devis trouvé' : 'Aucun devis créé'}
             </h5>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {searchQuery 
+              {searchQuery
                 ? 'Essayez de modifier vos critères de recherche.'
                 : 'Créez votre premier devis pour proposer vos services à vos clients.'
               }
             </p>
             {!searchQuery && (
-              <button 
+              <button
                 onClick={handleAddQuote}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center space-x-2"
               >
@@ -684,7 +533,7 @@ const QuotesModule = ({ navigateToClient }) => {
                   {filteredQuotes.map((quote) => {
                     const StatusIcon = getStatusIcon(quote.status);
                     const isExpired = quote.validUntil && new Date(quote.validUntil) < new Date() && quote.status === 'sent';
-                    
+
                     return (
                       <tr key={quote.id} className="border-t hover:bg-gray-50">
                         <td className="p-4">
@@ -755,12 +604,12 @@ const QuotesModule = ({ navigateToClient }) => {
         )}
       </div>
 
-      {/* Actions rapides */}
+      {/* Quick actions */}
       {quotes.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h4 className="font-semibold text-gray-900 mb-4">Actions rapides</h4>
           <div className="grid md:grid-cols-3 gap-4">
-            <button 
+            <button
               onClick={handleAddQuote}
               className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
             >
@@ -774,14 +623,16 @@ const QuotesModule = ({ navigateToClient }) => {
                 </div>
               </div>
             </button>
-            
-            <button 
-              onClick={() => {
+
+            <button
+              onClick={async () => {
                 const acceptedQuotes = quotes.filter(q => q.status === 'accepted');
-                if (acceptedQuotes.length > 0) {
-                  acceptedQuotes.forEach(quote => handleConvertToInvoice(quote));
-                } else {
+                if (acceptedQuotes.length === 0) {
                   alert('Aucun devis accepté à convertir');
+                  return;
+                }
+                for (const quote of acceptedQuotes) {
+                  await handleConvertToInvoice(quote);
                 }
               }}
               className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
@@ -796,7 +647,7 @@ const QuotesModule = ({ navigateToClient }) => {
                 </div>
               </div>
             </button>
-            
+
             <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -812,7 +663,7 @@ const QuotesModule = ({ navigateToClient }) => {
         </div>
       )}
 
-      {/* Taux de conversion */}
+      {/* Conversion rate */}
       {stats.totalQuotes > 0 && (
         <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
           <div className="flex items-start space-x-3">
@@ -849,7 +700,7 @@ const QuotesModule = ({ navigateToClient }) => {
         </div>
       )}
 
-      {/* Informations conformité devis */}
+      {/* Compliance info */}
       <div className="bg-green-50 border border-green-200 rounded-xl p-6">
         <div className="flex items-start space-x-3">
           <div className="text-2xl">📋</div>
@@ -881,15 +732,17 @@ const QuotesModule = ({ navigateToClient }) => {
         </div>
       </div>
 
-      {/* Modal de formulaire devis */}
+      {/* Quote form modal */}
       <QuoteFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveQuote}
         quote={editingQuote}
+        patients={patients}
+        billingSettings={billingSettings}
       />
 
-      {/* Modal aperçu PDF */}
+      {/* PDF preview modal */}
       <PDFPreviewModal
         isOpen={isPDFModalOpen}
         onClose={() => setIsPDFModalOpen(false)}
@@ -901,4 +754,3 @@ const QuotesModule = ({ navigateToClient }) => {
 };
 
 export default QuotesModule;
-                  

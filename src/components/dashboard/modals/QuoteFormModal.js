@@ -5,12 +5,11 @@ import {
   ChevronDown, ChevronUp, Send, CheckCircle, XCircle,
   Percent, Minus, ArrowRight
 } from 'lucide-react';
-import { clientStorage, settingsStorage } from '../../../utils/storage';
 import CatalogProductSelector from '../../common/CatalogProductSelector';
 import { useCountryConfig } from '../../../config/ConfigManager';
 import { useLocale } from '../../../contexts/LocaleContext';
 
-const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, preSelectedPatient = null }) => {
+const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPatient = null, patients = [], billingSettings = null }) => {
   const { config } = useCountryConfig();
   const { locale } = useLocale();
   
@@ -49,28 +48,38 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, pre
   });
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
-  // Charger les clients et paramètres
+  // Load clients from props (patients from API) and billing settings
   useEffect(() => {
-    const clientsData = clientStorage.getAll();
-    const settingsData = settingsStorage.get();
+    const clientsData = (patients || []).map(p => ({
+      id: p.id,
+      displayName: p.displayName || p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+      email: p.email || '',
+      phone: p.phone || '',
+      address: p.address || '',
+      postalCode: p.postalCode || p.zipCode || '',
+      city: p.city || '',
+      country: p.country || '',
+      type: p.type || 'individual',
+      siren: p.siren || ''
+    }));
     setClients(clientsData);
-    setSettings(settingsData);
-  }, []);
+    setSettings(billingSettings || { defaultTaxRate: 20, defaultPaymentTerms: 30 });
+  }, [patients, billingSettings]);
 
   // Initialiser le formulaire
   useEffect(() => {
-    if (appointment) {
+    if (quote) {
       setFormData({
-        clientId: appointment.clientId || '',
-        quoteDate: appointment.quoteDate || new Date().toISOString().split('T')[0],
-        validUntil: appointment.validUntil || '',
-        status: appointment.status || 'draft',
-        items: appointment.items || [{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, taxRate: null }],
-        notes: appointment.notes || '',
-        validityDays: appointment.validityDays || 30,
-        discountType: appointment.discountType || 'none',
-        discountValue: appointment.discountValue || 0,
-        terms: appointment.terms || ''
+        clientId: quote.clientId || '',
+        quoteDate: quote.quoteDate || new Date().toISOString().split('T')[0],
+        validUntil: quote.validUntil || '',
+        status: quote.status || 'draft',
+        items: quote.items?.length ? quote.items : [{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, taxRate: null }],
+        notes: quote.notes || '',
+        validityDays: quote.validityDays || 30,
+        discountType: quote.discountType || 'none',
+        discountValue: quote.discountValue || 0,
+        terms: quote.terms || ''
       });
     } else {
       const today = new Date();
@@ -91,7 +100,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, pre
       });
     }
     setErrors({});
-  }, [appointment, preSelectedPatient, isOpen]);
+  }, [quote, preSelectedPatient, isOpen]);
 
   // Mettre à jour le client sélectionné
   useEffect(() => {
@@ -362,7 +371,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, pre
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
           <h2 className="text-2xl font-bold text-gray-900">
-            {appointment ? 'Modifier le devis' : 'Nouveau devis'}
+            {quote ? 'Modifier le devis' : 'Nouveau devis'}
           </h2>
           <button
             onClick={onClose}
@@ -843,7 +852,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, pre
               className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
             >
               <Save className="h-4 w-4" />
-              <span>{isLoading ? 'Sauvegarde...' : (appointment ? 'Modifier' : 'Créer')} - {totals.total.toFixed(2)}€</span>
+              <span>{isLoading ? 'Sauvegarde...' : (quote ? 'Modifier' : 'Créer')} - {totals.total.toFixed(2)}€</span>
             </button>
           </div>
         </div>
@@ -852,4 +861,4 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, appointment = null, pre
   );
 };
 
-export default AppointmentFormModal;
+export default QuoteFormModal;

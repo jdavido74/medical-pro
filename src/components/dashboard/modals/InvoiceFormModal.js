@@ -5,10 +5,9 @@ import {
   ChevronDown, ChevronUp, CheckCircle, Send, DollarSign,
   Percent, Minus, Clock
 } from 'lucide-react';
-import { clientStorage, settingsStorage } from '../../../utils/storage';
 import CatalogProductSelector from '../../common/CatalogProductSelector';
 
-const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelectedClient = null }) => {
+const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelectedClient = null, patients = [], billingSettings = null }) => {
   const [formData, setFormData] = useState({
     clientId: '',
     invoiceDate: new Date().toISOString().split('T')[0],
@@ -46,13 +45,24 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
   // NOUVEAU : État accordéon
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
-  // Charger les clients et paramètres disponibles
+  // Load clients from props (patients from API) and billing settings
   useEffect(() => {
-    const clientsData = clientStorage.getAll();
-    const settingsData = settingsStorage.get();
+    // Map patients to client format for the dropdown
+    const clientsData = (patients || []).map(p => ({
+      id: p.id,
+      displayName: p.displayName || p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+      email: p.email || '',
+      phone: p.phone || '',
+      address: p.address || '',
+      postalCode: p.postalCode || p.zipCode || '',
+      city: p.city || '',
+      country: p.country || '',
+      type: p.type || 'individual',
+      siren: p.siren || ''
+    }));
     setClients(clientsData);
-    setSettings(settingsData);
-  }, []);
+    setSettings(billingSettings || { defaultTaxRate: 20, defaultPaymentTerms: 30 });
+  }, [patients, billingSettings]);
 
   // Initialiser le formulaire
   useEffect(() => {

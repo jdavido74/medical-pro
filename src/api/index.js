@@ -24,3 +24,4 @@ export { profileApi } from './profileApi';
 export { clinicRolesApi } from './clinicRolesApi';
 export { clinicSettingsApi } from './clinicSettingsApi';
 export { prescriptionsApi } from './prescriptionsApi';
+export { default as documentsApi } from './documentsApi';

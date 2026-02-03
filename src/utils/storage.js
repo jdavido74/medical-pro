@@ -134,90 +134,9 @@ export const clientStorage = {
 };
 
 // === GESTION DES FACTURES ===
-
-export const invoiceStorage = {
-  // Récupérer toutes les factures
-  getAll: () => {
-    return storage.get(STORAGE_KEYS.INVOICES) || [];
-  },
-
-  // Récupérer une facture par ID
-  getById: (id) => {
-    const invoices = invoiceStorage.getAll();
-    return invoices.find(invoice => invoice.id === id) || null;
-  },
-
-  // Ajouter une nouvelle facture
-  add: (invoiceData) => {
-    const invoices = invoiceStorage.getAll();
-    const newInvoice = {
-      id: Date.now().toString(),
-      number: generateInvoiceNumber(invoiceData.clientId),
-      ...invoiceData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    invoices.push(newInvoice);
-    storage.set(STORAGE_KEYS.INVOICES, invoices);
-    return newInvoice;
-  },
-
-  // Mettre à jour une facture
-  update: (id, invoiceData) => {
-    const invoices = invoiceStorage.getAll();
-    const index = invoices.findIndex(invoice => invoice.id === id);
-    
-    if (index === -1) {
-      throw new Error('Facture non trouvée');
-    }
-    
-    invoices[index] = {
-      ...invoices[index],
-      ...invoiceData,
-      updatedAt: new Date().toISOString()
-    };
-    
-    storage.set(STORAGE_KEYS.INVOICES, invoices);
-    return invoices[index];
-  },
-
-  // Supprimer une facture
-  delete: (id) => {
-    const invoices = invoiceStorage.getAll();
-    const filteredInvoices = invoices.filter(invoice => invoice.id !== id);
-    
-    if (invoices.length === filteredInvoices.length) {
-      throw new Error('Facture non trouvée');
-    }
-    
-    storage.set(STORAGE_KEYS.INVOICES, filteredInvoices);
-    return true;
-  },
-
-  // Récupérer les factures d'un client
-  getByClientId: (clientId) => {
-    const invoices = invoiceStorage.getAll();
-    return invoices.filter(invoice => invoice.clientId === clientId);
-  },
-
-  // Filtrer par statut
-  filterByStatus: (status) => {
-    const invoices = invoiceStorage.getAll();
-    return invoices.filter(invoice => invoice.status === status);
-  },
-
-  // Rechercher des factures
-  search: (query) => {
-    const invoices = invoiceStorage.getAll();
-    const searchTerm = query.toLowerCase();
-    
-    return invoices.filter(invoice => 
-      invoice.number?.toLowerCase().includes(searchTerm) ||
-      invoice.clientName?.toLowerCase().includes(searchTerm)
-    );
-  }
-};
+// DEPRECATED: Invoice storage has been migrated to the backend API.
+// Use documentsApi.js instead. This stub is kept for backward compatibility
+// during migration but will be removed in a future release.
 
 // === GESTION DES COMPTEURS ===
 
@@ -276,92 +195,16 @@ export const settingsStorage = {
 };
 
 // === UTILITAIRES ===
-
-// Générer un numéro de facture
-function generateInvoiceNumber(clientId = null) {
-  const settings = settingsStorage.get();
-  const pattern = settings.invoiceNumberPattern;
-  const counter = counterStorage.increment('invoiceCounter');
-  
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  
-  let number = pattern
-    .replace('{YYYY}', year)
-    .replace('{MM}', month)
-    .replace('{NNNN}', String(counter).padStart(4, '0'))
-    .replace('{NNN}', String(counter).padStart(3, '0'))
-    .replace('{NN}', String(counter).padStart(2, '0'));
-
-  // Si pattern spécifique client (sera implémenté plus tard)
-  if (clientId) {
-    const client = clientStorage.getById(clientId);
-    if (client && client.invoicePattern) {
-      // Logique pattern client personnalisé
-    }
-  }
-
-  return number;
-}
-
-// Calculer les totaux d'une facture
-export const calculateInvoiceTotals = (items, taxRate = 20) => {
-  const subtotal = items.reduce((sum, item) => {
-    return sum + (item.quantity * item.unitPrice);
-  }, 0);
-  
-  const taxAmount = (subtotal * taxRate) / 100;
-  const total = subtotal + taxAmount;
-  
-  return {
-    subtotal: Math.round(subtotal * 100) / 100,
-    taxAmount: Math.round(taxAmount * 100) / 100,
-    total: Math.round(total * 100) / 100,
-    taxRate
-  };
-};
-
-// Statistiques globales
-export const getStatistics = () => {
-  const clients = clientStorage.getAll();
-  const invoices = invoiceStorage.getAll();
-  
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  
-  const thisMonthInvoices = invoices.filter(invoice => {
-    const invoiceDate = new Date(invoice.createdAt);
-    return invoiceDate.getMonth() === currentMonth && 
-           invoiceDate.getFullYear() === currentYear;
-  });
-  
-  const totalRevenue = invoices
-    .filter(invoice => invoice.status === 'paid')
-    .reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-    
-  const pendingAmount = invoices
-    .filter(invoice => ['sent', 'overdue'].includes(invoice.status))
-    .reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-    
-  return {
-    totalClients: clients.length,
-    totalInvoices: invoices.length,
-    thisMonthInvoices: thisMonthInvoices.length,
-    totalRevenue,
-    pendingAmount,
-    businessClients: clients.filter(c => c.type === 'business').length,
-    individualClients: clients.filter(c => c.type === 'individual').length
-  };
-};
+// Note: Invoice number generation, calculateInvoiceTotals, and getStatistics
+// have been migrated to the backend (documentService.js / documents routes).
+// Use documentsApi.js for all billing operations.
 
 // Export/Import des données
 export const dataManagement = {
-  // Exporter toutes les données
+  // Exporter toutes les données (local only — billing data is now in the backend)
   exportAll: () => {
     return {
       clients: clientStorage.getAll(),
-      invoices: invoiceStorage.getAll(),
       settings: settingsStorage.get(),
       counters: counterStorage.get(),
       exportDate: new Date().toISOString()
@@ -372,7 +215,6 @@ export const dataManagement = {
   importAll: (data) => {
     try {
       if (data.clients) storage.set(STORAGE_KEYS.CLIENTS, data.clients);
-      if (data.invoices) storage.set(STORAGE_KEYS.INVOICES, data.invoices);
       if (data.settings) storage.set(STORAGE_KEYS.SETTINGS, data.settings);
       if (data.counters) storage.set(STORAGE_KEYS.COUNTERS, data.counters);
       return true;
@@ -394,10 +236,7 @@ export { storage };
 export default {
   storage,
   clientStorage,
-  invoiceStorage,
   settingsStorage,
   counterStorage,
-  calculateInvoiceTotals,
-  getStatistics,
   dataManagement
 };

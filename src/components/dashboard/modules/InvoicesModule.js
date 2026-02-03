@@ -1,7 +1,12 @@
 // components/dashboard/modules/InvoicesModule.js
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Filter, Download, Edit2, Trash2, Send, Copy, Eye, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
-import { invoiceStorage, getStatistics } from '../../../utils/storage';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Search, FileText, Download, Edit2, Trash2, Send, Copy, Eye, ChevronUp, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
+import {
+  getDocuments, deleteDocument, sendDocument, duplicateDocument,
+  getDocumentStats, getBillingSettings, payDocument,
+  buildDocumentPayload, createDocument, updateDocument, transformDocumentForDisplay
+} from '../../../api/documentsApi';
+import { patientsApi } from '../../../api/patientsApi';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
 import { useLocale } from '../../../contexts/LocaleContext';
@@ -16,51 +21,80 @@ const InvoicesModule = ({ navigateToClient }) => {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({});
-  
-  // États pour PDF
+  const [billingSettings, setBillingSettings] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [error, setError] = useState(null);
+
+  // PDF states
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
   const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState(null);
 
-  // États pour le tri
+  // Sort states
   const [sortField, setSortField] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
 
-  // Charger les factures au montage du composant
+  // Load invoices from backend
+  const loadInvoices = useCallback(async () => {
+    try {
+      setError(null);
+      const response = await getDocuments({ documentType: 'invoice', limit: 200 });
+      const data = response.data || response || [];
+      const docs = Array.isArray(data) ? data : [];
+      setInvoices(docs.map(transformDocumentForDisplay));
+    } catch (err) {
+      console.error('Erreur chargement factures:', err);
+      setError('Impossible de charger les factures');
+      setInvoices([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Load stats from backend
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await getDocumentStats({ documentType: 'invoice' });
+      const s = response.data || response || {};
+      setStats({
+        totalInvoices: s.totalCount || 0,
+        totalRevenue: s.paidTotal || 0,
+        pendingAmount: s.pendingTotal || s.sentTotal || 0,
+        thisMonthInvoices: s.thisMonthCount || 0
+      });
+    } catch (err) {
+      console.error('Erreur chargement stats:', err);
+    }
+  }, []);
+
+  // Load billing settings and patients
+  const loadSettings = useCallback(async () => {
+    try {
+      const [settingsResp, patientsResp] = await Promise.all([
+        getBillingSettings().catch(() => ({ data: null })),
+        patientsApi.getPatients({ limit: 500 }).catch(() => ({ patients: [] }))
+      ]);
+      setBillingSettings(settingsResp.data || settingsResp || null);
+      setPatients(patientsResp.patients || []);
+    } catch (err) {
+      console.error('Erreur chargement paramètres:', err);
+    }
+  }, []);
+
+  // Initial load
   useEffect(() => {
     loadInvoices();
     loadStats();
-  }, []);
+    loadSettings();
+  }, [loadInvoices, loadStats, loadSettings]);
 
-  // Filtrer les factures quand la recherche, le filtre ou le tri change
+  // Filter and sort
   useEffect(() => {
-    filterInvoices();
-  }, [invoices, searchQuery, filterStatus, sortField, sortDirection]);
-
-  const loadInvoices = () => {
-    try {
-      const invoicesData = invoiceStorage.getAll();
-      setInvoices(invoicesData);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Erreur chargement factures:', error);
-      setIsLoading(false);
-    }
-  };
-
-  const loadStats = () => {
-    const statistics = getStatistics();
-    setStats(statistics);
-  };
-
-  const filterInvoices = () => {
     let filtered = invoices;
 
-    // Filtrer par statut
     if (filterStatus !== 'all') {
       filtered = filtered.filter(invoice => invoice.status === filterStatus);
     }
 
-    // Filtrer par recherche
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(invoice =>
@@ -69,22 +103,19 @@ const InvoicesModule = ({ navigateToClient }) => {
       );
     }
 
-    // Appliquer le tri
     if (sortField) {
-      filtered = filtered.sort((a, b) => {
+      filtered = [...filtered].sort((a, b) => {
         let aValue = a[sortField];
         let bValue = b[sortField];
 
-        // Gestion spéciale pour les dates
         if (sortField === 'invoiceDate' || sortField === 'dueDate') {
           aValue = new Date(aValue);
           bValue = new Date(bValue);
         }
 
-        // Tri par défaut (string)
         if (typeof aValue === 'string') {
           aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
+          bValue = (bValue || '').toLowerCase();
         }
 
         let comparison = 0;
@@ -96,9 +127,8 @@ const InvoicesModule = ({ navigateToClient }) => {
     }
 
     setFilteredInvoices(filtered);
-  };
+  }, [invoices, searchQuery, filterStatus, sortField, sortDirection]);
 
-  // Fonction pour gérer le tri par colonne
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -108,13 +138,9 @@ const InvoicesModule = ({ navigateToClient }) => {
     }
   };
 
-  // Fonction pour naviguer vers la fiche client
   const handleClientClick = (clientId, clientName) => {
     if (navigateToClient && clientId) {
       navigateToClient(clientId);
-    } else {
-      // Fallback si la navigation n'est pas disponible
-      alert(`Navigation vers la fiche client: ${clientName}\nID: ${clientId}`);
     }
   };
 
@@ -134,65 +160,72 @@ const InvoicesModule = ({ navigateToClient }) => {
     }
 
     try {
-      invoiceStorage.delete(invoiceId);
+      await deleteDocument(invoiceId);
       loadInvoices();
       loadStats();
-    } catch (error) {
-      console.error('Erreur suppression facture:', error);
-      alert('Erreur lors de la suppression de la facture');
+    } catch (err) {
+      console.error('Erreur suppression facture:', err);
+      alert(err.message || 'Erreur lors de la suppression. Seuls les brouillons peuvent être supprimés.');
     }
   };
 
-  const handleSaveInvoice = async (invoiceData) => {
+  const handleSaveInvoice = async (formData) => {
     try {
-      if (editingInvoice) {
-        // Modification
-        invoiceStorage.update(editingInvoice.id, invoiceData);
+      // Find the selected patient
+      const selectedClient = patients.find(p => p.id === formData.clientId) || null;
+
+      // Build backend payload
+      const payload = buildDocumentPayload('invoice', formData, billingSettings, selectedClient);
+
+      if (editingInvoice?.id) {
+        await updateDocument(editingInvoice.id, payload);
       } else {
-        // Création
-        invoiceStorage.add(invoiceData);
+        await createDocument(payload);
       }
-      
+
       loadInvoices();
       loadStats();
       setIsModalOpen(false);
-    } catch (error) {
-      console.error('Erreur sauvegarde facture:', error);
-      throw error;
+    } catch (err) {
+      console.error('Erreur sauvegarde facture:', err);
+      throw err;
     }
   };
 
-  const handleDuplicateInvoice = (invoice) => {
-    const duplicatedInvoice = {
-      ...invoice,
-      id: undefined,
-      number: undefined,
-      status: 'draft',
-      invoiceDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    };
-    
-    setEditingInvoice(duplicatedInvoice);
-    setIsModalOpen(true);
+  const handleDuplicateInvoice = async (invoice) => {
+    try {
+      await duplicateDocument(invoice.id);
+      loadInvoices();
+      loadStats();
+    } catch (err) {
+      console.error('Erreur duplication facture:', err);
+      alert('Erreur lors de la duplication');
+    }
   };
 
-  // NOUVEAU : Gestion aperçu PDF
   const handleShowPDF = (invoice) => {
     setSelectedInvoiceForPDF(invoice);
     setIsPDFModalOpen(true);
   };
 
-  const handleSendInvoice = (invoice) => {
-    // Marquer comme envoyée et ouvrir PDF
-    if (invoice.status === 'draft') {
-      invoiceStorage.update(invoice.id, { 
-        status: 'sent',
-        sentAt: new Date().toISOString()
-      });
-      loadInvoices();
-      loadStats();
+  const handleSendInvoice = async (invoice) => {
+    try {
+      if (invoice.status === 'draft') {
+        await sendDocument(invoice.id);
+        loadInvoices();
+        loadStats();
+      }
+      handleShowPDF(invoice);
+    } catch (err) {
+      console.error('Erreur envoi facture:', err);
+      alert('Erreur lors de l\'envoi');
     }
-    handleShowPDF(invoice);
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    loadInvoices();
+    loadStats();
   };
 
   const getStatusColor = (status) => {
@@ -201,6 +234,7 @@ const InvoicesModule = ({ navigateToClient }) => {
       case 'sent': return 'bg-blue-100 text-blue-800';
       case 'paid': return 'bg-green-100 text-green-800';
       case 'overdue': return 'bg-red-100 text-red-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -211,6 +245,7 @@ const InvoicesModule = ({ navigateToClient }) => {
       case 'sent': return 'Envoyée';
       case 'paid': return 'Payée';
       case 'overdue': return 'Échue';
+      case 'cancelled': return 'Annulée';
       default: return status;
     }
   };
@@ -218,16 +253,16 @@ const InvoicesModule = ({ navigateToClient }) => {
   const InvoiceActions = ({ invoice }) => {
     return (
       <div className="flex items-center space-x-1">
-        {/* Modifier */}
-        <button
-          onClick={() => handleEditInvoice(invoice)}
-          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-          title="Modifier"
-        >
-          <Edit2 className="h-4 w-4" />
-        </button>
+        {invoice.status === 'draft' && (
+          <button
+            onClick={() => handleEditInvoice(invoice)}
+            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+            title="Modifier"
+          >
+            <Edit2 className="h-4 w-4" />
+          </button>
+        )}
 
-        {/* Dupliquer */}
         <button
           onClick={() => handleDuplicateInvoice(invoice)}
           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -236,7 +271,6 @@ const InvoicesModule = ({ navigateToClient }) => {
           <Copy className="h-4 w-4" />
         </button>
 
-        {/* Aperçu PDF */}
         <button
           onClick={() => handleShowPDF(invoice)}
           className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
@@ -245,8 +279,7 @@ const InvoicesModule = ({ navigateToClient }) => {
           <Eye className="h-4 w-4" />
         </button>
 
-        {/* Envoyer par email - seulement pour factures non payées */}
-        {invoice.status !== 'paid' && (
+        {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
           <button
             onClick={() => handleSendInvoice(invoice)}
             className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
@@ -256,11 +289,9 @@ const InvoicesModule = ({ navigateToClient }) => {
           </button>
         )}
 
-        {/* Télécharger PDF */}
         <button
           onClick={() => {
             handleShowPDF(invoice);
-            // Auto-download après 2 secondes
             setTimeout(() => {
               const downloadBtn = document.querySelector('[title="Télécharger"]');
               if (downloadBtn) downloadBtn.click();
@@ -272,14 +303,15 @@ const InvoicesModule = ({ navigateToClient }) => {
           <Download className="h-4 w-4" />
         </button>
 
-        {/* Supprimer */}
-        <button
-          onClick={() => handleDeleteInvoice(invoice.id)}
-          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-          title="Supprimer"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {invoice.status === 'draft' && (
+          <button
+            onClick={() => handleDeleteInvoice(invoice.id)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            title="Supprimer"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
     );
   };
@@ -294,7 +326,18 @@ const InvoicesModule = ({ navigateToClient }) => {
 
   return (
     <div className="space-y-6">
-      {/* En-tête : Titre + Bouton */}
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+          <p className="text-red-700 text-sm">{error}</p>
+          <button onClick={handleRefresh} className="ml-auto text-red-600 hover:text-red-800 text-sm font-medium">
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Factures</h2>
@@ -309,7 +352,7 @@ const InvoicesModule = ({ navigateToClient }) => {
         </button>
       </div>
 
-      {/* Barre de filtres */}
+      {/* Filters */}
       <div className="bg-white rounded-lg border p-4">
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
@@ -333,13 +376,16 @@ const InvoicesModule = ({ navigateToClient }) => {
             <option value="paid">Payées</option>
             <option value="overdue">Échues</option>
           </select>
-          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+          <button
+            onClick={handleRefresh}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+          >
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Statistiques rapides remontées */}
+      {/* Stats */}
       <div className="grid md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <h4 className="font-semibold text-gray-900 mb-2">Total factures</h4>
@@ -349,13 +395,13 @@ const InvoicesModule = ({ navigateToClient }) => {
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <h4 className="font-semibold text-gray-900 mb-2">Chiffre d'affaires</h4>
-          <p className="text-3xl font-bold text-indigo-600">{stats.totalRevenue?.toFixed(2) || '0.00'}€</p>
+          <p className="text-3xl font-bold text-indigo-600">{(stats.totalRevenue || 0).toFixed(2)}€</p>
           <p className="text-sm text-gray-500">Factures payées</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <h4 className="font-semibold text-gray-900 mb-2">En attente</h4>
-          <p className="text-3xl font-bold text-orange-600">{stats.pendingAmount?.toFixed(2) || '0.00'}€</p>
+          <p className="text-3xl font-bold text-orange-600">{(stats.pendingAmount || 0).toFixed(2)}€</p>
           <p className="text-sm text-gray-500">À encaisser</p>
         </div>
 
@@ -366,7 +412,7 @@ const InvoicesModule = ({ navigateToClient }) => {
         </div>
       </div>
 
-      {/* Liste des factures */}
+      {/* Invoice list */}
       <div className="bg-white rounded-xl shadow-sm border overflow-visible">
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
@@ -377,7 +423,7 @@ const InvoicesModule = ({ navigateToClient }) => {
             </span>
           </div>
         </div>
-        
+
         {filteredInvoices.length === 0 ? (
           <div className="p-12 text-center">
             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -385,13 +431,13 @@ const InvoicesModule = ({ navigateToClient }) => {
               {searchQuery ? 'Aucune facture trouvée' : 'Aucune facture créée'}
             </h5>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {searchQuery 
+              {searchQuery
                 ? 'Essayez de modifier vos critères de recherche.'
                 : 'Créez votre première facture conforme à la réglementation 2026. L\'interface vous guidera pour respecter toutes les obligations légales.'
               }
             </p>
             {!searchQuery && (
-              <button 
+              <button
                 onClick={handleAddInvoice}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center space-x-2"
               >
@@ -442,7 +488,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                 <tbody>
                   {filteredInvoices.map((invoice) => {
                     const isOverdue = invoice.dueDate && new Date(invoice.dueDate) < new Date() && invoice.status === 'sent';
-                    
+
                     return (
                       <tr key={invoice.id} className="border-t hover:bg-gray-50">
                         <td className="p-4">
@@ -510,12 +556,12 @@ const InvoicesModule = ({ navigateToClient }) => {
         )}
       </div>
 
-      {/* Actions rapides */}
+      {/* Quick actions */}
       {invoices.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h4 className="font-semibold text-gray-900 mb-4">Actions rapides</h4>
           <div className="grid md:grid-cols-3 gap-4">
-            <button 
+            <button
               onClick={handleAddInvoice}
               className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
             >
@@ -529,8 +575,8 @@ const InvoicesModule = ({ navigateToClient }) => {
                 </div>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => {
                 const lastInvoice = invoices[invoices.length - 1];
                 if (lastInvoice) handleDuplicateInvoice(lastInvoice);
@@ -548,7 +594,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                 </div>
               </div>
             </button>
-            
+
             <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -564,7 +610,7 @@ const InvoicesModule = ({ navigateToClient }) => {
         </div>
       )}
 
-      {/* Informations conformité */}
+      {/* Compliance info */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
         <div className="flex items-start space-x-3">
           <div className="text-2xl">ℹ️</div>
@@ -573,7 +619,7 @@ const InvoicesModule = ({ navigateToClient }) => {
               Conformité 2026 - Facturation électronique
             </h4>
             <p className="text-blue-700 text-sm mb-3">
-              Toutes vos factures sont automatiquement générées selon la norme européenne EN 16931. 
+              Toutes vos factures sont automatiquement générées selon la norme européenne EN 16931.
               Elles incluent la signature électronique et l'archivage légal requis.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -597,15 +643,17 @@ const InvoicesModule = ({ navigateToClient }) => {
         </div>
       </div>
 
-      {/* Modal de formulaire facture */}
+      {/* Invoice form modal */}
       <InvoiceFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveInvoice}
         invoice={editingInvoice}
+        patients={patients}
+        billingSettings={billingSettings}
       />
 
-      {/* Modal aperçu PDF */}
+      {/* PDF preview modal */}
       <PDFPreviewModal
         isOpen={isPDFModalOpen}
         onClose={() => setIsPDFModalOpen(false)}

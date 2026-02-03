@@ -34,12 +34,12 @@ optionnelles pour MedicalPro.
 
 | # | Tache | Fichier(s) | Statut |
 |---|-------|-----------|--------|
-| 2.1 | Client API documentsApi.js | `src/api/documentsApi.js` | [ ] |
-| 2.2 | Adapter InvoicesModule.js (localStorage -> API) | `src/components/billing/InvoicesModule.js` | [ ] |
-| 2.3 | Adapter QuotesModule.js (localStorage -> API) | `src/components/billing/QuotesModule.js` | [ ] |
-| 2.4 | Adapter InvoiceFormModal.js (API + champs EN 16931) | `src/components/billing/InvoiceFormModal.js` | [ ] |
-| 2.5 | Adapter QuoteFormModal.js (API + champs EN 16931) | `src/components/billing/QuoteFormModal.js` | [ ] |
-| 2.6 | Supprimer localStorage billing dans storage.js | `src/utils/storage.js` | [ ] |
+| 2.1 | Client API documentsApi.js | `src/api/documentsApi.js` | [x] |
+| 2.2 | Adapter InvoicesModule.js (localStorage -> API) | `src/components/dashboard/modules/InvoicesModule.js` | [x] |
+| 2.3 | Adapter QuotesModule.js (localStorage -> API) | `src/components/dashboard/modules/QuotesModule.js` | [x] |
+| 2.4 | Adapter InvoiceFormModal.js (API + champs EN 16931) | `src/components/dashboard/modals/InvoiceFormModal.js` | [x] |
+| 2.5 | Adapter QuoteFormModal.js (API + champs EN 16931) | `src/components/dashboard/modals/QuoteFormModal.js` | [x] |
+| 2.6 | Supprimer localStorage billing dans storage.js | `src/utils/storage.js` | [x] |
 
 ### Phase 3 -- Integration planning
 
