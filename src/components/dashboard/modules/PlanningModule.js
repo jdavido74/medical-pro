@@ -528,7 +528,7 @@ const PlanningModule = () => {
   // Group appointments by date and sort by time
   const appointmentsByDate = useMemo(() => {
     const grouped = {};
-    for (const apt of appointments) {
+    for (const apt of appointments.filter(a => a.status !== 'cancelled')) {
       const date = apt.date;
       if (!grouped[date]) {
         grouped[date] = [];
@@ -623,12 +623,13 @@ const PlanningModule = () => {
     }
   };
 
-  const handleBookingSave = async () => {
+  const handleBookingSave = async (result) => {
+    const isDeleted = result?.deleted;
     const isUpdate = !!selectedAppointment;
     setShowBookingModal(false);
     setSelectedAppointment(null);
     setSummaryAppointment(null);
-    showToast(isUpdate ? t('messages.updateSuccess') : t('messages.createSuccess'));
+    showToast(isDeleted ? t('messages.cancelSuccess') : isUpdate ? t('messages.updateSuccess') : t('messages.createSuccess'));
     await loadData();
     if (viewMode === 'list') {
       await loadListData();

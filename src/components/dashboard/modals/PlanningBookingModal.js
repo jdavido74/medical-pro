@@ -1072,12 +1072,20 @@ const PlanningBookingModal = ({
   }, [selectedSlot, step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter providers by role for practitioner dropdown
+  // Handle both camelCase (isActive) and snake_case (is_active) since
+  // /planning/resources returns raw backend data without transformation
+  const isProviderActive = (p) => {
+    const active = p.isActive !== undefined ? p.isActive : p.is_active;
+    return active !== false;
+  };
+
   const practitionerProviders = providers.filter(p =>
-    !p.role || p.role === 'physician' || p.role === 'practitioner' || p.role === 'doctor'
+    isProviderActive(p) &&
+    (!p.role || p.role === 'physician' || p.role === 'practitioner' || p.role === 'doctor')
   );
 
   // All providers for assistant dropdown
-  const assistantProviders = providers;
+  const assistantProviders = providers.filter(p => isProviderActive(p));
 
   // Helper to convert time string to minutes
   const timeToMinutes = (timeStr) => {

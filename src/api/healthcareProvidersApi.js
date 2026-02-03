@@ -83,11 +83,11 @@ async function updateHealthcareProvider(providerId, providerData) {
     // Transform frontend data to backend format
     const backendData = dataTransform.transformHealthcareProviderToBackend(providerData);
 
-    // Remove email - it's immutable after creation (backend won't accept it)
+    // Remove fields that are only valid on creation, not on update
     delete backendData.email;
-
-    // Remove facility_id - it comes from auth context, not from the request
     delete backendData.facility_id;
+    delete backendData.send_invitation;
+    delete backendData.password_hash;
 
     const response = await baseClient.put(`/healthcare-providers/${providerId}`, backendData);
     const data = dataTransform.unwrapResponse(response);

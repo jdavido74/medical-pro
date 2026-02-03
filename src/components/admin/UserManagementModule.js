@@ -59,20 +59,21 @@ const UserManagementModule = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [notification, setNotification] = useState(null);
 
-  // État pour les praticiens en attente (pending)
+  // État pour les praticiens (tous + pending)
+  const [allProviders, setAllProviders] = useState([]);
   const [pendingProviders, setPendingProviders] = useState([]);
   const [isLoadingPending, setIsLoadingPending] = useState(false);
 
-  // Charger les praticiens en attente
+  // Charger tous les praticiens (on garde la ref complète pour enrichir les users actifs)
   const loadPendingProviders = useCallback(async () => {
     try {
       setIsLoadingPending(true);
       const result = await healthcareProvidersApi.getHealthcareProviders();
-      // Filtrer uniquement les praticiens en attente
-      const pending = (result.providers || []).filter(p => p.accountStatus === 'pending');
-      setPendingProviders(pending);
+      const providers = result.providers || [];
+      setAllProviders(providers);
+      setPendingProviders(providers.filter(p => p.accountStatus === 'pending'));
     } catch (error) {
-      console.error('[UserManagementModule] Error loading pending providers:', error);
+      console.error('[UserManagementModule] Error loading providers:', error);
     } finally {
       setIsLoadingPending(false);
     }
@@ -128,16 +129,27 @@ const UserManagementModule = () => {
     };
   }, [users, pendingProviders]);
 
-  // Fusionner utilisateurs actifs et praticiens pending
+  // Fusionner utilisateurs actifs (enrichis avec données provider) et praticiens pending
   const allUsers = useMemo(() => {
-    // Marquer les utilisateurs actifs avec accountStatus: 'active'
-    const activeUsers = users.map(u => ({
-      ...u,
-      accountStatus: u.accountStatus || 'active',
-      isPendingProvider: false
-    }));
+    const activeUsers = users.map(u => {
+      // Enrichir avec les données du healthcare_provider lié (department, speciality, etc.)
+      const provider = allProviders.find(
+        p => p.centralUserId === u.id || p.email === u.email
+      );
+      return {
+        ...u,
+        // Provider fields (profession → department pour le formulaire)
+        department: provider?.profession || u.department || '',
+        speciality: provider?.speciality || u.speciality || '',
+        administrativeRole: provider?.administrativeRole || u.administrativeRole || '',
+        phone: provider?.phone || u.phone || '',
+        licenseNumber: provider?.licenseNumber || u.licenseNumber || '',
+        accountStatus: u.accountStatus || 'active',
+        isPendingProvider: false
+      };
+    });
     return [...activeUsers, ...pendingAsUsers];
-  }, [users, pendingAsUsers]);
+  }, [users, pendingAsUsers, allProviders]);
 
   // Filtrage et tri appliqués avec useMemo pour performance
   const filteredUsers = useMemo(() => {
@@ -244,15 +256,42 @@ const UserManagementModule = () => {
     setShowUserModal(true);
   };
 
+  const isPractitionerRole = (role) =>
+    ['physician', 'practitioner', 'doctor'].includes(role);
+
   const handleSaveUser = async (userData) => {
     try {
       if (editingUser) {
-        // Modification via contexte (optimistic update inclus)
-        await updateUser(editingUser.id, userData);
+        if (editingUser.isPendingProvider) {
+          // Pending provider: update via healthcare_providers API
+          await healthcareProvidersApi.updateHealthcareProvider(editingUser.id, userData);
+          await loadPendingProviders();
+        } else if (isPractitionerRole(editingUser.role)) {
+          // Active practitioner: update user fields via users API
+          await updateUser(editingUser.id, userData);
+          // Also update provider fields via healthcare_providers API
+          const provider = allProviders.find(
+            p => p.centralUserId === editingUser.id || p.email === editingUser.email
+          );
+          if (provider) {
+            await healthcareProvidersApi.updateHealthcareProvider(provider.id, userData);
+          }
+          await loadPendingProviders();
+        } else {
+          // Non-practitioner: update via users context only
+          await updateUser(editingUser.id, userData);
+        }
         showNotification(t('users.messages.updateSuccess') || 'Utilisateur mis à jour avec succès', 'success');
       } else {
-        // Création via contexte (optimistic update inclus)
-        await createUser(userData);
+        if (isPractitionerRole(userData.role)) {
+          // Create practitioner via healthcare_providers API (creates provider + linked central user)
+          await healthcareProvidersApi.createHealthcareProvider(userData);
+          await loadPendingProviders();
+          await refreshUsers();
+        } else {
+          // Create non-practitioner via users context
+          await createUser(userData);
+        }
         showNotification(t('users.messages.createSuccess') || 'Utilisateur créé avec succès', 'success');
       }
 

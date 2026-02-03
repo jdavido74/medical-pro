@@ -1617,6 +1617,7 @@ function transformUserFromBackend(user) {
     name: user.name || `${firstName} ${lastName}`.trim(),
     phone: user.phone || '',
     role: user.role,
+    administrativeRole: user.administrativeRole || user.administrative_role || '',
     department: user.department || '',
     speciality: user.speciality || '',
     licenseNumber: user.licenseNumber || user.license_number || null,
@@ -1638,8 +1639,9 @@ function transformUserToBackend(userData) {
 
   const backendData = {};
 
-  // Central user fields (users table)
-  // Note: phone, department, speciality, licenseNumber belong to healthcare_providers, not users
+  // Central user fields only (users table)
+  // Note: phone, department, speciality, licenseNumber, administrativeRole
+  // belong to healthcare_providers — use healthcareProvidersApi for those.
   if (userData.email !== undefined) backendData.email = userData.email;
   if (userData.password !== undefined) backendData.password = userData.password;
   if (userData.firstName !== undefined) backendData.firstName = userData.firstName;
