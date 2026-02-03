@@ -22,13 +22,13 @@ optionnelles pour MedicalPro.
 
 | # | Tache | Fichier(s) | Statut |
 |---|-------|-----------|--------|
-| 1.1 | Migration DB (documents, document_items, document_sequences, billing_settings) | `migrations/clinic_056_documents_billing.sql` | [ ] |
-| 1.2 | Modele Sequelize Document | `backend/src/models/clinic/Document.js` | [ ] |
-| 1.3 | Modele Sequelize DocumentItem | `backend/src/models/clinic/DocumentItem.js` | [ ] |
-| 1.4 | Modele Sequelize DocumentSequence | `backend/src/models/clinic/DocumentSequence.js` | [ ] |
-| 1.5 | ModelFactory + associations | `backend/src/base/ModelFactory.js` | [ ] |
-| 1.6 | documentService.js (calculs totaux, numerotation, conversion devis->facture) | `backend/src/services/documentService.js` | [ ] |
-| 1.7 | Routes /documents (CRUD + actions + stats) | `backend/src/routes/documents.js` | [ ] |
+| 1.1 | Migration DB (documents, document_items, document_sequences, billing_settings) | `migrations/clinic_055_documents_billing.sql` | [x] |
+| 1.2 | Modele Sequelize Document | `src/models/clinic/Document.js` | [x] |
+| 1.3 | Modele Sequelize DocumentItem | `src/models/clinic/DocumentItem.js` | [x] |
+| 1.4 | Modele Sequelize DocumentSequence | `src/models/clinic/DocumentSequence.js` | [x] |
+| 1.5 | ModelFactory + associations | `src/base/ModelFactory.js` | [x] |
+| 1.6 | documentService.js (calculs totaux, numerotation, conversion devis->facture) | `src/services/documentService.js` | [x] |
+| 1.7 | Routes /documents (CRUD + actions + stats) | `src/routes/documents.js` | [x] |
 
 ### Phase 2 -- Frontend connexion
 
