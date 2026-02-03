@@ -42,6 +42,9 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 ### Je travaille sur les consentements
 → [Gestion des consentements](./features/CONSENT_MANAGEMENT.md)
 
+### Je travaille sur la facturation / devis
+→ [Refonte Devis & Factures](./features/BILLING_INVOICING.md)
+
 ---
 
 ## 📂 **Par catégorie**
@@ -74,6 +77,7 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 - **[Vérification email](./security/EMAIL_VERIFICATION.md)** - Processus de vérification email
 
 ### 🌍 Fonctionnalités & I18N
+- **[Refonte Devis & Factures](./features/BILLING_INVOICING.md)** - Backend, EN 16931, Factur-X, SaaS-ready
 - **[Gestion des consentements](./features/CONSENT_MANAGEMENT.md)** - Consentements RGPD et médicaux
 - **[Support multilingue](./features/MULTILINGUAL_EMAILS.md)** - Emails en FR/ES/EN
 - **[Implémentation i18n](./features/I18N_IMPLEMENTATION.md)** - Intégration du système de traductions
