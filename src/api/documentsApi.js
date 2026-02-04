@@ -132,11 +132,32 @@ export const duplicateDocument = async (id) => {
 // ============================================================================
 
 /**
- * Get PDF for a document
+ * Get PDF for a document (binary response)
+ * Uses direct fetch instead of baseClient to handle binary Blob response.
  * @param {string} id - Document ID
+ * @returns {Promise<Blob>} PDF blob
  */
 export const getDocumentPDF = async (id) => {
-  return baseClient.get(`${ENDPOINT}/${id}/pdf`);
+  const { API_BASE_URL, getAuthToken, getCompanyId } = baseClient;
+  const url = `${API_BASE_URL}${ENDPOINT}/${id}/pdf`;
+  const headers = {};
+
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const companyId = getCompanyId();
+  if (companyId) {
+    headers['X-Company-ID'] = companyId;
+  }
+
+  const response = await fetch(url, { method: 'GET', headers });
+  if (!response.ok) {
+    throw new Error(`PDF download failed: ${response.status} ${response.statusText}`);
+  }
+
+  return response.blob();
 };
 
 // ============================================================================

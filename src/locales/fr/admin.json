@@ -10,6 +10,7 @@
   "teams": "Équipes et délégations",
   "audit": "Audit et journaux",
   "systemCategories": "Catégories",
+  "billingTab": "Facturation",
   "totalUsers": "Utilisateurs totaux",
   "active": "actifs",
   "clinic": "Cabinet",
@@ -885,6 +886,69 @@
     "validation": {
       "codeRequired": "Le code est obligatoire",
       "nameRequired": "Le nom en espagnol est obligatoire"
+    }
+  },
+  "billingSettings": {
+    "title": "Paramètres de facturation",
+    "subtitle": "Configurez les informations de facturation et de conformité e-invoicing",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "sellerInfo": {
+      "title": "Informations vendeur",
+      "name": "Raison sociale",
+      "legalForm": "Forme juridique",
+      "siren": "SIREN",
+      "vatNumber": "N° TVA intracommunautaire",
+      "capital": "Capital social",
+      "rcs": "RCS",
+      "address": "Adresse",
+      "line1": "Adresse ligne 1",
+      "line2": "Adresse ligne 2",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "contact": "Contact",
+      "email": "Email",
+      "phone": "Téléphone"
+    },
+    "prefixes": {
+      "title": "Préfixes de numérotation",
+      "invoice": "Préfixe factures",
+      "quote": "Préfixe devis",
+      "creditNote": "Préfixe avoirs",
+      "nextNumber": "Prochain"
+    },
+    "defaults": {
+      "title": "TVA et devise par défaut",
+      "taxRate": "Taux de TVA par défaut (%)",
+      "currency": "Devise",
+      "country": "Pays"
+    },
+    "bank": {
+      "title": "Coordonnées bancaires",
+      "bankName": "Banque",
+      "holder": "Titulaire du compte"
+    },
+    "conditions": {
+      "title": "Conditions et mentions légales",
+      "paymentDelay": "Délai de paiement (jours)",
+      "paymentTerms": "Conditions de paiement",
+      "latePaymentPenalty": "Pénalités de retard",
+      "recoveryCompensation": "Indemnité forfaitaire de recouvrement",
+      "earlyPaymentDiscount": "Escompte pour paiement anticipé",
+      "legalMentions": "Mentions légales additionnelles"
+    },
+    "einvoicing": {
+      "title": "E-invoicing (Factur-X)",
+      "description": "Sélectionnez le profil Factur-X pour la génération de factures électroniques conformes. Le XML CII est automatiquement embarqué dans le PDF des factures et avoirs.",
+      "minimum": "Données minimales (numéro, date, montants). Compatible avec les systèmes les plus simples.",
+      "basic": "Informations de base avec ventilation TVA et lignes de détail.",
+      "en16931": "Profil standard européen. Conforme à la directive 2014/55/EU. Recommandé pour la plupart des cas.",
+      "extended": "Profil étendu avec champs supplémentaires pour des besoins spécifiques."
+    },
+    "messages": {
+      "loadError": "Erreur lors du chargement des paramètres de facturation",
+      "saveSuccess": "Paramètres de facturation enregistrés avec succès",
+      "saveError": "Erreur lors de la sauvegarde des paramètres"
     }
   },
   "treatmentConsents": {

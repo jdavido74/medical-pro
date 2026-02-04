@@ -10,6 +10,7 @@
   "teams": "Equipos y delegaciones",
   "audit": "Auditoría y registros",
   "systemCategories": "Categorías",
+  "billingTab": "Facturación",
   "totalUsers": "Usuarios totales",
   "active": "activos",
   "clinic": "Consulta",
@@ -885,6 +886,69 @@
     "validation": {
       "codeRequired": "El c\u00f3digo es obligatorio",
       "nameRequired": "El nombre en espa\u00f1ol es obligatorio"
+    }
+  },
+  "billingSettings": {
+    "title": "Configuración de facturación",
+    "subtitle": "Configure la información de facturación y el cumplimiento de facturación electrónica",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "sellerInfo": {
+      "title": "Información del vendedor",
+      "name": "Razón social",
+      "legalForm": "Forma jurídica",
+      "siren": "Número de registro",
+      "vatNumber": "Número de IVA",
+      "capital": "Capital social",
+      "rcs": "Registro mercantil",
+      "address": "Dirección",
+      "line1": "Dirección línea 1",
+      "line2": "Dirección línea 2",
+      "postalCode": "Código postal",
+      "city": "Ciudad",
+      "contact": "Contacto",
+      "email": "Email",
+      "phone": "Teléfono"
+    },
+    "prefixes": {
+      "title": "Prefijos de numeración",
+      "invoice": "Prefijo facturas",
+      "quote": "Prefijo presupuestos",
+      "creditNote": "Prefijo notas de crédito",
+      "nextNumber": "Siguiente"
+    },
+    "defaults": {
+      "title": "IVA y moneda por defecto",
+      "taxRate": "Tasa de IVA por defecto (%)",
+      "currency": "Moneda",
+      "country": "País"
+    },
+    "bank": {
+      "title": "Datos bancarios",
+      "bankName": "Banco",
+      "holder": "Titular de la cuenta"
+    },
+    "conditions": {
+      "title": "Condiciones y menciones legales",
+      "paymentDelay": "Plazo de pago (días)",
+      "paymentTerms": "Condiciones de pago",
+      "latePaymentPenalty": "Penalizaciones por mora",
+      "recoveryCompensation": "Indemnización fija de cobro",
+      "earlyPaymentDiscount": "Descuento por pronto pago",
+      "legalMentions": "Menciones legales adicionales"
+    },
+    "einvoicing": {
+      "title": "Facturación electrónica (Factur-X)",
+      "description": "Seleccione el perfil Factur-X para la generación de facturas electrónicas conformes. El XML CII se integra automáticamente en el PDF de facturas y notas de crédito.",
+      "minimum": "Datos mínimos (número, fecha, importes). Compatible con los sistemas más simples.",
+      "basic": "Información básica con desglose de IVA y líneas de detalle.",
+      "en16931": "Perfil estándar europeo. Conforme a la directiva 2014/55/EU. Recomendado para la mayoría de los casos.",
+      "extended": "Perfil extendido con campos adicionales para necesidades específicas."
+    },
+    "messages": {
+      "loadError": "Error al cargar la configuración de facturación",
+      "saveSuccess": "Configuración de facturación guardada con éxito",
+      "saveError": "Error al guardar la configuración de facturación"
     }
   },
   "treatmentConsents": {

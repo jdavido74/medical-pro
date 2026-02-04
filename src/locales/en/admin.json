@@ -10,6 +10,7 @@
   "teams": "Teams and Branches",
   "audit": "Audit and Logs",
   "systemCategories": "Categories",
+  "billingTab": "Billing",
   "totalUsers": "Total Users",
   "active": "active",
   "clinic": "Practice",
@@ -885,6 +886,69 @@
     "validation": {
       "codeRequired": "Code is required",
       "nameRequired": "Spanish name is required"
+    }
+  },
+  "billingSettings": {
+    "title": "Billing Settings",
+    "subtitle": "Configure billing information and e-invoicing compliance",
+    "save": "Save",
+    "saving": "Saving...",
+    "sellerInfo": {
+      "title": "Seller Information",
+      "name": "Company name",
+      "legalForm": "Legal form",
+      "siren": "Registration number",
+      "vatNumber": "VAT number",
+      "capital": "Share capital",
+      "rcs": "Trade registry",
+      "address": "Address",
+      "line1": "Address line 1",
+      "line2": "Address line 2",
+      "postalCode": "Postal code",
+      "city": "City",
+      "contact": "Contact",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "prefixes": {
+      "title": "Numbering Prefixes",
+      "invoice": "Invoice prefix",
+      "quote": "Quote prefix",
+      "creditNote": "Credit note prefix",
+      "nextNumber": "Next"
+    },
+    "defaults": {
+      "title": "Tax & Currency Defaults",
+      "taxRate": "Default tax rate (%)",
+      "currency": "Currency",
+      "country": "Country"
+    },
+    "bank": {
+      "title": "Bank Details",
+      "bankName": "Bank",
+      "holder": "Account holder"
+    },
+    "conditions": {
+      "title": "Terms & Legal Mentions",
+      "paymentDelay": "Payment delay (days)",
+      "paymentTerms": "Payment terms",
+      "latePaymentPenalty": "Late payment penalties",
+      "recoveryCompensation": "Fixed recovery compensation",
+      "earlyPaymentDiscount": "Early payment discount",
+      "legalMentions": "Additional legal mentions"
+    },
+    "einvoicing": {
+      "title": "E-invoicing (Factur-X)",
+      "description": "Select the Factur-X profile for compliant electronic invoice generation. The CII XML is automatically embedded in the PDF for invoices and credit notes.",
+      "minimum": "Minimal data (number, date, amounts). Compatible with the simplest systems.",
+      "basic": "Basic information with tax breakdown and line items.",
+      "en16931": "European standard profile. Compliant with directive 2014/55/EU. Recommended for most cases.",
+      "extended": "Extended profile with additional fields for specific needs."
+    },
+    "messages": {
+      "loadError": "Error loading billing settings",
+      "saveSuccess": "Billing settings saved successfully",
+      "saveError": "Error saving billing settings"
     }
   },
   "treatmentConsents": {
