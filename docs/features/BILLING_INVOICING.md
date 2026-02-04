@@ -45,18 +45,21 @@ optionnelles pour MedicalPro.
 
 | # | Tache | Fichier(s) | Statut |
 |---|-------|-----------|--------|
-| 3.1 | Bouton "Creer devis/facture" dans PlanningBookingModal | `src/components/planning/PlanningBookingModal.js` | [ ] |
-| 3.2 | Pre-remplissage depuis appointment (patient, traitements, prix) | Frontend forms | [ ] |
-| 3.3 | Alimenter appointments.quote_id / invoice_id | Backend routes | [ ] |
+| 3.1 | Bouton "Creer devis/facture" dans PlanningBookingModal | `src/components/dashboard/modals/PlanningBookingModal.js` | [x] |
+| 3.2 | Pre-remplissage depuis appointment (patient, traitements, prix) | `PlanningBookingModal.js`, `InvoiceFormModal.js`, `QuoteFormModal.js` | [x] |
+| 3.3 | Alimenter appointments.quote_id / invoice_id | `src/routes/documents.js` (Phase 1) | [x] |
 
 ### Phase 4 -- E-invoicing
 
 | # | Tache | Fichier(s) | Statut |
 |---|-------|-----------|--------|
-| 4.1 | facturxService.js (generation XML CII) | `backend/src/services/facturxService.js` | [ ] |
-| 4.2 | Endpoint /documents/:id/pdf (PDF/A-3 Factur-X) | Routes documents | [ ] |
-| 4.3 | Validation Schematron | facturxService | [ ] |
-| 4.4 | Configuration billing_settings dans admin | Frontend admin | [ ] |
+| 4.1 | facturxService.js (generation XML CII + validation structurelle) | `backend/src/services/facturxService.js` | [x] |
+| 4.2 | pdfService.js (rendu PDF pdfkit + PDF/A-3b pdf-lib) | `backend/src/services/pdfService.js` | [x] |
+| 4.3 | Endpoint /documents/:id/pdf (PDF binaire + Factur-X embedding) | `backend/src/routes/documents.js` | [x] |
+| 4.4 | Frontend getDocumentPDF (fetch binaire Blob) | `src/api/documentsApi.js` | [x] |
+| 4.5 | BillingSettingsModule admin (vendeur, prefixes, TVA, banque, conditions, Factur-X) | `src/components/admin/BillingSettingsModule.js` | [x] |
+| 4.6 | Route + onglet admin Facturation | `src/routes/index.js`, `src/layouts/AdminLayout.js` | [x] |
+| 4.7 | Traductions i18n fr/en/es | `src/locales/*/admin.json` | [x] |
 
 ### Phase 5 -- Finitions
 
@@ -328,4 +331,4 @@ Reforme francaise sept 2026 : buyer_siren, transaction_category, vat_on_debits.
 
 ---
 
-*Derniere mise a jour : Fevrier 2026*
+*Derniere mise a jour : 4 Fevrier 2026 — Phase 4 terminee*
