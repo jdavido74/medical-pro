@@ -19,8 +19,7 @@ import PlanningBookingModal from '../modals/PlanningBookingModal';
 import SendConsentRequestModal from '../../modals/SendConsentRequestModal';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import QuoteFormModal from '../modals/QuoteFormModal';
-import { createDocument, updateDocument, getDocument, buildDocumentPayload, getBillingSettings, transformDocumentForDisplay } from '../../../api/documentsApi';
-import { patientsApi } from '../../../api';
+import { createDocument, updateDocument, getDocument, buildDocumentPayload, getBillingSettings, transformDocumentForDisplay, fetchClientForBilling } from '../../../api/documentsApi';
 
 
 // Status icons and colors
@@ -739,26 +738,7 @@ const PlanningModule = () => {
 
   const handleSaveBillingDoc = useCallback(async (formData, documentType) => {
     try {
-      // Fetch the selected patient for document payload
-      let selectedClient = null;
-      if (formData.clientId) {
-        try {
-          const patient = await patientsApi.getPatientById(formData.clientId);
-          selectedClient = {
-            id: patient.id,
-            displayName: patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
-            email: patient.contact?.email || patient.email || '',
-            phone: patient.contact?.phone || patient.phone || '',
-            address: patient.address?.street || '',
-            postalCode: patient.address?.postalCode || '',
-            city: patient.address?.city || '',
-            country: patient.address?.country || '',
-            siren: patient.siren || ''
-          };
-        } catch (err) {
-          console.error('Error fetching patient for billing doc:', err);
-        }
-      }
+      const selectedClient = await fetchClientForBilling(formData.clientId);
 
       const enrichedFormData = {
         ...formData,

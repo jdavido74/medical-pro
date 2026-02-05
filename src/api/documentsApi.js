@@ -405,6 +405,27 @@ export const transformDocumentForDisplay = (doc) => {
   };
 };
 
+/**
+ * Fetch a patient by ID and map nested fields to the flat format expected by buildDocumentPayload.
+ * Shared by all save handlers (PlanningModule, InvoicesModule, QuotesModule).
+ */
+export const fetchClientForBilling = async (patientId) => {
+  if (!patientId) return null;
+  const { patientsApi } = await import('./patientsApi');
+  const patient = await patientsApi.getPatientById(patientId);
+  return {
+    id: patient.id,
+    displayName: patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
+    email: patient.contact?.email || patient.email || '',
+    phone: patient.contact?.phone || patient.phone || '',
+    address: patient.address?.street || '',
+    postalCode: patient.address?.postalCode || '',
+    city: patient.address?.city || '',
+    country: patient.address?.country || '',
+    siren: patient.siren || ''
+  };
+};
+
 export default {
   getDocuments,
   getDocument,

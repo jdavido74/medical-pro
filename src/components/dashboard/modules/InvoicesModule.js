@@ -4,9 +4,9 @@ import { Plus, Search, FileText, Download, Edit2, Trash2, Send, Copy, Eye, Chevr
 import {
   getDocuments, deleteDocument, sendDocument, duplicateDocument,
   getDocumentStats, getBillingSettings, payDocument,
-  buildDocumentPayload, createDocument, updateDocument, transformDocumentForDisplay
+  buildDocumentPayload, createDocument, updateDocument, transformDocumentForDisplay,
+  fetchClientForBilling
 } from '../../../api/documentsApi';
-import { patientsApi } from '../../../api/patientsApi';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
 import { useLocale } from '../../../contexts/LocaleContext';
@@ -168,28 +168,7 @@ const InvoicesModule = ({ navigateToClient }) => {
 
   const handleSaveInvoice = async (formData) => {
     try {
-      // Fetch the selected patient for document payload
-      let selectedClient = null;
-      if (formData.clientId) {
-        try {
-          const patient = await patientsApi.getPatientById(formData.clientId);
-          selectedClient = {
-            id: patient.id,
-            displayName: patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
-            email: patient.contact?.email || patient.email || '',
-            phone: patient.contact?.phone || patient.phone || '',
-            address: patient.address?.street || '',
-            postalCode: patient.address?.postalCode || '',
-            city: patient.address?.city || '',
-            country: patient.address?.country || '',
-            siren: patient.siren || ''
-          };
-        } catch (err) {
-          console.error('Error fetching patient for invoice:', err);
-        }
-      }
-
-      // Build backend payload
+      const selectedClient = await fetchClientForBilling(formData.clientId);
       const payload = buildDocumentPayload('invoice', formData, billingSettings, selectedClient);
 
       if (editingInvoice?.id) {

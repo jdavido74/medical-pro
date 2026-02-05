@@ -8,9 +8,9 @@ import {
 import {
   getDocuments, deleteDocument, sendDocument, duplicateDocument, convertToInvoice,
   acceptDocument, rejectDocument, getDocumentStats, getBillingSettings,
-  buildDocumentPayload, createDocument, updateDocument, transformDocumentForDisplay
+  buildDocumentPayload, createDocument, updateDocument, transformDocumentForDisplay,
+  fetchClientForBilling
 } from '../../../api/documentsApi';
-import { patientsApi } from '../../../api/patientsApi';
 import QuoteFormModal from '../modals/QuoteFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
 import { useLocale } from '../../../contexts/LocaleContext';
@@ -176,26 +176,7 @@ const QuotesModule = ({ navigateToClient }) => {
 
   const handleSaveQuote = async (formData) => {
     try {
-      // Fetch the selected patient for document payload
-      let selectedClient = null;
-      if (formData.clientId) {
-        try {
-          const patient = await patientsApi.getPatientById(formData.clientId);
-          selectedClient = {
-            id: patient.id,
-            displayName: patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
-            email: patient.contact?.email || patient.email || '',
-            phone: patient.contact?.phone || patient.phone || '',
-            address: patient.address?.street || '',
-            postalCode: patient.address?.postalCode || '',
-            city: patient.address?.city || '',
-            country: patient.address?.country || '',
-            siren: patient.siren || ''
-          };
-        } catch (err) {
-          console.error('Error fetching patient for quote:', err);
-        }
-      }
+      const selectedClient = await fetchClientForBilling(formData.clientId);
       const payload = buildDocumentPayload('quote', formData, billingSettings, selectedClient);
 
       if (editingQuote?.id) {
