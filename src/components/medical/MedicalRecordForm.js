@@ -14,6 +14,7 @@ import PrescriptionPreview from './PrescriptionPreview';
 import SmokingAssessment from './SmokingAssessment';
 import AlcoholAssessment from './AlcoholAssessment';
 import CatalogProductSelector from '../common/CatalogProductSelector';
+import { catalogStorage } from '../../utils/catalogStorage';
 import { useTranslation } from 'react-i18next';
 
 // Accept both single patient or patients array, and both onSave/onSubmit, existingRecord/initialData
@@ -272,10 +273,16 @@ const MedicalRecordForm = forwardRef(({
   const [activeTab, setActiveTab] = useState(initialActiveTab || 'basic');
   const [medicationWarnings, setMedicationWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCatalogSearch, setShowCatalogSearch] = useState(false);
 
   // Liste du personnel médical pour le champ assistant
   const [staffList, setStaffList] = useState([]);
   const [staffLoading, setStaffLoading] = useState(false);
+
+  // Initialiser le cache catalogue pour le sélecteur de traitements
+  useEffect(() => {
+    catalogStorage.initialize();
+  }, []);
 
   // Charger la liste du personnel médical
   useEffect(() => {
@@ -635,6 +642,7 @@ const MedicalRecordForm = forwardRef(({
       ...prev,
       treatments: [...prev.treatments, newTreatment]
     }));
+    setShowCatalogSearch(false);
   };
 
   const updateTreatment = (index, field, value) => {
@@ -1785,23 +1793,39 @@ const MedicalRecordForm = forwardRef(({
       <div>
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-semibold text-gray-900">{t('medical:form.treatmentsTab.treatments')}</h4>
-          <button
-            type="button"
-            onClick={addTreatment}
-            className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700"
-          >
-            <Plus className="h-4 w-4" />
-            <span>{t('medical:form.treatmentsTab.addMedication')}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={addTreatment}
+              className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{t('medical:form.treatmentsTab.addMedication')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCatalogSearch(!showCatalogSearch)}
+              className={`flex items-center space-x-2 px-3 py-1 rounded-lg ${
+                showCatalogSearch
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              <Package className="h-4 w-4" />
+              <span>{t('medical:form.treatmentsTab.addFromCatalog')}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="mb-4">
-          <CatalogProductSelector
-            onSelect={addTreatmentFromCatalog}
-            filterType={null}
-            placeholder={t('medical:form.treatmentsTab.addFromCatalog')}
-          />
-        </div>
+        {showCatalogSearch && (
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <CatalogProductSelector
+              onSelect={addTreatmentFromCatalog}
+              filterType={null}
+              placeholder={t('medical:form.treatmentsTab.searchCatalog')}
+            />
+          </div>
+        )}
 
         <div className="space-y-4">
           {formData.treatments.map((treatment, index) => (
