@@ -225,6 +225,13 @@ export const updateBillingSettings = async (settings) => {
 export const buildDocumentPayload = (documentType, formData, billingSettings, selectedClient) => {
   const seller = billingSettings?.seller || {};
 
+  // Validate required seller info
+  if (!seller.name) {
+    const err = new Error('Veuillez configurer les informations du vendeur (nom) dans les paramètres de facturation avant de créer un document.');
+    err.code = 'MISSING_SELLER_NAME';
+    throw err;
+  }
+
   // Map items: resolve null taxRate to default
   const defaultTaxRate = billingSettings?.defaultTaxRate || 20;
   const items = (formData.items || [])

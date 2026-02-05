@@ -358,7 +358,8 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
       onClose();
     } catch (error) {
       console.error('Erreur sauvegarde devis:', error);
-      setErrors({ general: t('saveError') });
+      const msg = error?.response?.data?.error?.details || error?.response?.data?.error?.message || error?.message || t('saveError');
+      setErrors({ general: msg });
     } finally {
       setIsLoading(false);
     }
