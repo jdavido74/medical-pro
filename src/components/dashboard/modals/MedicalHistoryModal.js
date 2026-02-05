@@ -1,7 +1,7 @@
 // components/dashboard/modals/MedicalHistoryModal.js
 import React, { useState, useRef, useContext, useEffect } from 'react';
 import {
-  X, Stethoscope, Plus, FileText, User, Calendar, Save
+  X, Stethoscope, Plus, FileText, User, Calendar, Save, Loader2
 } from 'lucide-react';
 import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
 import MedicalRecordForm from '../../medical/MedicalRecordForm';
@@ -9,12 +9,14 @@ import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
 import { MedicalRecordContext } from '../../../contexts/MedicalRecordContext';
 import { useAuth } from '../../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 const MedicalHistoryModal = ({
   patient,
   isOpen,
   onClose
 }) => {
+  const { t } = useTranslation(['medical', 'common']);
   const [editingRecord, setEditingRecord] = useState(null);
   const [isRecordFormOpen, setIsRecordFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +25,7 @@ const MedicalHistoryModal = ({
   const { hasPermission } = usePermissions();
   const { user } = useAuth();
   const medicalRecordContext = useContext(MedicalRecordContext);
-  const { createRecord, updateRecord, refreshRecords, getPatientRecords } = medicalRecordContext || {};
+  const { refreshRecords, getPatientRecords } = medicalRecordContext || {};
 
   // Charger les dossiers du patient pour obtenir le dernier
   useEffect(() => {
@@ -68,55 +70,33 @@ const MedicalHistoryModal = ({
     setIsRecordFormOpen(true);
   };
 
-  const handleSaveRecord = async (recordData) => {
+  const handleSaveRecord = async (savedRecord) => {
+    // Le formulaire MedicalRecordForm a déjà sauvegardé via l'API
+    // Ici on rafraîchit seulement la liste et on ferme le modal
+    console.log('[MedicalHistoryModal] Record saved by form, refreshing list:', savedRecord?.id);
+
     try {
-      console.log('[MedicalHistoryModal] Saving medical record:', recordData);
-
-      if (editingRecord && !editingRecord.isNew && updateRecord) {
-        // Mettre à jour un dossier existant via l'API
-        // Exclure patientId car non autorisé par le backend lors d'une mise à jour
-        const { patientId, ...dataWithoutPatientId } = recordData;
-        console.log('[MedicalHistoryModal] Updating existing record:', editingRecord.id);
-        await updateRecord(editingRecord.id, dataWithoutPatientId);
-      } else if (createRecord) {
-        // Créer un nouveau dossier médical via l'API
-        console.log('[MedicalHistoryModal] Creating new record for patient:', patient.id);
-        await createRecord({
-          ...recordData,
-          patientId: patient.id
-        });
-      } else {
-        console.error('[MedicalHistoryModal] MedicalRecordContext not available');
-        throw new Error('MedicalRecordContext not available');
-      }
-
-      // Rafraîchir la liste des dossiers
+      // Rafraîchir la liste des dossiers dans le contexte
       if (refreshRecords) {
         await refreshRecords();
       }
 
       // Recharger les dossiers du patient pour mettre à jour lastRecord
       if (getPatientRecords && patient?.id) {
-        try {
-          const result = await getPatientRecords(patient.id);
-          const records = result?.records || [];
-          const sortedRecords = [...records].sort((a, b) =>
-            new Date(b.createdAt) - new Date(a.createdAt)
-          );
-          setPatientRecords(sortedRecords);
-        } catch (error) {
-          console.error('[MedicalHistoryModal] Error reloading patient records:', error);
-        }
+        const result = await getPatientRecords(patient.id);
+        const records = result?.records || [];
+        const sortedRecords = [...records].sort((a, b) =>
+          new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setPatientRecords(sortedRecords);
       }
-
-      setIsRecordFormOpen(false);
-      setEditingRecord(null);
-      setIsSubmitting(false);
     } catch (error) {
-      console.error('[MedicalHistoryModal] Error saving medical record:', error);
-      setIsSubmitting(false);
-      // TODO: Afficher une notification d'erreur à l'utilisateur
+      console.error('[MedicalHistoryModal] Error refreshing records:', error);
     }
+
+    setIsRecordFormOpen(false);
+    setEditingRecord(null);
+    setIsSubmitting(false);
   };
 
   const handleCloseRecordForm = () => {
@@ -301,8 +281,12 @@ const MedicalHistoryModal = ({
                   disabled={isSubmitting}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
-                  <Save className="h-4 w-4" />
-                  <span>{isSubmitting ? 'Guardando...' : 'Guardar'}</span>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  <span>{isSubmitting ? t('medical:form.footer.saving') : t('medical:form.footer.saveRecord')}</span>
                 </button>
                 <button
                   onClick={handleCloseRecordForm}
