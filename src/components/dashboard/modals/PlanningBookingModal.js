@@ -1195,7 +1195,8 @@ const PlanningBookingModal = ({
         date,
         startTime,
         duration: selectedTreatments[0]?.duration || 30,
-        machineId: selectedSlot.machineId,
+        // Don't send machineId for overlappable treatments (no machine required)
+        machineId: selectedSlot.isOverlappable ? null : selectedSlot.machineId,
         treatmentId: selectedTreatments[0]?.id,
         serviceId: selectedTreatments[0]?.id,
         priority,
