@@ -86,6 +86,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
       });
     }
     setErrors({});
+    setSelectedClient(null);
   }, [invoice, preSelectedClient, initialItems, isOpen]);
 
   // Handle client selection from ClientSearchInput

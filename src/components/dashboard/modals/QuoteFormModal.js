@@ -89,6 +89,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
       });
     }
     setErrors({});
+    setSelectedClient(null);
   }, [quote, preSelectedPatient, initialItems, isOpen]);
 
   // Handle client selection from ClientSearchInput

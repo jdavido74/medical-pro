@@ -19,7 +19,7 @@ import PlanningBookingModal from '../modals/PlanningBookingModal';
 import SendConsentRequestModal from '../../modals/SendConsentRequestModal';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import QuoteFormModal from '../modals/QuoteFormModal';
-import { createDocument, buildDocumentPayload, getBillingSettings } from '../../../api/documentsApi';
+import { createDocument, updateDocument, getDocument, buildDocumentPayload, getBillingSettings, transformDocumentForDisplay } from '../../../api/documentsApi';
 import { patientsApi } from '../../../api';
 
 
@@ -258,8 +258,9 @@ const PlanningModule = () => {
   const [showBillingQuoteModal, setShowBillingQuoteModal] = useState(false);
   const [showBillingInvoiceModal, setShowBillingInvoiceModal] = useState(false);
   const [billingSettings, setBillingSettings] = useState(null);
-  const [billingPatients, setBillingPatients] = useState([]);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [editingBillingQuote, setEditingBillingQuote] = useState(null);
+  const [editingBillingInvoice, setEditingBillingInvoice] = useState(null);
 
   // Calculate date range based on view mode
   const dateRange = useMemo(() => {
@@ -638,23 +639,18 @@ const PlanningModule = () => {
   const [billingItems, setBillingItems] = useState([]);
 
   const loadBillingData = useCallback(async () => {
-    if (billingSettings && billingPatients.length > 0) return;
+    if (billingSettings) return;
     setBillingLoading(true);
     try {
-      const [settingsRes, patientsRes] = await Promise.all([
-        getBillingSettings(),
-        patientsApi.getPatients()
-      ]);
+      const settingsRes = await getBillingSettings();
       setBillingSettings(settingsRes.data || settingsRes);
-      const pts = patientsRes.data?.patients || patientsRes.data || [];
-      setBillingPatients(pts);
     } catch (err) {
       console.error('Error loading billing data:', err);
       showToast(t('billing.loadError', 'Erreur chargement facturation'), 'error');
     } finally {
       setBillingLoading(false);
     }
-  }, [billingSettings, billingPatients.length, t]);
+  }, [billingSettings, t]);
 
   // Build billing items from appointment(s), including linked group treatments with catalog prices
   const loadBillingItems = useCallback(async () => {
@@ -691,42 +687,102 @@ const PlanningModule = () => {
     setBillingLoading(true);
     try {
       await loadBillingData();
+
+      // If appointment already has a quote, open it for editing
+      if (summaryAppointment?.quoteId) {
+        const docRes = await getDocument(summaryAppointment.quoteId);
+        const doc = docRes.data || docRes;
+        setEditingBillingQuote(transformDocumentForDisplay(doc));
+        setBillingItems([]);
+        setShowBillingQuoteModal(true);
+        return;
+      }
+
       const items = await loadBillingItems();
       setBillingItems(items);
+      setEditingBillingQuote(null);
       setShowBillingQuoteModal(true);
+    } catch (err) {
+      console.error('Error opening quote modal:', err);
+      showToast(t('billing.loadError', 'Erreur chargement'), 'error');
     } finally {
       setBillingLoading(false);
     }
-  }, [loadBillingData, loadBillingItems]);
+  }, [loadBillingData, loadBillingItems, summaryAppointment, t]);
 
   const handleSummaryCreateInvoice = useCallback(async () => {
     setBillingLoading(true);
     try {
       await loadBillingData();
+
+      // If appointment already has an invoice, open it for editing
+      if (summaryAppointment?.invoiceId) {
+        const docRes = await getDocument(summaryAppointment.invoiceId);
+        const doc = docRes.data || docRes;
+        setEditingBillingInvoice(transformDocumentForDisplay(doc));
+        setBillingItems([]);
+        setShowBillingInvoiceModal(true);
+        return;
+      }
+
       const items = await loadBillingItems();
       setBillingItems(items);
+      setEditingBillingInvoice(null);
       setShowBillingInvoiceModal(true);
+    } catch (err) {
+      console.error('Error opening invoice modal:', err);
+      showToast(t('billing.loadError', 'Erreur chargement'), 'error');
     } finally {
       setBillingLoading(false);
     }
-  }, [loadBillingData, loadBillingItems]);
+  }, [loadBillingData, loadBillingItems, summaryAppointment, t]);
 
   const handleSaveBillingDoc = useCallback(async (formData, documentType) => {
     try {
-      const selectedClient = billingPatients.find(p => p.id === formData.clientId) || null;
+      // Fetch the selected patient for document payload
+      let selectedClient = null;
+      if (formData.clientId) {
+        try {
+          const patient = await patientsApi.getPatientById(formData.clientId);
+          selectedClient = {
+            id: patient.id,
+            displayName: patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
+            email: patient.contact?.email || patient.email || '',
+            phone: patient.contact?.phone || patient.phone || '',
+            address: patient.address?.street || '',
+            postalCode: patient.address?.postalCode || '',
+            city: patient.address?.city || '',
+            country: patient.address?.country || '',
+            siren: patient.siren || ''
+          };
+        } catch (err) {
+          console.error('Error fetching patient for billing doc:', err);
+        }
+      }
+
       const enrichedFormData = {
         ...formData,
         appointmentId: summaryAppointment?.id || null,
         practitionerId: summaryAppointment?.providerId || null
       };
       const payload = buildDocumentPayload(documentType, enrichedFormData, billingSettings, selectedClient);
-      await createDocument(payload);
-      showToast(documentType === 'quote' ? t('billing.quoteCreated', 'Devis créé') : t('billing.invoiceCreated', 'Facture créée'), 'success');
+
+      // Edit existing or create new
+      const editingDoc = documentType === 'quote' ? editingBillingQuote : editingBillingInvoice;
+      if (editingDoc?.id) {
+        await updateDocument(editingDoc.id, payload);
+        showToast(documentType === 'quote' ? t('billing.quoteUpdated', 'Devis mis à jour') : t('billing.invoiceUpdated', 'Facture mise à jour'), 'success');
+      } else {
+        await createDocument(payload);
+        showToast(documentType === 'quote' ? t('billing.quoteCreated', 'Devis créé') : t('billing.invoiceCreated', 'Facture créée'), 'success');
+        // Refresh appointment data so quoteId/invoiceId get updated
+        await loadData();
+      }
     } catch (err) {
       console.error('Error saving billing document:', err);
       throw err;
     }
-  }, [billingPatients, billingSettings, summaryAppointment, t]);
+  }, [billingSettings, summaryAppointment, editingBillingQuote, editingBillingInvoice, t, loadData]);
 
   const handleBookingSave = async (result) => {
     const isDeleted = result?.deleted;
@@ -1707,18 +1763,32 @@ const PlanningModule = () => {
                     <button
                       onClick={handleSummaryCreateQuote}
                       disabled={billingLoading}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        summaryAppointment.quoteId
+                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                          : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                      }`}
                     >
                       <FileText className="w-4 h-4" />
-                      {t('billing.createQuote', 'Devis')}
+                      {summaryAppointment.quoteId
+                        ? t('billing.editQuote', 'Modifier le devis')
+                        : t('billing.createQuote', 'Devis')
+                      }
                     </button>
                     <button
                       onClick={handleSummaryCreateInvoice}
                       disabled={billingLoading}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        summaryAppointment.invoiceId
+                          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                      }`}
                     >
                       <Receipt className="w-4 h-4" />
-                      {t('billing.createInvoice', 'Facture')}
+                      {summaryAppointment.invoiceId
+                        ? t('billing.editInvoice', 'Modifier la facture')
+                        : t('billing.createInvoice', 'Facture')
+                      }
                     </button>
                   </>
                 )}
@@ -1770,23 +1840,23 @@ const PlanningModule = () => {
       {/* Billing Quote Modal */}
       <QuoteFormModal
         isOpen={showBillingQuoteModal}
-        onClose={() => setShowBillingQuoteModal(false)}
+        onClose={() => { setShowBillingQuoteModal(false); setEditingBillingQuote(null); }}
         onSave={(formData) => handleSaveBillingDoc(formData, 'quote')}
-        preSelectedPatient={summaryAppointment?.patient ? { id: summaryAppointment.patient.id } : null}
-        patients={billingPatients}
+        quote={editingBillingQuote}
+        preSelectedPatient={!editingBillingQuote && summaryAppointment?.patient ? { id: summaryAppointment.patient.id } : null}
         billingSettings={billingSettings}
-        initialItems={billingItems}
+        initialItems={!editingBillingQuote ? billingItems : null}
       />
 
       {/* Billing Invoice Modal */}
       <InvoiceFormModal
         isOpen={showBillingInvoiceModal}
-        onClose={() => setShowBillingInvoiceModal(false)}
+        onClose={() => { setShowBillingInvoiceModal(false); setEditingBillingInvoice(null); }}
         onSave={(formData) => handleSaveBillingDoc(formData, 'invoice')}
-        preSelectedClient={summaryAppointment?.patient ? { id: summaryAppointment.patient.id } : null}
-        patients={billingPatients}
+        invoice={editingBillingInvoice}
+        preSelectedClient={!editingBillingInvoice && summaryAppointment?.patient ? { id: summaryAppointment.patient.id } : null}
         billingSettings={billingSettings}
-        initialItems={billingItems}
+        initialItems={!editingBillingInvoice ? billingItems : null}
       />
 
       {/* Click outside handler for action menu */}

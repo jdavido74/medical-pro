@@ -32,6 +32,8 @@ const ClientSearchInput = ({
       patientsApi.getPatientById(value)
         .then(patient => {
           setSelectedPatient(patient);
+          // Notify parent so it gets the full patient data for save
+          onChange(patient.id, patient);
         })
         .catch(err => {
           console.error('[ClientSearchInput] Error loading pre-selected patient:', err);
