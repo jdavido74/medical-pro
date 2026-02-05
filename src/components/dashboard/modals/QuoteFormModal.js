@@ -9,7 +9,7 @@ import CatalogProductSelector from '../../common/CatalogProductSelector';
 import { useCountryConfig } from '../../../config/ConfigManager';
 import { useLocale } from '../../../contexts/LocaleContext';
 
-const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPatient = null, patients = [], billingSettings = null }) => {
+const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPatient = null, patients = [], billingSettings = null, initialItems = null }) => {
   const { config } = useCountryConfig();
   const { locale } = useLocale();
   
@@ -91,7 +91,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
         quoteDate: today.toISOString().split('T')[0],
         validUntil: validUntil.toISOString().split('T')[0],
         status: 'draft',
-        items: [{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, taxRate: null }],
+        items: initialItems?.length ? initialItems : [{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, taxRate: null }],
         notes: '',
         validityDays: 30,
         discountType: 'none',
@@ -100,7 +100,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
       });
     }
     setErrors({});
-  }, [quote, preSelectedPatient, isOpen]);
+  }, [quote, preSelectedPatient, initialItems, isOpen]);
 
   // Mettre à jour le client sélectionné
   useEffect(() => {

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import CatalogProductSelector from '../../common/CatalogProductSelector';
 
-const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelectedClient = null, patients = [], billingSettings = null }) => {
+const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelectedClient = null, patients = [], billingSettings = null, initialItems = null }) => {
   const [formData, setFormData] = useState({
     clientId: '',
     invoiceDate: new Date().toISOString().split('T')[0],
@@ -90,7 +90,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
         invoiceDate: today.toISOString().split('T')[0],
         dueDate: dueDate.toISOString().split('T')[0],
         status: 'draft',
-        items: [{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, taxRate: null }],
+        items: initialItems?.length ? initialItems : [{ id: Date.now(), description: '', quantity: 1, unitPrice: 0, taxRate: null }],
         notes: '',
         paymentTerms: 30,
         discountType: 'none',
@@ -98,7 +98,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
       });
     }
     setErrors({});
-  }, [invoice, preSelectedClient, isOpen]);
+  }, [invoice, preSelectedClient, initialItems, isOpen]);
 
   // Mettre à jour le client sélectionné
   useEffect(() => {

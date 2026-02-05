@@ -6,12 +6,16 @@
 
 import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck, FileText, Receipt } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { PatientContext } from '../../../contexts/PatientContext';
 import { useAuth } from '../../../hooks/useAuth';
 import PatientSearchSelect from '../../common/PatientSearchSelect';
 import QuickPatientModal from '../../modals/QuickPatientModal';
+import InvoiceFormModal from './InvoiceFormModal';
+import QuoteFormModal from './QuoteFormModal';
+import { createDocument, buildDocumentPayload, getBillingSettings } from '../../../api/documentsApi';
+import { patientsApi } from '../../../api';
 
 /**
  * LinkedGroupChoiceModal - Sub-modal to choose between editing/deleting single, group, or all patient appointments
@@ -367,6 +371,14 @@ const PlanningBookingModal = ({
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [conflictInfo, setConflictInfo] = useState(null);
   const [pendingSaveData, setPendingSaveData] = useState(null);
+
+  // Billing state
+  const [showBillingQuoteModal, setShowBillingQuoteModal] = useState(false);
+  const [showBillingInvoiceModal, setShowBillingInvoiceModal] = useState(false);
+  const [billingSettings, setBillingSettings] = useState(null);
+  const [billingPatients, setBillingPatients] = useState([]);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState(null);
 
   // Data state
   const [treatments, setTreatments] = useState([]);
@@ -862,6 +874,69 @@ const PlanningBookingModal = ({
     setIsQuickPatientModalOpen(false);
     setQuickPatientSearchQuery('');
   };
+
+  // === Billing integration ===
+
+  // Load billing data (settings + patients) when opening a billing modal
+  const loadBillingData = useCallback(async () => {
+    if (billingSettings && billingPatients.length > 0) return; // Already loaded
+    setBillingLoading(true);
+    setBillingError(null);
+    try {
+      const [settingsRes, patientsRes] = await Promise.all([
+        getBillingSettings(),
+        patientsApi.getPatients()
+      ]);
+      setBillingSettings(settingsRes.data || settingsRes);
+      const pts = patientsRes.data?.patients || patientsRes.data || [];
+      setBillingPatients(pts);
+    } catch (err) {
+      console.error('Error loading billing data:', err);
+      setBillingError(err.message || 'Erreur chargement données facturation');
+    } finally {
+      setBillingLoading(false);
+    }
+  }, [billingSettings, billingPatients.length]);
+
+  // Build pre-filled items from selected treatments
+  const buildBillingItems = useCallback(() => {
+    return selectedTreatments.map((t, index) => ({
+      id: Date.now() + index,
+      description: t.title || '',
+      quantity: 1,
+      unitPrice: 0,
+      taxRate: null
+    }));
+  }, [selectedTreatments]);
+
+  // Open billing quote modal
+  const handleCreateQuote = useCallback(async () => {
+    await loadBillingData();
+    setShowBillingQuoteModal(true);
+  }, [loadBillingData]);
+
+  // Open billing invoice modal
+  const handleCreateInvoice = useCallback(async () => {
+    await loadBillingData();
+    setShowBillingInvoiceModal(true);
+  }, [loadBillingData]);
+
+  // Save billing document (quote or invoice)
+  const handleSaveBillingDoc = useCallback(async (formData, documentType) => {
+    try {
+      const selectedClient = billingPatients.find(p => p.id === formData.clientId) || null;
+      const enrichedFormData = {
+        ...formData,
+        appointmentId: appointment?.id || null,
+        practitionerId: providerId || appointment?.providerId || null
+      };
+      const payload = buildDocumentPayload(documentType, enrichedFormData, billingSettings, selectedClient);
+      await createDocument(payload);
+    } catch (err) {
+      console.error('Error saving billing document:', err);
+      throw err; // Let the modal handle the error display
+    }
+  }, [billingPatients, billingSettings, appointment, providerId]);
 
   // Handle treatment selection (add to list)
   const handleTreatmentSelect = (treatment) => {
@@ -2158,23 +2233,47 @@ const PlanningBookingModal = ({
             )}
           </div>
 
-          {step < 4 ? (
-            <button
-              onClick={() => setStep(step + 1)}
-              disabled={!canProceed()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t('actions.next')}
-            </button>
-          ) : (
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? t('actions.saving') : (isEditMode ? t('actions.save') : t('actions.create'))}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Billing buttons (only in edit mode for non-cancelled appointments) */}
+            {isEditMode && appointment?.status !== 'cancelled' && (
+              <>
+                <button
+                  onClick={handleCreateQuote}
+                  disabled={billingLoading}
+                  className="px-3 py-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1.5 text-sm"
+                >
+                  <FileText className="w-4 h-4" />
+                  {t('billing.createQuote', 'Devis')}
+                </button>
+                <button
+                  onClick={handleCreateInvoice}
+                  disabled={billingLoading}
+                  className="px-3 py-2 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors flex items-center gap-1.5 text-sm"
+                >
+                  <Receipt className="w-4 h-4" />
+                  {t('billing.createInvoice', 'Facture')}
+                </button>
+              </>
+            )}
+
+            {step < 4 ? (
+              <button
+                onClick={() => setStep(step + 1)}
+                disabled={!canProceed()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('actions.next')}
+              </button>
+            ) : (
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? t('actions.saving') : (isEditMode ? t('actions.save') : t('actions.create'))}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2226,6 +2325,28 @@ const PlanningBookingModal = ({
         onOverlap={handleConflictOverlap}
         onCancel={handleConflictCancel}
         conflictInfo={conflictInfo}
+      />
+
+      {/* Billing Quote Modal */}
+      <QuoteFormModal
+        isOpen={showBillingQuoteModal}
+        onClose={() => setShowBillingQuoteModal(false)}
+        onSave={(formData) => handleSaveBillingDoc(formData, 'quote')}
+        preSelectedPatient={selectedPatient ? { id: selectedPatient.id } : null}
+        patients={billingPatients}
+        billingSettings={billingSettings}
+        initialItems={buildBillingItems()}
+      />
+
+      {/* Billing Invoice Modal */}
+      <InvoiceFormModal
+        isOpen={showBillingInvoiceModal}
+        onClose={() => setShowBillingInvoiceModal(false)}
+        onSave={(formData) => handleSaveBillingDoc(formData, 'invoice')}
+        preSelectedClient={selectedPatient ? { id: selectedPatient.id } : null}
+        patients={billingPatients}
+        billingSettings={billingSettings}
+        initialItems={buildBillingItems()}
       />
     </div>
   );
