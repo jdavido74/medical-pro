@@ -10,9 +10,11 @@ import { patientsApi } from '../../../api/patientsApi';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
 import { useLocale } from '../../../contexts/LocaleContext';
+import { useTranslation } from 'react-i18next';
 
 const InvoicesModule = ({ navigateToClient }) => {
   const { locale } = useLocale();
+  const { t } = useTranslation('invoices');
   const [invoices, setInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,7 +24,6 @@ const InvoicesModule = ({ navigateToClient }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({});
   const [billingSettings, setBillingSettings] = useState(null);
-  const [patients, setPatients] = useState([]);
   const [error, setError] = useState(null);
 
   // PDF states
@@ -43,7 +44,7 @@ const InvoicesModule = ({ navigateToClient }) => {
       setInvoices(docs.map(transformDocumentForDisplay));
     } catch (err) {
       console.error('Erreur chargement factures:', err);
-      setError('Impossible de charger les factures');
+      setError(t('loadError'));
       setInvoices([]);
     } finally {
       setIsLoading(false);
@@ -66,15 +67,11 @@ const InvoicesModule = ({ navigateToClient }) => {
     }
   }, []);
 
-  // Load billing settings and patients
+  // Load billing settings
   const loadSettings = useCallback(async () => {
     try {
-      const [settingsResp, patientsResp] = await Promise.all([
-        getBillingSettings().catch(() => ({ data: null })),
-        patientsApi.getPatients({ limit: 500 }).catch(() => ({ patients: [] }))
-      ]);
+      const settingsResp = await getBillingSettings().catch(() => ({ data: null }));
       setBillingSettings(settingsResp.data || settingsResp || null);
-      setPatients(patientsResp.patients || []);
     } catch (err) {
       console.error('Erreur chargement paramètres:', err);
     }
@@ -155,7 +152,7 @@ const InvoicesModule = ({ navigateToClient }) => {
   };
 
   const handleDeleteInvoice = async (invoiceId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
+    if (!window.confirm(t('deleteConfirm'))) {
       return;
     }
 
@@ -165,14 +162,32 @@ const InvoicesModule = ({ navigateToClient }) => {
       loadStats();
     } catch (err) {
       console.error('Erreur suppression facture:', err);
-      alert(err.message || 'Erreur lors de la suppression. Seuls les brouillons peuvent être supprimés.');
+      alert(err.message || t('deleteError'));
     }
   };
 
   const handleSaveInvoice = async (formData) => {
     try {
-      // Find the selected patient
-      const selectedClient = patients.find(p => p.id === formData.clientId) || null;
+      // Fetch the selected patient for document payload
+      let selectedClient = null;
+      if (formData.clientId) {
+        try {
+          const patient = await patientsApi.getPatientById(formData.clientId);
+          selectedClient = {
+            id: patient.id,
+            displayName: patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
+            email: patient.contact?.email || patient.email || '',
+            phone: patient.contact?.phone || patient.phone || '',
+            address: patient.address?.street || '',
+            postalCode: patient.address?.postalCode || '',
+            city: patient.address?.city || '',
+            country: patient.address?.country || '',
+            siren: patient.siren || ''
+          };
+        } catch (err) {
+          console.error('Error fetching patient for invoice:', err);
+        }
+      }
 
       // Build backend payload
       const payload = buildDocumentPayload('invoice', formData, billingSettings, selectedClient);
@@ -199,7 +214,7 @@ const InvoicesModule = ({ navigateToClient }) => {
       loadStats();
     } catch (err) {
       console.error('Erreur duplication facture:', err);
-      alert('Erreur lors de la duplication');
+      alert(t('duplicateError'));
     }
   };
 
@@ -218,7 +233,7 @@ const InvoicesModule = ({ navigateToClient }) => {
       handleShowPDF(invoice);
     } catch (err) {
       console.error('Erreur envoi facture:', err);
-      alert('Erreur lors de l\'envoi');
+      alert(t('sendError'));
     }
   };
 
@@ -241,11 +256,11 @@ const InvoicesModule = ({ navigateToClient }) => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'draft': return 'Brouillon';
-      case 'sent': return 'Envoyée';
-      case 'paid': return 'Payée';
-      case 'overdue': return 'Échue';
-      case 'cancelled': return 'Annulée';
+      case 'draft': return t('statuses.draft');
+      case 'sent': return t('statuses.sent');
+      case 'paid': return t('statuses.paid');
+      case 'overdue': return t('statuses.overdue');
+      case 'cancelled': return t('statuses.cancelled');
       default: return status;
     }
   };
@@ -257,7 +272,7 @@ const InvoicesModule = ({ navigateToClient }) => {
           <button
             onClick={() => handleEditInvoice(invoice)}
             className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-            title="Modifier"
+            title={t('tooltips.edit')}
           >
             <Edit2 className="h-4 w-4" />
           </button>
@@ -266,7 +281,7 @@ const InvoicesModule = ({ navigateToClient }) => {
         <button
           onClick={() => handleDuplicateInvoice(invoice)}
           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-          title="Dupliquer"
+          title={t('tooltips.duplicate')}
         >
           <Copy className="h-4 w-4" />
         </button>
@@ -274,7 +289,7 @@ const InvoicesModule = ({ navigateToClient }) => {
         <button
           onClick={() => handleShowPDF(invoice)}
           className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-          title="Aperçu PDF"
+          title={t('tooltips.pdfPreview')}
         >
           <Eye className="h-4 w-4" />
         </button>
@@ -283,7 +298,7 @@ const InvoicesModule = ({ navigateToClient }) => {
           <button
             onClick={() => handleSendInvoice(invoice)}
             className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-            title="Envoyer par email"
+            title={t('tooltips.sendEmail')}
           >
             <Send className="h-4 w-4" />
           </button>
@@ -298,7 +313,7 @@ const InvoicesModule = ({ navigateToClient }) => {
             }, 2000);
           }}
           className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-          title="Télécharger PDF"
+          title={t('tooltips.downloadPDF')}
         >
           <Download className="h-4 w-4" />
         </button>
@@ -307,7 +322,7 @@ const InvoicesModule = ({ navigateToClient }) => {
           <button
             onClick={() => handleDeleteInvoice(invoice.id)}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-            title="Supprimer"
+            title={t('tooltips.delete')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -332,7 +347,7 @@ const InvoicesModule = ({ navigateToClient }) => {
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
           <p className="text-red-700 text-sm">{error}</p>
           <button onClick={handleRefresh} className="ml-auto text-red-600 hover:text-red-800 text-sm font-medium">
-            Réessayer
+            {t('retry')}
           </button>
         </div>
       )}
@@ -340,15 +355,15 @@ const InvoicesModule = ({ navigateToClient }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Factures</h2>
-          <p className="text-sm text-gray-500 mt-1">Gérez vos factures et suivi de paiements</p>
+          <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
         </div>
         <button
           onClick={handleAddInvoice}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Nouvelle facture</span>
+          <span>{t('newInvoice')}</span>
         </button>
       </div>
 
@@ -359,7 +374,7 @@ const InvoicesModule = ({ navigateToClient }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher une facture..."
+              placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -370,11 +385,11 @@ const InvoicesModule = ({ navigateToClient }) => {
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
-            <option value="all">Tous les statuts</option>
-            <option value="draft">Brouillons</option>
-            <option value="sent">Envoyées</option>
-            <option value="paid">Payées</option>
-            <option value="overdue">Échues</option>
+            <option value="all">{t('statuses.all')}</option>
+            <option value="draft">{t('statuses.drafts')}</option>
+            <option value="sent">{t('statuses.sents')}</option>
+            <option value="paid">{t('statuses.paids')}</option>
+            <option value="overdue">{t('statuses.overdues')}</option>
           </select>
           <button
             onClick={handleRefresh}
@@ -388,27 +403,27 @@ const InvoicesModule = ({ navigateToClient }) => {
       {/* Stats */}
       <div className="grid md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">Total factures</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.totalInvoices')}</h4>
           <p className="text-3xl font-bold text-gray-900">{stats.totalInvoices || 0}</p>
-          <p className="text-sm text-gray-500">Toutes factures</p>
+          <p className="text-sm text-gray-500">{t('stats.allInvoices')}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">Chiffre d'affaires</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.revenue')}</h4>
           <p className="text-3xl font-bold text-indigo-600">{(stats.totalRevenue || 0).toFixed(2)}€</p>
-          <p className="text-sm text-gray-500">Factures payées</p>
+          <p className="text-sm text-gray-500">{t('stats.paidInvoices')}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">En attente</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.pending')}</h4>
           <p className="text-3xl font-bold text-orange-600">{(stats.pendingAmount || 0).toFixed(2)}€</p>
-          <p className="text-sm text-gray-500">À encaisser</p>
+          <p className="text-sm text-gray-500">{t('stats.toCollect')}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">Ce mois</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.thisMonth')}</h4>
           <p className="text-3xl font-bold text-green-600">{stats.thisMonthInvoices || 0}</p>
-          <p className="text-sm text-gray-500">Nouvelles factures</p>
+          <p className="text-sm text-gray-500">{t('stats.newInvoices')}</p>
         </div>
       </div>
 
@@ -416,10 +431,10 @@ const InvoicesModule = ({ navigateToClient }) => {
       <div className="bg-white rounded-xl shadow-sm border overflow-visible">
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
-            <h4 className="font-semibold text-gray-900">Factures récentes</h4>
+            <h4 className="font-semibold text-gray-900">{t('table.recentInvoices')}</h4>
             <span className="text-sm text-gray-500">
-              {filteredInvoices.length} facture(s)
-              {searchQuery && ` (filtré sur "${searchQuery}")`}
+              {t('table.invoiceCount', { count: filteredInvoices.length })}
+              {searchQuery && ` ${t('table.filteredOn', { query: searchQuery })}`}
             </span>
           </div>
         </div>
@@ -428,12 +443,12 @@ const InvoicesModule = ({ navigateToClient }) => {
           <div className="p-12 text-center">
             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h5 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery ? 'Aucune facture trouvée' : 'Aucune facture créée'}
+              {searchQuery ? t('empty.noResults') : t('empty.noInvoices')}
             </h5>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               {searchQuery
-                ? 'Essayez de modifier vos critères de recherche.'
-                : 'Créez votre première facture conforme à la réglementation 2026. L\'interface vous guidera pour respecter toutes les obligations légales.'
+                ? t('empty.noResultsHint')
+                : t('empty.noInvoicesHint')
               }
             </p>
             {!searchQuery && (
@@ -442,7 +457,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center space-x-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>Créer une facture</span>
+                <span>{t('empty.createInvoice')}</span>
               </button>
             )}
           </div>
@@ -452,13 +467,13 @@ const InvoicesModule = ({ navigateToClient }) => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left p-4 font-medium text-gray-900">Numéro</th>
+                    <th className="text-left p-4 font-medium text-gray-900">{t('table.number')}</th>
                     <th
                       className="text-left p-4 font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
                       onClick={() => handleSort('clientName')}
                     >
                       <div className="flex items-center space-x-1">
-                        <span>Client</span>
+                        <span>{t('table.client')}</span>
                         {sortField === 'clientName' && (
                           sortDirection === 'asc' ?
                             <ChevronUp className="h-4 w-4" /> :
@@ -466,15 +481,15 @@ const InvoicesModule = ({ navigateToClient }) => {
                         )}
                       </div>
                     </th>
-                    <th className="text-left p-4 font-medium text-gray-900">Date</th>
-                    <th className="text-left p-4 font-medium text-gray-900 hidden sm:table-cell">Échéance</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Montant</th>
+                    <th className="text-left p-4 font-medium text-gray-900">{t('table.date')}</th>
+                    <th className="text-left p-4 font-medium text-gray-900 hidden sm:table-cell">{t('table.dueDate')}</th>
+                    <th className="text-left p-4 font-medium text-gray-900">{t('table.amount')}</th>
                     <th
                       className="text-left p-4 font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
                       onClick={() => handleSort('status')}
                     >
                       <div className="flex items-center space-x-1">
-                        <span>Statut</span>
+                        <span>{t('table.status')}</span>
                         {sortField === 'status' && (
                           sortDirection === 'asc' ?
                             <ChevronUp className="h-4 w-4" /> :
@@ -482,7 +497,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                         )}
                       </div>
                     </th>
-                    <th className="text-left p-4 font-medium text-gray-900 w-40">Actions</th>
+                    <th className="text-left p-4 font-medium text-gray-900 w-40">{t('table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -496,7 +511,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                             <span className="font-medium text-gray-900">{invoice.number || 'N/A'}</span>
                             {invoice.discountAmount > 0 && (
                               <span className="text-xs bg-orange-100 text-orange-600 px-1 py-0.5 rounded">
-                                Remise
+                                {t('table.discount')}
                               </span>
                             )}
                           </div>
@@ -506,7 +521,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                             onClick={() => handleClientClick(invoice.clientId, invoice.clientName)}
                             className="text-indigo-600 hover:text-indigo-800 hover:underline text-left font-medium transition-colors"
                           >
-                            {invoice.clientName || 'Client inconnu'}
+                            {invoice.clientName || t('table.unknownClient')}
                           </button>
                         </td>
                         <td className="p-4">
@@ -521,7 +536,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                             </span>
                             {isOverdue && (
                               <span className="text-xs bg-red-100 text-red-600 px-1 py-0.5 rounded">
-                                Échue
+                                {t('statuses.overdue')}
                               </span>
                             )}
                           </div>
@@ -533,7 +548,7 @@ const InvoicesModule = ({ navigateToClient }) => {
                             </span>
                             {invoice.discountAmount > 0 && (
                               <div className="text-xs text-orange-600">
-                                -{invoice.discountAmount.toFixed(2)}€ remise
+                                -{invoice.discountAmount.toFixed(2)}€ {t('table.discount').toLowerCase()}
                               </div>
                             )}
                           </div>
@@ -559,7 +574,7 @@ const InvoicesModule = ({ navigateToClient }) => {
       {/* Quick actions */}
       {invoices.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border p-6">
-          <h4 className="font-semibold text-gray-900 mb-4">Actions rapides</h4>
+          <h4 className="font-semibold text-gray-900 mb-4">{t('quickActions.title')}</h4>
           <div className="grid md:grid-cols-3 gap-4">
             <button
               onClick={handleAddInvoice}
@@ -570,8 +585,8 @@ const InvoicesModule = ({ navigateToClient }) => {
                   <Plus className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Nouvelle facture</p>
-                  <p className="text-sm text-gray-500">Créer une facture conforme</p>
+                  <p className="font-medium text-gray-900">{t('quickActions.newInvoice')}</p>
+                  <p className="text-sm text-gray-500">{t('quickActions.newInvoiceDesc')}</p>
                 </div>
               </div>
             </button>
@@ -589,8 +604,8 @@ const InvoicesModule = ({ navigateToClient }) => {
                   <Copy className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Dupliquer facture</p>
-                  <p className="text-sm text-gray-500">À partir de la dernière</p>
+                  <p className="font-medium text-gray-900">{t('quickActions.duplicateInvoice')}</p>
+                  <p className="text-sm text-gray-500">{t('quickActions.duplicateInvoiceDesc')}</p>
                 </div>
               </div>
             </button>
@@ -601,8 +616,8 @@ const InvoicesModule = ({ navigateToClient }) => {
                   <Download className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Export comptable</p>
-                  <p className="text-sm text-gray-500">Données pour expert-comptable</p>
+                  <p className="font-medium text-gray-900">{t('quickActions.accountingExport')}</p>
+                  <p className="text-sm text-gray-500">{t('quickActions.accountingExportDesc')}</p>
                 </div>
               </div>
             </button>
@@ -616,27 +631,26 @@ const InvoicesModule = ({ navigateToClient }) => {
           <div className="text-2xl">ℹ️</div>
           <div className="flex-1">
             <h4 className="font-semibold text-blue-800 mb-2">
-              Conformité 2026 - Facturation électronique
+              {t('compliance.title')}
             </h4>
             <p className="text-blue-700 text-sm mb-3">
-              Toutes vos factures sont automatiquement générées selon la norme européenne EN 16931.
-              Elles incluent la signature électronique et l'archivage légal requis.
+              {t('compliance.description')}
             </p>
             <div className="flex flex-wrap gap-2">
               <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ XML structuré
+                {'✓ ' + t('compliance.xmlStructured')}
               </span>
               <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ PDF/A-3
+                {'✓ ' + t('compliance.pdfA3')}
               </span>
               <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Signature électronique
+                {'✓ ' + t('compliance.electronicSignature')}
               </span>
               <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Archivage 10 ans
+                {'✓ ' + t('compliance.archiving10years')}
               </span>
               <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Aperçu PDF temps réel
+                {'✓ ' + t('compliance.realtimePDFPreview')}
               </span>
             </div>
           </div>
@@ -649,7 +663,6 @@ const InvoicesModule = ({ navigateToClient }) => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveInvoice}
         invoice={editingInvoice}
-        patients={patients}
         billingSettings={billingSettings}
       />
 

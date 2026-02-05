@@ -1,18 +1,21 @@
 // components/dashboard/modals/QuoteFormModal.js
 import React, { useState, useEffect } from 'react';
 import {
-  X, Save, Plus, Trash2, User, Building, Calendar, Calculator,
+  X, Save, Plus, Trash2, Calendar, Calculator,
   ChevronDown, ChevronUp, Send, CheckCircle, XCircle,
   Percent, Minus, ArrowRight
 } from 'lucide-react';
 import CatalogProductSelector from '../../common/CatalogProductSelector';
+import ClientSearchInput from '../../common/ClientSearchInput';
 import { useCountryConfig } from '../../../config/ConfigManager';
 import { useLocale } from '../../../contexts/LocaleContext';
+import { useTranslation } from 'react-i18next';
 
 const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPatient = null, patients = [], billingSettings = null, initialItems = null }) => {
   const { config } = useCountryConfig();
   const { locale } = useLocale();
-  
+  const { t } = useTranslation('quotes');
+
   const [formData, setFormData] = useState({
     clientId: '',
     quoteDate: new Date().toISOString().split('T')[0],
@@ -34,7 +37,6 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
     terms: ''
   });
 
-  const [clients, setClients] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -48,23 +50,10 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
   });
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
-  // Load clients from props (patients from API) and billing settings
+  // Load billing settings
   useEffect(() => {
-    const clientsData = (patients || []).map(p => ({
-      id: p.id,
-      displayName: p.displayName || p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim(),
-      email: p.email || '',
-      phone: p.phone || '',
-      address: p.address || '',
-      postalCode: p.postalCode || p.zipCode || '',
-      city: p.city || '',
-      country: p.country || '',
-      type: p.type || 'individual',
-      siren: p.siren || ''
-    }));
-    setClients(clientsData);
     setSettings(billingSettings || { defaultTaxRate: 20, defaultPaymentTerms: 30 });
-  }, [patients, billingSettings]);
+  }, [billingSettings]);
 
   // Initialiser le formulaire
   useEffect(() => {
@@ -96,21 +85,32 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
         validityDays: 30,
         discountType: 'none',
         discountValue: 0,
-        terms: 'Devis valable 30 jours. Prix et disponibilité sous réserve de confirmation.'
+        terms: t('form.defaultTerms')
       });
     }
     setErrors({});
   }, [quote, preSelectedPatient, initialItems, isOpen]);
 
-  // Mettre à jour le client sélectionné
-  useEffect(() => {
-    if (formData.clientId) {
-      const client = clients.find(c => c.id === formData.clientId);
-      setSelectedClient(client);
+  // Handle client selection from ClientSearchInput
+  const handleClientSelect = (patientId, patientData) => {
+    handleInputChange('clientId', patientId);
+    if (patientData) {
+      setSelectedClient({
+        id: patientData.id,
+        displayName: patientData.displayName || `${patientData.firstName || ''} ${patientData.lastName || ''}`.trim(),
+        email: patientData.contact?.email || patientData.email || '',
+        phone: patientData.contact?.phone || patientData.phone || '',
+        address: patientData.address?.street || '',
+        postalCode: patientData.address?.postalCode || '',
+        city: patientData.address?.city || '',
+        country: patientData.address?.country || '',
+        type: patientData.type || 'individual',
+        siren: patientData.siren || ''
+      });
     } else {
       setSelectedClient(null);
     }
-  }, [formData.clientId, clients]);
+  };
 
   // Mettre à jour la date de validité selon la durée
   useEffect(() => {
@@ -250,11 +250,11 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
   // Composant statut spécifique aux devis
   const QuoteStatusIndicator = ({ status, onChange }) => {
     const statuses = [
-      { value: 'draft', label: 'Brouillon', icon: Calendar, color: 'gray' },
-      { value: 'sent', label: 'Envoyé', icon: Send, color: 'blue' },
-      { value: 'accepted', label: 'Accepté', icon: CheckCircle, color: 'green' },
-      { value: 'rejected', label: 'Refusé', icon: XCircle, color: 'red' },
-      { value: 'converted', label: 'Converti', icon: ArrowRight, color: 'purple' }
+      { value: 'draft', label: t('statuses.draft'), icon: Calendar, color: 'gray' },
+      { value: 'sent', label: t('statuses.sent'), icon: Send, color: 'blue' },
+      { value: 'accepted', label: t('statuses.accepted'), icon: CheckCircle, color: 'green' },
+      { value: 'rejected', label: t('statuses.rejected'), icon: XCircle, color: 'red' },
+      { value: 'converted', label: t('statuses.converted'), icon: ArrowRight, color: 'purple' }
     ];
 
     return (
@@ -297,30 +297,30 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
     const newErrors = {};
 
     if (!formData.clientId) {
-      newErrors.clientId = 'Client requis';
+      newErrors.clientId = t('form.validation.clientRequired');
     }
 
     if (!formData.quoteDate) {
-      newErrors.quoteDate = 'Date de devis requise';
+      newErrors.quoteDate = t('form.validation.quoteDateRequired');
     }
 
     if (!formData.validUntil) {
-      newErrors.validUntil = 'Date de validité requise';
+      newErrors.validUntil = t('form.validation.validUntilRequired');
     }
 
-    const validItems = formData.items.filter(item => 
+    const validItems = formData.items.filter(item =>
       item.description.trim() && item.unitPrice > 0
     );
-    
+
     if (validItems.length === 0) {
-      newErrors.items = 'Au moins une ligne valide requise';
+      newErrors.items = t('form.validation.atLeastOneLine');
     }
 
     if (formData.discountType === 'percentage' && formData.discountValue > 100) {
-      newErrors.discount = 'La remise ne peut pas dépasser 100%';
+      newErrors.discount = t('form.validation.discountOver100');
     }
     if (formData.discountType === 'amount' && formData.discountValue > totals.subtotal) {
-      newErrors.discount = 'La remise ne peut pas être supérieure au sous-total';
+      newErrors.discount = t('form.validation.discountOverSubtotal');
     }
 
     return newErrors;
@@ -357,7 +357,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
       onClose();
     } catch (error) {
       console.error('Erreur sauvegarde devis:', error);
-      setErrors({ general: 'Erreur lors de la sauvegarde' });
+      setErrors({ general: t('saveError') });
     } finally {
       setIsLoading(false);
     }
@@ -371,7 +371,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
           <h2 className="text-2xl font-bold text-gray-900">
-            {quote ? 'Modifier le devis' : 'Nouveau devis'}
+            {quote ? t('form.editTitle') : t('form.createTitle')}
           </h2>
           <button
             onClick={onClose}
@@ -391,7 +391,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
               className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-100 transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <h3 className="text-lg font-semibold text-gray-900">Informations de base</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('form.basicInfo')}</h3>
                 {selectedClient && (
                   <span className="text-sm text-gray-600 bg-white px-2 py-1 rounded">
                     {selectedClient.displayName}
@@ -414,46 +414,21 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                   {/* Sélection client */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Client *
+                      {t('form.client')}
                     </label>
-                    <select
+                    <ClientSearchInput
                       value={formData.clientId}
-                      onChange={(e) => handleInputChange('clientId', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        errors.clientId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Sélectionner un client</option>
-                      {clients.map(client => (
-                        <option key={client.id} value={client.id}>
-                          {client.displayName}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.clientId && <p className="text-red-500 text-sm mt-1">{errors.clientId}</p>}
-                    
-                    {selectedClient && (
-                      <div className="mt-3 p-3 bg-white rounded-lg border">
-                        <div className="flex items-center space-x-2 mb-2">
-                          {selectedClient.type === 'business' ? 
-                            <Building className="h-4 w-4 text-indigo-600" /> : 
-                            <User className="h-4 w-4 text-green-600" />
-                          }
-                          <span className="font-medium text-gray-900">{selectedClient.displayName}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">{selectedClient.email}</p>
-                        <p className="text-sm text-gray-600">
-                          {selectedClient.address}, {selectedClient.postalCode} {selectedClient.city}
-                        </p>
-                      </div>
-                    )}
+                      onChange={handleClientSelect}
+                      error={errors.clientId}
+                      placeholder={t('form.selectClient')}
+                    />
                   </div>
 
                   {/* Dates et validité */}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date du devis *
+                        {t('form.quoteDate')}
                       </label>
                       <input
                         type="date"
@@ -468,24 +443,24 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Durée de validité
+                        {t('form.validityDuration')}
                       </label>
                       <select
                         value={formData.validityDays}
                         onChange={(e) => handleInputChange('validityDays', parseInt(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
-                        <option value={15}>15 jours</option>
-                        <option value={30}>30 jours</option>
-                        <option value={45}>45 jours</option>
-                        <option value={60}>60 jours</option>
-                        <option value={90}>90 jours</option>
+                        <option value={15}>{t('form.days', { count: 15 })}</option>
+                        <option value={30}>{t('form.days', { count: 30 })}</option>
+                        <option value={45}>{t('form.days', { count: 45 })}</option>
+                        <option value={60}>{t('form.days', { count: 60 })}</option>
+                        <option value={90}>{t('form.days', { count: 90 })}</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Valable jusqu'au *
+                        {t('form.validUntil')}
                       </label>
                       <input
                         type="date"
@@ -508,23 +483,23 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
             <div className="flex items-center space-x-2 mb-2">
               <Calculator className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-800">
-                {config?.taxation.vatLabel || 'TVA'} par défaut : {settings.defaultTaxRate || 20}%
+                {t('form.defaultTax', { vatLabel: config?.taxation.vatLabel || 'TVA', rate: settings.defaultTaxRate || 20 })}
               </span>
             </div>
             <p className="text-xs text-green-600">
-              Les taux de {config?.taxation.vatLabel || 'TVA'} peuvent être ajustés par ligne. Pour un devis, la {config?.taxation.vatLabel || 'TVA'} est indicative.
+              {t('form.defaultTaxInfo', { vatLabel: config?.taxation.vatLabel || 'TVA' })}
             </p>
           </div>
 
           {/* Lignes de devis */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Lignes du devis</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('form.quoteLines')}</h3>
               <div className="flex items-center gap-2">
                 <CatalogProductSelector
                   onSelect={addItemFromCatalog}
                   includeServices={true}
-                  placeholder="Ajouter depuis le catalogue"
+                  placeholder={t('form.addFromCatalog')}
                   className="w-64"
                 />
                 <button
@@ -533,7 +508,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                   className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Ligne manuelle</span>
+                  <span>{t('form.manualLine')}</span>
                 </button>
               </div>
             </div>
@@ -548,11 +523,11 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
               <table className="w-full border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left p-3 font-medium text-gray-900">Description</th>
-                    <th className="text-left p-3 font-medium text-gray-900 w-24">Qté</th>
-                    <th className="text-left p-3 font-medium text-gray-900 w-32">Prix unitaire</th>
+                    <th className="text-left p-3 font-medium text-gray-900">{t('form.description')}</th>
+                    <th className="text-left p-3 font-medium text-gray-900 w-24">{t('form.qty')}</th>
+                    <th className="text-left p-3 font-medium text-gray-900 w-32">{t('form.unitPrice')}</th>
                     <th className="text-left p-3 font-medium text-gray-900 w-28">{config?.taxation.vatLabel || 'TVA'} %</th>
-                    <th className="text-left p-3 font-medium text-gray-900 w-32">Total HT</th>
+                    <th className="text-left p-3 font-medium text-gray-900 w-32">{t('form.totalExclTax')}</th>
                     <th className="w-12"></th>
                   </tr>
                 </thead>
@@ -565,7 +540,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                           value={item.description}
                           onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Description du produit/service"
+                          placeholder={t('form.descriptionPlaceholder')}
                         />
                       </td>
                       <td className="p-3">
@@ -595,8 +570,8 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                           onChange={(e) => handleItemChange(item.id, 'taxRate', e.target.value === '' ? null : parseFloat(e.target.value))}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                          <option value="">Défaut ({settings.defaultTaxRate || 20}%)</option>
-                          <option value={0}>0% (Exonéré)</option>
+                          <option value="">{t('form.defaultRate', { rate: settings.defaultTaxRate || 20 })}</option>
+                          <option value={0}>{t('form.exempt')}</option>
                           <option value={5.5}>5.5%</option>
                           <option value={10}>10%</option>
                           <option value={20}>20%</option>
@@ -632,22 +607,22 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
           <div className="bg-orange-50 rounded-lg p-4 mb-6 border border-orange-200">
             <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
               <Minus className="h-4 w-4 mr-2 text-orange-600" />
-              Remise commerciale
+              {t('form.commercialDiscount')}
             </h4>
             
             <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type de remise
+                  {t('form.discountType')}
                 </label>
                 <select
                   value={formData.discountType}
                   onChange={(e) => handleInputChange('discountType', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="none">Aucune remise</option>
-                  <option value="percentage">Pourcentage (%)</option>
-                  <option value="amount">Montant fixe (€)</option>
+                  <option value="none">{t('form.noDiscount')}</option>
+                  <option value="percentage">{t('form.percentage')}</option>
+                  <option value="amount">{t('form.fixedAmount')}</option>
                 </select>
               </div>
               
@@ -655,7 +630,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Valeur de la remise
+                      {t('form.discountValue')}
                     </label>
                     <div className="relative">
                       <input
@@ -682,7 +657,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                   
                   <div className="flex items-end">
                     <div className="bg-white p-3 rounded-lg border">
-                      <div className="text-sm text-gray-600">Remise appliquée</div>
+                      <div className="text-sm text-gray-600">{t('form.discountApplied')}</div>
                       <div className="text-lg font-bold text-orange-600">
                         -{totals.discountAmount.toFixed(2)}€
                       </div>
@@ -697,52 +672,52 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
             <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
               <Calculator className="h-5 w-5 mr-2 text-indigo-600" />
-              Récapitulatif du devis
+              {t('form.quoteSummary')}
             </h4>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sous-total HT :</span>
+                  <span className="text-gray-600">{t('form.subtotalExclTax')}</span>
                   <span className="font-medium">{totals.subtotal.toFixed(2)}€</span>
                 </div>
                 
                 {totals.discountAmount > 0 && (
                   <div className="flex justify-between text-orange-600">
                     <span>
-                      Remise {formData.discountType === 'percentage' ? `${formData.discountValue}%` : 'commerciale'} :
+                      Remise {formData.discountType === 'percentage' ? `${formData.discountValue}%` : t('form.discountCommercial')} :
                     </span>
                     <span className="font-medium">-{totals.discountAmount.toFixed(2)}€</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sous-total après remise :</span>
+                  <span className="text-gray-600">{t('form.subtotalAfterDiscount')}</span>
                   <span className="font-medium">{(totals.subtotal - totals.discountAmount).toFixed(2)}€</span>
                 </div>
                 
                 {Object.entries(totals.taxDetails).map(([rate, details]) => (
                   <div key={rate} className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      {config?.taxation.vatLabel || 'TVA'} {rate}% sur {details.base.toFixed(2)}€ :
+                      {t('form.taxOnBase', { vatLabel: config?.taxation.vatLabel || 'TVA', rate, base: details.base.toFixed(2) })}
                     </span>
                     <span className="font-medium">{details.amount.toFixed(2)}€</span>
                   </div>
                 ))}
                 
                 <div className="border-t pt-2 flex justify-between">
-                  <span className="text-gray-600">Total {config?.taxation.vatLabel || 'TVA'} :</span>
+                  <span className="text-gray-600">{t('form.totalTax', { vatLabel: config?.taxation.vatLabel || 'TVA' })}</span>
                   <span className="font-medium">{totals.taxAmount.toFixed(2)}€</span>
                 </div>
                 
                 <div className="border-t pt-2 flex justify-between text-lg font-bold">
-                  <span className="text-gray-900">Total TTC :</span>
+                  <span className="text-gray-900">{t('form.totalInclTax')}</span>
                   <span className="text-indigo-600">{totals.total.toFixed(2)}€</span>
                 </div>
               </div>
               
               <div className="space-y-2">
-                <div className="text-sm text-gray-600 mb-2">Répartition :</div>
+                <div className="text-sm text-gray-600 mb-2">{t('form.breakdown')}</div>
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
                   <div 
                     className="bg-indigo-500" 
@@ -756,7 +731,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                 <div className="flex text-xs text-gray-600">
                   <div className="flex items-center mr-4">
                     <div className="w-3 h-3 bg-indigo-500 rounded mr-1"></div>
-                    HT ({(((totals.subtotal - totals.discountAmount) / totals.total) * 100 || 0).toFixed(1)}%)
+                    {t('form.exclTax')} ({(((totals.subtotal - totals.discountAmount) / totals.total) * 100 || 0).toFixed(1)}%)
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-orange-400 rounded mr-1"></div>
@@ -766,7 +741,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
                 
                 {totals.discountAmount > 0 && (
                   <div className="mt-3 p-2 bg-orange-100 rounded text-center">
-                    <div className="text-xs text-orange-600">Économie proposée</div>
+                    <div className="text-xs text-orange-600">{t('form.savingsProposed')}</div>
                     <div className="text-sm font-bold text-orange-700">{totals.discountAmount.toFixed(2)}€</div>
                   </div>
                 )}
@@ -778,30 +753,30 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Conditions du devis
+                {t('form.quoteTerms')}
               </label>
               <textarea
                 value={formData.terms}
                 onChange={(e) => handleInputChange('terms', e.target.value)}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Conditions générales du devis..."
+                placeholder={t('form.quoteTermsPlaceholder')}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Conditions applicables à ce devis (validité, modalités, etc.)
+                {t('form.quoteTermsHint')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notes internes (optionnel)
+                {t('form.internalNotes')}
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Notes internes sur ce devis..."
+                placeholder={t('form.internalNotesPlaceholder')}
               />
             </div>
           </div>
@@ -820,14 +795,14 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
           <div className="px-6 py-3 bg-white border-b">
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                {formData.items.filter(item => item.description.trim() && item.unitPrice > 0).length} ligne(s) valide(s)
+                {t('form.validLinesCount', { count: formData.items.filter(item => item.description.trim() && item.unitPrice > 0).length })}
                 {totals.discountAmount > 0 && (
                   <span className="ml-2 text-orange-600">
-                    • Remise: -{totals.discountAmount.toFixed(2)}€
+                    • {t('form.discountSummary', { amount: totals.discountAmount.toFixed(2) })}
                   </span>
                 )}
                 <span className="ml-2 text-blue-600">
-                  • Valable jusqu'au {formData.validUntil ? new Date(formData.validUntil).toLocaleDateString(locale) : '-'}
+                  • {t('form.validUntilSummary', { date: formData.validUntil ? new Date(formData.validUntil).toLocaleDateString(locale) : '-' })}
                 </span>
               </div>
               <div className="flex space-x-6 text-sm">
@@ -844,7 +819,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
               onClick={onClose}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Annuler
+              {t('form.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -852,7 +827,7 @@ const QuoteFormModal = ({ isOpen, onClose, onSave, quote = null, preSelectedPati
               className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
             >
               <Save className="h-4 w-4" />
-              <span>{isLoading ? 'Sauvegarde...' : (quote ? 'Modifier' : 'Créer')} - {totals.total.toFixed(2)}€</span>
+              <span>{isLoading ? t('form.saving') : (quote ? t('form.edit') : t('form.create'))} - {totals.total.toFixed(2)}€</span>
             </button>
           </div>
         </div>

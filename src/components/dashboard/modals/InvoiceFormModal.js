@@ -1,13 +1,16 @@
 // components/dashboard/modals/InvoiceFormModal.js
 import React, { useState, useEffect } from 'react';
 import {
-  X, Save, Plus, Trash2, User, Building, Calendar, Calculator,
+  X, Save, Plus, Trash2, Calendar, Calculator,
   ChevronDown, ChevronUp, CheckCircle, Send, DollarSign,
   Percent, Minus, Clock
 } from 'lucide-react';
 import CatalogProductSelector from '../../common/CatalogProductSelector';
+import ClientSearchInput from '../../common/ClientSearchInput';
+import { useTranslation } from 'react-i18next';
 
 const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelectedClient = null, patients = [], billingSettings = null, initialItems = null }) => {
+  const { t } = useTranslation('invoices');
   const [formData, setFormData] = useState({
     clientId: '',
     invoiceDate: new Date().toISOString().split('T')[0],
@@ -29,7 +32,6 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
     discountValue: 0
   });
 
-  const [clients, setClients] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -45,24 +47,10 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
   // NOUVEAU : État accordéon
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
-  // Load clients from props (patients from API) and billing settings
+  // Load billing settings
   useEffect(() => {
-    // Map patients to client format for the dropdown
-    const clientsData = (patients || []).map(p => ({
-      id: p.id,
-      displayName: p.displayName || p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim(),
-      email: p.email || '',
-      phone: p.phone || '',
-      address: p.address || '',
-      postalCode: p.postalCode || p.zipCode || '',
-      city: p.city || '',
-      country: p.country || '',
-      type: p.type || 'individual',
-      siren: p.siren || ''
-    }));
-    setClients(clientsData);
     setSettings(billingSettings || { defaultTaxRate: 20, defaultPaymentTerms: 30 });
-  }, [patients, billingSettings]);
+  }, [billingSettings]);
 
   // Initialiser le formulaire
   useEffect(() => {
@@ -100,15 +88,26 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
     setErrors({});
   }, [invoice, preSelectedClient, initialItems, isOpen]);
 
-  // Mettre à jour le client sélectionné
-  useEffect(() => {
-    if (formData.clientId) {
-      const client = clients.find(c => c.id === formData.clientId);
-      setSelectedClient(client);
+  // Handle client selection from ClientSearchInput
+  const handleClientSelect = (patientId, patientData) => {
+    handleInputChange('clientId', patientId);
+    if (patientData) {
+      setSelectedClient({
+        id: patientData.id,
+        displayName: patientData.displayName || `${patientData.firstName || ''} ${patientData.lastName || ''}`.trim(),
+        email: patientData.contact?.email || patientData.email || '',
+        phone: patientData.contact?.phone || patientData.phone || '',
+        address: patientData.address?.street || '',
+        postalCode: patientData.address?.postalCode || '',
+        city: patientData.address?.city || '',
+        country: patientData.address?.country || '',
+        type: patientData.type || 'individual',
+        siren: patientData.siren || ''
+      });
     } else {
       setSelectedClient(null);
     }
-  }, [formData.clientId, clients]);
+  };
 
   // Mettre à jour la date d'échéance selon les conditions de paiement
   useEffect(() => {
@@ -260,10 +259,10 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
   // NOUVEAU : Composant statut visuel
   const StatusIndicator = ({ status, onChange }) => {
     const statuses = [
-      { value: 'draft', label: 'Brouillon', icon: Calendar, color: 'gray' },
-      { value: 'sent', label: 'Envoyée', icon: Send, color: 'blue' },
-      { value: 'paid', label: 'Payée', icon: CheckCircle, color: 'green' },
-      { value: 'overdue', label: 'Échue', icon: Clock, color: 'red' }
+      { value: 'draft', label: t('statuses.draft'), icon: Calendar, color: 'gray' },
+      { value: 'sent', label: t('statuses.sent'), icon: Send, color: 'blue' },
+      { value: 'paid', label: t('statuses.paid'), icon: CheckCircle, color: 'green' },
+      { value: 'overdue', label: t('statuses.overdue'), icon: Clock, color: 'red' }
     ];
 
     return (
@@ -305,15 +304,15 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
     const newErrors = {};
 
     if (!formData.clientId) {
-      newErrors.clientId = 'Client requis';
+      newErrors.clientId = t('form.validation.clientRequired');
     }
 
     if (!formData.invoiceDate) {
-      newErrors.invoiceDate = 'Date de facture requise';
+      newErrors.invoiceDate = t('form.validation.invoiceDateRequired');
     }
 
     if (!formData.dueDate) {
-      newErrors.dueDate = 'Date d\'échéance requise';
+      newErrors.dueDate = t('form.validation.dueDateRequired');
     }
 
     // Vérifier qu'au moins une ligne a une description et un prix
@@ -322,15 +321,15 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
     );
     
     if (validItems.length === 0) {
-      newErrors.items = 'Au moins une ligne valide requise';
+      newErrors.items = t('form.validation.atLeastOneLine');
     }
 
     // Validation remise
     if (formData.discountType === 'percentage' && formData.discountValue > 100) {
-      newErrors.discount = 'La remise ne peut pas dépasser 100%';
+      newErrors.discount = t('form.validation.discountOver100');
     }
     if (formData.discountType === 'amount' && formData.discountValue > totals.subtotal) {
-      newErrors.discount = 'La remise ne peut pas être supérieure au sous-total';
+      newErrors.discount = t('form.validation.discountOverSubtotal');
     }
 
     return newErrors;
@@ -372,7 +371,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
       onClose();
     } catch (error) {
       console.error('Erreur sauvegarde facture:', error);
-      setErrors({ general: 'Erreur lors de la sauvegarde' });
+      setErrors({ general: t('saveError') });
     } finally {
       setIsLoading(false);
     }
@@ -386,7 +385,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
           <h2 className="text-2xl font-bold text-gray-900">
-            {invoice ? 'Modifier la facture' : 'Nouvelle facture'}
+            {invoice ? t('form.editTitle') : t('form.createTitle')}
           </h2>
           <button
             onClick={onClose}
@@ -406,7 +405,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
               className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-100 transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <h3 className="text-lg font-semibold text-gray-900">Informations de base</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('form.basicInfo')}</h3>
                 {selectedClient && (
                   <span className="text-sm text-gray-600 bg-white px-2 py-1 rounded">
                     {selectedClient.displayName}
@@ -429,47 +428,21 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                   {/* Sélection client */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Client *
+                      {t('form.client')}
                     </label>
-                    <select
+                    <ClientSearchInput
                       value={formData.clientId}
-                      onChange={(e) => handleInputChange('clientId', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        errors.clientId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Sélectionner un client</option>
-                      {clients.map(client => (
-                        <option key={client.id} value={client.id}>
-                          {client.displayName}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.clientId && <p className="text-red-500 text-sm mt-1">{errors.clientId}</p>}
-                    
-                    {/* Aperçu client sélectionné */}
-                    {selectedClient && (
-                      <div className="mt-3 p-3 bg-white rounded-lg border">
-                        <div className="flex items-center space-x-2 mb-2">
-                          {selectedClient.type === 'business' ? 
-                            <Building className="h-4 w-4 text-indigo-600" /> : 
-                            <User className="h-4 w-4 text-green-600" />
-                          }
-                          <span className="font-medium text-gray-900">{selectedClient.displayName}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">{selectedClient.email}</p>
-                        <p className="text-sm text-gray-600">
-                          {selectedClient.address}, {selectedClient.postalCode} {selectedClient.city}
-                        </p>
-                      </div>
-                    )}
+                      onChange={handleClientSelect}
+                      error={errors.clientId}
+                      placeholder={t('form.selectClient')}
+                    />
                   </div>
 
                   {/* Dates et statut */}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date de facture *
+                        {t('form.invoiceDate')}
                       </label>
                       <input
                         type="date"
@@ -484,24 +457,24 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Conditions de paiement
+                        {t('form.paymentTerms')}
                       </label>
                       <select
                         value={formData.paymentTerms}
                         onChange={(e) => handleInputChange('paymentTerms', parseInt(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
-                        <option value={0}>Paiement à réception</option>
-                        <option value={15}>15 jours</option>
-                        <option value={30}>30 jours</option>
-                        <option value={45}>45 jours</option>
-                        <option value={60}>60 jours</option>
+                        <option value={0}>{t('form.paymentOnReceipt')}</option>
+                        <option value={15}>{t('form.days', { count: 15 })}</option>
+                        <option value={30}>{t('form.days', { count: 30 })}</option>
+                        <option value={45}>{t('form.days', { count: 45 })}</option>
+                        <option value={60}>{t('form.days', { count: 60 })}</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date d'échéance *
+                        {t('form.dueDate')}
                       </label>
                       <input
                         type="date"
@@ -524,23 +497,23 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
             <div className="flex items-center space-x-2 mb-2">
               <Calculator className="h-4 w-4 text-blue-600" />
               <span className="text-sm font-medium text-blue-800">
-                TVA par défaut : {settings.defaultTaxRate || 20}%
+                {t('form.defaultTax', { rate: settings.defaultTaxRate || 20 })}
               </span>
             </div>
             <p className="text-xs text-blue-600">
-              Cette TVA s'applique automatiquement sauf si vous spécifiez un taux différent par ligne
+              {t('form.defaultTaxInfo')}
             </p>
           </div>
 
           {/* Lignes de facturation */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Lignes de facturation</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('form.invoiceLines')}</h3>
               <div className="flex items-center gap-2">
                 <CatalogProductSelector
                   onSelect={addItemFromCatalog}
                   includeServices={true}
-                  placeholder="Ajouter depuis le catalogue"
+                  placeholder={t('form.addFromCatalog')}
                   className="w-64"
                 />
                 <button
@@ -549,7 +522,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                   className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Ligne manuelle</span>
+                  <span>{t('form.manualLine')}</span>
                 </button>
               </div>
             </div>
@@ -564,11 +537,11 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
               <table className="w-full border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left p-3 font-medium text-gray-900">Description</th>
-                    <th className="text-left p-3 font-medium text-gray-900 w-24">Qté</th>
-                    <th className="text-left p-3 font-medium text-gray-900 w-32">Prix unitaire</th>
-                    <th className="text-left p-3 font-medium text-gray-900 w-28">TVA %</th>
-                    <th className="text-left p-3 font-medium text-gray-900 w-32">Total HT</th>
+                    <th className="text-left p-3 font-medium text-gray-900">{t('form.description')}</th>
+                    <th className="text-left p-3 font-medium text-gray-900 w-24">{t('form.qty')}</th>
+                    <th className="text-left p-3 font-medium text-gray-900 w-32">{t('form.unitPrice')}</th>
+                    <th className="text-left p-3 font-medium text-gray-900 w-28">{t('form.taxPercent')}</th>
+                    <th className="text-left p-3 font-medium text-gray-900 w-32">{t('form.totalExclTax')}</th>
                     <th className="w-12"></th>
                   </tr>
                 </thead>
@@ -581,7 +554,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                           value={item.description}
                           onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Description du produit/service"
+                          placeholder={t('form.descriptionPlaceholder')}
                         />
                       </td>
                       <td className="p-3">
@@ -611,8 +584,8 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                           onChange={(e) => handleItemChange(item.id, 'taxRate', e.target.value === '' ? null : parseFloat(e.target.value))}
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                          <option value="">Défaut ({settings.defaultTaxRate || 20}%)</option>
-                          <option value={0}>0% (Exonéré)</option>
+                          <option value="">{t('form.defaultRate', { rate: settings.defaultTaxRate || 20 })}</option>
+                          <option value={0}>{t('form.exempt')}</option>
                           <option value={5.5}>5.5%</option>
                           <option value={10}>10%</option>
                           <option value={20}>20%</option>
@@ -622,7 +595,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                         <div>
                           <div>{getLineTotal(item)}€</div>
                           <div className="text-xs text-gray-500">
-                            TVA {getEffectiveTaxRate(item)}%
+                            {t('form.tax')} {getEffectiveTaxRate(item)}%
                           </div>
                         </div>
                       </td>
@@ -648,29 +621,29 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
           <div className="bg-orange-50 rounded-lg p-4 mb-6 border border-orange-200">
             <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
               <Minus className="h-4 w-4 mr-2 text-orange-600" />
-              Remise globale
+              {t('form.globalDiscount')}
             </h4>
             
             <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type de remise
+                  {t('form.discountType')}
                 </label>
                 <select
                   value={formData.discountType}
                   onChange={(e) => handleInputChange('discountType', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="none">Aucune remise</option>
-                  <option value="percentage">Pourcentage (%)</option>
-                  <option value="amount">Montant fixe (€)</option>
+                  <option value="none">{t('form.noDiscount')}</option>
+                  <option value="percentage">{t('form.percentage')}</option>
+                  <option value="amount">{t('form.fixedAmount')}</option>
                 </select>
               </div>
               
               {formData.discountType !== 'none' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Valeur de la remise
+                    {t('form.discountValue')}
                   </label>
                   <div className="relative">
                     <input
@@ -699,7 +672,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
               {formData.discountType !== 'none' && totals.discountAmount > 0 && (
                 <div className="flex items-end">
                   <div className="bg-white p-3 rounded-lg border">
-                    <div className="text-sm text-gray-600">Remise appliquée</div>
+                    <div className="text-sm text-gray-600">{t('form.discountApplied')}</div>
                     <div className="text-lg font-bold text-orange-600">
                       -{totals.discountAmount.toFixed(2)}€
                     </div>
@@ -713,14 +686,14 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
             <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
               <Calculator className="h-5 w-5 mr-2 text-indigo-600" />
-              Récapitulatif des totaux
+              {t('form.totalsSummary')}
             </h4>
             
             <div className="grid md:grid-cols-2 gap-6">
               {/* Détail des calculs */}
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sous-total HT :</span>
+                  <span className="text-gray-600">{t('form.subtotalExclTax')}</span>
                   <span className="font-medium">{totals.subtotal.toFixed(2)}€</span>
                 </div>
                 
@@ -728,14 +701,14 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                 {totals.discountAmount > 0 && (
                   <div className="flex justify-between text-orange-600">
                     <span>
-                      Remise {formData.discountType === 'percentage' ? `${formData.discountValue}%` : 'fixe'} :
+                      Remise {formData.discountType === 'percentage' ? `${formData.discountValue}%` : t('form.discountFixed')} :
                     </span>
                     <span className="font-medium">-{totals.discountAmount.toFixed(2)}€</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sous-total après remise :</span>
+                  <span className="text-gray-600">{t('form.subtotalAfterDiscount')}</span>
                   <span className="font-medium">{(totals.subtotal - totals.discountAmount).toFixed(2)}€</span>
                 </div>
                 
@@ -743,26 +716,26 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                 {Object.entries(totals.taxDetails).map(([rate, details]) => (
                   <div key={rate} className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      TVA {rate}% sur {details.base.toFixed(2)}€ :
+                      {t('form.taxOnBase', { rate, base: details.base.toFixed(2) })}
                     </span>
                     <span className="font-medium">{details.amount.toFixed(2)}€</span>
                   </div>
                 ))}
                 
                 <div className="border-t pt-2 flex justify-between">
-                  <span className="text-gray-600">Total TVA :</span>
+                  <span className="text-gray-600">{t('form.totalTax')}</span>
                   <span className="font-medium">{totals.taxAmount.toFixed(2)}€</span>
                 </div>
                 
                 <div className="border-t pt-2 flex justify-between text-lg font-bold">
-                  <span className="text-gray-900">Total TTC :</span>
+                  <span className="text-gray-900">{t('form.totalInclTax')}</span>
                   <span className="text-indigo-600">{totals.total.toFixed(2)}€</span>
                 </div>
               </div>
               
               {/* Aperçu visuel */}
               <div className="space-y-2">
-                <div className="text-sm text-gray-600 mb-2">Répartition :</div>
+                <div className="text-sm text-gray-600 mb-2">{t('form.breakdown')}</div>
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
                   <div 
                     className="bg-indigo-500" 
@@ -776,18 +749,18 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
                 <div className="flex text-xs text-gray-600">
                   <div className="flex items-center mr-4">
                     <div className="w-3 h-3 bg-indigo-500 rounded mr-1"></div>
-                    HT ({(((totals.subtotal - totals.discountAmount) / totals.total) * 100 || 0).toFixed(1)}%)
+                    {t('form.exclTax')} ({(((totals.subtotal - totals.discountAmount) / totals.total) * 100 || 0).toFixed(1)}%)
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-orange-400 rounded mr-1"></div>
-                    TVA ({((totals.taxAmount / totals.total) * 100 || 0).toFixed(1)}%)
+                    {t('form.tax')} ({((totals.taxAmount / totals.total) * 100 || 0).toFixed(1)}%)
                   </div>
                 </div>
                 
                 {/* Économies réalisées */}
                 {totals.discountAmount > 0 && (
                   <div className="mt-3 p-2 bg-orange-100 rounded text-center">
-                    <div className="text-xs text-orange-600">Économie réalisée</div>
+                    <div className="text-xs text-orange-600">{t('form.savingsRealized')}</div>
                     <div className="text-sm font-bold text-orange-700">{totals.discountAmount.toFixed(2)}€</div>
                   </div>
                 )}
@@ -798,14 +771,14 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
           {/* Notes */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes et conditions (optionnel)
+              {t('form.notesLabel')}
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Conditions de paiement, notes particulières..."
+              placeholder={t('form.notesPlaceholder')}
             />
           </div>
 
@@ -823,16 +796,16 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
           <div className="px-6 py-3 bg-white border-b">
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                {formData.items.filter(item => item.description.trim() && item.unitPrice > 0).length} ligne(s) valide(s)
+                {t('form.validLinesCount', { count: formData.items.filter(item => item.description.trim() && item.unitPrice > 0).length })}
                 {totals.discountAmount > 0 && (
                   <span className="ml-2 text-orange-600">
-                    • Remise: -{totals.discountAmount.toFixed(2)}€
+                    {'• ' + t('form.discountSummary', { amount: totals.discountAmount.toFixed(2) })}
                   </span>
                 )}
               </div>
               <div className="flex space-x-6 text-sm">
-                <span>HT: <strong>{totals.subtotal.toFixed(2)}€</strong></span>
-                <span>TVA: <strong>{totals.taxAmount.toFixed(2)}€</strong></span>
+                <span>{t('form.exclTax')}: <strong>{totals.subtotal.toFixed(2)}€</strong></span>
+                <span>{t('form.tax')}: <strong>{totals.taxAmount.toFixed(2)}€</strong></span>
                 <span className="text-lg">TTC: <strong className="text-indigo-600">{totals.total.toFixed(2)}€</strong></span>
               </div>
             </div>
@@ -844,7 +817,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
               onClick={onClose}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Annuler
+              {t('form.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -852,7 +825,7 @@ const InvoiceFormModal = ({ isOpen, onClose, onSave, invoice = null, preSelected
               className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
             >
               <Save className="h-4 w-4" />
-              <span>{isLoading ? 'Sauvegarde...' : (invoice ? 'Modifier' : 'Créer')} - {totals.total.toFixed(2)}€</span>
+              <span>{isLoading ? t('form.saving') : (invoice ? t('form.edit') : t('form.create'))} - {totals.total.toFixed(2)}€</span>
             </button>
           </div>
         </div>

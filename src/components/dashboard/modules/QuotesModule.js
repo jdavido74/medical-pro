@@ -14,9 +14,11 @@ import { patientsApi } from '../../../api/patientsApi';
 import QuoteFormModal from '../modals/QuoteFormModal';
 import PDFPreviewModal from '../modals/PDFPreviewModal';
 import { useLocale } from '../../../contexts/LocaleContext';
+import { useTranslation } from 'react-i18next';
 
 const QuotesModule = ({ navigateToClient }) => {
   const { locale } = useLocale();
+  const { t } = useTranslation('quotes');
   const [quotes, setQuotes] = useState([]);
   const [filteredQuotes, setFilteredQuotes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,7 +28,6 @@ const QuotesModule = ({ navigateToClient }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({});
   const [billingSettings, setBillingSettings] = useState(null);
-  const [patients, setPatients] = useState([]);
   const [error, setError] = useState(null);
 
   // PDF states
@@ -47,7 +48,7 @@ const QuotesModule = ({ navigateToClient }) => {
       setQuotes(docs.map(transformDocumentForDisplay));
     } catch (err) {
       console.error('Erreur chargement devis:', err);
-      setError('Impossible de charger les devis');
+      setError(t('loadError'));
       setQuotes([]);
     } finally {
       setIsLoading(false);
@@ -74,15 +75,11 @@ const QuotesModule = ({ navigateToClient }) => {
     }
   }, []);
 
-  // Load billing settings and patients
+  // Load billing settings
   const loadSettings = useCallback(async () => {
     try {
-      const [settingsResp, patientsResp] = await Promise.all([
-        getBillingSettings().catch(() => ({ data: null })),
-        patientsApi.getPatients({ limit: 500 }).catch(() => ({ patients: [] }))
-      ]);
+      const settingsResp = await getBillingSettings().catch(() => ({ data: null }));
       setBillingSettings(settingsResp.data || settingsResp || null);
-      setPatients(patientsResp.patients || []);
     } catch (err) {
       console.error('Erreur chargement paramètres:', err);
     }
@@ -163,7 +160,7 @@ const QuotesModule = ({ navigateToClient }) => {
   };
 
   const handleDeleteQuote = async (quoteId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce devis ?')) {
+    if (!window.confirm(t('deleteConfirm'))) {
       return;
     }
 
@@ -173,13 +170,32 @@ const QuotesModule = ({ navigateToClient }) => {
       loadStats();
     } catch (err) {
       console.error('Erreur suppression devis:', err);
-      alert(err.message || 'Erreur lors de la suppression. Seuls les brouillons peuvent être supprimés.');
+      alert(err.message || t('deleteError'));
     }
   };
 
   const handleSaveQuote = async (formData) => {
     try {
-      const selectedClient = patients.find(p => p.id === formData.clientId) || null;
+      // Fetch the selected patient for document payload
+      let selectedClient = null;
+      if (formData.clientId) {
+        try {
+          const patient = await patientsApi.getPatientById(formData.clientId);
+          selectedClient = {
+            id: patient.id,
+            displayName: patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
+            email: patient.contact?.email || patient.email || '',
+            phone: patient.contact?.phone || patient.phone || '',
+            address: patient.address?.street || '',
+            postalCode: patient.address?.postalCode || '',
+            city: patient.address?.city || '',
+            country: patient.address?.country || '',
+            siren: patient.siren || ''
+          };
+        } catch (err) {
+          console.error('Error fetching patient for quote:', err);
+        }
+      }
       const payload = buildDocumentPayload('quote', formData, billingSettings, selectedClient);
 
       if (editingQuote?.id) {
@@ -198,7 +214,7 @@ const QuotesModule = ({ navigateToClient }) => {
   };
 
   const handleConvertToInvoice = async (quote) => {
-    if (!window.confirm(`Convertir le devis ${quote.number} en facture ?`)) {
+    if (!window.confirm(t('convertConfirm', { number: quote.number }))) {
       return;
     }
 
@@ -207,10 +223,10 @@ const QuotesModule = ({ navigateToClient }) => {
       loadQuotes();
       loadStats();
       const newNumber = result?.data?.documentNumber || result?.data?.document_number || '';
-      alert(`Devis ${quote.number} converti en facture ${newNumber}`);
+      alert(t('convertSuccess', { quoteNumber: quote.number, invoiceNumber: newNumber }));
     } catch (err) {
       console.error('Erreur conversion devis:', err);
-      alert(err.message || 'Erreur lors de la conversion');
+      alert(err.message || t('convertError'));
     }
   };
 
@@ -221,7 +237,7 @@ const QuotesModule = ({ navigateToClient }) => {
       loadStats();
     } catch (err) {
       console.error('Erreur duplication devis:', err);
-      alert('Erreur lors de la duplication');
+      alert(t('duplicateError'));
     }
   };
 
@@ -240,7 +256,7 @@ const QuotesModule = ({ navigateToClient }) => {
       handleShowPDF(quote);
     } catch (err) {
       console.error('Erreur envoi devis:', err);
-      alert('Erreur lors de l\'envoi');
+      alert(t('sendError'));
     }
   };
 
@@ -263,11 +279,11 @@ const QuotesModule = ({ navigateToClient }) => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'draft': return 'Brouillon';
-      case 'sent': return 'Envoyé';
-      case 'accepted': return 'Accepté';
-      case 'rejected': return 'Refusé';
-      case 'converted': return 'Converti';
+      case 'draft': return t('statuses.draft');
+      case 'sent': return t('statuses.sent');
+      case 'accepted': return t('statuses.accepted');
+      case 'rejected': return t('statuses.rejected');
+      case 'converted': return t('statuses.converted');
       default: return status;
     }
   };
@@ -290,7 +306,7 @@ const QuotesModule = ({ navigateToClient }) => {
           <button
             onClick={() => handleEditQuote(quote)}
             className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-            title="Modifier"
+            title={t('tooltips.edit')}
           >
             <Edit2 className="h-4 w-4" />
           </button>
@@ -299,7 +315,7 @@ const QuotesModule = ({ navigateToClient }) => {
         <button
           onClick={() => handleDuplicateQuote(quote)}
           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-          title="Dupliquer"
+          title={t('tooltips.duplicate')}
         >
           <Copy className="h-4 w-4" />
         </button>
@@ -307,7 +323,7 @@ const QuotesModule = ({ navigateToClient }) => {
         <button
           onClick={() => handleShowPDF(quote)}
           className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-          title="Aperçu PDF"
+          title={t('tooltips.pdfPreview')}
         >
           <Eye className="h-4 w-4" />
         </button>
@@ -316,7 +332,7 @@ const QuotesModule = ({ navigateToClient }) => {
           <button
             onClick={() => handleSendQuote(quote)}
             className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-            title="Envoyer par email"
+            title={t('tooltips.sendEmail')}
           >
             <Send className="h-4 w-4" />
           </button>
@@ -326,7 +342,7 @@ const QuotesModule = ({ navigateToClient }) => {
           <button
             onClick={() => handleConvertToInvoice(quote)}
             className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-            title="Convertir en facture"
+            title={t('tooltips.convertToInvoice')}
           >
             <ArrowRight className="h-4 w-4" />
           </button>
@@ -341,7 +357,7 @@ const QuotesModule = ({ navigateToClient }) => {
             }, 2000);
           }}
           className="p-1.5 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 rounded transition-colors"
-          title="Télécharger PDF"
+          title={t('tooltips.downloadPDF')}
         >
           <Download className="h-4 w-4" />
         </button>
@@ -350,7 +366,7 @@ const QuotesModule = ({ navigateToClient }) => {
           <button
             onClick={() => handleDeleteQuote(quote.id)}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-            title="Supprimer"
+            title={t('tooltips.delete')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -375,7 +391,7 @@ const QuotesModule = ({ navigateToClient }) => {
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
           <p className="text-red-700 text-sm">{error}</p>
           <button onClick={handleRefresh} className="ml-auto text-red-600 hover:text-red-800 text-sm font-medium">
-            Réessayer
+            {t('retry')}
           </button>
         </div>
       )}
@@ -383,15 +399,15 @@ const QuotesModule = ({ navigateToClient }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Devis</h2>
-          <p className="text-sm text-gray-500 mt-1">Gérez vos devis et propositions commerciales</p>
+          <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
         </div>
         <button
           onClick={handleAddQuote}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Nouveau devis</span>
+          <span>{t('newQuote')}</span>
         </button>
       </div>
 
@@ -402,7 +418,7 @@ const QuotesModule = ({ navigateToClient }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher un devis..."
+              placeholder={t('search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -413,12 +429,12 @@ const QuotesModule = ({ navigateToClient }) => {
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
-            <option value="all">Tous les statuts</option>
-            <option value="draft">Brouillons</option>
-            <option value="sent">Envoyés</option>
-            <option value="accepted">Acceptés</option>
-            <option value="rejected">Refusés</option>
-            <option value="converted">Convertis</option>
+            <option value="all">{t('statuses.all')}</option>
+            <option value="draft">{t('statuses.drafts')}</option>
+            <option value="sent">{t('statuses.sents')}</option>
+            <option value="accepted">{t('statuses.accepteds')}</option>
+            <option value="rejected">{t('statuses.rejecteds')}</option>
+            <option value="converted">{t('statuses.converteds')}</option>
           </select>
           <button
             onClick={handleRefresh}
@@ -432,27 +448,27 @@ const QuotesModule = ({ navigateToClient }) => {
       {/* Stats */}
       <div className="grid md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">Total devis</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.totalQuotes')}</h4>
           <p className="text-3xl font-bold text-gray-900">{stats.totalQuotes || 0}</p>
-          <p className="text-sm text-gray-500">Tous statuts</p>
+          <p className="text-sm text-gray-500">{t('stats.allStatuses')}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">Valeur totale</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.totalValue')}</h4>
           <p className="text-3xl font-bold text-indigo-600">{(stats.totalValue || 0).toFixed(2)}€</p>
-          <p className="text-sm text-gray-500">Tous devis</p>
+          <p className="text-sm text-gray-500">{t('stats.allQuotes')}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">Acceptés</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.accepted')}</h4>
           <p className="text-3xl font-bold text-green-600">{(stats.acceptedValue || 0).toFixed(2)}€</p>
-          <p className="text-sm text-gray-500">{stats.acceptedCount || 0} devis</p>
+          <p className="text-sm text-gray-500">{t('stats.acceptedQuotes', { count: stats.acceptedCount || 0 })}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h4 className="font-semibold text-gray-900 mb-2">Ce mois</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">{t('stats.thisMonth')}</h4>
           <p className="text-3xl font-bold text-blue-600">{stats.thisMonthQuotes || 0}</p>
-          <p className="text-sm text-gray-500">Nouveaux devis</p>
+          <p className="text-sm text-gray-500">{t('stats.newQuotes')}</p>
         </div>
       </div>
 
@@ -460,10 +476,10 @@ const QuotesModule = ({ navigateToClient }) => {
       <div className="bg-white rounded-xl shadow-sm border overflow-visible">
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
-            <h4 className="font-semibold text-gray-900">Devis récents</h4>
+            <h4 className="font-semibold text-gray-900">{t('table.recentQuotes')}</h4>
             <span className="text-sm text-gray-500">
-              {filteredQuotes.length} devis
-              {searchQuery && ` (filtré sur "${searchQuery}")`}
+              {t('table.quoteCount', { count: filteredQuotes.length })}
+              {searchQuery && ` (${t('table.filteredOn', { query: searchQuery })})`}
             </span>
           </div>
         </div>
@@ -472,12 +488,12 @@ const QuotesModule = ({ navigateToClient }) => {
           <div className="p-12 text-center">
             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h5 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery ? 'Aucun devis trouvé' : 'Aucun devis créé'}
+              {searchQuery ? t('empty.noResults') : t('empty.noQuotes')}
             </h5>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               {searchQuery
-                ? 'Essayez de modifier vos critères de recherche.'
-                : 'Créez votre premier devis pour proposer vos services à vos clients.'
+                ? t('empty.noResultsHint')
+                : t('empty.noQuotesHint')
               }
             </p>
             {!searchQuery && (
@@ -486,7 +502,7 @@ const QuotesModule = ({ navigateToClient }) => {
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center space-x-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>Créer un devis</span>
+                <span>{t('empty.createQuote')}</span>
               </button>
             )}
           </div>
@@ -496,13 +512,13 @@ const QuotesModule = ({ navigateToClient }) => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left p-4 font-medium text-gray-900">Numéro</th>
+                    <th className="text-left p-4 font-medium text-gray-900">{t('table.number')}</th>
                     <th
                       className="text-left p-4 font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
                       onClick={() => handleSort('clientName')}
                     >
                       <div className="flex items-center space-x-1">
-                        <span>Client</span>
+                        <span>{t('table.client')}</span>
                         {sortField === 'clientName' && (
                           sortDirection === 'asc' ?
                             <ChevronUp className="h-4 w-4" /> :
@@ -510,15 +526,15 @@ const QuotesModule = ({ navigateToClient }) => {
                         )}
                       </div>
                     </th>
-                    <th className="text-left p-4 font-medium text-gray-900">Date</th>
-                    <th className="text-left p-4 font-medium text-gray-900 hidden sm:table-cell">Validité</th>
-                    <th className="text-left p-4 font-medium text-gray-900">Montant</th>
+                    <th className="text-left p-4 font-medium text-gray-900">{t('table.date')}</th>
+                    <th className="text-left p-4 font-medium text-gray-900 hidden sm:table-cell">{t('table.validity')}</th>
+                    <th className="text-left p-4 font-medium text-gray-900">{t('table.amount')}</th>
                     <th
                       className="text-left p-4 font-medium text-gray-900 cursor-pointer hover:bg-gray-100 select-none"
                       onClick={() => handleSort('status')}
                     >
                       <div className="flex items-center space-x-1">
-                        <span>Statut</span>
+                        <span>{t('table.status')}</span>
                         {sortField === 'status' && (
                           sortDirection === 'asc' ?
                             <ChevronUp className="h-4 w-4" /> :
@@ -526,7 +542,7 @@ const QuotesModule = ({ navigateToClient }) => {
                         )}
                       </div>
                     </th>
-                    <th className="text-left p-4 font-medium text-gray-900 w-48">Actions</th>
+                    <th className="text-left p-4 font-medium text-gray-900 w-48">{t('table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -541,7 +557,7 @@ const QuotesModule = ({ navigateToClient }) => {
                             <span className="font-medium text-gray-900">{quote.number || 'N/A'}</span>
                             {quote.discountAmount > 0 && (
                               <span className="text-xs bg-orange-100 text-orange-600 px-1 py-0.5 rounded">
-                                Remise
+                                {t('table.discount')}
                               </span>
                             )}
                           </div>
@@ -551,7 +567,7 @@ const QuotesModule = ({ navigateToClient }) => {
                             onClick={() => handleClientClick(quote.clientId, quote.clientName)}
                             className="text-indigo-600 hover:text-indigo-800 hover:underline text-left font-medium transition-colors"
                           >
-                            {quote.clientName || 'Client inconnu'}
+                            {quote.clientName || t('table.unknownClient')}
                           </button>
                         </td>
                         <td className="p-4">
@@ -566,7 +582,7 @@ const QuotesModule = ({ navigateToClient }) => {
                             </span>
                             {isExpired && (
                               <span className="text-xs bg-red-100 text-red-600 px-1 py-0.5 rounded">
-                                Expiré
+                                {t('table.expired')}
                               </span>
                             )}
                           </div>
@@ -578,7 +594,7 @@ const QuotesModule = ({ navigateToClient }) => {
                             </span>
                             {quote.discountAmount > 0 && (
                               <div className="text-xs text-orange-600">
-                                -{quote.discountAmount.toFixed(2)}€ remise
+                                -{quote.discountAmount.toFixed(2)}€ {t('table.discount').toLowerCase()}
                               </div>
                             )}
                           </div>
@@ -607,7 +623,7 @@ const QuotesModule = ({ navigateToClient }) => {
       {/* Quick actions */}
       {quotes.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border p-6">
-          <h4 className="font-semibold text-gray-900 mb-4">Actions rapides</h4>
+          <h4 className="font-semibold text-gray-900 mb-4">{t('quickActions.title')}</h4>
           <div className="grid md:grid-cols-3 gap-4">
             <button
               onClick={handleAddQuote}
@@ -618,8 +634,8 @@ const QuotesModule = ({ navigateToClient }) => {
                   <Plus className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Nouveau devis</p>
-                  <p className="text-sm text-gray-500">Créer une proposition commerciale</p>
+                  <p className="font-medium text-gray-900">{t('quickActions.newQuote')}</p>
+                  <p className="text-sm text-gray-500">{t('quickActions.newQuoteDesc')}</p>
                 </div>
               </div>
             </button>
@@ -628,7 +644,7 @@ const QuotesModule = ({ navigateToClient }) => {
               onClick={async () => {
                 const acceptedQuotes = quotes.filter(q => q.status === 'accepted');
                 if (acceptedQuotes.length === 0) {
-                  alert('Aucun devis accepté à convertir');
+                  alert(t('noAcceptedToConvert'));
                   return;
                 }
                 for (const quote of acceptedQuotes) {
@@ -642,8 +658,8 @@ const QuotesModule = ({ navigateToClient }) => {
                   <ArrowRight className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Convertir en factures</p>
-                  <p className="text-sm text-gray-500">Devis acceptés → factures</p>
+                  <p className="font-medium text-gray-900">{t('quickActions.convertToInvoices')}</p>
+                  <p className="text-sm text-gray-500">{t('quickActions.convertToInvoicesDesc')}</p>
                 </div>
               </div>
             </button>
@@ -654,8 +670,8 @@ const QuotesModule = ({ navigateToClient }) => {
                   <Download className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Export commercial</p>
-                  <p className="text-sm text-gray-500">Rapport activité devis</p>
+                  <p className="font-medium text-gray-900">{t('quickActions.commercialExport')}</p>
+                  <p className="text-sm text-gray-500">{t('quickActions.commercialExportDesc')}</p>
                 </div>
               </div>
             </button>
@@ -670,30 +686,30 @@ const QuotesModule = ({ navigateToClient }) => {
             <div className="text-2xl">📊</div>
             <div className="flex-1">
               <h4 className="font-semibold text-gray-800 mb-2">
-                Performance commerciale
+                {t('performance.title')}
               </h4>
               <div className="grid md:grid-cols-3 gap-4 mb-3">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
                     {((stats.acceptedCount / stats.totalQuotes) * 100 || 0).toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-600">Taux d'acceptation</div>
+                  <div className="text-sm text-gray-600">{t('performance.acceptanceRate')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
                     {((stats.convertedCount / stats.totalQuotes) * 100 || 0).toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-600">Taux de conversion</div>
+                  <div className="text-sm text-gray-600">{t('performance.conversionRate')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
                     {stats.totalQuotes > 0 ? (stats.totalValue / stats.totalQuotes).toFixed(0) : 0}€
                   </div>
-                  <div className="text-sm text-gray-600">Valeur moyenne</div>
+                  <div className="text-sm text-gray-600">{t('performance.averageValue')}</div>
                 </div>
               </div>
               <p className="text-gray-700 text-sm">
-                {stats.acceptedCount} devis acceptés, {stats.convertedCount} convertis en factures sur {stats.totalQuotes} total.
+                {t('performance.summary', { accepted: stats.acceptedCount, converted: stats.convertedCount, total: stats.totalQuotes })}
               </p>
             </div>
           </div>
@@ -706,26 +722,26 @@ const QuotesModule = ({ navigateToClient }) => {
           <div className="text-2xl">📋</div>
           <div className="flex-1">
             <h4 className="font-semibold text-green-800 mb-2">
-              Devis professionnels - Conformité commerciale
+              {t('compliance.title')}
             </h4>
             <p className="text-green-700 text-sm mb-3">
-              Vos devis respectent les standards commerciaux et sont automatiquement convertibles en factures conformes EN 16931.
+              {t('compliance.description')}
             </p>
             <div className="flex flex-wrap gap-2">
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Aperçu PDF temps réel
+                {'✓ ' + t('compliance.realtimePDFPreview')}
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Conversion facture automatique
+                {'✓ ' + t('compliance.autoInvoiceConversion')}
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Gestion dates validité
+                {'✓ ' + t('compliance.validityManagement')}
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Statuts visuels
+                {'✓ ' + t('compliance.visualStatuses')}
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                ✓ Métriques performance
+                {'✓ ' + t('compliance.performanceMetrics')}
               </span>
             </div>
           </div>
@@ -738,7 +754,6 @@ const QuotesModule = ({ navigateToClient }) => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveQuote}
         quote={editingQuote}
-        patients={patients}
         billingSettings={billingSettings}
       />
 
