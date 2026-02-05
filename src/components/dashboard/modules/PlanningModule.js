@@ -8,15 +8,19 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, Filter,
-  Cpu, User, Clock, Check, X, Edit2, Bell, FileText,
+  Cpu, User, Clock, Check, X, Edit2, Bell, FileText, Receipt,
   CircleDot, CheckCircle2, PlayCircle, XCircle, AlertTriangle, Link,
   List, Search, Send, Eye, MoreHorizontal, Trash2
 } from 'lucide-react';
-import planningApi from '../../../api/planningApi';
+import planningApi, { getAppointmentGroup } from '../../../api/planningApi';
 import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
 import { usePermissions } from '../../auth/PermissionGuard';
 import PlanningBookingModal from '../modals/PlanningBookingModal';
 import SendConsentRequestModal from '../../modals/SendConsentRequestModal';
+import InvoiceFormModal from '../modals/InvoiceFormModal';
+import QuoteFormModal from '../modals/QuoteFormModal';
+import { createDocument, buildDocumentPayload, getBillingSettings } from '../../../api/documentsApi';
+import { patientsApi } from '../../../api';
 
 
 // Status icons and colors
@@ -249,6 +253,13 @@ const PlanningModule = () => {
   const [consentPatient, setConsentPatient] = useState(null);
   const [consentAppointmentId, setConsentAppointmentId] = useState(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
+
+  // Billing state
+  const [showBillingQuoteModal, setShowBillingQuoteModal] = useState(false);
+  const [showBillingInvoiceModal, setShowBillingInvoiceModal] = useState(false);
+  const [billingSettings, setBillingSettings] = useState(null);
+  const [billingPatients, setBillingPatients] = useState([]);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   // Calculate date range based on view mode
   const dateRange = useMemo(() => {
@@ -622,6 +633,100 @@ const PlanningModule = () => {
       showToast(t('messages.reminderError'), 'error');
     }
   };
+
+  // === Billing integration ===
+  const [billingItems, setBillingItems] = useState([]);
+
+  const loadBillingData = useCallback(async () => {
+    if (billingSettings && billingPatients.length > 0) return;
+    setBillingLoading(true);
+    try {
+      const [settingsRes, patientsRes] = await Promise.all([
+        getBillingSettings(),
+        patientsApi.getPatients()
+      ]);
+      setBillingSettings(settingsRes.data || settingsRes);
+      const pts = patientsRes.data?.patients || patientsRes.data || [];
+      setBillingPatients(pts);
+    } catch (err) {
+      console.error('Error loading billing data:', err);
+      showToast(t('billing.loadError', 'Erreur chargement facturation'), 'error');
+    } finally {
+      setBillingLoading(false);
+    }
+  }, [billingSettings, billingPatients.length, t]);
+
+  // Build billing items from appointment(s), including linked group treatments with catalog prices
+  const loadBillingItems = useCallback(async () => {
+    if (!summaryAppointment) return [];
+
+    let appointmentsToProcess = [summaryAppointment];
+
+    // If linked (multi-treatment), fetch the full group
+    if (summaryAppointment.isLinked) {
+      const groupId = summaryAppointment.linkedAppointmentId || summaryAppointment.id;
+      try {
+        const res = await getAppointmentGroup(groupId);
+        const groupAppts = res.data?.appointments || res.data || [];
+        if (groupAppts.length > 0) {
+          appointmentsToProcess = groupAppts;
+        }
+      } catch (err) {
+        console.error('Error fetching appointment group:', err);
+      }
+    }
+
+    const items = appointmentsToProcess.map((apt, i) => ({
+      id: Date.now() + i,
+      description: apt.service?.title || apt.title || '',
+      quantity: 1,
+      unitPrice: apt.service?.unitPrice ?? 0,
+      taxRate: apt.service?.taxRate ?? null
+    }));
+
+    return items.length > 0 ? items : [{ id: Date.now(), description: summaryAppointment.title || '', quantity: 1, unitPrice: 0, taxRate: null }];
+  }, [summaryAppointment]);
+
+  const handleSummaryCreateQuote = useCallback(async () => {
+    setBillingLoading(true);
+    try {
+      await loadBillingData();
+      const items = await loadBillingItems();
+      setBillingItems(items);
+      setShowBillingQuoteModal(true);
+    } finally {
+      setBillingLoading(false);
+    }
+  }, [loadBillingData, loadBillingItems]);
+
+  const handleSummaryCreateInvoice = useCallback(async () => {
+    setBillingLoading(true);
+    try {
+      await loadBillingData();
+      const items = await loadBillingItems();
+      setBillingItems(items);
+      setShowBillingInvoiceModal(true);
+    } finally {
+      setBillingLoading(false);
+    }
+  }, [loadBillingData, loadBillingItems]);
+
+  const handleSaveBillingDoc = useCallback(async (formData, documentType) => {
+    try {
+      const selectedClient = billingPatients.find(p => p.id === formData.clientId) || null;
+      const enrichedFormData = {
+        ...formData,
+        appointmentId: summaryAppointment?.id || null,
+        practitionerId: summaryAppointment?.providerId || null
+      };
+      const payload = buildDocumentPayload(documentType, enrichedFormData, billingSettings, selectedClient);
+      await createDocument(payload);
+      showToast(documentType === 'quote' ? t('billing.quoteCreated', 'Devis créé') : t('billing.invoiceCreated', 'Facture créée'), 'success');
+    } catch (err) {
+      console.error('Error saving billing document:', err);
+      throw err;
+    }
+  }, [billingPatients, billingSettings, summaryAppointment, t]);
 
   const handleBookingSave = async (result) => {
     const isDeleted = result?.deleted;
@@ -1597,6 +1702,26 @@ const PlanningModule = () => {
                   <Bell className="w-4 h-4" />
                   {t('actions.sendReminder')}
                 </button>
+                {summaryAppointment.status !== 'cancelled' && (
+                  <>
+                    <button
+                      onClick={handleSummaryCreateQuote}
+                      disabled={billingLoading}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                    >
+                      <FileText className="w-4 h-4" />
+                      {t('billing.createQuote', 'Devis')}
+                    </button>
+                    <button
+                      onClick={handleSummaryCreateInvoice}
+                      disabled={billingLoading}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <Receipt className="w-4 h-4" />
+                      {t('billing.createInvoice', 'Facture')}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1641,6 +1766,28 @@ const PlanningModule = () => {
           onSuccess={handleConsentSuccess}
         />
       )}
+
+      {/* Billing Quote Modal */}
+      <QuoteFormModal
+        isOpen={showBillingQuoteModal}
+        onClose={() => setShowBillingQuoteModal(false)}
+        onSave={(formData) => handleSaveBillingDoc(formData, 'quote')}
+        preSelectedPatient={summaryAppointment?.patient ? { id: summaryAppointment.patient.id } : null}
+        patients={billingPatients}
+        billingSettings={billingSettings}
+        initialItems={billingItems}
+      />
+
+      {/* Billing Invoice Modal */}
+      <InvoiceFormModal
+        isOpen={showBillingInvoiceModal}
+        onClose={() => setShowBillingInvoiceModal(false)}
+        onSave={(formData) => handleSaveBillingDoc(formData, 'invoice')}
+        preSelectedClient={summaryAppointment?.patient ? { id: summaryAppointment.patient.id } : null}
+        patients={billingPatients}
+        billingSettings={billingSettings}
+        initialItems={billingItems}
+      />
 
       {/* Click outside handler for action menu */}
       {actionMenuOpen && (
