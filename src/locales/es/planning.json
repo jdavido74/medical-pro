@@ -327,6 +327,14 @@
     "selectAnotherDate": "Por favor seleccione otra fecha."
   },
 
+  "billing": {
+    "loadError": "Error al cargar los artículos de facturación",
+    "quoteCreated": "Presupuesto creado con éxito",
+    "invoiceCreated": "Factura creada con éxito",
+    "createQuote": "Presupuesto",
+    "createInvoice": "Factura"
+  },
+
   "staffAssignment": {
     "title": "Asignación de personal",
     "subtitle": "Asigne un profesional y/o asistente (opcional)",

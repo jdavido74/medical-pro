@@ -1,4 +1,151 @@
 {
   "title": "Facturas",
-  "description": "Gestione sus facturas y pagos"
+  "description": "Gestione sus facturas y pagos",
+  "subtitle": "Gestione sus facturas y seguimiento de pagos",
+  "newInvoice": "Nueva factura",
+  "search": "Buscar una factura...",
+  "retry": "Reintentar",
+  "loadError": "No se pudieron cargar las facturas",
+  "saveError": "Error al guardar",
+  "deleteConfirm": "¿Está seguro de que desea eliminar esta factura?",
+  "deleteError": "Error al eliminar. Solo se pueden eliminar los borradores.",
+  "duplicateError": "Error al duplicar",
+  "sendError": "Error al enviar",
+
+  "statuses": {
+    "all": "Todos los estados",
+    "draft": "Borrador",
+    "drafts": "Borradores",
+    "sent": "Enviada",
+    "sents": "Enviadas",
+    "paid": "Pagada",
+    "paids": "Pagadas",
+    "overdue": "Vencida",
+    "overdues": "Vencidas",
+    "cancelled": "Anulada"
+  },
+
+  "stats": {
+    "totalInvoices": "Total facturas",
+    "allInvoices": "Todas las facturas",
+    "revenue": "Ingresos",
+    "paidInvoices": "Facturas pagadas",
+    "pending": "Pendiente",
+    "toCollect": "Por cobrar",
+    "thisMonth": "Este mes",
+    "newInvoices": "Nuevas facturas"
+  },
+
+  "table": {
+    "recentInvoices": "Facturas recientes",
+    "invoiceCount": "{{count}} factura(s)",
+    "filteredOn": "(filtrado por \"{{query}}\")",
+    "number": "Número",
+    "client": "Cliente",
+    "date": "Fecha",
+    "dueDate": "Vencimiento",
+    "amount": "Importe",
+    "status": "Estado",
+    "actions": "Acciones",
+    "unknownClient": "Cliente desconocido",
+    "discount": "Descuento"
+  },
+
+  "empty": {
+    "noResults": "No se encontraron facturas",
+    "noInvoices": "No se han creado facturas",
+    "noResultsHint": "Intente modificar sus criterios de búsqueda.",
+    "noInvoicesHint": "Cree su primera factura conforme a la normativa 2026. La interfaz le guiará para cumplir con todas las obligaciones legales.",
+    "createInvoice": "Crear una factura"
+  },
+
+  "tooltips": {
+    "edit": "Editar",
+    "duplicate": "Duplicar",
+    "pdfPreview": "Vista previa PDF",
+    "sendEmail": "Enviar por email",
+    "downloadPDF": "Descargar PDF",
+    "delete": "Eliminar"
+  },
+
+  "quickActions": {
+    "title": "Acciones rápidas",
+    "newInvoice": "Nueva factura",
+    "newInvoiceDesc": "Crear una factura conforme",
+    "duplicateInvoice": "Duplicar factura",
+    "duplicateInvoiceDesc": "A partir de la última",
+    "accountingExport": "Exportación contable",
+    "accountingExportDesc": "Datos para el contador"
+  },
+
+  "compliance": {
+    "title": "Conformidad 2026 - Facturación electrónica",
+    "description": "Todas sus facturas se generan automáticamente según la norma europea EN 16931. Incluyen la firma electrónica y el archivo legal requeridos.",
+    "xmlStructured": "XML estructurado",
+    "pdfA3": "PDF/A-3",
+    "electronicSignature": "Firma electrónica",
+    "archiving10years": "Archivo 10 años",
+    "realtimePDFPreview": "Vista previa PDF en tiempo real"
+  },
+
+  "form": {
+    "editTitle": "Editar factura",
+    "createTitle": "Nueva factura",
+    "basicInfo": "Información básica",
+    "client": "Cliente *",
+    "selectClient": "Seleccionar un cliente",
+    "invoiceDate": "Fecha de factura *",
+    "paymentTerms": "Condiciones de pago",
+    "paymentOnReceipt": "Pago al recibir",
+    "days": "{{count}} días",
+    "dueDate": "Fecha de vencimiento *",
+    "defaultTax": "IVA por defecto: {{rate}}%",
+    "defaultTaxInfo": "Este IVA se aplica automáticamente a menos que especifique una tasa diferente por línea",
+    "invoiceLines": "Líneas de facturación",
+    "addFromCatalog": "Agregar desde catálogo",
+    "manualLine": "Línea manual",
+    "description": "Descripción",
+    "qty": "Cant.",
+    "unitPrice": "Precio unitario",
+    "taxPercent": "IVA %",
+    "totalExclTax": "Total sin IVA",
+    "descriptionPlaceholder": "Descripción del producto/servicio",
+    "defaultRate": "Defecto ({{rate}}%)",
+    "exempt": "0% (Exento)",
+    "globalDiscount": "Descuento global",
+    "discountType": "Tipo de descuento",
+    "noDiscount": "Sin descuento",
+    "percentage": "Porcentaje (%)",
+    "fixedAmount": "Importe fijo (€)",
+    "discountValue": "Valor del descuento",
+    "discountApplied": "Descuento aplicado",
+    "totalsSummary": "Resumen de totales",
+    "subtotalExclTax": "Subtotal sin IVA:",
+    "discountFixed": "fijo",
+    "subtotalAfterDiscount": "Subtotal después del descuento:",
+    "taxOnBase": "IVA {{rate}}% sobre {{base}}€:",
+    "totalTax": "Total IVA:",
+    "totalInclTax": "Total con IVA:",
+    "breakdown": "Desglose:",
+    "exclTax": "Sin IVA",
+    "tax": "IVA",
+    "savingsRealized": "Ahorro realizado",
+    "notesLabel": "Notas y condiciones (opcional)",
+    "notesPlaceholder": "Condiciones de pago, notas especiales...",
+    "validLinesCount": "{{count}} línea(s) válida(s)",
+    "discountSummary": "Descuento: -{{amount}}€",
+    "cancel": "Cancelar",
+    "saving": "Guardando...",
+    "edit": "Editar",
+    "create": "Crear",
+
+    "validation": {
+      "clientRequired": "Cliente requerido",
+      "invoiceDateRequired": "Fecha de factura requerida",
+      "dueDateRequired": "Fecha de vencimiento requerida",
+      "atLeastOneLine": "Se requiere al menos una línea válida",
+      "discountOver100": "El descuento no puede superar el 100%",
+      "discountOverSubtotal": "El descuento no puede ser superior al subtotal"
+    }
+  }
 }

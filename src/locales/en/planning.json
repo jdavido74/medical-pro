@@ -327,6 +327,14 @@
     "selectAnotherDate": "Please select another date."
   },
 
+  "billing": {
+    "loadError": "Error loading billing items",
+    "quoteCreated": "Quote created successfully",
+    "invoiceCreated": "Invoice created successfully",
+    "createQuote": "Quote",
+    "createInvoice": "Invoice"
+  },
+
   "staffAssignment": {
     "title": "Staff Assignment",
     "subtitle": "Assign a practitioner and/or assistant (optional)",

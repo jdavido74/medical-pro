@@ -327,6 +327,14 @@
     "selectAnotherDate": "Veuillez sélectionner une autre date."
   },
 
+  "billing": {
+    "loadError": "Erreur lors du chargement des articles de facturation",
+    "quoteCreated": "Devis créé avec succès",
+    "invoiceCreated": "Facture créée avec succès",
+    "createQuote": "Devis",
+    "createInvoice": "Facture"
+  },
+
   "staffAssignment": {
     "title": "Attribution du personnel",
     "subtitle": "Attribuez un praticien et/ou assistant (optionnel)",

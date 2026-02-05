@@ -1,0 +1,168 @@
+{
+  "title": "Devis",
+  "description": "Gérez vos devis et propositions commerciales",
+  "subtitle": "Gérez vos devis et propositions commerciales",
+  "newQuote": "Nouveau devis",
+  "search": "Rechercher un devis...",
+  "retry": "Réessayer",
+  "loadError": "Impossible de charger les devis",
+  "saveError": "Erreur lors de la sauvegarde",
+  "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce devis ?",
+  "deleteError": "Erreur lors de la suppression. Seuls les brouillons peuvent être supprimés.",
+  "duplicateError": "Erreur lors de la duplication",
+  "sendError": "Erreur lors de l'envoi",
+  "convertConfirm": "Convertir le devis {{number}} en facture ?",
+  "convertSuccess": "Devis {{quoteNumber}} converti en facture {{invoiceNumber}}",
+  "convertError": "Erreur lors de la conversion",
+  "noAcceptedToConvert": "Aucun devis accepté à convertir",
+
+  "statuses": {
+    "all": "Tous les statuts",
+    "draft": "Brouillon",
+    "drafts": "Brouillons",
+    "sent": "Envoyé",
+    "sents": "Envoyés",
+    "accepted": "Accepté",
+    "accepteds": "Acceptés",
+    "rejected": "Refusé",
+    "rejecteds": "Refusés",
+    "converted": "Converti",
+    "converteds": "Convertis"
+  },
+
+  "stats": {
+    "totalQuotes": "Total devis",
+    "allStatuses": "Tous statuts",
+    "totalValue": "Valeur totale",
+    "allQuotes": "Tous devis",
+    "accepted": "Acceptés",
+    "acceptedQuotes": "{{count}} devis",
+    "thisMonth": "Ce mois",
+    "newQuotes": "Nouveaux devis"
+  },
+
+  "table": {
+    "recentQuotes": "Devis récents",
+    "quoteCount": "{{count}} devis",
+    "filteredOn": "(filtré sur \"{{query}}\")",
+    "number": "Numéro",
+    "client": "Client",
+    "date": "Date",
+    "validity": "Validité",
+    "amount": "Montant",
+    "status": "Statut",
+    "actions": "Actions",
+    "unknownClient": "Client inconnu",
+    "discount": "Remise",
+    "expired": "Expiré"
+  },
+
+  "empty": {
+    "noResults": "Aucun devis trouvé",
+    "noQuotes": "Aucun devis créé",
+    "noResultsHint": "Essayez de modifier vos critères de recherche.",
+    "noQuotesHint": "Créez votre premier devis pour proposer vos services à vos clients.",
+    "createQuote": "Créer un devis"
+  },
+
+  "tooltips": {
+    "edit": "Modifier",
+    "duplicate": "Dupliquer",
+    "pdfPreview": "Aperçu PDF",
+    "sendEmail": "Envoyer par email",
+    "convertToInvoice": "Convertir en facture",
+    "downloadPDF": "Télécharger PDF",
+    "delete": "Supprimer"
+  },
+
+  "quickActions": {
+    "title": "Actions rapides",
+    "newQuote": "Nouveau devis",
+    "newQuoteDesc": "Créer une proposition commerciale",
+    "convertToInvoices": "Convertir en factures",
+    "convertToInvoicesDesc": "Devis acceptés → factures",
+    "commercialExport": "Export commercial",
+    "commercialExportDesc": "Rapport activité devis"
+  },
+
+  "performance": {
+    "title": "Performance commerciale",
+    "acceptanceRate": "Taux d'acceptation",
+    "conversionRate": "Taux de conversion",
+    "averageValue": "Valeur moyenne",
+    "summary": "{{accepted}} devis acceptés, {{converted}} convertis en factures sur {{total}} total."
+  },
+
+  "compliance": {
+    "title": "Devis professionnels - Conformité commerciale",
+    "description": "Vos devis respectent les standards commerciaux et sont automatiquement convertibles en factures conformes EN 16931.",
+    "realtimePDFPreview": "Aperçu PDF temps réel",
+    "autoInvoiceConversion": "Conversion facture automatique",
+    "validityManagement": "Gestion dates validité",
+    "visualStatuses": "Statuts visuels",
+    "performanceMetrics": "Métriques performance"
+  },
+
+  "form": {
+    "editTitle": "Modifier le devis",
+    "createTitle": "Nouveau devis",
+    "basicInfo": "Informations de base",
+    "client": "Client *",
+    "selectClient": "Sélectionner un client",
+    "quoteDate": "Date du devis *",
+    "validityDuration": "Durée de validité",
+    "days": "{{count}} jours",
+    "validUntil": "Valable jusqu'au *",
+    "defaultTax": "{{vatLabel}} par défaut : {{rate}}%",
+    "defaultTaxInfo": "Les taux de {{vatLabel}} peuvent être ajustés par ligne. Pour un devis, la {{vatLabel}} est indicative.",
+    "quoteLines": "Lignes du devis",
+    "addFromCatalog": "Ajouter depuis le catalogue",
+    "manualLine": "Ligne manuelle",
+    "description": "Description",
+    "qty": "Qté",
+    "unitPrice": "Prix unitaire",
+    "totalExclTax": "Total HT",
+    "descriptionPlaceholder": "Description du produit/service",
+    "defaultRate": "Défaut ({{rate}}%)",
+    "exempt": "0% (Exonéré)",
+    "commercialDiscount": "Remise commerciale",
+    "discountType": "Type de remise",
+    "noDiscount": "Aucune remise",
+    "percentage": "Pourcentage (%)",
+    "fixedAmount": "Montant fixe (€)",
+    "discountValue": "Valeur de la remise",
+    "discountApplied": "Remise appliquée",
+    "quoteSummary": "Récapitulatif du devis",
+    "subtotalExclTax": "Sous-total HT :",
+    "discountCommercial": "commerciale",
+    "subtotalAfterDiscount": "Sous-total après remise :",
+    "taxOnBase": "{{vatLabel}} {{rate}}% sur {{base}}€ :",
+    "totalTax": "Total {{vatLabel}} :",
+    "totalInclTax": "Total TTC :",
+    "breakdown": "Répartition :",
+    "exclTax": "HT",
+    "savingsProposed": "Économie proposée",
+    "quoteTerms": "Conditions du devis",
+    "quoteTermsPlaceholder": "Conditions générales du devis...",
+    "quoteTermsHint": "Conditions applicables à ce devis (validité, modalités, etc.)",
+    "internalNotes": "Notes internes (optionnel)",
+    "internalNotesPlaceholder": "Notes internes sur ce devis...",
+    "defaultTerms": "Devis valable 30 jours. Prix et disponibilité sous réserve de confirmation.",
+    "validLinesCount": "{{count}} ligne(s) valide(s)",
+    "discountSummary": "Remise: -{{amount}}€",
+    "validUntilSummary": "Valable jusqu'au {{date}}",
+    "cancel": "Annuler",
+    "saving": "Sauvegarde...",
+    "edit": "Modifier",
+    "create": "Créer",
+
+    "validation": {
+      "clientRequired": "Client requis",
+      "quoteDateRequired": "Date de devis requise",
+      "validUntilRequired": "Date de validité requise",
+      "atLeastOneLine": "Au moins une ligne valide requise",
+      "discountOver100": "La remise ne peut pas dépasser 100%",
+      "discountOverSubtotal": "La remise ne peut pas être supérieure au sous-total"
+    }
+  }
+}

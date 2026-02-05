@@ -1,4 +1,151 @@
 {
   "title": "Invoices",
-  "description": "Manage your invoices and payments"
+  "description": "Manage your invoices and payments",
+  "subtitle": "Manage your invoices and payment tracking",
+  "newInvoice": "New invoice",
+  "search": "Search an invoice...",
+  "retry": "Retry",
+  "loadError": "Unable to load invoices",
+  "saveError": "Error saving",
+  "deleteConfirm": "Are you sure you want to delete this invoice?",
+  "deleteError": "Error deleting. Only drafts can be deleted.",
+  "duplicateError": "Error duplicating",
+  "sendError": "Error sending",
+
+  "statuses": {
+    "all": "All statuses",
+    "draft": "Draft",
+    "drafts": "Drafts",
+    "sent": "Sent",
+    "sents": "Sent",
+    "paid": "Paid",
+    "paids": "Paid",
+    "overdue": "Overdue",
+    "overdues": "Overdue",
+    "cancelled": "Cancelled"
+  },
+
+  "stats": {
+    "totalInvoices": "Total invoices",
+    "allInvoices": "All invoices",
+    "revenue": "Revenue",
+    "paidInvoices": "Paid invoices",
+    "pending": "Pending",
+    "toCollect": "To collect",
+    "thisMonth": "This month",
+    "newInvoices": "New invoices"
+  },
+
+  "table": {
+    "recentInvoices": "Recent invoices",
+    "invoiceCount": "{{count}} invoice(s)",
+    "filteredOn": "(filtered on \"{{query}}\")",
+    "number": "Number",
+    "client": "Client",
+    "date": "Date",
+    "dueDate": "Due date",
+    "amount": "Amount",
+    "status": "Status",
+    "actions": "Actions",
+    "unknownClient": "Unknown client",
+    "discount": "Discount"
+  },
+
+  "empty": {
+    "noResults": "No invoices found",
+    "noInvoices": "No invoices created",
+    "noResultsHint": "Try modifying your search criteria.",
+    "noInvoicesHint": "Create your first invoice compliant with 2026 regulations. The interface will guide you to comply with all legal requirements.",
+    "createInvoice": "Create an invoice"
+  },
+
+  "tooltips": {
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "pdfPreview": "PDF preview",
+    "sendEmail": "Send by email",
+    "downloadPDF": "Download PDF",
+    "delete": "Delete"
+  },
+
+  "quickActions": {
+    "title": "Quick actions",
+    "newInvoice": "New invoice",
+    "newInvoiceDesc": "Create a compliant invoice",
+    "duplicateInvoice": "Duplicate invoice",
+    "duplicateInvoiceDesc": "From the latest one",
+    "accountingExport": "Accounting export",
+    "accountingExportDesc": "Data for accountant"
+  },
+
+  "compliance": {
+    "title": "2026 Compliance - Electronic invoicing",
+    "description": "All your invoices are automatically generated according to the European standard EN 16931. They include the required electronic signature and legal archiving.",
+    "xmlStructured": "Structured XML",
+    "pdfA3": "PDF/A-3",
+    "electronicSignature": "Electronic signature",
+    "archiving10years": "10-year archiving",
+    "realtimePDFPreview": "Real-time PDF preview"
+  },
+
+  "form": {
+    "editTitle": "Edit invoice",
+    "createTitle": "New invoice",
+    "basicInfo": "Basic information",
+    "client": "Client *",
+    "selectClient": "Select a client",
+    "invoiceDate": "Invoice date *",
+    "paymentTerms": "Payment terms",
+    "paymentOnReceipt": "Payment on receipt",
+    "days": "{{count}} days",
+    "dueDate": "Due date *",
+    "defaultTax": "Default VAT: {{rate}}%",
+    "defaultTaxInfo": "This VAT applies automatically unless you specify a different rate per line",
+    "invoiceLines": "Invoice lines",
+    "addFromCatalog": "Add from catalog",
+    "manualLine": "Manual line",
+    "description": "Description",
+    "qty": "Qty",
+    "unitPrice": "Unit price",
+    "taxPercent": "VAT %",
+    "totalExclTax": "Total excl. tax",
+    "descriptionPlaceholder": "Product/service description",
+    "defaultRate": "Default ({{rate}}%)",
+    "exempt": "0% (Exempt)",
+    "globalDiscount": "Global discount",
+    "discountType": "Discount type",
+    "noDiscount": "No discount",
+    "percentage": "Percentage (%)",
+    "fixedAmount": "Fixed amount (€)",
+    "discountValue": "Discount value",
+    "discountApplied": "Discount applied",
+    "totalsSummary": "Totals summary",
+    "subtotalExclTax": "Subtotal excl. tax:",
+    "discountFixed": "fixed",
+    "subtotalAfterDiscount": "Subtotal after discount:",
+    "taxOnBase": "VAT {{rate}}% on {{base}}€:",
+    "totalTax": "Total VAT:",
+    "totalInclTax": "Total incl. tax:",
+    "breakdown": "Breakdown:",
+    "exclTax": "Excl. tax",
+    "tax": "VAT",
+    "savingsRealized": "Savings realized",
+    "notesLabel": "Notes and conditions (optional)",
+    "notesPlaceholder": "Payment terms, special notes...",
+    "validLinesCount": "{{count}} valid line(s)",
+    "discountSummary": "Discount: -{{amount}}€",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "edit": "Edit",
+    "create": "Create",
+
+    "validation": {
+      "clientRequired": "Client required",
+      "invoiceDateRequired": "Invoice date required",
+      "dueDateRequired": "Due date required",
+      "atLeastOneLine": "At least one valid line required",
+      "discountOver100": "Discount cannot exceed 100%",
+      "discountOverSubtotal": "Discount cannot exceed the subtotal"
+    }
+  }
 }

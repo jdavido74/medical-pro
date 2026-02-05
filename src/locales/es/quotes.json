@@ -1,0 +1,168 @@
+{
+  "title": "Presupuestos",
+  "description": "Gestione sus presupuestos y propuestas comerciales",
+  "subtitle": "Gestione sus presupuestos y propuestas comerciales",
+  "newQuote": "Nuevo presupuesto",
+  "search": "Buscar un presupuesto...",
+  "retry": "Reintentar",
+  "loadError": "No se pudieron cargar los presupuestos",
+  "saveError": "Error al guardar",
+  "deleteConfirm": "¿Está seguro de que desea eliminar este presupuesto?",
+  "deleteError": "Error al eliminar. Solo se pueden eliminar los borradores.",
+  "duplicateError": "Error al duplicar",
+  "sendError": "Error al enviar",
+  "convertConfirm": "¿Convertir el presupuesto {{number}} en factura?",
+  "convertSuccess": "Presupuesto {{quoteNumber}} convertido en factura {{invoiceNumber}}",
+  "convertError": "Error al convertir",
+  "noAcceptedToConvert": "No hay presupuestos aceptados para convertir",
+
+  "statuses": {
+    "all": "Todos los estados",
+    "draft": "Borrador",
+    "drafts": "Borradores",
+    "sent": "Enviado",
+    "sents": "Enviados",
+    "accepted": "Aceptado",
+    "accepteds": "Aceptados",
+    "rejected": "Rechazado",
+    "rejecteds": "Rechazados",
+    "converted": "Convertido",
+    "converteds": "Convertidos"
+  },
+
+  "stats": {
+    "totalQuotes": "Total presupuestos",
+    "allStatuses": "Todos los estados",
+    "totalValue": "Valor total",
+    "allQuotes": "Todos los presupuestos",
+    "accepted": "Aceptados",
+    "acceptedQuotes": "{{count}} presupuestos",
+    "thisMonth": "Este mes",
+    "newQuotes": "Nuevos presupuestos"
+  },
+
+  "table": {
+    "recentQuotes": "Presupuestos recientes",
+    "quoteCount": "{{count}} presupuestos",
+    "filteredOn": "(filtrado por \"{{query}}\")",
+    "number": "Número",
+    "client": "Cliente",
+    "date": "Fecha",
+    "validity": "Validez",
+    "amount": "Importe",
+    "status": "Estado",
+    "actions": "Acciones",
+    "unknownClient": "Cliente desconocido",
+    "discount": "Descuento",
+    "expired": "Expirado"
+  },
+
+  "empty": {
+    "noResults": "No se encontraron presupuestos",
+    "noQuotes": "No se han creado presupuestos",
+    "noResultsHint": "Intente modificar sus criterios de búsqueda.",
+    "noQuotesHint": "Cree su primer presupuesto para ofrecer sus servicios a sus clientes.",
+    "createQuote": "Crear un presupuesto"
+  },
+
+  "tooltips": {
+    "edit": "Editar",
+    "duplicate": "Duplicar",
+    "pdfPreview": "Vista previa PDF",
+    "sendEmail": "Enviar por email",
+    "convertToInvoice": "Convertir en factura",
+    "downloadPDF": "Descargar PDF",
+    "delete": "Eliminar"
+  },
+
+  "quickActions": {
+    "title": "Acciones rápidas",
+    "newQuote": "Nuevo presupuesto",
+    "newQuoteDesc": "Crear una propuesta comercial",
+    "convertToInvoices": "Convertir en facturas",
+    "convertToInvoicesDesc": "Presupuestos aceptados → facturas",
+    "commercialExport": "Exportación comercial",
+    "commercialExportDesc": "Informe de actividad de presupuestos"
+  },
+
+  "performance": {
+    "title": "Rendimiento comercial",
+    "acceptanceRate": "Tasa de aceptación",
+    "conversionRate": "Tasa de conversión",
+    "averageValue": "Valor promedio",
+    "summary": "{{accepted}} presupuestos aceptados, {{converted}} convertidos en facturas de {{total}} total."
+  },
+
+  "compliance": {
+    "title": "Presupuestos profesionales - Conformidad comercial",
+    "description": "Sus presupuestos cumplen con los estándares comerciales y son automáticamente convertibles en facturas conformes EN 16931.",
+    "realtimePDFPreview": "Vista previa PDF en tiempo real",
+    "autoInvoiceConversion": "Conversión automática a factura",
+    "validityManagement": "Gestión de fechas de validez",
+    "visualStatuses": "Estados visuales",
+    "performanceMetrics": "Métricas de rendimiento"
+  },
+
+  "form": {
+    "editTitle": "Editar presupuesto",
+    "createTitle": "Nuevo presupuesto",
+    "basicInfo": "Información básica",
+    "client": "Cliente *",
+    "selectClient": "Seleccionar un cliente",
+    "quoteDate": "Fecha del presupuesto *",
+    "validityDuration": "Duración de validez",
+    "days": "{{count}} días",
+    "validUntil": "Válido hasta *",
+    "defaultTax": "{{vatLabel}} por defecto: {{rate}}%",
+    "defaultTaxInfo": "Las tasas de {{vatLabel}} pueden ajustarse por línea. Para un presupuesto, el {{vatLabel}} es indicativo.",
+    "quoteLines": "Líneas del presupuesto",
+    "addFromCatalog": "Agregar desde catálogo",
+    "manualLine": "Línea manual",
+    "description": "Descripción",
+    "qty": "Cant.",
+    "unitPrice": "Precio unitario",
+    "totalExclTax": "Total sin IVA",
+    "descriptionPlaceholder": "Descripción del producto/servicio",
+    "defaultRate": "Defecto ({{rate}}%)",
+    "exempt": "0% (Exento)",
+    "commercialDiscount": "Descuento comercial",
+    "discountType": "Tipo de descuento",
+    "noDiscount": "Sin descuento",
+    "percentage": "Porcentaje (%)",
+    "fixedAmount": "Importe fijo (€)",
+    "discountValue": "Valor del descuento",
+    "discountApplied": "Descuento aplicado",
+    "quoteSummary": "Resumen del presupuesto",
+    "subtotalExclTax": "Subtotal sin IVA:",
+    "discountCommercial": "comercial",
+    "subtotalAfterDiscount": "Subtotal después del descuento:",
+    "taxOnBase": "{{vatLabel}} {{rate}}% sobre {{base}}€:",
+    "totalTax": "Total {{vatLabel}}:",
+    "totalInclTax": "Total con IVA:",
+    "breakdown": "Desglose:",
+    "exclTax": "Sin IVA",
+    "savingsProposed": "Ahorro propuesto",
+    "quoteTerms": "Condiciones del presupuesto",
+    "quoteTermsPlaceholder": "Condiciones generales del presupuesto...",
+    "quoteTermsHint": "Condiciones aplicables a este presupuesto (validez, modalidades, etc.)",
+    "internalNotes": "Notas internas (opcional)",
+    "internalNotesPlaceholder": "Notas internas sobre este presupuesto...",
+    "defaultTerms": "Presupuesto válido por 30 días. Precios y disponibilidad sujetos a confirmación.",
+    "validLinesCount": "{{count}} línea(s) válida(s)",
+    "discountSummary": "Descuento: -{{amount}}€",
+    "validUntilSummary": "Válido hasta el {{date}}",
+    "cancel": "Cancelar",
+    "saving": "Guardando...",
+    "edit": "Editar",
+    "create": "Crear",
+
+    "validation": {
+      "clientRequired": "Cliente requerido",
+      "quoteDateRequired": "Fecha de presupuesto requerida",
+      "validUntilRequired": "Fecha de validez requerida",
+      "atLeastOneLine": "Se requiere al menos una línea válida",
+      "discountOver100": "El descuento no puede superar el 100%",
+      "discountOverSubtotal": "El descuento no puede ser superior al subtotal"
+    }
+  }
+}

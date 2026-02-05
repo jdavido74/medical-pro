@@ -1,4 +1,151 @@
 {
   "title": "Factures",
-  "description": "Gérez vos factures et paiements"
+  "description": "Gérez vos factures et paiements",
+  "subtitle": "Gérez vos factures et suivi de paiements",
+  "newInvoice": "Nouvelle facture",
+  "search": "Rechercher une facture...",
+  "retry": "Réessayer",
+  "loadError": "Impossible de charger les factures",
+  "saveError": "Erreur lors de la sauvegarde",
+  "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette facture ?",
+  "deleteError": "Erreur lors de la suppression. Seuls les brouillons peuvent être supprimés.",
+  "duplicateError": "Erreur lors de la duplication",
+  "sendError": "Erreur lors de l'envoi",
+
+  "statuses": {
+    "all": "Tous les statuts",
+    "draft": "Brouillon",
+    "drafts": "Brouillons",
+    "sent": "Envoyée",
+    "sents": "Envoyées",
+    "paid": "Payée",
+    "paids": "Payées",
+    "overdue": "Échue",
+    "overdues": "Échues",
+    "cancelled": "Annulée"
+  },
+
+  "stats": {
+    "totalInvoices": "Total factures",
+    "allInvoices": "Toutes factures",
+    "revenue": "Chiffre d'affaires",
+    "paidInvoices": "Factures payées",
+    "pending": "En attente",
+    "toCollect": "À encaisser",
+    "thisMonth": "Ce mois",
+    "newInvoices": "Nouvelles factures"
+  },
+
+  "table": {
+    "recentInvoices": "Factures récentes",
+    "invoiceCount": "{{count}} facture(s)",
+    "filteredOn": "(filtré sur \"{{query}}\")",
+    "number": "Numéro",
+    "client": "Client",
+    "date": "Date",
+    "dueDate": "Échéance",
+    "amount": "Montant",
+    "status": "Statut",
+    "actions": "Actions",
+    "unknownClient": "Client inconnu",
+    "discount": "Remise"
+  },
+
+  "empty": {
+    "noResults": "Aucune facture trouvée",
+    "noInvoices": "Aucune facture créée",
+    "noResultsHint": "Essayez de modifier vos critères de recherche.",
+    "noInvoicesHint": "Créez votre première facture conforme à la réglementation 2026. L'interface vous guidera pour respecter toutes les obligations légales.",
+    "createInvoice": "Créer une facture"
+  },
+
+  "tooltips": {
+    "edit": "Modifier",
+    "duplicate": "Dupliquer",
+    "pdfPreview": "Aperçu PDF",
+    "sendEmail": "Envoyer par email",
+    "downloadPDF": "Télécharger PDF",
+    "delete": "Supprimer"
+  },
+
+  "quickActions": {
+    "title": "Actions rapides",
+    "newInvoice": "Nouvelle facture",
+    "newInvoiceDesc": "Créer une facture conforme",
+    "duplicateInvoice": "Dupliquer facture",
+    "duplicateInvoiceDesc": "À partir de la dernière",
+    "accountingExport": "Export comptable",
+    "accountingExportDesc": "Données pour expert-comptable"
+  },
+
+  "compliance": {
+    "title": "Conformité 2026 - Facturation électronique",
+    "description": "Toutes vos factures sont automatiquement générées selon la norme européenne EN 16931. Elles incluent la signature électronique et l'archivage légal requis.",
+    "xmlStructured": "XML structuré",
+    "pdfA3": "PDF/A-3",
+    "electronicSignature": "Signature électronique",
+    "archiving10years": "Archivage 10 ans",
+    "realtimePDFPreview": "Aperçu PDF temps réel"
+  },
+
+  "form": {
+    "editTitle": "Modifier la facture",
+    "createTitle": "Nouvelle facture",
+    "basicInfo": "Informations de base",
+    "client": "Client *",
+    "selectClient": "Sélectionner un client",
+    "invoiceDate": "Date de facture *",
+    "paymentTerms": "Conditions de paiement",
+    "paymentOnReceipt": "Paiement à réception",
+    "days": "{{count}} jours",
+    "dueDate": "Date d'échéance *",
+    "defaultTax": "TVA par défaut : {{rate}}%",
+    "defaultTaxInfo": "Cette TVA s'applique automatiquement sauf si vous spécifiez un taux différent par ligne",
+    "invoiceLines": "Lignes de facturation",
+    "addFromCatalog": "Ajouter depuis le catalogue",
+    "manualLine": "Ligne manuelle",
+    "description": "Description",
+    "qty": "Qté",
+    "unitPrice": "Prix unitaire",
+    "taxPercent": "TVA %",
+    "totalExclTax": "Total HT",
+    "descriptionPlaceholder": "Description du produit/service",
+    "defaultRate": "Défaut ({{rate}}%)",
+    "exempt": "0% (Exonéré)",
+    "globalDiscount": "Remise globale",
+    "discountType": "Type de remise",
+    "noDiscount": "Aucune remise",
+    "percentage": "Pourcentage (%)",
+    "fixedAmount": "Montant fixe (€)",
+    "discountValue": "Valeur de la remise",
+    "discountApplied": "Remise appliquée",
+    "totalsSummary": "Récapitulatif des totaux",
+    "subtotalExclTax": "Sous-total HT :",
+    "discountFixed": "fixe",
+    "subtotalAfterDiscount": "Sous-total après remise :",
+    "taxOnBase": "TVA {{rate}}% sur {{base}}€ :",
+    "totalTax": "Total TVA :",
+    "totalInclTax": "Total TTC :",
+    "breakdown": "Répartition :",
+    "exclTax": "HT",
+    "tax": "TVA",
+    "savingsRealized": "Économie réalisée",
+    "notesLabel": "Notes et conditions (optionnel)",
+    "notesPlaceholder": "Conditions de paiement, notes particulières...",
+    "validLinesCount": "{{count}} ligne(s) valide(s)",
+    "discountSummary": "Remise: -{{amount}}€",
+    "cancel": "Annuler",
+    "saving": "Sauvegarde...",
+    "edit": "Modifier",
+    "create": "Créer",
+
+    "validation": {
+      "clientRequired": "Client requis",
+      "invoiceDateRequired": "Date de facture requise",
+      "dueDateRequired": "Date d'échéance requise",
+      "atLeastOneLine": "Au moins une ligne valide requise",
+      "discountOver100": "La remise ne peut pas dépasser 100%",
+      "discountOverSubtotal": "La remise ne peut pas être supérieure au sous-total"
+    }
+  }
 }

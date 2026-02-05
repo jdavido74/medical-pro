@@ -1,0 +1,168 @@
+{
+  "title": "Quotes",
+  "description": "Manage your quotes and proposals",
+  "subtitle": "Manage your quotes and business proposals",
+  "newQuote": "New quote",
+  "search": "Search a quote...",
+  "retry": "Retry",
+  "loadError": "Unable to load quotes",
+  "saveError": "Error saving",
+  "deleteConfirm": "Are you sure you want to delete this quote?",
+  "deleteError": "Error deleting. Only drafts can be deleted.",
+  "duplicateError": "Error duplicating",
+  "sendError": "Error sending",
+  "convertConfirm": "Convert quote {{number}} to invoice?",
+  "convertSuccess": "Quote {{quoteNumber}} converted to invoice {{invoiceNumber}}",
+  "convertError": "Error converting",
+  "noAcceptedToConvert": "No accepted quotes to convert",
+
+  "statuses": {
+    "all": "All statuses",
+    "draft": "Draft",
+    "drafts": "Drafts",
+    "sent": "Sent",
+    "sents": "Sent",
+    "accepted": "Accepted",
+    "accepteds": "Accepted",
+    "rejected": "Rejected",
+    "rejecteds": "Rejected",
+    "converted": "Converted",
+    "converteds": "Converted"
+  },
+
+  "stats": {
+    "totalQuotes": "Total quotes",
+    "allStatuses": "All statuses",
+    "totalValue": "Total value",
+    "allQuotes": "All quotes",
+    "accepted": "Accepted",
+    "acceptedQuotes": "{{count}} quotes",
+    "thisMonth": "This month",
+    "newQuotes": "New quotes"
+  },
+
+  "table": {
+    "recentQuotes": "Recent quotes",
+    "quoteCount": "{{count}} quotes",
+    "filteredOn": "(filtered on \"{{query}}\")",
+    "number": "Number",
+    "client": "Client",
+    "date": "Date",
+    "validity": "Validity",
+    "amount": "Amount",
+    "status": "Status",
+    "actions": "Actions",
+    "unknownClient": "Unknown client",
+    "discount": "Discount",
+    "expired": "Expired"
+  },
+
+  "empty": {
+    "noResults": "No quotes found",
+    "noQuotes": "No quotes created",
+    "noResultsHint": "Try modifying your search criteria.",
+    "noQuotesHint": "Create your first quote to offer your services to clients.",
+    "createQuote": "Create a quote"
+  },
+
+  "tooltips": {
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "pdfPreview": "PDF preview",
+    "sendEmail": "Send by email",
+    "convertToInvoice": "Convert to invoice",
+    "downloadPDF": "Download PDF",
+    "delete": "Delete"
+  },
+
+  "quickActions": {
+    "title": "Quick actions",
+    "newQuote": "New quote",
+    "newQuoteDesc": "Create a business proposal",
+    "convertToInvoices": "Convert to invoices",
+    "convertToInvoicesDesc": "Accepted quotes → invoices",
+    "commercialExport": "Commercial export",
+    "commercialExportDesc": "Quotes activity report"
+  },
+
+  "performance": {
+    "title": "Business performance",
+    "acceptanceRate": "Acceptance rate",
+    "conversionRate": "Conversion rate",
+    "averageValue": "Average value",
+    "summary": "{{accepted}} quotes accepted, {{converted}} converted to invoices out of {{total}} total."
+  },
+
+  "compliance": {
+    "title": "Professional quotes - Business compliance",
+    "description": "Your quotes comply with business standards and are automatically convertible to EN 16931 compliant invoices.",
+    "realtimePDFPreview": "Real-time PDF preview",
+    "autoInvoiceConversion": "Automatic invoice conversion",
+    "validityManagement": "Validity date management",
+    "visualStatuses": "Visual statuses",
+    "performanceMetrics": "Performance metrics"
+  },
+
+  "form": {
+    "editTitle": "Edit quote",
+    "createTitle": "New quote",
+    "basicInfo": "Basic information",
+    "client": "Client *",
+    "selectClient": "Select a client",
+    "quoteDate": "Quote date *",
+    "validityDuration": "Validity duration",
+    "days": "{{count}} days",
+    "validUntil": "Valid until *",
+    "defaultTax": "Default {{vatLabel}}: {{rate}}%",
+    "defaultTaxInfo": "{{vatLabel}} rates can be adjusted per line. For a quote, {{vatLabel}} is indicative.",
+    "quoteLines": "Quote lines",
+    "addFromCatalog": "Add from catalog",
+    "manualLine": "Manual line",
+    "description": "Description",
+    "qty": "Qty",
+    "unitPrice": "Unit price",
+    "totalExclTax": "Total excl. tax",
+    "descriptionPlaceholder": "Product/service description",
+    "defaultRate": "Default ({{rate}}%)",
+    "exempt": "0% (Exempt)",
+    "commercialDiscount": "Commercial discount",
+    "discountType": "Discount type",
+    "noDiscount": "No discount",
+    "percentage": "Percentage (%)",
+    "fixedAmount": "Fixed amount (€)",
+    "discountValue": "Discount value",
+    "discountApplied": "Discount applied",
+    "quoteSummary": "Quote summary",
+    "subtotalExclTax": "Subtotal excl. tax:",
+    "discountCommercial": "commercial",
+    "subtotalAfterDiscount": "Subtotal after discount:",
+    "taxOnBase": "{{vatLabel}} {{rate}}% on {{base}}€:",
+    "totalTax": "Total {{vatLabel}}:",
+    "totalInclTax": "Total incl. tax:",
+    "breakdown": "Breakdown:",
+    "exclTax": "Excl. tax",
+    "savingsProposed": "Proposed savings",
+    "quoteTerms": "Quote terms",
+    "quoteTermsPlaceholder": "General quote terms...",
+    "quoteTermsHint": "Terms applicable to this quote (validity, conditions, etc.)",
+    "internalNotes": "Internal notes (optional)",
+    "internalNotesPlaceholder": "Internal notes about this quote...",
+    "defaultTerms": "Quote valid for 30 days. Prices and availability subject to confirmation.",
+    "validLinesCount": "{{count}} valid line(s)",
+    "discountSummary": "Discount: -{{amount}}€",
+    "validUntilSummary": "Valid until {{date}}",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "edit": "Edit",
+    "create": "Create",
+
+    "validation": {
+      "clientRequired": "Client required",
+      "quoteDateRequired": "Quote date required",
+      "validUntilRequired": "Validity date required",
+      "atLeastOneLine": "At least one valid line required",
+      "discountOver100": "Discount cannot exceed 100%",
+      "discountOverSubtotal": "Discount cannot exceed the subtotal"
+    }
+  }
+}
