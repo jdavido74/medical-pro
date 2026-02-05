@@ -56,13 +56,17 @@
     "tabs": {
       "basic": "Información Básica",
       "antecedents": "Antecedentes",
-      "vitals": "Signos Vitales",
+      "vitals": "Examen Clínico",
+      "currentIllness": "Motivo / Enfermedad Actual",
       "currentMedications": "Tratamiento Actual",
       "diagnosis": "Diagnóstico",
       "treatments": "Tratamientos/Prescripciones",
-      "exam": "Examen Físico",
       "plan": "Plan",
       "prescription": "Receta"
+    },
+    "currentIllnessTab": {
+      "title": "Motivo de consulta y enfermedad actual",
+      "description": "Describa el motivo de consulta y la enfermedad actual del paciente."
     },
     "antecedents": {
       "personal": "Antecedentes Personales",
@@ -262,6 +266,9 @@
       "medicationAlerts": "Alertas de Medicación",
       "treatments": "Tratamientos prescritos",
       "addTreatment": "Agregar Tratamiento",
+      "addMedication": "Agregar un medicamento",
+      "addFromCatalog": "Buscar en el catálogo...",
+      "fromCatalog": "Del catálogo",
       "medication": "Medicamento",
       "route": "Vía",
       "routes": {

@@ -4,7 +4,7 @@ import {
   FileText, Activity, Heart, AlertTriangle, Plus, X, Save,
   Stethoscope, Thermometer, Scale, Ruler, Droplets, Clock,
   Pill, CheckCircle, Trash2, User, Search, Check, Loader2,
-  FileSignature, Eye, Printer, Settings, Edit3, Calendar, Users
+  FileSignature, Eye, Printer, Settings, Edit3, Calendar, Users, Package
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { medicalRecordsApi } from '../../api/medicalRecordsApi';
@@ -13,6 +13,7 @@ import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import PrescriptionPreview from './PrescriptionPreview';
 import SmokingAssessment from './SmokingAssessment';
 import AlcoholAssessment from './AlcoholAssessment';
+import CatalogProductSelector from '../common/CatalogProductSelector';
 import { useTranslation } from 'react-i18next';
 
 // Accept both single patient or patients array, and both onSave/onSubmit, existingRecord/initialData
@@ -615,6 +616,27 @@ const MedicalRecordForm = forwardRef(({
     }));
   };
 
+  const addTreatmentFromCatalog = (catalogItem) => {
+    const newTreatment = {
+      medication: catalogItem.description,
+      dosage: catalogItem._catalogProduct?.dosage || '',
+      frequency: '',
+      route: 'oral',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: null,
+      status: 'active',
+      prescribedBy: user?.name || '',
+      notes: '',
+      catalogItemId: catalogItem.catalogItemId,
+      catalogItemType: catalogItem.type
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      treatments: [...prev.treatments, newTreatment]
+    }));
+  };
+
   const updateTreatment = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -789,10 +811,10 @@ const MedicalRecordForm = forwardRef(({
     { id: 'basic', label: t('medical:form.tabs.basic'), icon: FileText },
     { id: 'antecedents', label: t('medical:form.tabs.antecedents'), icon: Clock },
     { id: 'vitals', label: t('medical:form.tabs.vitals'), icon: Activity },
+    { id: 'currentIllness', label: t('medical:form.tabs.currentIllness'), icon: AlertTriangle },
     { id: 'currentMedications', label: t('medical:form.tabs.currentMedications'), icon: Pill },
     { id: 'diagnosis', label: t('medical:form.tabs.diagnosis'), icon: Stethoscope },
     { id: 'treatments', label: t('medical:form.tabs.treatments'), icon: Pill },
-    { id: 'exam', label: t('medical:form.tabs.exam'), icon: Heart },
     { id: 'plan', label: t('medical:form.tabs.plan'), icon: CheckCircle },
     { id: 'prescription', label: t('medical:form.tabs.prescription'), icon: FileSignature }
   ];
@@ -843,73 +865,6 @@ const MedicalRecordForm = forwardRef(({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.chiefComplaint')}
-          </label>
-          <textarea
-            value={formData.basicInfo?.chiefComplaint || ''}
-            onChange={(e) => handleInputChange('basicInfo', 'chiefComplaint', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-              errors['basicInfo.chiefComplaint'] ? 'border-red-300' : 'border-gray-300'
-            }`}
-            rows={3}
-            placeholder={t('medical:form.placeholders.chiefComplaint')}
-          />
-          {errors['basicInfo.chiefComplaint'] && (
-            <p className="text-red-600 text-sm mt-1">{errors['basicInfo.chiefComplaint']}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.symptomsDuration')}
-          </label>
-          <input
-            type="text"
-            value={formData.basicInfo.duration}
-            onChange={(e) => handleInputChange('basicInfo', 'duration', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder={t('medical:form.placeholders.duration')}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {t('medical:symptoms')}
-        </label>
-        <div className="space-y-2">
-          {formData.basicInfo.symptoms.map((symptom, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={symptom}
-                onChange={(e) => handleArrayInputChange('basicInfo', 'symptoms', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder={t('medical:form.placeholders.symptom')}
-              />
-              <button
-                type="button"
-                onClick={() => removeArrayItem('basicInfo', 'symptoms', index)}
-                className="p-2 text-red-600 hover:text-red-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => addArrayItem('basicInfo', 'symptoms')}
-            className="flex items-center space-x-2 text-green-600 hover:text-green-800"
-          >
-            <Plus className="h-4 w-4" />
-            <span>{t('medical:form.addSymptom')}</span>
-          </button>
-        </div>
-      </div>
-
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {t('medical:form.recordType')}
@@ -929,6 +884,85 @@ const MedicalRecordForm = forwardRef(({
     </div>
   );
   };
+
+  const renderCurrentIllnessTab = () => (
+    <div className="space-y-6">
+      <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+        <h4 className="font-semibold text-gray-900 mb-1 flex items-center">
+          <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
+          {t('medical:form.currentIllnessTab.title')}
+        </h4>
+        <p className="text-sm text-gray-500 mb-4">{t('medical:form.currentIllnessTab.description')}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.chiefComplaint')}
+            </label>
+            <textarea
+              value={formData.basicInfo?.chiefComplaint || ''}
+              onChange={(e) => handleInputChange('basicInfo', 'chiefComplaint', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                errors['basicInfo.chiefComplaint'] ? 'border-red-300' : 'border-gray-300'
+              }`}
+              rows={3}
+              placeholder={t('medical:form.placeholders.chiefComplaint')}
+            />
+            {errors['basicInfo.chiefComplaint'] && (
+              <p className="text-red-600 text-sm mt-1">{errors['basicInfo.chiefComplaint']}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.symptomsDuration')}
+            </label>
+            <input
+              type="text"
+              value={formData.basicInfo.duration}
+              onChange={(e) => handleInputChange('basicInfo', 'duration', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder={t('medical:form.placeholders.duration')}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t('medical:symptoms')}
+          </label>
+          <div className="space-y-2">
+            {formData.basicInfo.symptoms.map((symptom, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={symptom}
+                  onChange={(e) => handleArrayInputChange('basicInfo', 'symptoms', index, e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={t('medical:form.placeholders.symptom')}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeArrayItem('basicInfo', 'symptoms', index)}
+                  className="p-2 text-red-600 hover:text-red-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => addArrayItem('basicInfo', 'symptoms')}
+              className="flex items-center space-x-2 text-green-600 hover:text-green-800"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{t('medical:form.addSymptom')}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderAntecedentsTab = () => (
     <div className="space-y-6">
@@ -1368,6 +1402,94 @@ const MedicalRecordForm = forwardRef(({
           <option value="O-">O-</option>
         </select>
       </div>
+
+      {/* Examen physique - fusionné dans cet onglet */}
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+          <Heart className="h-5 w-5 mr-2 text-blue-600" />
+          {t('medical:examination')}
+        </h4>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.examTab.generalAppearance')}
+            </label>
+            <textarea
+              value={formData.physicalExam.general}
+              onChange={(e) => handleInputChange('physicalExam', 'general', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows={3}
+              placeholder={t('medical:form.placeholders.generalState')}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.examTab.cardiovascular')}
+            </label>
+            <textarea
+              value={formData.physicalExam.cardiovascular}
+              onChange={(e) => handleInputChange('physicalExam', 'cardiovascular', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows={3}
+              placeholder={t('medical:form.placeholders.cardiovascularFindings')}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.examTab.respiratory')}
+            </label>
+            <textarea
+              value={formData.physicalExam.respiratory}
+              onChange={(e) => handleInputChange('physicalExam', 'respiratory', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows={3}
+              placeholder={t('medical:form.placeholders.respiratoryFindings')}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.examTab.abdomen')}
+            </label>
+            <textarea
+              value={formData.physicalExam.abdomen}
+              onChange={(e) => handleInputChange('physicalExam', 'abdomen', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows={3}
+              placeholder={t('medical:form.placeholders.abdominalExam')}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.examTab.neurological')}
+            </label>
+            <textarea
+              value={formData.physicalExam.neurological}
+              onChange={(e) => handleInputChange('physicalExam', 'neurological', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows={3}
+              placeholder={t('medical:form.placeholders.neurologicalExam')}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('medical:form.examTab.otherSystems')}
+            </label>
+            <textarea
+              value={formData.physicalExam.other}
+              onChange={(e) => handleInputChange('physicalExam', 'other', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows={3}
+              placeholder={t('medical:form.placeholders.otherFindings')}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -1669,8 +1791,16 @@ const MedicalRecordForm = forwardRef(({
             className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700"
           >
             <Plus className="h-4 w-4" />
-            <span>{t('medical:form.treatmentsTab.addTreatment')}</span>
+            <span>{t('medical:form.treatmentsTab.addMedication')}</span>
           </button>
+        </div>
+
+        <div className="mb-4">
+          <CatalogProductSelector
+            onSelect={addTreatmentFromCatalog}
+            filterType={null}
+            placeholder={t('medical:form.treatmentsTab.addFromCatalog')}
+          />
         </div>
 
         <div className="space-y-4">
@@ -1688,6 +1818,12 @@ const MedicalRecordForm = forwardRef(({
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
                     placeholder={t('medical:form.placeholders.medicationName')}
                   />
+                  {treatment.catalogItemId && (
+                    <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                      <Package className="h-3 w-3 mr-1" />
+                      {t('medical:form.treatmentsTab.fromCatalog')}
+                    </span>
+                  )}
                 </div>
 
                 <div>
@@ -1785,90 +1921,6 @@ const MedicalRecordForm = forwardRef(({
               </div>
             </div>
           ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderExamTab = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.examTab.generalAppearance')}
-          </label>
-          <textarea
-            value={formData.physicalExam.general}
-            onChange={(e) => handleInputChange('physicalExam', 'general', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            rows={3}
-            placeholder={t('medical:form.placeholders.generalState')}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.examTab.cardiovascular')}
-          </label>
-          <textarea
-            value={formData.physicalExam.cardiovascular}
-            onChange={(e) => handleInputChange('physicalExam', 'cardiovascular', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            rows={3}
-            placeholder={t('medical:form.placeholders.cardiovascularFindings')}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.examTab.respiratory')}
-          </label>
-          <textarea
-            value={formData.physicalExam.respiratory}
-            onChange={(e) => handleInputChange('physicalExam', 'respiratory', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            rows={3}
-            placeholder={t('medical:form.placeholders.respiratoryFindings')}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.examTab.abdomen')}
-          </label>
-          <textarea
-            value={formData.physicalExam.abdomen}
-            onChange={(e) => handleInputChange('physicalExam', 'abdomen', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            rows={3}
-            placeholder={t('medical:form.placeholders.abdominalExam')}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.examTab.neurological')}
-          </label>
-          <textarea
-            value={formData.physicalExam.neurological}
-            onChange={(e) => handleInputChange('physicalExam', 'neurological', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            rows={3}
-            placeholder={t('medical:form.placeholders.neurologicalExam')}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('medical:form.examTab.otherSystems')}
-          </label>
-          <textarea
-            value={formData.physicalExam.other}
-            onChange={(e) => handleInputChange('physicalExam', 'other', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            rows={3}
-            placeholder={t('medical:form.placeholders.otherFindings')}
-          />
         </div>
       </div>
     </div>
@@ -2892,10 +2944,10 @@ const MedicalRecordForm = forwardRef(({
           {activeTab === 'basic' && renderBasicTab()}
           {activeTab === 'antecedents' && renderAntecedentsTab()}
           {activeTab === 'vitals' && renderVitalsTab()}
+          {activeTab === 'currentIllness' && renderCurrentIllnessTab()}
           {activeTab === 'currentMedications' && renderCurrentMedicationsTab()}
           {activeTab === 'diagnosis' && renderDiagnosisTab()}
           {activeTab === 'treatments' && renderTreatmentsTab()}
-          {activeTab === 'exam' && renderExamTab()}
           {activeTab === 'plan' && renderPlanTab()}
           {activeTab === 'prescription' && renderPrescriptionTab()}
         </div>

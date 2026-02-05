@@ -809,7 +809,9 @@ function transformMedicalRecordFromBackend(record) {
       endDate: t.end_date || t.endDate,
       status: t.status,
       prescribedBy: t.prescribed_by || t.prescribedBy,
-      notes: t.notes
+      notes: t.notes,
+      catalogItemId: t.catalog_item_id || t.catalogItemId || null,
+      catalogItemType: t.catalog_item_type || t.catalogItemType || null
     })),
 
     // Treatment plan
@@ -1009,6 +1011,8 @@ function transformMedicalRecordToBackend(record) {
         const prescribedBy = t.prescribedBy || t.prescribed_by;
         if (prescribedBy && prescribedBy.trim()) item.prescribed_by = prescribedBy;
         if (t.notes && t.notes.trim()) item.notes = t.notes;
+        if (t.catalogItemId) item.catalog_item_id = t.catalogItemId;
+        if (t.catalogItemType) item.catalog_item_type = t.catalogItemType;
         return item;
       });
     if (cleaned.length > 0) {
