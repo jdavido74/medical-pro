@@ -233,6 +233,7 @@ const PlanningModule = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('week'); // day, week, month, list
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [machineFilter, setMachineFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -294,7 +295,8 @@ const PlanningModule = () => {
         planningApi.getCalendar({
           startDate: dateRange.start,
           endDate: dateRange.end,
-          category: categoryFilter !== 'all' ? categoryFilter : undefined
+          category: categoryFilter !== 'all' ? categoryFilter : undefined,
+          machineId: machineFilter || undefined
         }),
         planningApi.getResources()
       ]);
@@ -312,7 +314,7 @@ const PlanningModule = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, categoryFilter, t]);
+  }, [dateRange, categoryFilter, machineFilter, t]);
 
   useEffect(() => {
     loadData();
@@ -1239,8 +1241,12 @@ const PlanningModule = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t('filters.machine')}
               </label>
-              <select className="w-full border rounded-lg px-3 py-2 text-sm">
-                <option value="">Toutes les machines</option>
+              <select
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+                value={machineFilter}
+                onChange={(e) => setMachineFilter(e.target.value)}
+              >
+                <option value="">{t('filters.allMachines')}</option>
                 {resources.machines.map(m => (
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}

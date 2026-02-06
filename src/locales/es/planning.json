@@ -11,6 +11,7 @@
   "filters": {
     "category": "Categoría",
     "machine": "Máquina",
+    "allMachines": "Todas las máquinas",
     "provider": "Profesional",
     "patient": "Paciente",
     "status": "Estado",

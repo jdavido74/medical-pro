@@ -11,6 +11,7 @@
   "filters": {
     "category": "Category",
     "machine": "Machine",
+    "allMachines": "All machines",
     "provider": "Practitioner",
     "patient": "Patient",
     "status": "Status",
