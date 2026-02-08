@@ -116,27 +116,40 @@ jobs:
           name: build-fr
           path: ./build-fr
 
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT || 2222 }} -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
       - name: Deploy to production server
         env:
-          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || 2222 }}
+          SSH_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH_ES: ${{ secrets.DEPLOY_PATH_ES }}
           DEPLOY_PATH_FR: ${{ secrets.DEPLOY_PATH_FR }}
         run: |
-          mkdir -p ~/.ssh
-          echo "$DEPLOY_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null
+          # Deploy ES frontend
+          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
+            ./build-es/ $SSH_USER@$SSH_HOST:$DEPLOY_PATH_ES
 
-          # Deploy ES
-          rsync -avz --delete ./build-es/ $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH_ES
+          # Deploy FR frontend (if configured)
+          if [ -n "$DEPLOY_PATH_FR" ]; then
+            rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
+              ./build-fr/ $SSH_USER@$SSH_HOST:$DEPLOY_PATH_FR
+          fi
 
-          # Deploy FR
-          rsync -avz --delete ./build-fr/ $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH_FR
+          # Restart PM2 frontend and reload Nginx
+          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST << 'ENDSSH'
+            sudo pm2 restart medical-pro-frontend 2>/dev/null || true
+            sudo systemctl reload nginx
+          ENDSSH
 
-          # Restart Nginx (optionnel)
-          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl reload nginx"
+      - name: Cleanup SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
 
       - name: Notify deployment
         if: always()
