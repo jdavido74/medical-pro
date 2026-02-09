@@ -78,7 +78,6 @@ jobs:
           username: deploy
           key: ${{ secrets.PROD_SSH_KEY }}
           port: ${{ secrets.PROD_SSH_PORT }}
-          debug: true
           script: |
             echo "Starting frontend deployment..."
             cd /var/www/medical-pro
