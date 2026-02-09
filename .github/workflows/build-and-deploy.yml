@@ -10,6 +10,7 @@ on:
       - 'public/**'
       - 'package.json'
       - 'package-lock.json'
+      - '.npmrc'
       - '.github/workflows/build-and-deploy.yml'
   pull_request:
     branches:
