@@ -1,4 +1,4 @@
-name: Build and Deploy Multi-Country Frontend
+name: Build and Deploy Frontend
 
 on:
   push:
