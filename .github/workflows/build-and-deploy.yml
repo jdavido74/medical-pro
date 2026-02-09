@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - develop
     paths:
       - 'src/**'
       - 'public/**'
@@ -12,15 +11,10 @@ on:
       - 'package-lock.json'
       - '.npmrc'
       - '.github/workflows/build-and-deploy.yml'
-  pull_request:
-    branches:
-      - master
-      - develop
-  workflow_dispatch:  # Permet de déclencher manuellement
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '18'
-  REGISTRY: ghcr.io
 
 jobs:
   # Job 1: Build ES Frontend
@@ -41,7 +35,7 @@ jobs:
       - name: Build ES Frontend
         env:
           REACT_APP_COUNTRY: ES
-          CI: false  # Désactiver warnings-as-errors en CI
+          CI: false
         run: npm run build
 
       - name: Upload ES build artifact
@@ -51,35 +45,7 @@ jobs:
           path: build/
           retention-days: 5
 
-  # Job 2: Build FR Frontend
-  build-fr:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build FR Frontend
-        env:
-          REACT_APP_COUNTRY: FR
-          CI: false
-        run: npm run build
-
-      - name: Upload FR build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-fr
-          path: build/
-          retention-days: 5
-
-  # Job 3: Run tests (optionnel)
+  # Job 2: Run tests
   test:
     runs-on: ubuntu-latest
     steps:
@@ -97,103 +63,28 @@ jobs:
       - name: Run tests
         run: npm test -- --passWithNoTests --watchAll=false || true
 
-  # Job 4: Deploy to production (seulement sur master)
+  # Job 3: Deploy to production (master only)
   deploy:
-    needs: [build-es, build-fr, test]
+    needs: [build-es, test]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    environment: production
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download ES build
-        uses: actions/download-artifact@v4
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          name: build-es
-          path: ./build-es
-
-      - name: Download FR build
-        uses: actions/download-artifact@v4
-        with:
-          name: build-fr
-          path: ./build-fr
-
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PROD_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p ${{ secrets.PROD_SSH_PORT }} -H ${{ secrets.PROD_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-
-      - name: Deploy to production server
-        env:
-          SSH_HOST: ${{ secrets.PROD_HOST }}
-          SSH_PORT: ${{ secrets.PROD_SSH_PORT }}
-          SSH_USER: root
-          DEPLOY_PATH_ES: /var/www/medical-pro/build
-        run: |
-          # Deploy ES frontend
-          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
-            ./build-es/ $SSH_USER@$SSH_HOST:$DEPLOY_PATH_ES
-
-          # Reload Nginx
-          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST << 'ENDSSH'
-            pm2 restart medical-pro-frontend 2>/dev/null || true
-            systemctl reload nginx
-          ENDSSH
-
-      - name: Cleanup SSH
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
-
-      - name: Notify deployment
-        if: always()
-        uses: actions/github-script@v7
-        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: deploy
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT }}
           script: |
-            const status = '${{ job.status }}';
-            const message = `
-              🚀 **Multi-Country Frontend Deployment**
-
-              **Status:** ${status === 'success' ? '✅ Success' : '❌ Failed'}
-
-              **Builds Deployed:**
-              - ES Frontend: es.medicalpro.com
-              - FR Frontend: fr.medicalpro.com
-
-              **Commit:** ${{ github.sha }}
-              **Author:** ${{ github.actor }}
-            `;
-
-            if (context.payload.pull_request) {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: message
-              });
-            }
-
-  # Job 5: Create release (optionnel, pour tracking versions)
-  release:
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: build-${{ github.run_number }}
-          body: |
-            ## Multi-Country Frontend Build #${{ github.run_number }}
-
-            **Deployed Builds:**
-            - ✅ ES Frontend (es.medicalpro.com)
-            - ✅ FR Frontend (fr.medicalpro.com)
-
-            **Changes:** ${{ github.event.head_commit.message }}
-          draft: false
-          prerelease: false
+            echo "Starting frontend deployment..."
+            cd /var/www/medical-pro
+            git fetch origin
+            git reset --hard origin/master
+            npm ci --legacy-peer-deps
+            npm run build
+            sudo pm2 restart medical-pro-frontend 2>/dev/null || true
+            sleep 3
+            echo "Frontend deployment complete!"
