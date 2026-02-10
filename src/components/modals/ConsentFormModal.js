@@ -463,7 +463,7 @@ const ConsentFormModal = ({
                 >
                   {Object.values(COLLECTION_METHODS).map(method => (
                     <option key={method.id} value={method.id}>
-                      {method.name}
+                      {t(method.nameKey)}
                     </option>
                   ))}
                 </select>
@@ -714,7 +714,7 @@ const ConsentFormModal = ({
                           )}
                           <div className="flex items-center">
                             <Signature className="h-3 w-3 mr-1" />
-                            {COLLECTION_METHODS[consent.collectionMethod]?.name || consent.collectionMethod}
+                            {COLLECTION_METHODS[consent.collectionMethod]?.nameKey ? t(COLLECTION_METHODS[consent.collectionMethod].nameKey) : consent.collectionMethod}
                           </div>
                         </div>
                       </div>

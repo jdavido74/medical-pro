@@ -448,5 +448,11 @@
     "generateLink": "Generar enlace",
     "selectWorkflowHint": "Seleccione un flujo de firma para continuar",
     "gdprCompliant": "Datos seguros y conformes con el RGPD"
+  },
+  "collectionMethods": {
+    "digital": "Digital (formulario)",
+    "verbal": "Verbal (con testigo)",
+    "written": "Escrito (firma física)",
+    "electronic": "Firma electrónica"
   }
 }

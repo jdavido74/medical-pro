@@ -758,7 +758,7 @@ const ConsentManagementModule = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center text-sm text-gray-500">
                             <Signature className="h-3 w-3 mr-1" />
-                            {COLLECTION_METHODS[consent.collectionMethod]?.name || consent.collectionMethod}
+                            {COLLECTION_METHODS[consent.collectionMethod]?.nameKey ? t(COLLECTION_METHODS[consent.collectionMethod].nameKey) : consent.collectionMethod}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -902,7 +902,7 @@ const ConsentManagementModule = () => {
                     {Object.entries(statistics.byCollectionMethod || {}).map(([method, count]) => (
                       <div key={method} className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">
-                          {COLLECTION_METHODS[method]?.name || method}
+                          {COLLECTION_METHODS[method]?.nameKey ? t(COLLECTION_METHODS[method].nameKey) : method}
                         </span>
                         <span className="text-sm font-medium text-gray-900">{count}</span>
                       </div>
@@ -985,7 +985,7 @@ const ConsentDetailsModal = ({ consent, onClose, patientName }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('details.collectionMethod')}</label>
                   <p className="text-sm text-gray-900">
-                    {COLLECTION_METHODS[consent.collectionMethod]?.name || consent.collectionMethod}
+                    {COLLECTION_METHODS[consent.collectionMethod]?.nameKey ? t(COLLECTION_METHODS[consent.collectionMethod].nameKey) : consent.collectionMethod}
                   </p>
                 </div>
                 {consent.expiresAt && (

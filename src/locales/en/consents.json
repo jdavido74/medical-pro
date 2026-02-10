@@ -448,5 +448,11 @@
     "generateLink": "Generate link",
     "selectWorkflowHint": "Select a signature workflow to continue",
     "gdprCompliant": "Secure and GDPR compliant data"
+  },
+  "collectionMethods": {
+    "digital": "Digital (form)",
+    "verbal": "Verbal (with witness)",
+    "written": "Written (physical signature)",
+    "electronic": "Electronic signature"
   }
 }

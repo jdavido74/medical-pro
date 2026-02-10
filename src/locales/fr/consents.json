@@ -448,5 +448,11 @@
     "generateLink": "Générer le lien",
     "selectWorkflowHint": "Sélectionnez un parcours de signature pour continuer",
     "gdprCompliant": "Données sécurisées et conformes RGPD"
+  },
+  "collectionMethods": {
+    "digital": "Numérique (formulaire)",
+    "verbal": "Verbal (avec témoin)",
+    "written": "Écrit (signature physique)",
+    "electronic": "Signature électronique"
   }
 }

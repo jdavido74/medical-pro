@@ -182,10 +182,10 @@ export const CONSENT_TYPES = {
 
 // Méthodes de collecte des consentements
 export const COLLECTION_METHODS = {
-  DIGITAL: { id: 'digital', name: 'Numérique (formulaire)', icon: 'Monitor' },
-  VERBAL: { id: 'verbal', name: 'Verbal (avec témoin)', icon: 'Mic' },
-  WRITTEN: { id: 'written', name: 'Écrit (signature physique)', icon: 'PenTool' },
-  ELECTRONIC: { id: 'electronic', name: 'Signature électronique', icon: 'Edit3' }
+  DIGITAL: { id: 'digital', name: 'Numérique (formulaire)', nameKey: 'consents:collectionMethods.digital', icon: 'Monitor' },
+  VERBAL: { id: 'verbal', name: 'Verbal (avec témoin)', nameKey: 'consents:collectionMethods.verbal', icon: 'Mic' },
+  WRITTEN: { id: 'written', name: 'Écrit (signature physique)', nameKey: 'consents:collectionMethods.written', icon: 'PenTool' },
+  ELECTRONIC: { id: 'electronic', name: 'Signature électronique', nameKey: 'consents:collectionMethods.electronic', icon: 'Edit3' }
 };
 
 // Liste des IDs de types pour la validation
