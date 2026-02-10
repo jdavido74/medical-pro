@@ -7,6 +7,7 @@ import {
   CheckSquare, Mail, User, Calendar, Phone, MapPin, Stethoscope,
   Globe, Trash2, Languages, Check, Loader
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { consentTemplatesApi } from '../../api/consentTemplatesApi';
 import { useConsentTypes, useSpecialties } from '../../hooks/useSystemCategories';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,6 +26,7 @@ const ConsentTemplateEditorModal = ({
   editingTemplate = null,
   mode = 'create' // 'create', 'edit', 'duplicate'
 }) => {
+  const { t } = useTranslation('consents');
   const { user } = useAuth();
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -170,7 +172,7 @@ const ConsentTemplateEditorModal = ({
       setEditingTranslation({ languageCode: '', title: '', description: '', terms: '' });
     } catch (error) {
       console.error('[ConsentTemplateEditorModal] Error saving translation:', error);
-      alert('Erreur lors de la sauvegarde de la traduction');
+      alert(t('templateEditor.translations.saveError'));
     } finally {
       setTranslationSaving(false);
     }
@@ -178,7 +180,7 @@ const ConsentTemplateEditorModal = ({
 
   const handleDeleteTranslation = async (langCode) => {
     if (!editingTemplate?.id) return;
-    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer la traduction en ${AVAILABLE_LANGUAGES.find(l => l.code === langCode)?.name}?`)) {
+    if (!window.confirm(t('templateEditor.translations.deleteConfirm', { language: AVAILABLE_LANGUAGES.find(l => l.code === langCode)?.name }))) {
       return;
     }
 
@@ -192,7 +194,7 @@ const ConsentTemplateEditorModal = ({
       }
     } catch (error) {
       console.error('[ConsentTemplateEditorModal] Error deleting translation:', error);
-      alert('Erreur lors de la suppression de la traduction');
+      alert(t('templateEditor.translations.deleteError'));
     }
   };
 
@@ -251,7 +253,7 @@ const ConsentTemplateEditorModal = ({
       handleClose();
     } catch (error) {
       console.error('[ConsentTemplateEditorModal] Error saving template:', error);
-      setValidationErrors({ general: error.message || 'Erreur lors de la sauvegarde' });
+      setValidationErrors({ general: error.message || t('templateEditor.errors.saveFailed') });
     } finally {
       setIsSubmitting(false);
     }
@@ -260,11 +262,11 @@ const ConsentTemplateEditorModal = ({
   const validateForm = () => {
     const errors = {};
 
-    if (!formData.title?.trim()) errors.title = 'Titre requis';
+    if (!formData.title?.trim()) errors.title = t('templateEditor.validation.titleRequired');
     // Description is optional
-    if (!formData.content?.trim()) errors.content = 'Contenu requis';
-    if (!formData.consentType) errors.consentType = 'Type de consentement requis';
-    if (!formData.speciality) errors.speciality = 'Spécialité requise';
+    if (!formData.content?.trim()) errors.content = t('templateEditor.validation.contentRequired');
+    if (!formData.consentType) errors.consentType = t('templateEditor.validation.consentTypeRequired');
+    if (!formData.speciality) errors.speciality = t('templateEditor.validation.specialtyRequired');
 
     return errors;
   };
@@ -314,7 +316,7 @@ const ConsentTemplateEditorModal = ({
       reader.readAsText(file);
     } catch (error) {
       console.error('Erreur import fichier:', error);
-      alert('Erreur lors de l\'import du fichier');
+      alert(t('templateEditor.importExport.importError'));
     }
   };
 
@@ -322,7 +324,7 @@ const ConsentTemplateEditorModal = ({
   const handleExport = (format = 'txt') => {
     try {
       if (!formData.content.trim()) {
-        alert('Aucun contenu à exporter');
+        alert(t('templateEditor.importExport.noContent'));
         return;
       }
 
@@ -379,7 +381,7 @@ const ConsentTemplateEditorModal = ({
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Erreur export:', error);
-      alert('Erreur lors de l\'export');
+      alert(t('templateEditor.importExport.exportError'));
     }
   };
 
@@ -484,72 +486,72 @@ const ConsentTemplateEditorModal = ({
   // Variables prédéfinies organisées par catégorie
   const variableCategories = {
     patient: {
-      label: 'Patient',
+      label: t('templateEditor.variables.patient'),
       icon: User,
       variables: [
-        { name: 'NOM_PATIENT', label: 'Nom' },
-        { name: 'PRÉNOM_PATIENT', label: 'Prénom' },
-        { name: 'NOM_COMPLET_PATIENT', label: 'Nom complet' },
-        { name: 'EMAIL_PATIENT', label: 'Email' },
-        { name: 'TÉLÉPHONE_PATIENT', label: 'Téléphone' },
-        { name: 'DATE_NAISSANCE', label: 'Date de naissance' },
-        { name: 'ADRESSE_PATIENT', label: 'Adresse' },
-        { name: 'NUMÉRO_DOCUMENT', label: 'N° Document (NIF/Passeport)' },
-        { name: 'NUMÉRO_SÉCU', label: 'N° Sécurité sociale' }
+        { name: 'NOM_PATIENT', label: t('templateEditor.variables.lastName') },
+        { name: 'PRÉNOM_PATIENT', label: t('templateEditor.variables.firstName') },
+        { name: 'NOM_COMPLET_PATIENT', label: t('templateEditor.variables.fullName') },
+        { name: 'EMAIL_PATIENT', label: t('templateEditor.variables.email') },
+        { name: 'TÉLÉPHONE_PATIENT', label: t('templateEditor.variables.phone') },
+        { name: 'DATE_NAISSANCE', label: t('templateEditor.variables.birthDate') },
+        { name: 'ADRESSE_PATIENT', label: t('templateEditor.variables.address') },
+        { name: 'NUMÉRO_DOCUMENT', label: t('templateEditor.variables.documentNumber') },
+        { name: 'NUMÉRO_SÉCU', label: t('templateEditor.variables.socialSecurity') }
       ]
     },
     clinique: {
-      label: 'Clinique',
+      label: t('templateEditor.variables.clinic'),
       icon: MapPin,
       variables: [
-        { name: 'NOM_CLINIQUE', label: 'Nom de la clinique' },
-        { name: 'ADRESSE_CLINIQUE', label: 'Adresse complète' },
-        { name: 'TÉLÉPHONE_CLINIQUE', label: 'Téléphone' },
-        { name: 'EMAIL_CLINIQUE', label: 'Email' },
-        { name: 'LOGO_CLINIQUE', label: 'Logo (image)' },
-        { name: 'NIF_CLINIQUE', label: 'NIF/CIF clinique' }
+        { name: 'NOM_CLINIQUE', label: t('templateEditor.variables.clinicName') },
+        { name: 'ADRESSE_CLINIQUE', label: t('templateEditor.variables.clinicAddress') },
+        { name: 'TÉLÉPHONE_CLINIQUE', label: t('templateEditor.variables.clinicPhone') },
+        { name: 'EMAIL_CLINIQUE', label: t('templateEditor.variables.clinicEmail') },
+        { name: 'LOGO_CLINIQUE', label: t('templateEditor.variables.clinicLogo') },
+        { name: 'NIF_CLINIQUE', label: t('templateEditor.variables.clinicTaxId') }
       ]
     },
     praticien: {
-      label: 'Praticien',
+      label: t('templateEditor.variables.practitioner'),
       icon: Stethoscope,
       variables: [
-        { name: 'NOM_PRATICIEN', label: 'Nom complet' },
-        { name: 'TITRE_PRATICIEN', label: 'Titre (Dr., etc.)' },
-        { name: 'SPÉCIALITÉ_PRATICIEN', label: 'Spécialité' },
-        { name: 'NUMÉRO_ORDRE', label: 'N° Ordre des médecins' },
-        { name: 'SIGNATURE_PRATICIEN', label: 'Zone signature' }
+        { name: 'NOM_PRATICIEN', label: t('templateEditor.variables.practitionerName') },
+        { name: 'TITRE_PRATICIEN', label: t('templateEditor.variables.practitionerTitle') },
+        { name: 'SPÉCIALITÉ_PRATICIEN', label: t('templateEditor.variables.practitionerSpecialty') },
+        { name: 'NUMÉRO_ORDRE', label: t('templateEditor.variables.orderNumber') },
+        { name: 'SIGNATURE_PRATICIEN', label: t('templateEditor.variables.practitionerSignature') }
       ]
     },
     intervention: {
-      label: 'Intervention',
+      label: t('templateEditor.variables.intervention'),
       icon: FileText,
       variables: [
-        { name: 'DESCRIPTION_INTERVENTION', label: 'Description' },
-        { name: 'RISQUES_SPÉCIFIQUES', label: 'Risques' },
-        { name: 'BÉNÉFICES_ATTENDUS', label: 'Bénéfices' },
-        { name: 'ALTERNATIVES_DISPONIBLES', label: 'Alternatives' },
-        { name: 'TRAITEMENT', label: 'Traitement' },
-        { name: 'PRODUIT_SERVICE', label: 'Produit/Service' }
+        { name: 'DESCRIPTION_INTERVENTION', label: t('templateEditor.variables.interventionDescription') },
+        { name: 'RISQUES_SPÉCIFIQUES', label: t('templateEditor.variables.specificRisks') },
+        { name: 'BÉNÉFICES_ATTENDUS', label: t('templateEditor.variables.expectedBenefits') },
+        { name: 'ALTERNATIVES_DISPONIBLES', label: t('templateEditor.variables.availableAlternatives') },
+        { name: 'TRAITEMENT', label: t('templateEditor.variables.treatment') },
+        { name: 'PRODUIT_SERVICE', label: t('templateEditor.variables.productService') }
       ]
     },
     dates: {
-      label: 'Dates',
+      label: t('templateEditor.variables.dates'),
       icon: Calendar,
       variables: [
-        { name: 'DATE', label: 'Date actuelle' },
-        { name: 'DATE_HEURE', label: 'Date et heure' },
-        { name: 'DURÉE', label: 'Durée' },
-        { name: 'SIGNATURE_PATIENT', label: 'Signature patient' }
+        { name: 'DATE', label: t('templateEditor.variables.currentDate') },
+        { name: 'DATE_HEURE', label: t('templateEditor.variables.dateTime') },
+        { name: 'DURÉE', label: t('templateEditor.variables.duration') },
+        { name: 'SIGNATURE_PATIENT', label: t('templateEditor.variables.patientSignature') }
       ]
     },
     checkbox: {
-      label: 'Cases à cocher',
+      label: t('templateEditor.variables.checkboxes'),
       icon: CheckSquare,
       variables: [
-        { name: 'CASE_À_COCHER', label: '☐ Case à cocher' },
-        { name: 'CASE_OUI_NON', label: '☐ Oui / ☐ Non' },
-        { name: 'INITIALES', label: 'Initiales: ____' }
+        { name: 'CASE_À_COCHER', label: t('templateEditor.variables.checkbox') },
+        { name: 'CASE_OUI_NON', label: t('templateEditor.variables.yesNo') },
+        { name: 'INITIALES', label: t('templateEditor.variables.initials') }
       ]
     }
   };
@@ -560,10 +562,10 @@ const ConsentTemplateEditorModal = ({
 
   const getModalTitle = () => {
     switch (mode) {
-      case 'create': return 'Créer un modèle de consentement';
-      case 'edit': return 'Modifier le modèle de consentement';
-      case 'duplicate': return 'Dupliquer le modèle de consentement';
-      default: return 'Éditeur de modèle';
+      case 'create': return t('templateEditor.createTitle');
+      case 'edit': return t('templateEditor.editTitle');
+      case 'duplicate': return t('templateEditor.duplicateTitle');
+      default: return t('templateEditor.defaultTitle');
     }
   };
 
@@ -630,7 +632,7 @@ const ConsentTemplateEditorModal = ({
                   }`}
                 >
                   <FileText className="h-4 w-4 mr-1" />
-                  Contenu
+                  {t('templateEditor.contentTab')}
                 </button>
                 <button
                   onClick={() => setActiveEditorTab('translations')}
@@ -639,7 +641,7 @@ const ConsentTemplateEditorModal = ({
                   }`}
                 >
                   <Globe className="h-4 w-4 mr-1" />
-                  Traductions
+                  {t('templateEditor.translationsTab')}
                   {translations.length > 0 && (
                     <span className="ml-1 bg-green-500 text-white text-xs px-1.5 rounded-full">
                       {translations.length}
@@ -653,7 +655,7 @@ const ConsentTemplateEditorModal = ({
               className="px-3 py-1 bg-blue-500 rounded hover:bg-blue-400 flex items-center"
             >
               <Eye className="h-4 w-4 mr-1" />
-              {showPreview ? 'Éditer' : 'Aperçu'}
+              {showPreview ? t('templateEditor.editMode') : t('templateEditor.preview')}
             </button>
             <button
               onClick={handleClose}
@@ -672,7 +674,7 @@ const ConsentTemplateEditorModal = ({
               <div className="w-64 bg-gray-50 border-r p-4 overflow-y-auto">
                 <h3 className="font-medium text-gray-900 mb-4 flex items-center">
                   <Languages className="h-5 w-5 mr-2" />
-                  Langues disponibles
+                  {t('templateEditor.translations.availableLanguages')}
                 </h3>
 
                 {translationsLoading ? (
@@ -719,7 +721,7 @@ const ConsentTemplateEditorModal = ({
                               </>
                             ) : (
                               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
-                                Non traduit
+                                {t('templateEditor.translations.notTranslated')}
                               </span>
                             )}
                           </div>
@@ -730,8 +732,8 @@ const ConsentTemplateEditorModal = ({
                 )}
 
                 <div className="mt-6 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                  <p className="font-medium mb-1">Info</p>
-                  <p>Sélectionnez une langue pour ajouter ou modifier sa traduction.</p>
+                  <p className="font-medium mb-1">{t('templateEditor.translations.info')}</p>
+                  <p>{t('templateEditor.translations.selectLanguageHint')}</p>
                 </div>
               </div>
 
@@ -747,12 +749,12 @@ const ConsentTemplateEditorModal = ({
                           </span>
                           <div>
                             <h3 className="font-medium text-gray-900">
-                              Traduction en {AVAILABLE_LANGUAGES.find(l => l.code === selectedTranslationLang)?.name}
+                              {t('templateEditor.translations.translationIn', { language: AVAILABLE_LANGUAGES.find(l => l.code === selectedTranslationLang)?.name })}
                             </h3>
                             <p className="text-sm text-gray-500">
-                              {translations.some(t => t.language_code === selectedTranslationLang)
-                                ? 'Modifier la traduction existante'
-                                : 'Créer une nouvelle traduction'}
+                              {translations.some(tr => tr.language_code === selectedTranslationLang)
+                                ? t('templateEditor.translations.editExisting')
+                                : t('templateEditor.translations.createNew')}
                             </p>
                           </div>
                         </div>
@@ -761,7 +763,7 @@ const ConsentTemplateEditorModal = ({
                             onClick={cancelTranslationEdit}
                             className="px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
                           >
-                            Annuler
+                            {t('templateEditor.buttons.cancel')}
                           </button>
                           <button
                             onClick={handleSaveTranslation}
@@ -771,12 +773,12 @@ const ConsentTemplateEditorModal = ({
                             {translationSaving ? (
                               <>
                                 <Loader className="h-4 w-4 animate-spin mr-2" />
-                                Enregistrement...
+                                {t('templateEditor.buttons.saving')}
                               </>
                             ) : (
                               <>
                                 <Save className="h-4 w-4 mr-2" />
-                                Enregistrer
+                                {t('templateEditor.buttons.save')}
                               </>
                             )}
                           </button>
@@ -789,41 +791,41 @@ const ConsentTemplateEditorModal = ({
                         {/* Title */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Titre traduit *
+                            {t('templateEditor.translations.translatedTitle')}
                           </label>
                           <input
                             type="text"
                             value={editingTranslation.title}
                             onChange={(e) => setEditingTranslation(prev => ({ ...prev, title: e.target.value }))}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Titre dans cette langue"
+                            placeholder={t('templateEditor.translations.titlePlaceholder')}
                           />
                           <p className="text-xs text-gray-500 mt-1">
-                            Original: {formData.title}
+                            {t('templateEditor.translations.original')} {formData.title}
                           </p>
                         </div>
 
                         {/* Description */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Description traduite *
+                            {t('templateEditor.translations.translatedDescription')}
                           </label>
                           <textarea
                             value={editingTranslation.description}
                             onChange={(e) => setEditingTranslation(prev => ({ ...prev, description: e.target.value }))}
                             rows={3}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Description dans cette langue"
+                            placeholder={t('templateEditor.translations.descriptionPlaceholder')}
                           />
                           <p className="text-xs text-gray-500 mt-1">
-                            Original: {formData.description}
+                            {t('templateEditor.translations.original')} {formData.description}
                           </p>
                         </div>
 
                         {/* Terms/Content */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Contenu traduit (termes) *
+                            {t('templateEditor.translations.translatedContent')}
                           </label>
                           <div className="border border-gray-300 rounded-lg overflow-hidden">
                             <textarea
@@ -831,11 +833,11 @@ const ConsentTemplateEditorModal = ({
                               onChange={(e) => setEditingTranslation(prev => ({ ...prev, terms: e.target.value }))}
                               rows={15}
                               className="w-full p-4 resize-none focus:ring-0 focus:outline-none font-mono text-sm"
-                              placeholder="Contenu du consentement dans cette langue..."
+                              placeholder={t('templateEditor.translations.contentPlaceholder')}
                             />
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            Conservez les variables [VARIABLE] telles quelles pour le remplacement automatique.
+                            {t('templateEditor.translations.keepVariables')}
                           </p>
                         </div>
 
@@ -843,10 +845,10 @@ const ConsentTemplateEditorModal = ({
                         <div className="bg-gray-50 rounded-lg p-4">
                           <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                             <FileText className="h-4 w-4 mr-2" />
-                            Contenu original (référence)
+                            {t('templateEditor.translations.originalContent')}
                           </h4>
                           <div className="bg-white border rounded p-3 max-h-48 overflow-y-auto text-sm text-gray-600 whitespace-pre-wrap">
-                            {formData.content || 'Aucun contenu original'}
+                            {formData.content || t('templateEditor.translations.noOriginalContent')}
                           </div>
                         </div>
                       </div>
@@ -856,9 +858,9 @@ const ConsentTemplateEditorModal = ({
                   <div className="flex-1 flex items-center justify-center bg-gray-50">
                     <div className="text-center">
                       <Globe className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Gestion des traductions</h3>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">{t('templateEditor.translations.management')}</h3>
                       <p className="text-gray-500 max-w-md">
-                        Sélectionnez une langue dans la liste de gauche pour ajouter ou modifier sa traduction.
+                        {t('templateEditor.translations.selectLanguage')}
                       </p>
                     </div>
                   </div>
@@ -873,12 +875,12 @@ const ConsentTemplateEditorModal = ({
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Informations générales */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium text-gray-900 mb-3">Informations générales</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('templateEditor.form.generalInfo')}</h3>
 
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Titre *
+                      {t('templateEditor.form.title')}
                     </label>
                     <input
                       type="text"
@@ -887,7 +889,7 @@ const ConsentTemplateEditorModal = ({
                       className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         validationErrors.title ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      placeholder="Nom du modèle"
+                      placeholder={t('templateEditor.form.titlePlaceholder')}
                     />
                     {validationErrors.title && (
                       <p className="text-red-500 text-sm mt-1">{validationErrors.title}</p>
@@ -896,20 +898,20 @@ const ConsentTemplateEditorModal = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
+                      {t('templateEditor.form.description')}
                     </label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       rows={3}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Description du modèle (optionnel)"
+                      placeholder={t('templateEditor.form.descriptionPlaceholder')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Type de consentement *
+                      {t('templateEditor.form.consentType')}
                     </label>
                     <select
                       value={formData.consentType}
@@ -920,7 +922,7 @@ const ConsentTemplateEditorModal = ({
                       disabled={consentTypesLoading}
                     >
                       {consentTypesLoading ? (
-                        <option>Chargement...</option>
+                        <option>{t('templateEditor.form.loading')}</option>
                       ) : (
                         consentTypes.map(type => (
                           <option key={type.code} value={type.code}>
@@ -936,7 +938,7 @@ const ConsentTemplateEditorModal = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Spécialité *
+                      {t('templateEditor.form.specialty')}
                     </label>
                     <select
                       value={formData.speciality}
@@ -945,7 +947,7 @@ const ConsentTemplateEditorModal = ({
                       disabled={specialtiesLoading}
                     >
                       {specialtiesLoading ? (
-                        <option>Chargement...</option>
+                        <option>{t('templateEditor.form.loading')}</option>
                       ) : (
                         specialties.map(specialty => (
                           <option key={specialty.code} value={specialty.code}>
@@ -958,16 +960,16 @@ const ConsentTemplateEditorModal = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Statut
+                      {t('templateEditor.form.status')}
                     </label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="draft">Brouillon</option>
-                      <option value="active">Actif</option>
-                      <option value="inactive">Inactif</option>
+                      <option value="draft">{t('templateEditor.form.statusDraft')}</option>
+                      <option value="active">{t('templateEditor.form.statusActive')}</option>
+                      <option value="inactive">{t('templateEditor.form.statusInactive')}</option>
                     </select>
                   </div>
                 </div>
@@ -975,7 +977,7 @@ const ConsentTemplateEditorModal = ({
 
               {/* Import/Export */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium text-gray-900 mb-3">Import/Export</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('templateEditor.importExport.title')}</h3>
 
                 <div className="space-y-2">
                   <input
@@ -991,12 +993,12 @@ const ConsentTemplateEditorModal = ({
                     className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    Importer fichier
+                    {t('templateEditor.importExport.importFile')}
                   </button>
 
                   {importedFileName && (
                     <p className="text-sm text-green-600">
-                      ✓ Importé: {importedFileName}
+                      ✓ {t('templateEditor.importExport.imported')} {importedFileName}
                     </p>
                   )}
 
@@ -1024,7 +1026,7 @@ const ConsentTemplateEditorModal = ({
               {/* Variables détectées */}
               {detectedVariables.length > 0 && (
                 <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <h3 className="font-medium text-gray-900 mb-3">Variables détectées</h3>
+                  <h3 className="font-medium text-gray-900 mb-3">{t('templateEditor.variables.detected')}</h3>
                   <div className="space-y-1">
                     {detectedVariables.map((variable, index) => (
                       <div key={index} className="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
@@ -1037,7 +1039,7 @@ const ConsentTemplateEditorModal = ({
 
               {/* Variables prédéfinies organisées par catégorie */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <h3 className="font-medium text-gray-900 mb-3">Variables prédéfinies</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('templateEditor.variables.predefined')}</h3>
                 <div className="space-y-3">
                   {Object.entries(variableCategories).map(([key, category]) => {
                     const IconComponent = category.icon;
@@ -1054,7 +1056,7 @@ const ConsentTemplateEditorModal = ({
                               type="button"
                               onClick={() => insertVariable(variable.name)}
                               className="text-left text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
-                              title={`Insérer [${variable.name}]`}
+                              title={`${t('templateEditor.variables.insert')} [${variable.name}]`}
                             >
                               <span className="font-mono">[{variable.name}]</span>
                               <span className="text-gray-500 ml-1">- {variable.label}</span>
@@ -1081,7 +1083,7 @@ const ConsentTemplateEditorModal = ({
                   onClick={handleClose}
                   className="flex-1 px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
                 >
-                  Annuler
+                  {t('templateEditor.buttons.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -1091,12 +1093,12 @@ const ConsentTemplateEditorModal = ({
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Enregistrement...
+                      {t('templateEditor.buttons.saving')}
                     </>
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Enregistrer
+                      {t('templateEditor.buttons.save')}
                     </>
                   )}
                 </button>
@@ -1114,8 +1116,8 @@ const ConsentTemplateEditorModal = ({
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">{formData.title}</h2>
                     <p className="text-gray-600 mb-2">{formData.description}</p>
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Type: {getConsentTypeName(consentTypes.find(t => t.code === formData.consentType)) || formData.consentType}</span>
-                      <span>Spécialité: {getSpecialtyName(specialties.find(s => s.code === formData.speciality)) || formData.speciality}</span>
+                      <span>{t('templateEditor.previewLabels.type')} {getConsentTypeName(consentTypes.find(ct => ct.code === formData.consentType)) || formData.consentType}</span>
+                      <span>{t('templateEditor.previewLabels.specialty')} {getSpecialtyName(specialties.find(s => s.code === formData.speciality)) || formData.speciality}</span>
                     </div>
                   </div>
                   <div className="bg-white border rounded-lg p-6 prose max-w-none">
@@ -1133,15 +1135,15 @@ const ConsentTemplateEditorModal = ({
               <div className="flex-1 flex flex-col">
                 <div className="p-4 border-b bg-gray-50">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contenu du modèle *
+                    {t('templateEditor.editor.contentLabel')}
                   </label>
                   <p className="text-xs text-gray-500 mb-3">
-                    Utilisez [VARIABLE] pour insérer des variables dynamiques
+                    {t('templateEditor.editor.variablesHint')}
                   </p>
 
                   {/* Barre d'outils de formatage */}
                   <div className="flex flex-wrap items-center gap-1 p-2 bg-white border rounded-lg">
-                    <span className="text-xs text-gray-500 mr-2">Formatage:</span>
+                    <span className="text-xs text-gray-500 mr-2">{t('templateEditor.editor.formatting')}</span>
                     <button
                       type="button"
                       onClick={() => applyFormatting('\n# ', '\n')}
@@ -1233,7 +1235,7 @@ const ConsentTemplateEditorModal = ({
                       className="p-1.5 rounded hover:bg-gray-100 text-blue-600 text-xs font-medium"
                       title="Insérer en-tête clinique"
                     >
-                      En-tête
+                      {t('templateEditor.editor.header')}
                     </button>
                   </div>
                 </div>
@@ -1245,17 +1247,7 @@ const ConsentTemplateEditorModal = ({
                     className={`w-full h-full p-4 border-0 resize-none focus:ring-0 focus:outline-none font-mono text-sm ${
                       validationErrors.content ? 'bg-red-50' : 'bg-white'
                     }`}
-                    placeholder="Saisissez le contenu de votre modèle de consentement ici...
-
-Exemple:
-CONSENTEMENT ÉCLAIRÉ
-
-Je soussigné(e), [NOM_PATIENT] [PRÉNOM_PATIENT], né(e) le [DATE_NAISSANCE], déclare avoir été informé(e) par le Dr [NOM_PRATICIEN] de la nature de l'intervention proposée.
-
-[DESCRIPTION_INTERVENTION]
-
-Date: [DATE]
-Signature du patient: [SIGNATURE_PATIENT]"
+                    placeholder={t('templateEditor.editor.placeholder')}
                   />
                   {validationErrors.content && (
                     <div className="bg-red-50 border-t border-red-200 p-2">

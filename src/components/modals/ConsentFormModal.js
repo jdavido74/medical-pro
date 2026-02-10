@@ -19,7 +19,7 @@ const ConsentFormModal = ({
   editingConsent = null,
   preselectedType = null
 }) => {
-  const { t } = useTranslation(['common', 'admin']);
+  const { t } = useTranslation(['consents', 'common', 'admin']);
   const { user } = useAuth();
 
   // Dynamic consent types from API
@@ -252,7 +252,7 @@ const ConsentFormModal = ({
       handleClose();
     } catch (error) {
       console.error('[ConsentFormModal] Error saving consent:', error);
-      setValidationErrors({ general: error.message || 'Erreur lors de la sauvegarde' });
+      setValidationErrors({ general: error.message || t('consents:consentForm.saveFailed') });
     } finally {
       setIsSubmitting(false);
     }
@@ -261,29 +261,29 @@ const ConsentFormModal = ({
   const validateForm = () => {
     const errors = {};
 
-    if (!formData.patientId) errors.patientId = 'Sélectionner un patient';
-    if (!formData.type) errors.type = 'Sélectionner un type de consentement';
-    if (!formData.title?.trim()) errors.title = 'Titre requis';
-    if (!formData.description?.trim()) errors.description = 'Description requise';
-    if (!formData.purpose?.trim()) errors.purpose = 'Finalité requise';
+    if (!formData.patientId) errors.patientId = t('consents:consentForm.validation.patientRequired');
+    if (!formData.type) errors.type = t('consents:consentForm.validation.typeRequired');
+    if (!formData.title?.trim()) errors.title = t('consents:consentForm.validation.titleRequired');
+    if (!formData.description?.trim()) errors.description = t('consents:consentForm.validation.descriptionRequired');
+    if (!formData.purpose?.trim()) errors.purpose = t('consents:consentForm.validation.purposeRequired');
 
     // Validation pour consentement verbal avec témoin
     if (formData.collectionMethod === 'verbal') {
       if (!formData.witness?.name?.trim()) {
-        errors['witness.name'] = 'Nom du témoin requis pour consentement verbal';
+        errors['witness.name'] = t('consents:consentForm.validation.witnessNameRequired');
       }
       if (!formData.witness?.role?.trim()) {
-        errors['witness.role'] = 'Rôle du témoin requis';
+        errors['witness.role'] = t('consents:consentForm.validation.witnessRoleRequired');
       }
     }
 
     // Validation pour soins spécifiques
     if (formData.type === 'medical_specific') {
       if (!formData.specificDetails?.procedure?.trim()) {
-        errors['specificDetails.procedure'] = 'Description de la procédure requise';
+        errors['specificDetails.procedure'] = t('consents:consentForm.validation.procedureRequired');
       }
       if (!formData.specificDetails?.risks?.trim()) {
-        errors['specificDetails.risks'] = 'Description des risques requise';
+        errors['specificDetails.risks'] = t('consents:consentForm.validation.risksRequired');
       }
     }
 
@@ -322,10 +322,10 @@ const ConsentFormModal = ({
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'granted': return 'Accordé';
-      case 'revoked': return 'Révoqué';
-      case 'expired': return 'Expiré';
-      default: return 'Inconnu';
+      case 'granted': return t('consents:consentForm.statusGranted');
+      case 'revoked': return t('consents:consentForm.statusRevoked');
+      case 'expired': return t('consents:consentForm.statusExpired');
+      default: return t('consents:consentForm.statusUnknown');
     }
   };
 
@@ -339,7 +339,7 @@ const ConsentFormModal = ({
           <div className="flex items-center space-x-3">
             <Shield className="h-6 w-6" />
             <h2 className="text-xl font-semibold">
-              {editingConsent ? 'Modifier le consentement' : 'Nouveau consentement'}
+              {editingConsent ? t('consents:consentForm.editTitle') : t('consents:consentForm.createTitle')}
             </h2>
           </div>
           <button
@@ -357,7 +357,7 @@ const ConsentFormModal = ({
               {/* Sélection patient */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Patient *
+                  {t('consents:consentForm.patient')}
                 </label>
                 <select
                   value={formData.patientId}
@@ -367,7 +367,7 @@ const ConsentFormModal = ({
                   }`}
                   disabled={!!patientId}
                 >
-                  <option value="">Sélectionner un patient</option>
+                  <option value="">{t('consents:consentForm.selectPatient')}</option>
                   {patients.map(patient => (
                     <option key={patient.id} value={patient.id}>
                       {patient.firstName} {patient.lastName} - {patient.patientNumber}
@@ -382,7 +382,7 @@ const ConsentFormModal = ({
               {/* Type de consentement */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type de consentement *
+                  {t('consents:consentForm.consentType')}
                 </label>
                 <select
                   value={formData.type}
@@ -392,13 +392,13 @@ const ConsentFormModal = ({
                   }`}
                   disabled={consentTypesLoading}
                 >
-                  <option value="">Sélectionner un type</option>
+                  <option value="">{t('consents:consentForm.selectType')}</option>
                   {consentTypesLoading ? (
-                    <option disabled>Chargement...</option>
+                    <option disabled>{t('consents:consentForm.loading')}</option>
                   ) : (
                     consentTypes.map(type => (
                       <option key={type.code} value={type.code}>
-                        {getTranslatedName(type)} {type.metadata?.required ? '(Obligatoire)' : ''}
+                        {getTranslatedName(type)} {type.metadata?.required ? t('consents:consentForm.required') : ''}
                       </option>
                     ))
                   )}
@@ -413,14 +413,14 @@ const ConsentFormModal = ({
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                     <FileText className="h-4 w-4 mr-2 text-green-600" />
-                    Modèle de consentement (optionnel)
+                    {t('consents:consentForm.templateLabel')}
                   </label>
                   <select
                     value={selectedTemplate}
                     onChange={(e) => handleTemplateSelection(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
-                    <option value="">Saisie manuelle - Aucun modèle</option>
+                    <option value="">{t('consents:consentForm.noTemplate')}</option>
                     {filterTemplatesByType(availableTemplates, formData.type)
                       .map(template => (
                       <option key={template.id} value={template.id}>
@@ -432,7 +432,7 @@ const ConsentFormModal = ({
                     <div className="mt-3 p-3 bg-white border border-green-200 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-sm text-green-700">
-                          ✅ Modèle sélectionné - Les données patient seront automatiquement pré-remplies
+                          {t('consents:consentForm.templateSelected')}
                         </p>
                         <button
                           type="button"
@@ -445,7 +445,7 @@ const ConsentFormModal = ({
                       </div>
                       {prefilledContent && (
                         <div className="text-xs text-gray-600">
-                          <strong>Aperçu:</strong>
+                          <strong>{t('consents:consentForm.previewLabel')}</strong>
                           <div className="mt-1 max-h-20 overflow-y-auto bg-gray-50 p-2 rounded text-xs">
                             {prefilledContent.substring(0, 200)}...
                           </div>
@@ -454,7 +454,7 @@ const ConsentFormModal = ({
                     </div>
                   )}
                   <p className="text-xs text-gray-600 mt-2">
-                    💡 Sélectionnez un modèle pour pré-remplir automatiquement le consentement avec les données du patient
+                    {t('consents:consentForm.templateHint')}
                   </p>
                 </div>
               )}
@@ -462,7 +462,7 @@ const ConsentFormModal = ({
               {/* Finalité */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Finalité *
+                  {t('consents:consentForm.purpose')}
                 </label>
                 <input
                   type="text"
@@ -471,7 +471,7 @@ const ConsentFormModal = ({
                   className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     validationErrors.purpose ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Ex: soins médicaux, recherche, marketing..."
+                  placeholder={t('consents:consentForm.purposePlaceholder')}
                 />
                 {validationErrors.purpose && (
                   <p className="text-red-500 text-sm mt-1">{validationErrors.purpose}</p>
@@ -481,7 +481,7 @@ const ConsentFormModal = ({
               {/* Titre */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Titre *
+                  {t('consents:consentForm.title')}
                 </label>
                 <input
                   type="text"
@@ -490,7 +490,7 @@ const ConsentFormModal = ({
                   className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     validationErrors.title ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Titre du consentement"
+                  placeholder={t('consents:consentForm.titlePlaceholder')}
                 />
                 {validationErrors.title && (
                   <p className="text-red-500 text-sm mt-1">{validationErrors.title}</p>
@@ -500,10 +500,10 @@ const ConsentFormModal = ({
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
-                  Description *
+                  {t('consents:consentForm.description')}
                   {selectedTemplate && prefilledContent && (
                     <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                      📄 Contenu pré-rempli depuis le modèle
+                      {t('consents:consentForm.prefilledFromTemplate')}
                     </span>
                   )}
                 </label>
@@ -522,15 +522,15 @@ const ConsentFormModal = ({
                     validationErrors.description ? 'border-red-500' : 'border-gray-300'
                   } ${selectedTemplate && prefilledContent ? 'bg-green-50 border-green-300' : ''}`}
                   placeholder={selectedTemplate && prefilledContent ?
-                    "Contenu pré-rempli avec les données du patient. Vous pouvez modifier le texte si nécessaire." :
-                    "Description détaillée du consentement"
+                    t('consents:consentForm.prefilledPlaceholder') :
+                    t('consents:consentForm.descriptionPlaceholder')
                   }
                 />
                 {selectedTemplate && prefilledContent && (
                   <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
-                    💡 <strong>Variables automatiquement remplies:</strong> Nom patient, date, praticien, etc.
+                    {t('consents:consentForm.autoFilledVariables')}
                     <br />
-                    ✏️ Vous pouvez modifier le texte selon vos besoins. La modification désélectionnera automatiquement le modèle.
+                    {t('consents:consentForm.editWarning')}
                   </div>
                 )}
                 {validationErrors.description && (
@@ -541,7 +541,7 @@ const ConsentFormModal = ({
               {/* Méthode de collecte */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Méthode de collecte
+                  {t('consents:consentForm.collectionMethod')}
                 </label>
                 <select
                   value={formData.collectionMethod}
@@ -561,12 +561,12 @@ const ConsentFormModal = ({
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center">
                     <User className="h-4 w-4 mr-2" />
-                    Informations du témoin
+                    {t('consents:consentForm.witnessInfo')}
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nom du témoin *
+                        {t('consents:consentForm.witnessName')}
                       </label>
                       <input
                         type="text"
@@ -578,7 +578,7 @@ const ConsentFormModal = ({
                         className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           validationErrors['witness.name'] ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Nom complet"
+                        placeholder={t('consents:consentForm.witnessNamePlaceholder')}
                       />
                       {validationErrors['witness.name'] && (
                         <p className="text-red-500 text-sm mt-1">{validationErrors['witness.name']}</p>
@@ -586,7 +586,7 @@ const ConsentFormModal = ({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Rôle *
+                        {t('consents:consentForm.witnessRole')}
                       </label>
                       <input
                         type="text"
@@ -598,7 +598,7 @@ const ConsentFormModal = ({
                         className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           validationErrors['witness.role'] ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Ex: Infirmière, Accompagnant..."
+                        placeholder={t('consents:consentForm.witnessRolePlaceholder')}
                       />
                       {validationErrors['witness.role'] && (
                         <p className="text-red-500 text-sm mt-1">{validationErrors['witness.role']}</p>
@@ -613,12 +613,12 @@ const ConsentFormModal = ({
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center">
                     <FileText className="h-4 w-4 mr-2" />
-                    Détails des soins spécifiques
+                    {t('consents:consentForm.specificDetails')}
                   </h4>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Procédure/Intervention *
+                        {t('consents:consentForm.procedure')}
                       </label>
                       <textarea
                         value={formData.specificDetails.procedure}
@@ -630,7 +630,7 @@ const ConsentFormModal = ({
                         className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           validationErrors['specificDetails.procedure'] ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Description de la procédure ou intervention"
+                        placeholder={t('consents:consentForm.procedurePlaceholder')}
                       />
                       {validationErrors['specificDetails.procedure'] && (
                         <p className="text-red-500 text-sm mt-1">{validationErrors['specificDetails.procedure']}</p>
@@ -638,7 +638,7 @@ const ConsentFormModal = ({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Risques et complications *
+                        {t('consents:consentForm.risksLabel')}
                       </label>
                       <textarea
                         value={formData.specificDetails.risks}
@@ -650,7 +650,7 @@ const ConsentFormModal = ({
                         className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           validationErrors['specificDetails.risks'] ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Risques associés à la procédure"
+                        placeholder={t('consents:consentForm.risksPlaceholder')}
                       />
                       {validationErrors['specificDetails.risks'] && (
                         <p className="text-red-500 text-sm mt-1">{validationErrors['specificDetails.risks']}</p>
@@ -658,7 +658,7 @@ const ConsentFormModal = ({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Alternatives
+                        {t('consents:consentForm.alternatives')}
                       </label>
                       <textarea
                         value={formData.specificDetails.alternatives}
@@ -668,12 +668,12 @@ const ConsentFormModal = ({
                         }))}
                         rows={2}
                         className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Alternatives possibles"
+                        placeholder={t('consents:consentForm.alternativesPlaceholder')}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Résultats attendus
+                        {t('consents:consentForm.expectedResults')}
                       </label>
                       <textarea
                         value={formData.specificDetails.expectedResults}
@@ -683,7 +683,7 @@ const ConsentFormModal = ({
                         }))}
                         rows={2}
                         className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Résultats et bénéfices attendus"
+                        placeholder={t('consents:consentForm.expectedResultsPlaceholder')}
                       />
                     </div>
                   </div>
@@ -693,8 +693,8 @@ const ConsentFormModal = ({
               {/* Date d'expiration */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Date d'expiration
-                  <span className="text-gray-500 text-sm ml-2">(optionnel)</span>
+                  {t('consents:consentForm.expirationDate')}
+                  <span className="text-gray-500 text-sm ml-2">{t('consents:consentForm.optional')}</span>
                 </label>
                 <input
                   type="date"
@@ -704,22 +704,22 @@ const ConsentFormModal = ({
                   min={new Date().toISOString().split('T')[0]}
                 />
                 <p className="text-gray-500 text-sm mt-1">
-                  Laisser vide pour un consentement permanent (jusqu'à révocation)
+                  {t('consents:consentForm.expirationHint')}
                 </p>
               </div>
 
               {/* Statut */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Statut
+                  {t('consents:consentForm.statusLabel')}
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="granted">Accordé</option>
-                  <option value="revoked">Révoqué</option>
+                  <option value="granted">{t('consents:consentForm.statusGranted')}</option>
+                  <option value="revoked">{t('consents:consentForm.statusRevoked')}</option>
                 </select>
               </div>
 
@@ -737,7 +737,7 @@ const ConsentFormModal = ({
                   onClick={handleClose}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Annuler
+                  {t('consents:consentForm.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -747,12 +747,12 @@ const ConsentFormModal = ({
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Enregistrement...
+                      {t('consents:consentForm.saving')}
                     </>
                   ) : editingConsent ? (
-                    'Modifier'
+                    t('consents:consentForm.edit')
                   ) : (
-                    'Créer'
+                    t('consents:consentForm.create')
                   )}
                 </button>
               </div>
@@ -765,7 +765,7 @@ const ConsentFormModal = ({
               <div className="p-4 border-b bg-white">
                 <h3 className="font-medium text-gray-900 flex items-center">
                   <FileText className="h-4 w-4 mr-2" />
-                  Consentements existants
+                  {t('consents:consentForm.existingConsents')}
                 </h3>
                 <p className="text-sm text-gray-600">
                   {selectedPatient.firstName} {selectedPatient.lastName}
@@ -796,7 +796,7 @@ const ConsentFormModal = ({
                           {consent.expiresAt && (
                             <div className="flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
-                              Expire: {new Date(consent.expiresAt).toLocaleDateString()}
+                              {t('consents:consentForm.expires')} {new Date(consent.expiresAt).toLocaleDateString()}
                             </div>
                           )}
                           <div className="flex items-center">

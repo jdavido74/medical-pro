@@ -41,7 +41,7 @@ const SendConsentRequestModal = ({
   appointmentId = null,
   onSuccess
 }) => {
-  const { t, i18n } = useTranslation(['common', 'admin']);
+  const { t, i18n } = useTranslation(['consents', 'common', 'admin']);
 
   // Dynamic consent types from API
   const { categories: consentTypes, loading: consentTypesLoading, getTranslatedName, getByCode } = useConsentTypes();
@@ -281,7 +281,7 @@ const SendConsentRequestModal = ({
                   >
                     <option value="">{t('admin:consents.allTypes')}</option>
                     {consentTypesLoading ? (
-                      <option disabled>Chargement...</option>
+                      <option disabled>{t('consents:consentForm.loading')}</option>
                     ) : (
                       consentTypes.map((type) => (
                         <option key={type.code} value={type.code}>
@@ -366,7 +366,7 @@ const SendConsentRequestModal = ({
                           : 'border-gray-200 hover:border-gray-300'}`}
                     >
                       <Tablet className="w-5 h-5" />
-                      <span className="text-xs font-medium">Tablette</span>
+                      <span className="text-xs font-medium">{t('consents:consentPreview.workflow.tabletName')}</span>
                     </button>
                     <button
                       type="button"
@@ -377,7 +377,7 @@ const SendConsentRequestModal = ({
                           : 'border-gray-200 hover:border-gray-300'}`}
                     >
                       <Link className="w-5 h-5" />
-                      <span className="text-xs font-medium">Lien</span>
+                      <span className="text-xs font-medium">{t('consents:consentPreview.workflow.linkName')}</span>
                     </button>
                   </div>
                 </div>
@@ -428,10 +428,10 @@ const SendConsentRequestModal = ({
                     onChange={(e) => setExpiresInHours(Number(e.target.value))}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value={24}>24 heures</option>
-                    <option value={48}>48 heures</option>
-                    <option value={72}>72 heures</option>
-                    <option value={168}>7 jours</option>
+                    <option value={24}>{t('consents:consentPreview.hours24')}</option>
+                    <option value={48}>{t('consents:consentPreview.hours48')}</option>
+                    <option value={72}>{t('consents:consentPreview.hours72')}</option>
+                    <option value={168}>{t('consents:consentPreview.days7')}</option>
                   </select>
                 </div>
 

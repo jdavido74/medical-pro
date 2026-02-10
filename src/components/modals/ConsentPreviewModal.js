@@ -43,22 +43,22 @@ import { useLocale } from '../../contexts/LocaleContext';
 const SIGNATURE_WORKFLOWS = {
   EMAIL: {
     id: 'email',
-    name: 'Par email',
-    description: 'Envoyer un lien de signature au patient par email',
+    nameKey: 'consentPreview.workflow.emailName',
+    descriptionKey: 'consentPreview.workflow.emailDescription',
     icon: Mail,
     color: 'blue'
   },
   TABLET: {
     id: 'tablet',
-    name: 'Sur tablette',
-    description: 'Signature immédiate sur tablette en cabinet',
+    nameKey: 'consentPreview.workflow.tabletName',
+    descriptionKey: 'consentPreview.workflow.tabletDescription',
     icon: Tablet,
     color: 'purple'
   },
   LINK: {
     id: 'link',
-    name: 'Générer un lien',
-    description: 'Créer un lien à partager avec le patient',
+    nameKey: 'consentPreview.workflow.linkName',
+    descriptionKey: 'consentPreview.workflow.linkDescription',
     icon: Link,
     color: 'green'
   }
@@ -74,7 +74,7 @@ const ConsentPreviewModal = ({
   onSignatureStarted,   // Callback quand un parcours est lancé
   readOnly = false      // Mode lecture seule (pas de lancement de signature)
 }) => {
-  const { t, i18n } = useTranslation(['common', 'admin']);
+  const { t, i18n } = useTranslation(['consents', 'common', 'admin']);
   const { user } = useAuth();
   const { locale } = useLocale();
   const printRef = useRef(null);
@@ -314,7 +314,7 @@ const ConsentPreviewModal = ({
                   {t('admin:consents.preview')}
                 </h2>
                 <p className="text-sm text-blue-100">
-                  {template?.title || 'Consentement'}
+                  {template?.title || t('consents:consentPreview.consent')}
                 </p>
               </div>
             </div>
@@ -363,7 +363,7 @@ const ConsentPreviewModal = ({
                 {patient?.birthDate && (
                   <div className="text-sm text-blue-700 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    Né(e) le {new Date(patient.birthDate).toLocaleDateString(locale)}
+                    {t('consents:consentPreview.bornOn')} {new Date(patient.birthDate).toLocaleDateString(locale)}
                   </div>
                 )}
               </div>
@@ -375,10 +375,10 @@ const ConsentPreviewModal = ({
                     <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-amber-800">
-                        Variables non remplies ({unfilledVariables.length})
+                        {t('consents:consentPreview.unfilledVariables', { count: unfilledVariables.length })}
                       </p>
                       <p className="text-sm text-amber-700 mt-1">
-                        Les variables suivantes n'ont pas pu être remplies automatiquement :
+                        {t('consents:consentPreview.unfilledHint')}
                       </p>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {unfilledVariables.slice(0, 10).map((variable, index) => (
@@ -391,7 +391,7 @@ const ConsentPreviewModal = ({
                         ))}
                         {unfilledVariables.length > 10 && (
                           <span className="px-2 py-1 text-amber-700 text-xs">
-                            +{unfilledVariables.length - 10} autres...
+                            {t('consents:consentPreview.moreVariables', { count: unfilledVariables.length - 10 })}
                           </span>
                         )}
                       </div>
@@ -444,23 +444,23 @@ const ConsentPreviewModal = ({
                 <div className="mt-8 pt-6 border-t border-dashed">
                   <div className="grid grid-cols-2 gap-8">
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-4">Signature du patient</p>
+                      <p className="text-sm font-medium text-gray-700 mb-4">{t('consents:consentPreview.patientSignature')}</p>
                       <div className="h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
                         <Edit3 className="w-6 h-6 mr-2" />
-                        Zone de signature
+                        {t('consents:consentPreview.signatureZone')}
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
-                        Date: _______________
+                        {t('consents:consentPreview.dateField')}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-4">Signature du praticien</p>
+                      <p className="text-sm font-medium text-gray-700 mb-4">{t('consents:consentPreview.practitionerSignature')}</p>
                       <div className="h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
                         <Edit3 className="w-6 h-6 mr-2" />
-                        Zone de signature
+                        {t('consents:consentPreview.signatureZone')}
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
-                        Date: _______________
+                        {t('consents:consentPreview.dateField')}
                       </p>
                     </div>
                   </div>
@@ -505,7 +505,7 @@ const ConsentPreviewModal = ({
                             <button
                               onClick={copySigningUrl}
                               className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-                              title="Copier le lien"
+                              title={t('consents:consentPreview.copyLink')}
                             >
                               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                             </button>
@@ -517,12 +517,12 @@ const ConsentPreviewModal = ({
                             className="mt-3 w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
                           >
                             <ExternalLink className="w-4 h-4" />
-                            Ouvrir le lien de signature
+                            {t('consents:consentPreview.openSigningLink')}
                           </button>
                         </>
                       ) : (
                         <p className="text-sm text-yellow-700 bg-yellow-50 p-2 rounded">
-                          Le lien n'a pas été retourné par l'API. Vérifiez la console pour plus de détails.
+                          {t('consents:consentPreview.noLinkReturned')}
                           <br />
                           <span className="text-xs text-gray-500">
                             Debug: {JSON.stringify(success, null, 2).substring(0, 200)}...
@@ -534,7 +534,7 @@ const ConsentPreviewModal = ({
                     {/* Expiration */}
                     <div className="text-sm text-gray-500 flex items-center gap-2 justify-center">
                       <Clock className="w-4 h-4" />
-                      Expire dans {expiresInHours} heures
+                      {t('consents:consentPreview.expiresIn', { hours: expiresInHours })}
                     </div>
 
                     <div className="mt-6 flex gap-2">
@@ -545,7 +545,7 @@ const ConsentPreviewModal = ({
                         }}
                         className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                       >
-                        Nouvelle demande
+                        {t('consents:consentPreview.newRequest')}
                       </button>
                       <button
                         onClick={() => {
@@ -564,7 +564,7 @@ const ConsentPreviewModal = ({
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <Send className="w-5 h-5 text-blue-600" />
-                      Parcours de signature
+                      {t('consents:consentPreview.signatureWorkflow')}
                     </h3>
 
                     {/* Choix du parcours */}
@@ -594,10 +594,10 @@ const ConsentPreviewModal = ({
                                 <p className={`font-medium ${
                                   isSelected ? `text-${workflow.color}-900` : 'text-gray-900'
                                 }`}>
-                                  {workflow.name}
+                                  {t(`consents:${workflow.nameKey}`)}
                                 </p>
                                 <p className="text-sm text-gray-500">
-                                  {workflow.description}
+                                  {t(`consents:${workflow.descriptionKey}`)}
                                 </p>
                               </div>
                               {isSelected && (
@@ -617,7 +617,7 @@ const ConsentPreviewModal = ({
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               <Mail className="w-4 h-4 inline mr-1" />
-                              Email du destinataire *
+                              {t('consents:consentPreview.recipientEmail')}
                             </label>
                             <input
                               type="email"
@@ -634,7 +634,7 @@ const ConsentPreviewModal = ({
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             <Globe className="w-4 h-4 inline mr-1" />
-                            Langue du formulaire
+                            {t('consents:consentPreview.formLanguage')}
                           </label>
                           <select
                             value={languageCode}
@@ -651,17 +651,17 @@ const ConsentPreviewModal = ({
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             <Clock className="w-4 h-4 inline mr-1" />
-                            Validité du lien
+                            {t('consents:consentPreview.linkValidity')}
                           </label>
                           <select
                             value={expiresInHours}
                             onChange={(e) => setExpiresInHours(Number(e.target.value))}
                             className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value={24}>24 heures</option>
-                            <option value={48}>48 heures</option>
-                            <option value={72}>72 heures</option>
-                            <option value={168}>7 jours</option>
+                            <option value={24}>{t('consents:consentPreview.hours24')}</option>
+                            <option value={48}>{t('consents:consentPreview.hours48')}</option>
+                            <option value={72}>{t('consents:consentPreview.hours72')}</option>
+                            <option value={168}>{t('consents:consentPreview.days7')}</option>
                           </select>
                         </div>
 
@@ -669,14 +669,14 @@ const ConsentPreviewModal = ({
                         {selectedWorkflow === 'email' && (
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Message personnalisé (optionnel)
+                              {t('consents:consentPreview.customMessage')}
                             </label>
                             <textarea
                               value={customMessage}
                               onChange={(e) => setCustomMessage(e.target.value)}
                               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
                               rows={3}
-                              placeholder="Ajoutez un message pour le patient..."
+                              placeholder={t('consents:consentPreview.customMessagePlaceholder')}
                               maxLength={500}
                             />
                           </div>
@@ -698,14 +698,14 @@ const ConsentPreviewModal = ({
                           {isLoading ? (
                             <>
                               <Loader className="w-5 h-5 animate-spin" />
-                              Création en cours...
+                              {t('consents:consentPreview.creating')}
                             </>
                           ) : (
                             <>
                               <Send className="w-5 h-5" />
-                              {selectedWorkflow === 'email' && 'Envoyer par email'}
-                              {selectedWorkflow === 'tablet' && 'Préparer pour tablette'}
-                              {selectedWorkflow === 'link' && 'Générer le lien'}
+                              {selectedWorkflow === 'email' && t('consents:consentPreview.sendByEmail')}
+                              {selectedWorkflow === 'tablet' && t('consents:consentPreview.prepareTablet')}
+                              {selectedWorkflow === 'link' && t('consents:consentPreview.generateLink')}
                             </>
                           )}
                         </button>
@@ -717,7 +717,7 @@ const ConsentPreviewModal = ({
                       <div className="text-center text-gray-500 py-8">
                         <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                         <p className="text-sm">
-                          Sélectionnez un parcours de signature pour continuer
+                          {t('consents:consentPreview.selectWorkflowHint')}
                         </p>
                       </div>
                     )}
@@ -731,7 +731,7 @@ const ConsentPreviewModal = ({
           <div className="flex justify-between items-center px-6 py-4 border-t bg-gray-50 rounded-b-lg">
             <div className="text-sm text-gray-500 flex items-center gap-2">
               <Shield className="w-4 h-4" />
-              Données sécurisées et conformes RGPD
+              {t('consents:consentPreview.gdprCompliant')}
             </div>
             <div className="flex gap-2">
               <button
