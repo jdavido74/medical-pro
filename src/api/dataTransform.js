@@ -1298,53 +1298,28 @@ function transformConsentFromBackend(consent) {
 function transformConsentToBackend(consent) {
   if (!consent) return null;
 
+  // Backend Joi schema expects camelCase keys; onBeforeCreate converts to snake_case for DB
   const backendData = {
     // Relations
-    patient_id: consent.patientId,
-    appointment_id: consent.appointmentId,
-    product_service_id: consent.productServiceId,
-    consent_template_id: consent.consentTemplateId,
+    patientId: consent.patientId,
+    appointmentId: consent.appointmentId,
+    productServiceId: consent.productServiceId,
+    consentTemplateId: consent.consentTemplateId,
 
     // Type
-    consent_type: consent.type || consent.consentType || 'medical_treatment',
+    consentType: consent.type || consent.consentType || 'medical_treatment',
 
     // Content
     title: consent.title,
     description: consent.description,
     terms: consent.terms || consent.description || consent.title,
-    purpose: consent.purpose,
 
-    // Status
-    status: mapConsentStatusToBackend(consent.status),
-
-    // Configuration
-    is_required: consent.isRequired,
-    signature_method: consent.collectionMethod || consent.signatureMethod || 'digital',
-
-    // Expiration
-    expires_at: consent.expiresAt,
-
-    // Witness (for verbal consents)
-    witness: consent.witness && consent.witness.name ? consent.witness : null,
-
-    // Specific details (for medical-specific consents)
-    specific_details: consent.specificDetails && (
-      consent.specificDetails.procedure ||
-      consent.specificDetails.risks ||
-      consent.specificDetails.alternatives ||
-      consent.specificDetails.expectedResults
-    ) ? {
-      procedure: consent.specificDetails.procedure,
-      risks: consent.specificDetails.risks,
-      alternatives: consent.specificDetails.alternatives,
-      expected_results: consent.specificDetails.expectedResults
-    } : null,
-
-    // Revocation reason
-    revocation_reason: consent.revocationReason,
+    // Multilingual support
+    languageCode: consent.languageCode,
+    templateVersion: consent.templateVersion,
 
     // Related document
-    related_document_id: consent.relatedDocumentId
+    relatedDocumentId: consent.relatedDocumentId
   };
 
   // Clean up empty values
