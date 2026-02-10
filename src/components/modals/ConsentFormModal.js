@@ -1,14 +1,15 @@
 // components/modals/ConsentFormModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, FileText, Shield, AlertCircle, Clock, CheckCircle, User, Calendar, Signature, Eye } from 'lucide-react';
 import { consentsApi } from '../../api/consentsApi';
-import { patientsApi } from '../../api/patientsApi';
 import { consentTemplatesApi } from '../../api/consentTemplatesApi';
 import { COLLECTION_METHODS, filterTemplatesByType } from '../../utils/consentTypes';
 import { useConsentTypes } from '../../hooks/useSystemCategories';
 import { consentVariableMapper } from '../../utils/consentVariableMapper';
 import { useAuth } from '../../hooks/useAuth';
+import { PatientContext } from '../../contexts/PatientContext';
+import PatientSearchSelect from '../common/PatientSearchSelect';
 import ConsentPreviewModal from './ConsentPreviewModal';
 
 const ConsentFormModal = ({
@@ -21,6 +22,7 @@ const ConsentFormModal = ({
 }) => {
   const { t } = useTranslation(['consents', 'common', 'admin']);
   const { user } = useAuth();
+  const patientContext = useContext(PatientContext);
 
   // Dynamic consent types from API
   const { categories: consentTypes, loading: consentTypesLoading, getTranslatedName, getByCode } = useConsentTypes();
@@ -34,9 +36,7 @@ const ConsentFormModal = ({
   const [formData, setFormData] = useState({
     patientId: patientId || '',
     type: preselectedType || '',
-    purpose: '',
     title: '',
-    description: '',
     collectionMethod: 'digital',
     isRequired: false,
     status: 'granted',
@@ -54,8 +54,6 @@ const ConsentFormModal = ({
     }
   });
 
-  const [patients, setPatients] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
   const [existingConsents, setExistingConsents] = useState([]);
   const [availableTemplates, setAvailableTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
@@ -65,6 +63,10 @@ const ConsentFormModal = ({
   const [loadingData, setLoadingData] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Resolve selected patient from PatientContext
+  const allPatients = patientContext?.patients || [];
+  const selectedPatient = formData.patientId ? allPatients.find(p => p.id === formData.patientId) : null;
+
   // Charger les données initiales
   useEffect(() => {
     const loadInitialData = async () => {
@@ -72,14 +74,8 @@ const ConsentFormModal = ({
 
       setLoadingData(true);
       try {
-        // Charger la liste des patients et des modèles en parallèle
-        const [patientsResponse, templatesResponse] = await Promise.all([
-          patientsApi.getPatients(),
-          consentTemplatesApi.getActiveTemplates()
-        ]);
-
-        const allPatients = patientsResponse.patients || [];
-        setPatients(allPatients);
+        // Charger les modèles
+        const templatesResponse = await consentTemplatesApi.getActiveTemplates();
         setAvailableTemplates(templatesResponse || []);
 
         // Si on édite un consentement existant
@@ -95,19 +91,12 @@ const ConsentFormModal = ({
               expectedResults: ''
             }
           });
-
-          if (editingConsent.patientId) {
-            const patient = allPatients.find(p => p.id === editingConsent.patientId);
-            setSelectedPatient(patient || null);
-          }
         }
 
         // Charger les consentements existants pour le patient
         if (patientId) {
           const { consents } = await consentsApi.getConsentsByPatient(patientId);
           setExistingConsents(consents || []);
-          const patient = allPatients.find(p => p.id === patientId);
-          setSelectedPatient(patient || null);
         }
       } catch (error) {
         console.error('[ConsentFormModal] Error loading data:', error);
@@ -122,12 +111,10 @@ const ConsentFormModal = ({
   // Mettre à jour les consentements existants quand le patient change
   useEffect(() => {
     const loadPatientConsents = async () => {
-      if (formData.patientId && patients.length > 0) {
+      if (formData.patientId) {
         try {
           const { consents } = await consentsApi.getConsentsByPatient(formData.patientId);
           setExistingConsents(consents || []);
-          const patient = patients.find(p => p.id === formData.patientId);
-          setSelectedPatient(patient || null);
         } catch (error) {
           console.error('[ConsentFormModal] Error loading patient consents:', error);
         }
@@ -135,9 +122,9 @@ const ConsentFormModal = ({
     };
 
     loadPatientConsents();
-  }, [formData.patientId, patients]);
+  }, [formData.patientId]);
 
-  // Mettre à jour le titre et la description selon le type
+  // Mettre à jour le titre selon le type
   useEffect(() => {
     if (formData.type && consentTypes.length > 0) {
       const typeInfo = getByCode(formData.type);
@@ -146,7 +133,6 @@ const ConsentFormModal = ({
         setFormData(prev => ({
           ...prev,
           title: getTranslatedName(typeInfo),
-          description: typeInfo.translations?.es?.description || typeInfo.translations?.fr?.description || '',
           isRequired: metadata.required || false,
           expiresAt: metadata.defaultDuration ?
             new Date(Date.now() + metadata.defaultDuration * 24 * 60 * 60 * 1000).toISOString().split('T')[0] :
@@ -172,8 +158,7 @@ const ConsentFormModal = ({
     setFormData(prev => ({
       ...prev,
       type: template.consentType || prev.type,
-      title: template.title,
-      description: template.description || template.terms
+      title: template.title
     }));
 
     // Préparer les données additionnelles
@@ -231,11 +216,20 @@ const ConsentFormModal = ({
       }
 
       // Préparer les données pour la sauvegarde
+      const finalTitle = formData.title?.trim() ||
+        (selectedTemplate ? availableTemplates.find(t => t.id === selectedTemplate)?.title : '') ||
+        getConsentTypeName(formData.type) ||
+        'Consent';
+
+      const terms = selectedTemplate && prefilledContent
+        ? prefilledContent
+        : finalTitle;
+
       const consentData = {
         ...formData,
-        // Utiliser le contenu pré-rempli si un modèle est sélectionné
-        description: selectedTemplate && prefilledContent ? prefilledContent : formData.description,
-        terms: selectedTemplate && prefilledContent ? prefilledContent : formData.description,
+        title: finalTitle,
+        description: terms,
+        terms,
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt + 'T23:59:59').toISOString() : null,
         witness: formData.collectionMethod === 'verbal' ? formData.witness : null,
         consentTemplateId: selectedTemplate || null
@@ -263,9 +257,6 @@ const ConsentFormModal = ({
 
     if (!formData.patientId) errors.patientId = t('consents:consentForm.validation.patientRequired');
     if (!formData.type) errors.type = t('consents:consentForm.validation.typeRequired');
-    if (!formData.title?.trim()) errors.title = t('consents:consentForm.validation.titleRequired');
-    if (!formData.description?.trim()) errors.description = t('consents:consentForm.validation.descriptionRequired');
-    if (!formData.purpose?.trim()) errors.purpose = t('consents:consentForm.validation.purposeRequired');
 
     // Validation pour consentement verbal avec témoin
     if (formData.collectionMethod === 'verbal') {
@@ -294,9 +285,7 @@ const ConsentFormModal = ({
     setFormData({
       patientId: patientId || '',
       type: preselectedType || '',
-      purpose: '',
       title: '',
-      description: '',
       collectionMethod: 'digital',
       isRequired: false,
       status: 'granted',
@@ -359,24 +348,12 @@ const ConsentFormModal = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('consents:consentForm.patient')}
                 </label>
-                <select
+                <PatientSearchSelect
                   value={formData.patientId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, patientId: e.target.value }))}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.patientId ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  onChange={(patientId) => setFormData(prev => ({ ...prev, patientId }))}
+                  error={validationErrors.patientId}
                   disabled={!!patientId}
-                >
-                  <option value="">{t('consents:consentForm.selectPatient')}</option>
-                  {patients.map(patient => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.firstName} {patient.lastName} - {patient.patientNumber}
-                    </option>
-                  ))}
-                </select>
-                {validationErrors.patientId && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.patientId}</p>
-                )}
+                />
               </div>
 
               {/* Type de consentement */}
@@ -459,83 +436,19 @@ const ConsentFormModal = ({
                 </div>
               )}
 
-              {/* Finalité */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('consents:consentForm.purpose')}
-                </label>
-                <input
-                  type="text"
-                  value={formData.purpose}
-                  onChange={(e) => setFormData(prev => ({ ...prev, purpose: e.target.value }))}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.purpose ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder={t('consents:consentForm.purposePlaceholder')}
-                />
-                {validationErrors.purpose && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.purpose}</p>
-                )}
-              </div>
-
               {/* Titre */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('consents:consentForm.title')}
+                  <span className="text-gray-500 text-sm ml-2">{t('consents:consentForm.optional')}</span>
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.title ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder={t('consents:consentForm.titlePlaceholder')}
                 />
-                {validationErrors.title && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.title}</p>
-                )}
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
-                  {t('consents:consentForm.description')}
-                  {selectedTemplate && prefilledContent && (
-                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                      {t('consents:consentForm.prefilledFromTemplate')}
-                    </span>
-                  )}
-                </label>
-                <textarea
-                  value={selectedTemplate && prefilledContent ? prefilledContent : formData.description}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, description: e.target.value }));
-                    // Si l'utilisateur modifie manuellement, désélectionner le modèle
-                    if (selectedTemplate && e.target.value !== prefilledContent) {
-                      setSelectedTemplate('');
-                      setPrefilledContent('');
-                    }
-                  }}
-                  rows={selectedTemplate && prefilledContent ? 8 : 4}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.description ? 'border-red-500' : 'border-gray-300'
-                  } ${selectedTemplate && prefilledContent ? 'bg-green-50 border-green-300' : ''}`}
-                  placeholder={selectedTemplate && prefilledContent ?
-                    t('consents:consentForm.prefilledPlaceholder') :
-                    t('consents:consentForm.descriptionPlaceholder')
-                  }
-                />
-                {selectedTemplate && prefilledContent && (
-                  <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
-                    {t('consents:consentForm.autoFilledVariables')}
-                    <br />
-                    {t('consents:consentForm.editWarning')}
-                  </div>
-                )}
-                {validationErrors.description && (
-                  <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>
-                )}
               </div>
 
               {/* Méthode de collecte */}
