@@ -8,12 +8,9 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { consentTemplatesApi } from '../../../api/consentTemplatesApi';
-import {
-  TEMPLATE_CATEGORIES,
-  MEDICAL_SPECIALITIES
-} from '../../../utils/consentTemplatesStorage';
 import ConsentTemplateEditorModal from '../../modals/ConsentTemplateEditorModal';
 import { useAuth } from '../../../hooks/useAuth';
+import { useConsentTypes, useSpecialties } from '../../../hooks/useSystemCategories';
 
 // Available languages for translations
 const AVAILABLE_LANGUAGES = [
@@ -25,6 +22,8 @@ const AVAILABLE_LANGUAGES = [
 const ConsentTemplatesModule = () => {
   const { t } = useTranslation('consents');
   const { user } = useAuth();
+  const { categories: consentTypes, getTranslatedName: getConsentTypeName, getByCode: getConsentTypeByCode } = useConsentTypes();
+  const { categories: specialties, getTranslatedName: getSpecialtyName, getByCode: getSpecialtyByCode } = useSpecialties();
   const [templates, setTemplates] = useState([]);
   const [filteredTemplates, setFilteredTemplates] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -402,9 +401,9 @@ const ConsentTemplatesModule = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
             <option value="">{t('filters.allCategories')}</option>
-            {Object.values(TEMPLATE_CATEGORIES).map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
+            {consentTypes.map(type => (
+              <option key={type.code} value={type.code}>
+                {getConsentTypeName(type)}
               </option>
             ))}
           </select>
@@ -574,10 +573,10 @@ const ConsentTemplatesModule = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm text-gray-900">
-                              {TEMPLATE_CATEGORIES[template.category?.toUpperCase()]?.name || template.category}
+                              {(getConsentTypeByCode(template.category) && getConsentTypeName(getConsentTypeByCode(template.category))) || template.category}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {MEDICAL_SPECIALITIES[template.speciality?.toUpperCase()]?.name || template.speciality}
+                              {(getSpecialtyByCode(template.speciality) && getSpecialtyName(getSpecialtyByCode(template.speciality))) || template.speciality}
                             </div>
                           </div>
                         </td>
@@ -672,14 +671,13 @@ const ConsentTemplatesModule = () => {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-3">{t('categories.available')}</h4>
                   <div className="space-y-2">
-                    {Object.values(TEMPLATE_CATEGORIES).map(category => (
-                      <div key={category.id} className="flex justify-between items-center bg-white p-3 rounded">
+                    {consentTypes.map(type => (
+                      <div key={type.code} className="flex justify-between items-center bg-white p-3 rounded">
                         <div>
-                          <div className="font-medium text-gray-900">{category.name}</div>
-                          <div className="text-sm text-gray-500">{category.description}</div>
+                          <div className="font-medium text-gray-900">{getConsentTypeName(type)}</div>
                         </div>
                         <div className="text-sm text-gray-500">
-                          {statistics.byCategory?.[category.id]?.count || 0} {t('count.models')}
+                          {statistics.byCategory?.[type.code]?.count || 0} {t('count.models')}
                         </div>
                       </div>
                     ))}
@@ -690,11 +688,11 @@ const ConsentTemplatesModule = () => {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-3">{t('categories.medicalSpecialties')}</h4>
                   <div className="space-y-2">
-                    {Object.values(MEDICAL_SPECIALITIES).map(speciality => (
-                      <div key={speciality.id} className="flex justify-between items-center bg-white p-3 rounded">
-                        <div className="font-medium text-gray-900">{speciality.name}</div>
+                    {specialties.map(specialty => (
+                      <div key={specialty.code} className="flex justify-between items-center bg-white p-3 rounded">
+                        <div className="font-medium text-gray-900">{getSpecialtyName(specialty)}</div>
                         <div className="text-sm text-gray-500">
-                          {statistics.bySpeciality?.[speciality.id]?.count || 0} {t('count.models')}
+                          {statistics.bySpeciality?.[specialty.code]?.count || 0} {t('count.models')}
                         </div>
                       </div>
                     ))}
@@ -724,7 +722,9 @@ const ConsentTemplatesModule = () => {
                           </div>
                           <div>
                             <div className="font-medium text-gray-900">{template.title}</div>
-                            <div className="text-sm text-gray-500">{template.category}</div>
+                            <div className="text-sm text-gray-500">
+                              {(getConsentTypeByCode(template.category) && getConsentTypeName(getConsentTypeByCode(template.category))) || template.category}
+                            </div>
                           </div>
                         </div>
                         <div className="text-sm font-medium text-gray-900">
@@ -805,6 +805,8 @@ const ConsentTemplatesModule = () => {
 // Modal pour afficher les détails d'un modèle
 const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
   const { t } = useTranslation('consents');
+  const { getTranslatedName: getConsentTypeName, getByCode: getConsentTypeByCode } = useConsentTypes();
+  const { getTranslatedName: getSpecialtyName, getByCode: getSpecialtyByCode } = useSpecialties();
   const [translations, setTranslations] = useState([]);
   const [translationsLoading, setTranslationsLoading] = useState(false);
 
@@ -873,13 +875,13 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('details.category')}</label>
                   <p className="text-sm text-gray-900">
-                    {TEMPLATE_CATEGORIES[template.category?.toUpperCase()]?.name || template.category}
+                    {(getConsentTypeByCode(template.category) && getConsentTypeName(getConsentTypeByCode(template.category))) || template.category}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('details.specialty')}</label>
                   <p className="text-sm text-gray-900">
-                    {MEDICAL_SPECIALITIES[template.speciality?.toUpperCase()]?.name || template.speciality}
+                    {(getSpecialtyByCode(template.speciality) && getSpecialtyName(getSpecialtyByCode(template.speciality))) || template.speciality}
                   </p>
                 </div>
                 <div>
@@ -1026,6 +1028,7 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
 // Modal de confirmation de suppression de modèle
 const ConfirmDeleteTemplateModal = ({ template, onConfirm, onCancel, isDeleting }) => {
   const { t } = useTranslation('consents');
+  const { getTranslatedName: getConsentTypeName, getByCode: getConsentTypeByCode } = useConsentTypes();
 
   const isActive = template.status === 'active' || !template.status;
   const hasUsage = (template.usage?.timesUsed || 0) > 0;
@@ -1068,7 +1071,7 @@ const ConfirmDeleteTemplateModal = ({ template, onConfirm, onCancel, isDeleting 
               <div className="flex justify-between">
                 <span className="text-gray-500">{t('deleteTemplateModal.category')}</span>
                 <span className="font-medium text-gray-900">
-                  {TEMPLATE_CATEGORIES[template.category?.toUpperCase()]?.name || template.category || '-'}
+                  {(getConsentTypeByCode(template.category) && getConsentTypeName(getConsentTypeByCode(template.category))) || template.category || '-'}
                 </span>
               </div>
               <div className="flex justify-between">
