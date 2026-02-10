@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../medical-pro-backend"
+		},
+		{
+			"path": "../medical-pro-admin"
 		}
 	],
 	"settings": {}
