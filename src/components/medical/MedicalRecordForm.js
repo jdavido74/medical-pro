@@ -30,6 +30,7 @@ const MedicalRecordForm = forwardRef(({
   onCancel,
   onClose,
   onActiveTabChange, // Callback pour notifier du changement d'onglet
+  hideFooter = false, // Masquer le footer interne quand le modal parent fournit ses propres boutons
   isOpen
 }, ref) => {
   const { user } = useAuth();
@@ -326,7 +327,10 @@ const MedicalRecordForm = forwardRef(({
   const [prescriptionOptions, setPrescriptionOptions] = useState({
     includeBasicInfo: false,        // Motif + symptômes + durée
     includeCurrentIllness: false,   // Maladie actuelle (textarea)
+    includeAntecedents: false,      // Antécédents médicaux
     includeVitalSigns: true,
+    includePhysicalExam: false,     // Examen clinique
+    includeCurrentMedications: false, // Traitement actuel
     includeDiagnosis: true,
     includeFromTreatments: false,  // Copier depuis l'onglet Traitements
     includeFromPlan: false          // Copier depuis l'onglet Plan
@@ -2166,7 +2170,10 @@ const MedicalRecordForm = forwardRef(({
         duration: formData.basicInfo?.duration
       } : undefined,
       currentIllness: prescriptionOptions.includeCurrentIllness ? formData.currentIllness : undefined,
+      antecedents: prescriptionOptions.includeAntecedents ? formData.antecedents : undefined,
       vitalSigns: formData.vitalSigns,
+      physicalExam: prescriptionOptions.includePhysicalExam ? formData.physicalExam : undefined,
+      currentMedications: prescriptionOptions.includeCurrentMedications ? formData.currentMedications : undefined,
       diagnosis: formData.diagnosis
     };
   };
@@ -2339,7 +2346,10 @@ const MedicalRecordForm = forwardRef(({
         renewable: prescriptionData.renewable,
         renewalsRemaining: prescriptionData.renewalsRemaining,
         // Include snapshots based on options
+        antecedents: prescriptionOptions.includeAntecedents ? (formData.antecedents || {}) : undefined,
         vitalSigns: prescriptionOptions.includeVitalSigns ? (formData.vitalSigns || {}) : {},
+        physicalExam: prescriptionOptions.includePhysicalExam ? (formData.physicalExam || {}) : undefined,
+        currentMedications: prescriptionOptions.includeCurrentMedications ? (formData.currentMedications || []) : undefined,
         diagnosis: prescriptionOptions.includeDiagnosis ? {
           primaryDiagnosis: formData.diagnoses?.primary || '',
           secondaryDiagnoses: formData.diagnoses?.secondary || [],
@@ -2550,11 +2560,38 @@ const MedicalRecordForm = forwardRef(({
               <label className="flex items-start space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
+                  checked={prescriptionOptions.includeAntecedents}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeAntecedents: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.antecedentsHistory')}</span>
+              </label>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
                   checked={prescriptionOptions.includeVitalSigns}
                   onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeVitalSigns: e.target.checked }))}
                   className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.vitalSignsToday')}</span>
+              </label>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prescriptionOptions.includePhysicalExam}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includePhysicalExam: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.physicalExamination')}</span>
+              </label>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prescriptionOptions.includeCurrentMedications}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeCurrentMedications: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.currentMedicationsText')}</span>
               </label>
               <label className="flex items-start space-x-2 cursor-pointer">
                 <input
@@ -2643,6 +2680,32 @@ const MedicalRecordForm = forwardRef(({
               </div>
             )}
 
+            {/* Antecedents Preview */}
+            {prescriptionOptions.includeAntecedents && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.antecedentsHistory')}</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
+                  {(formData.antecedents?.personal?.medicalHistory?.length > 0 ||
+                    formData.antecedents?.personal?.surgicalHistory?.length > 0 ||
+                    formData.antecedents?.personal?.allergies?.length > 0) ? (
+                    <>
+                      {formData.antecedents.personal.medicalHistory?.filter(h => h && h.trim()).map((h, i) => (
+                        <span key={`med-${i}`} className="block">• {h}</span>
+                      ))}
+                      {formData.antecedents.personal.surgicalHistory?.filter(h => h && h.trim()).map((h, i) => (
+                        <span key={`surg-${i}`} className="block">• {h}</span>
+                      ))}
+                      {formData.antecedents.personal.allergies?.filter(a => a && a.trim()).map((a, i) => (
+                        <span key={`allg-${i}`} className="block">⚠ {a}</span>
+                      ))}
+                    </>
+                  ) : (
+                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noAntecedents')}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Vital Signs Preview */}
             {prescriptionOptions.includeVitalSigns && formData.vitalSigns && (
               <div className="mb-3">
@@ -2656,6 +2719,38 @@ const MedicalRecordForm = forwardRef(({
                   {formData.vitalSigns.weight && <span className="block">{t('medical:weight')}: {formData.vitalSigns.weight} kg</span>}
                   {!formData.vitalSigns.bloodPressureSystolic && !formData.vitalSigns.heartRate && !formData.vitalSigns.temperature && !formData.vitalSigns.weight && (
                     <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noVitalSigns')}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Physical Exam Preview */}
+            {prescriptionOptions.includePhysicalExam && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.physicalExamination')}</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
+                  {formData.physicalExam && Object.entries(formData.physicalExam).some(([, v]) => v && v.trim && v.trim()) ? (
+                    Object.entries(formData.physicalExam).filter(([, v]) => v && v.trim && v.trim()).map(([key, value]) => (
+                      <span key={key} className="block">• <strong>{key}:</strong> {value.length > 60 ? value.substring(0, 60) + '...' : value}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noPhysicalExam')}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Current Medications Preview */}
+            {prescriptionOptions.includeCurrentMedications && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.currentMedicationsText')}</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
+                  {formData.currentMedications && formData.currentMedications.length > 0 ? (
+                    formData.currentMedications.map((med, i) => (
+                      <span key={i} className="block">• {med.name || med.medication || med} {med.dosage ? `- ${med.dosage}` : ''}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noCurrentMedications')}</span>
                   )}
                 </div>
               </div>
@@ -2711,7 +2806,9 @@ const MedicalRecordForm = forwardRef(({
 
             {/* No selection message */}
             {!prescriptionOptions.includeBasicInfo && !prescriptionOptions.includeCurrentIllness &&
-             !prescriptionOptions.includeVitalSigns && !prescriptionOptions.includeDiagnosis &&
+             !prescriptionOptions.includeAntecedents && !prescriptionOptions.includeVitalSigns &&
+             !prescriptionOptions.includePhysicalExam && !prescriptionOptions.includeCurrentMedications &&
+             !prescriptionOptions.includeDiagnosis &&
              !prescriptionOptions.includeFromTreatments && !prescriptionOptions.includeFromPlan && (
               <p className="text-gray-400 italic text-xs">{t('medical:form.prescriptionTab.checkOptionsPreview')}</p>
             )}
@@ -3072,7 +3169,8 @@ const MedicalRecordForm = forwardRef(({
         )}
       </div>
 
-      {/* Footer fixe avec bouton Enregistrer */}
+      {/* Footer fixe avec bouton Enregistrer — masqué si le modal parent fournit ses propres boutons */}
+      {!hideFooter && (
       <div className="shrink-0 bg-white border-t px-6 py-3 flex items-center justify-between shadow-lg">
         {/* Indicateur de statut */}
         <div className="flex items-center text-sm">
@@ -3127,6 +3225,7 @@ const MedicalRecordForm = forwardRef(({
           </button>
         </div>
       </div>
+      )}
 
       {/* Prescription Preview Modal */}
       {showPrescriptionPreview && currentPrescription && (

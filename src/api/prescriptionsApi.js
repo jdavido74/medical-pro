@@ -180,6 +180,11 @@ function transformPrescriptionFromBackend(prescription) {
     providerSnapshot: prescription.provider_snapshot || {},
     vitalSigns: prescription.vital_signs || {},
     diagnosis: prescription.diagnosis || {},
+    basicInfo: prescription.basic_info || null,
+    currentIllness: prescription.current_illness || '',
+    antecedents: prescription.antecedents || null,
+    physicalExam: prescription.physical_exam || null,
+    currentMedications: prescription.current_medications || null,
 
     // Status
     status: prescription.status || 'draft',
@@ -234,7 +239,12 @@ function transformPrescriptionToBackend(prescription) {
     patient_snapshot: prescription.patientSnapshot || {},
     provider_snapshot: prescription.providerSnapshot || {},
     vital_signs: prescription.vitalSigns || {},
-    diagnosis: prescription.diagnosis || {}
+    diagnosis: prescription.diagnosis || {},
+    basic_info: prescription.basicInfo || undefined,
+    current_illness: prescription.currentIllness || undefined,
+    antecedents: prescription.antecedents || undefined,
+    physical_exam: prescription.physicalExam || undefined,
+    current_medications: prescription.currentMedications || undefined
   };
 }
 

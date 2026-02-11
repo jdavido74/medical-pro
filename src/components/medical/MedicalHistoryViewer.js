@@ -481,6 +481,65 @@ const MedicalHistoryViewer = ({
                           {record.basicInfo?.chiefComplaint || 'Sin motivo especificado'}
                         </h4>
 
+                        {/* Symptoms + duration */}
+                        {(record.basicInfo?.symptoms?.filter(s => s && s.trim()).length > 0 || record.basicInfo?.duration) && (
+                          <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                            {record.basicInfo?.symptoms?.filter(s => s && s.trim()).map((s, i) => (
+                              <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{s}</span>
+                            ))}
+                            {record.basicInfo?.duration && (
+                              <span className="text-xs text-gray-500 ml-1">({record.basicInfo.duration})</span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Current illness */}
+                        {record.currentIllness && (
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                            {record.currentIllness.length > 150 ? record.currentIllness.substring(0, 150) + '...' : record.currentIllness}
+                          </p>
+                        )}
+
+                        {/* Compact vital signs */}
+                        {record.vitalSigns && (record.vitalSigns.bloodPressureSystolic || record.vitalSigns.heartRate || record.vitalSigns.temperature || record.vitalSigns.weight) && (
+                          <div className="mb-2 flex flex-wrap gap-3 text-xs text-gray-600">
+                            {record.vitalSigns.bloodPressureSystolic && record.vitalSigns.bloodPressureDiastolic && (
+                              <span>TA: <strong>{record.vitalSigns.bloodPressureSystolic}/{record.vitalSigns.bloodPressureDiastolic}</strong> mmHg</span>
+                            )}
+                            {record.vitalSigns.heartRate && (
+                              <span>FC: <strong>{record.vitalSigns.heartRate}</strong> bpm</span>
+                            )}
+                            {record.vitalSigns.temperature && (
+                              <span>T°: <strong>{record.vitalSigns.temperature}</strong>°C</span>
+                            )}
+                            {record.vitalSigns.weight && (
+                              <span>Poids: <strong>{record.vitalSigns.weight}</strong> kg</span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Physical exam - compact non-empty sections */}
+                        {record.physicalExam && Object.entries(record.physicalExam).filter(([, v]) => v && typeof v === 'string' && v.trim()).length > 0 && (
+                          <div className="mb-2 text-xs text-gray-600">
+                            {Object.entries(record.physicalExam).filter(([, v]) => v && typeof v === 'string' && v.trim()).map(([key, value]) => (
+                              <span key={key} className="inline-block mr-3">
+                                <strong>{key}:</strong> {value.length > 40 ? value.substring(0, 40) + '...' : value}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Current medications */}
+                        {record.currentMedications && record.currentMedications.length > 0 && (
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {record.currentMedications.map((med, i) => (
+                              <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {med.name || med.medication || med}{med.dosage ? ` ${med.dosage}` : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                           <div>
                             <span className="font-medium">Diagnóstico:</span>

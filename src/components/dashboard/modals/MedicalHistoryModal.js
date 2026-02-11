@@ -308,6 +308,7 @@ const MedicalHistoryModal = ({
                 lastRecord={patientRecords.length > 0 ? patientRecords[0] : null}
                 onSave={handleSaveRecord}
                 onCancel={handleCloseRecordForm}
+                hideFooter
               />
             </div>
           </div>
