@@ -758,6 +758,7 @@ function transformMedicalRecordFromBackend(record) {
     chiefComplaint: record.chief_complaint,
     symptoms: record.symptoms || [],
     duration: record.duration,
+    currentIllness: record.current_illness || '',
 
     // Nested structures - keep JSONB as-is but transform key names
     basicInfo: {
@@ -1165,6 +1166,11 @@ function transformMedicalRecordToBackend(record) {
   // Blood type
   if (record.bloodType && record.bloodType.trim()) {
     backendData.blood_type = record.bloodType;
+  }
+
+  // Current illness (free-text)
+  if (record.currentIllness && record.currentIllness.trim()) {
+    backendData.current_illness = record.currentIllness;
   }
 
   // Notes

@@ -57,7 +57,7 @@
       "basic": "Basic Information",
       "antecedents": "Medical History",
       "vitals": "Clinical Exam",
-      "currentIllness": "Reason / Current Illness",
+      "currentIllness": "Current Illness",
       "currentMedications": "Current Medications",
       "diagnosis": "Diagnosis",
       "treatments": "Treatments/Prescriptions",
@@ -65,8 +65,9 @@
       "prescription": "Prescription"
     },
     "currentIllnessTab": {
-      "title": "Reason for visit and current illness",
-      "description": "Describe the reason for the visit and the patient's current illness."
+      "title": "Current Illness",
+      "description": "Free-form description of the patient's current illness.",
+      "placeholder": "Describe the patient's current illness..."
     },
     "antecedents": {
       "personal": "Personal History",
@@ -319,6 +320,8 @@
       "elementsToInclude": "Elements to include in prescription:",
       "vitalSignsToday": "Today's vital signs",
       "diagnoses": "Diagnosis(es)",
+      "chiefComplaintAndSymptoms": "Chief complaint and symptoms",
+      "currentIllnessText": "Current illness",
       "autoAddFromRecord": "Auto-add from record:",
       "activeTreatments": "Active treatments",
       "planRecommendations": "Plan recommendations",

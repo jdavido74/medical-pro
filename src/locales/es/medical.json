@@ -57,7 +57,7 @@
       "basic": "Información Básica",
       "antecedents": "Antecedentes",
       "vitals": "Examen Clínico",
-      "currentIllness": "Motivo / Enfermedad Actual",
+      "currentIllness": "Enfermedad Actual",
       "currentMedications": "Tratamiento Actual",
       "diagnosis": "Diagnóstico",
       "treatments": "Tratamientos/Prescripciones",
@@ -65,8 +65,9 @@
       "prescription": "Receta"
     },
     "currentIllnessTab": {
-      "title": "Motivo de consulta y enfermedad actual",
-      "description": "Describa el motivo de consulta y la enfermedad actual del paciente."
+      "title": "Enfermedad Actual",
+      "description": "Descripción libre de la enfermedad actual del paciente.",
+      "placeholder": "Describa la enfermedad actual del paciente..."
     },
     "antecedents": {
       "personal": "Antecedentes Personales",
@@ -319,6 +320,8 @@
       "elementsToInclude": "Elementos a incluir en la receta:",
       "vitalSignsToday": "Signos vitales del día",
       "diagnoses": "Diagnóstico(s)",
+      "chiefComplaintAndSymptoms": "Motivo de consulta y síntomas",
+      "currentIllnessText": "Enfermedad actual",
       "autoAddFromRecord": "Agregar automáticamente desde el historial:",
       "activeTreatments": "Tratamientos activos",
       "planRecommendations": "Recomendaciones del plan",

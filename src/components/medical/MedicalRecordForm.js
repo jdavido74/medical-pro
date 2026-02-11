@@ -153,6 +153,9 @@ const MedicalRecordForm = forwardRef(({
         duration: data?.basicInfo?.duration || ''
       },
 
+      // Maladie actuelle - texte libre
+      currentIllness: data?.currentIllness || '',
+
       // Examen physique - nouveau à chaque visite
       physicalExam: {
         general: data?.physicalExam?.general || '',
@@ -253,6 +256,9 @@ const MedicalRecordForm = forwardRef(({
       duration: ''
     },
 
+    // Maladie actuelle - texte libre
+    currentIllness: '',
+
     physicalExam: {
       general: '',
       cardiovascular: '',
@@ -318,6 +324,8 @@ const MedicalRecordForm = forwardRef(({
   });
   // Options pour configurer ce qui est inclus dans l'ordonnance
   const [prescriptionOptions, setPrescriptionOptions] = useState({
+    includeBasicInfo: false,        // Motif + symptômes + durée
+    includeCurrentIllness: false,   // Maladie actuelle (textarea)
     includeVitalSigns: true,
     includeDiagnosis: true,
     includeFromTreatments: false,  // Copier depuis l'onglet Traitements
@@ -889,18 +897,13 @@ const MedicalRecordForm = forwardRef(({
           <option value="emergency">{t('medical:recordTypes.emergency')}</option>
         </select>
       </div>
-    </div>
-  );
-  };
 
-  const renderCurrentIllnessTab = () => (
-    <div className="space-y-6">
+      {/* Motif de consultation, durée et symptômes (déplacés depuis l'onglet Maladie actuelle) */}
       <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-        <h4 className="font-semibold text-gray-900 mb-1 flex items-center">
+        <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
           <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
-          {t('medical:form.currentIllnessTab.title')}
+          {t('medical:form.chiefComplaint')}
         </h4>
-        <p className="text-sm text-gray-500 mb-4">{t('medical:form.currentIllnessTab.description')}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -968,6 +971,27 @@ const MedicalRecordForm = forwardRef(({
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+  };
+
+  const renderCurrentIllnessTab = () => (
+    <div className="space-y-6">
+      <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+        <h4 className="font-semibold text-gray-900 mb-1 flex items-center">
+          <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
+          {t('medical:form.currentIllnessTab.title')}
+        </h4>
+        <p className="text-sm text-gray-500 mb-4">{t('medical:form.currentIllnessTab.description')}</p>
+
+        <textarea
+          value={formData.currentIllness || ''}
+          onChange={(e) => handleInputChange(null, 'currentIllness', e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          rows={8}
+          placeholder={t('medical:form.currentIllnessTab.placeholder')}
+        />
       </div>
     </div>
   );
@@ -2136,6 +2160,12 @@ const MedicalRecordForm = forwardRef(({
         rpps: user?.rpps,
         adeli: user?.adeli
       },
+      basicInfo: prescriptionOptions.includeBasicInfo ? {
+        chiefComplaint: formData.basicInfo?.chiefComplaint,
+        symptoms: formData.basicInfo?.symptoms,
+        duration: formData.basicInfo?.duration
+      } : undefined,
+      currentIllness: prescriptionOptions.includeCurrentIllness ? formData.currentIllness : undefined,
       vitalSigns: formData.vitalSigns,
       diagnosis: formData.diagnosis
     };
@@ -2502,6 +2532,24 @@ const MedicalRecordForm = forwardRef(({
               <label className="flex items-start space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
+                  checked={prescriptionOptions.includeBasicInfo}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeBasicInfo: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.chiefComplaintAndSymptoms')}</span>
+              </label>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prescriptionOptions.includeCurrentIllness}
+                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeCurrentIllness: e.target.checked }))}
+                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.currentIllnessText')}</span>
+              </label>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
                   checked={prescriptionOptions.includeVitalSigns}
                   onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeVitalSigns: e.target.checked }))}
                   className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
@@ -2558,6 +2606,42 @@ const MedicalRecordForm = forwardRef(({
           {/* Right column - Live preview */}
           <div className="bg-white p-3 rounded-lg border border-purple-200 text-sm">
             <p className="text-purple-700 font-medium mb-2">{t('medical:form.prescriptionTab.selectedElementsPreview')}</p>
+
+            {/* Basic Info Preview (chief complaint + symptoms) */}
+            {prescriptionOptions.includeBasicInfo && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.chiefComplaintAndSymptoms')}</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
+                  {formData.basicInfo?.chiefComplaint ? (
+                    <span className="block">{formData.basicInfo.chiefComplaint}</span>
+                  ) : (
+                    <span className="text-gray-400 italic">{t('medical:form.placeholders.chiefComplaint')}</span>
+                  )}
+                  {formData.basicInfo?.symptoms?.filter(s => s && s.trim()).length > 0 && (
+                    formData.basicInfo.symptoms.filter(s => s && s.trim()).map((s, i) => (
+                      <span key={i} className="block">• {s}</span>
+                    ))
+                  )}
+                  {formData.basicInfo?.duration && (
+                    <span className="block">{t('medical:form.symptomsDuration')}: {formData.basicInfo.duration}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Current Illness Preview */}
+            {prescriptionOptions.includeCurrentIllness && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.currentIllnessText')}</p>
+                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
+                  {formData.currentIllness ? (
+                    <span className="block">{formData.currentIllness.length > 100 ? formData.currentIllness.substring(0, 100) + '...' : formData.currentIllness}</span>
+                  ) : (
+                    <span className="text-gray-400 italic">{t('medical:form.currentIllnessTab.placeholder')}</span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Vital Signs Preview */}
             {prescriptionOptions.includeVitalSigns && formData.vitalSigns && (
@@ -2626,7 +2710,8 @@ const MedicalRecordForm = forwardRef(({
             )}
 
             {/* No selection message */}
-            {!prescriptionOptions.includeVitalSigns && !prescriptionOptions.includeDiagnosis &&
+            {!prescriptionOptions.includeBasicInfo && !prescriptionOptions.includeCurrentIllness &&
+             !prescriptionOptions.includeVitalSigns && !prescriptionOptions.includeDiagnosis &&
              !prescriptionOptions.includeFromTreatments && !prescriptionOptions.includeFromPlan && (
               <p className="text-gray-400 italic text-xs">{t('medical:form.prescriptionTab.checkOptionsPreview')}</p>
             )}
