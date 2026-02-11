@@ -67,13 +67,17 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
 
       // Pré-remplir si modification
       if (team) {
+        // Normalize specialties to string codes (backend may return objects or strings)
+        const normalizedSpecialties = (team.specialties || []).map(s =>
+          typeof s === 'object' && s !== null ? (s.code || s.name || String(s)) : String(s)
+        );
         setFormData({
           name: team.name || '',
           description: team.description || '',
           department: team.department || '',
           leaderId: team.leaderId || '',
           members: team.members || [],
-          specialties: team.specialties || [],
+          specialties: normalizedSpecialties,
           isActive: team.isActive !== undefined ? team.isActive : true,
           schedule: team.schedule || {
             monday: { start: '08:00', end: '17:00' },
@@ -387,11 +391,14 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                   <option value="">Ajouter un membre</option>
                   {availableUsers
                     .filter(user => !(formData.members || []).includes(user.id))
-                    .map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName} - {user.role} ({user.department})
-                      </option>
-                    ))}
+                    .map(user => {
+                      const dept = typeof user.department === 'object' ? (user.department?.name || user.department?.code || '') : (user.department || '');
+                      return (
+                        <option key={user.id} value={user.id}>
+                          {user.firstName} {user.lastName} - {user.role}{dept ? ` (${dept})` : ''}
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
 
@@ -463,18 +470,18 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
 
                 {/* Liste des spécialités */}
                 <div className="flex flex-wrap gap-2">
-                  {(formData.specialties || []).map(specialty => {
-                    const specName = typeof specialty === 'object' ? specialty.name : specialty;
-                    const specKey = typeof specialty === 'object' ? specialty.code : specialty;
+                  {(formData.specialties || []).map(specCode => {
+                    const available = getAvailableSpecialties().find(s => s.code === specCode);
+                    const displayName = available ? available.name : specCode;
                     return (
                       <span
-                        key={specKey}
+                        key={specCode}
                         className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
                       >
-                        {specName}
+                        {displayName}
                         <button
                           type="button"
-                          onClick={() => removeSpecialty(specialty)}
+                          onClick={() => removeSpecialty(specCode)}
                           className="text-blue-600 hover:text-blue-700"
                         >
                           <X className="h-3 w-3" />
