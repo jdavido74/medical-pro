@@ -585,11 +585,14 @@ const TeamManagementModule = () => {
                         <div className="text-sm text-gray-500">{team.description}</div>
                         {(team.specialties?.length > 0) && (
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {team.specialties.slice(0, 2).map(specialty => (
-                              <span key={specialty} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                {specialty}
-                              </span>
-                            ))}
+                            {team.specialties.slice(0, 2).map((specialty, idx) => {
+                              const label = typeof specialty === 'object' ? (specialty.name || specialty.code) : specialty;
+                              return (
+                                <span key={label || idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  {label}
+                                </span>
+                              );
+                            })}
                             {team.specialties.length > 2 && (
                               <span className="text-xs text-gray-500">+{team.specialties.length - 2}</span>
                             )}

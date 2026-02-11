@@ -454,30 +454,34 @@ const TeamFormModal = ({ isOpen, onClose, onSave, team = null, currentUser }) =>
                   >
                     <option value="">Ajouter une spécialité</option>
                     {getAvailableSpecialties()
-                      .filter(spec => !(formData.specialties || []).includes(spec))
+                      .filter(spec => !(formData.specialties || []).includes(spec.code))
                       .map(spec => (
-                        <option key={spec} value={spec}>{spec}</option>
+                        <option key={spec.code} value={spec.code}>{spec.name}</option>
                       ))}
                   </select>
                 </div>
 
                 {/* Liste des spécialités */}
                 <div className="flex flex-wrap gap-2">
-                  {(formData.specialties || []).map(specialty => (
-                    <span
-                      key={specialty}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
-                    >
-                      {specialty}
-                      <button
-                        type="button"
-                        onClick={() => removeSpecialty(specialty)}
-                        className="text-blue-600 hover:text-blue-700"
+                  {(formData.specialties || []).map(specialty => {
+                    const specName = typeof specialty === 'object' ? specialty.name : specialty;
+                    const specKey = typeof specialty === 'object' ? specialty.code : specialty;
+                    return (
+                      <span
+                        key={specKey}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
+                        {specName}
+                        <button
+                          type="button"
+                          onClick={() => removeSpecialty(specialty)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
