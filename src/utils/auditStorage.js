@@ -538,8 +538,7 @@ class AuditStorage {
   }
 
   getClientIP() {
-    // En production, ceci serait récupéré du serveur
-    return 'localhost';
+    return 'client';
   }
 
   getSessionId() {

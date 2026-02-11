@@ -142,7 +142,7 @@ export const consentsStorage = {
             action: 'revoked',
             userId: userId,
             timestamp: new Date().toISOString(),
-            ipAddress: 'localhost',
+            ipAddress: 'client',
             userAgent: navigator.userAgent || 'unknown',
             details: { reason }
           }

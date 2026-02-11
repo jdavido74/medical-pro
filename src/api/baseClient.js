@@ -71,16 +71,21 @@ async function request(endpoint, options = {}) {
   } = options;
 
   try {
-    // Build URL with query parameters
-    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    // Build URL with query parameters (supports both absolute and relative base URLs)
+    let urlString = `${API_BASE_URL}${endpoint}`;
 
     // Add query parameters
+    const params = new URLSearchParams();
     if (Object.keys(query).length > 0) {
       Object.entries(query).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
-          url.searchParams.append(key, value);
+          params.append(key, value);
         }
       });
+      const qs = params.toString();
+      if (qs) {
+        urlString += `?${qs}`;
+      }
     }
 
     // Build headers
@@ -105,7 +110,7 @@ async function request(endpoint, options = {}) {
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
     // Make request
-    const response = await fetch(url.toString(), {
+    const response = await fetch(urlString, {
       method,
       headers: requestHeaders,
       body: body ? JSON.stringify(body) : null,
@@ -226,7 +231,7 @@ async function deleteRequest(endpoint, options = {}) {
  */
 async function upload(endpoint, formData) {
   try {
-    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    const urlString = `${API_BASE_URL}${endpoint}`;
 
     // Build headers WITHOUT Content-Type (browser will set it with boundary)
     const requestHeaders = {};
@@ -246,7 +251,7 @@ async function upload(endpoint, formData) {
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT * 2); // Longer timeout for uploads
 
     // Make request - body is FormData directly, NOT JSON.stringify
-    const response = await fetch(url.toString(), {
+    const response = await fetch(urlString, {
       method: 'POST',
       headers: requestHeaders,
       body: formData, // Pass FormData directly
