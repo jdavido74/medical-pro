@@ -21,7 +21,7 @@ export const useClientIP = () => {
   useEffect(() => {
     const fetchClientIP = async () => {
       try {
-        const apiBaseURL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+        const apiBaseURL = process.env.REACT_APP_API_URL || '';
         const response = await fetch(`${apiBaseURL}/api/v1/auth/ip-info`);
 
         if (response.ok) {
@@ -56,7 +56,7 @@ export const useClientIP = () => {
  */
 export const getClientIPAsync = async () => {
   try {
-    const apiBaseURL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    const apiBaseURL = process.env.REACT_APP_API_URL || '';
     const response = await fetch(`${apiBaseURL}/api/v1/auth/ip-info`);
 
     if (response.ok) {

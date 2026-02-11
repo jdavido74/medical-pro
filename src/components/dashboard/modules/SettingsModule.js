@@ -204,7 +204,7 @@ const SettingsModule = () => {
     // If it's already an absolute URL, return as-is
     if (facility.logoUrl.startsWith('http')) return facility.logoUrl;
     // Otherwise prepend the API base URL
-    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    const apiBase = process.env.REACT_APP_API_URL || '';
     return `${apiBase}${facility.logoUrl}`;
   };
 

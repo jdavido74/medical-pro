@@ -9,7 +9,7 @@
 
 import { redirectToLogin } from '../utils/localeRedirect';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api/v1';
 const API_TIMEOUT = parseInt(process.env.REACT_APP_API_TIMEOUT) || 30000;
 const DEBUG = process.env.NODE_ENV === 'development';
 
