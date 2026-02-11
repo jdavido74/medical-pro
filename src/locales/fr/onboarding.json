@@ -122,6 +122,8 @@
           "licenseNumber": "10101234567"
         },
         "roles": {
+          "physician": "Médecin",
+          "practitioner": "Professionnel de santé",
           "doctor": "Médecin",
           "specialist": "Spécialiste",
           "nurse": "Infirmier(e)",

@@ -122,6 +122,8 @@
           "licenseNumber": "12345678"
         },
         "roles": {
+          "physician": "Physician",
+          "practitioner": "Healthcare Practitioner",
           "doctor": "Doctor",
           "specialist": "Specialist",
           "nurse": "Nurse",
