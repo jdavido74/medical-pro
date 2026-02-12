@@ -35,7 +35,7 @@ const STATUS_CONFIG = {
 // Time grid constants for day view
 const DAY_START_HOUR = 7;  // 7:00
 const DAY_END_HOUR = 21;   // 21:00
-const PIXELS_PER_MINUTE = 1.5; // Height scale
+const PIXELS_PER_MINUTE = 2.0; // Height scale
 const MAX_COLUMNS = 6;     // Maximum columns before horizontal scroll
 
 // Format date to YYYY-MM-DD without timezone conversion issues
