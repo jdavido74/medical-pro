@@ -408,6 +408,9 @@ const CatalogFormModal = ({
         dosageUnit: formData.dosageUnit || null,
         volume: formData.volume || null,
 
+        // Planning
+        isOverlappable: formData.isOverlappable || false,
+
         // Family/Variant
         parentId: formData.parentId || null,
         isFamily: formData.isFamily || false,
@@ -894,6 +897,28 @@ const CatalogFormModal = ({
                           {t('fields.prepAfterHint')}
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* No machine required toggle - for treatments and services */}
+                  {shouldShowField('duration', formData.type) && (
+                    <div className="border-t border-gray-200 pt-4">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isOverlappable || false}
+                          onChange={(e) => handleChange('isOverlappable', e.target.checked)}
+                          className="mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">
+                            {t('fields.noMachineRequired')}
+                          </span>
+                          <p className="mt-0.5 text-xs text-gray-500">
+                            {t('fields.noMachineRequiredHint')}
+                          </p>
+                        </div>
+                      </label>
                     </div>
                   )}
 

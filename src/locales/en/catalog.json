@@ -34,6 +34,8 @@
     "prepAfter": "Time after",
     "prepAfterHint": "Cleanup/rest time after appointment",
     "noPrepTime": "None",
+    "noMachineRequired": "Does not require a machine",
+    "noMachineRequiredHint": "This treatment can be scheduled without reserving a machine (e.g. injection, consultation). Slots will be based solely on clinic hours.",
     "family": "Family",
     "parentFamily": "Parent Family",
     "parentFamilyHint": "Select a family to create a variant",

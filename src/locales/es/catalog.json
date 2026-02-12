@@ -34,6 +34,8 @@
     "prepAfter": "Tiempo después",
     "prepAfterHint": "Tiempo de limpieza/descanso después de la cita",
     "noPrepTime": "Ninguno",
+    "noMachineRequired": "No requiere máquina",
+    "noMachineRequiredHint": "Este tratamiento se puede programar sin reservar una máquina (ej: inyección, consulta). Los horarios se basarán únicamente en el horario de la clínica.",
     "family": "Familia",
     "parentFamily": "Familia padre",
     "parentFamilyHint": "Selecciona una familia para crear una variante",

@@ -28,9 +28,32 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
     }
   }, [notification]);
 
+  // Normalize operating hours: when hasLunchBreak is false but morning/afternoon
+  // objects exist (from onboarding), convert to simple { start, end } format
+  const normalizeOperatingHours = (hours) => {
+    if (!hours) return hours;
+    const normalized = { ...hours };
+    for (const day of Object.keys(normalized)) {
+      const dh = normalized[day];
+      if (!dh || typeof dh !== 'object') continue;
+      if (!dh.hasLunchBreak && dh.morning) {
+        normalized[day] = {
+          enabled: dh.enabled,
+          hasLunchBreak: false,
+          start: dh.start || dh.morning.start || '08:00',
+          end: dh.end || dh.morning.end || '18:00'
+        };
+      }
+    }
+    return normalized;
+  };
+
   const loadConfig = async () => {
     try {
       const clinicSettings = await clinicSettingsApi.getClinicSettings();
+      if (clinicSettings?.operatingHours) {
+        clinicSettings.operatingHours = normalizeOperatingHours(clinicSettings.operatingHours);
+      }
       setConfig(clinicSettings);
     } catch (error) {
       console.error('[ClinicConfigModal] Error loading config:', error);
