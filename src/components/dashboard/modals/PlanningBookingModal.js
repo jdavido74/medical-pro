@@ -1224,11 +1224,21 @@ const PlanningBookingModal = ({
       setSaving(true);
       setError(null);
       try {
+        // Detect newly added treatments (those without appointmentId = not yet in DB)
+        const newTreatments = selectedTreatments
+          .filter(t => !t.appointmentId)
+          .map(t => ({
+            treatmentId: t.id,
+            duration: t.duration || 30,
+            machineId: t.machineId || null
+          }));
+
         const groupUpdateData = {
           notes,
           priority,
           providerId: providerId || null,
-          assistantId: assistantId || null
+          assistantId: assistantId || null,
+          ...(newTreatments.length > 0 && { newTreatments })
         };
         const response = await planningApi.updateAppointmentGroup(groupId, groupUpdateData);
         if (response.success) {
