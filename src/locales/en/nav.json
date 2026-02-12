@@ -21,7 +21,7 @@
     "catalog": "Catalog",
     "machines": "Machines",
     "equipment": "Equipment",
-    "planning": "Planning",
+    "planning": "Agenda",
     "analytics": "Analytics",
     "admin": "Administration",
     "categories": "Categories",
@@ -115,7 +115,7 @@
       "description": "Equipment for appointments"
     },
     "planning": {
-      "title": "Planning",
+      "title": "Agenda",
       "description": "Unified calendar for treatments and consultations"
     }
   }

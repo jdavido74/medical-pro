@@ -21,7 +21,7 @@
     "catalog": "Catalogue",
     "machines": "Machines",
     "equipment": "Équipement",
-    "planning": "Planning",
+    "planning": "Agenda",
     "analytics": "Statistiques",
     "admin": "Administration",
     "categories": "Catégories",
@@ -115,7 +115,7 @@
       "description": "Équipements pour les rendez-vous"
     },
     "planning": {
-      "title": "Planning",
+      "title": "Agenda",
       "description": "Calendrier unifié traitements et consultations"
     }
   }

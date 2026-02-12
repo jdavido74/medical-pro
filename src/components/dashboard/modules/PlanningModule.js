@@ -1310,7 +1310,7 @@ const PlanningModule = () => {
         )}
 
         {viewMode === 'day' && (
-          <div className="flex h-full overflow-y-auto">
+          <div className="flex h-full overflow-auto">
             {/* Time column */}
             <div className="flex-shrink-0 w-16 bg-gray-50 border-r sticky left-0 z-10">
               {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => {
@@ -1334,7 +1334,7 @@ const PlanningModule = () => {
             </div>
 
             {/* Appointments grid */}
-            <div className="flex-1 overflow-x-auto">
+            <div className="flex-1">
               {(() => {
                 const dayDateStr = formatDateLocal(currentDate);
                 const dayAppts = appointmentsByDate[dayDateStr] || [];
