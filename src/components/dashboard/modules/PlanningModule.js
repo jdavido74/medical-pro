@@ -477,6 +477,22 @@ const PlanningModule = () => {
     }
   }, [viewMode, loadListData]);
 
+  // Quick status change from list view
+  const handleQuickStatusChange = async (appointmentId, newStatus) => {
+    try {
+      await planningApi.updateAppointment(appointmentId, { status: newStatus });
+      // Update local state immediately for responsive UI
+      setListAppointments(prev => prev.map(apt =>
+        apt.id === appointmentId ? { ...apt, status: newStatus } : apt
+      ));
+      showToast(t(`statuses.${newStatus}`), 'success');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      const msg = error?.response?.data?.error?.message || error.message || t('messages.saveError');
+      showToast(msg, 'error');
+    }
+  };
+
   // Show toast notification
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -1506,7 +1522,7 @@ const PlanningModule = () => {
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         {t('list.columns.consent')}
                       </th>
-                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-3 py-2 text-xs font-medium text-gray-500 uppercase">
                         {t('list.columns.actions')}
                       </th>
                     </tr>
@@ -1565,48 +1581,117 @@ const PlanningModule = () => {
                           <td className="px-3 py-2">
                             {getConsentBadge(consentStatus)}
                           </td>
-                          <td className="px-3 py-2 text-right">
-                            <div className="relative inline-block">
-                              <button
-                                onClick={() => setActionMenuOpen(actionMenuOpen === apt.id ? null : apt.id)}
-                                className="p-1 hover:bg-gray-100 rounded"
-                              >
-                                <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                              </button>
-
-                              {/* Action dropdown */}
-                              {actionMenuOpen === apt.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-1.5">
+                              {/* Quick status action buttons */}
+                              {apt.status === 'scheduled' && (
+                                <>
                                   <button
-                                    onClick={() => {
-                                      handleAppointmentSummaryClick(apt);
-                                      setActionMenuOpen(null);
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                    onClick={() => handleQuickStatusChange(apt.id, 'confirmed')}
+                                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
                                   >
-                                    <Eye className="w-4 h-4 text-gray-500" />
-                                    {t('actions.viewDetails')}
+                                    {t('actions.confirm')}
                                   </button>
-                                  {apt.patient && (
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'no_show')}
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-orange-300 text-orange-600 hover:bg-orange-50 transition-colors"
+                                  >
+                                    {t('actions.noShow')}
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    {t('actions.cancel')}
+                                  </button>
+                                </>
+                              )}
+                              {apt.status === 'confirmed' && (
+                                <>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'completed')}
+                                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                  >
+                                    {t('actions.completed')}
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'in_progress')}
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors"
+                                  >
+                                    {t('actions.start')}
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'no_show')}
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-orange-300 text-orange-600 hover:bg-orange-50 transition-colors"
+                                  >
+                                    {t('actions.noShow')}
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    {t('actions.cancel')}
+                                  </button>
+                                </>
+                              )}
+                              {apt.status === 'in_progress' && (
+                                <>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'completed')}
+                                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                  >
+                                    {t('actions.completed')}
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    {t('actions.cancel')}
+                                  </button>
+                                </>
+                              )}
+
+                              {/* More actions menu */}
+                              <div className="relative inline-block">
+                                <button
+                                  onClick={() => setActionMenuOpen(actionMenuOpen === apt.id ? null : apt.id)}
+                                  className="p-1 hover:bg-gray-100 rounded"
+                                >
+                                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                                </button>
+                                {actionMenuOpen === apt.id && (
+                                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
                                     <button
-                                      onClick={() => handleSendConsent(apt)}
+                                      onClick={() => {
+                                        handleAppointmentSummaryClick(apt);
+                                        setActionMenuOpen(null);
+                                      }}
                                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
                                     >
-                                      <Send className="w-4 h-4 text-blue-500" />
-                                      {t('actions.sendConsent')}
+                                      <Eye className="w-4 h-4 text-gray-500" />
+                                      {t('actions.viewDetails')}
                                     </button>
-                                  )}
-                                  {canEdit && (
-                                    <button
-                                      onClick={() => handleListDelete(apt)}
-                                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                      {t('actions.delete')}
-                                    </button>
-                                  )}
-                                </div>
-                              )}
+                                    {apt.patient && (
+                                      <button
+                                        onClick={() => handleSendConsent(apt)}
+                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                      >
+                                        <Send className="w-4 h-4 text-blue-500" />
+                                        {t('actions.sendConsent')}
+                                      </button>
+                                    )}
+                                    {canEdit && (
+                                      <button
+                                        onClick={() => handleListDelete(apt)}
+                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        {t('actions.delete')}
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>

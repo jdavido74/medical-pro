@@ -211,7 +211,10 @@
     "saving": "Guardando...",
     "sendConsent": "Enviar consentimiento",
     "edit": "Editar",
-    "sendReminder": "Enviar recordatorio"
+    "sendReminder": "Enviar recordatorio",
+    "start": "Iniciar",
+    "noShow": "Ausente",
+    "completed": "Terminado"
   },
 
   "summary": {

@@ -211,7 +211,10 @@
     "saving": "Enregistrement...",
     "sendConsent": "Envoyer consentement",
     "edit": "Modifier",
-    "sendReminder": "Envoyer rappel"
+    "sendReminder": "Envoyer rappel",
+    "start": "Démarrer",
+    "noShow": "Absent",
+    "completed": "Terminé"
   },
 
   "summary": {
