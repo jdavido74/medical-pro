@@ -20,7 +20,7 @@
   "planConsultations": "Planifica tus consultas",
   "createFirstRecord": "Crea tu primer historial",
   "medicalCompliance": "Consulta médica segura y conforme",
-  "complianceDescription": "ClinicManager respeta la confidencialidad médica, la protección de datos de salud (RGPD) y se adapta a los requisitos profesionales de los médicos.",
+  "complianceDescription": "MediMaestro respeta la confidencialidad médica, la protección de datos de salud (RGPD) y se adapta a los requisitos profesionales de los médicos.",
   "statistics": "Estadísticas",
   "appointments": "Citas",
   "patients": "Pacientes",
@@ -58,7 +58,7 @@
   "steps": "pasos",
   "onboarding": {
     "clinicInfo": "Información profesional y datos de contacto",
-    "addPatients": "Crea tu base de pacientes en ClinicManager",
+    "addPatients": "Crea tu base de pacientes en MediMaestro",
     "planConsultations": "Organiza tu agenda médica",
     "createRecord": "Consultas y prescripciones"
   },

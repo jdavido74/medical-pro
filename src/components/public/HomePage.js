@@ -18,7 +18,7 @@ const HomePage = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
               <Heart className="h-8 w-8 text-green-600" />
-              <h1 className="text-2xl font-bold text-gray-900">ClinicManager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">MediMaestro</h1>
             </div>
             <div className="flex space-x-4">
               <button
@@ -204,7 +204,7 @@ const HomePage = () => {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Heart className="h-8 w-8 text-green-400" />
-                <h3 className="text-xl font-bold">ClinicManager</h3>
+                <h3 className="text-xl font-bold">MediMaestro</h3>
               </div>
               <p className="text-gray-400">
                 {t('footerDescription')}
@@ -239,7 +239,7 @@ const HomePage = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 ClinicManager. {t('footerCopyright')}</p>
+            <p>&copy; 2024 MediMaestro. {t('footerCopyright')}</p>
           </div>
         </div>
       </footer>

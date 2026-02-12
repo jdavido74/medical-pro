@@ -31,7 +31,7 @@ const AppRoutes = () => {
 };
 
 // Composant principal de l'application
-const ClinicManagerApp = () => {
+const MediMaestroApp = () => {
   const [region] = useState(() => detectRegion());
   const regionConfig = getRegionConfig(region);
 
@@ -67,4 +67,4 @@ const ClinicManagerApp = () => {
   );
 };
 
-export default ClinicManagerApp;
+export default MediMaestroApp;

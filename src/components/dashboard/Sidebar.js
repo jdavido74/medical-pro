@@ -115,7 +115,7 @@ const Sidebar = () => {
       <div className="p-6 border-b">
         <div className="flex items-center space-x-2 mb-4">
           <Heart className="h-8 w-8 text-green-600" />
-          <h1 className="text-xl font-bold text-gray-900">ClinicManager</h1>
+          <h1 className="text-xl font-bold text-gray-900">MediMaestro</h1>
         </div>
 
         <div className="flex items-center space-x-3">

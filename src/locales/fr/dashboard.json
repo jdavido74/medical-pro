@@ -20,7 +20,7 @@
   "planConsultations": "Planifiez vos consultations",
   "createFirstRecord": "Créez votre premier dossier",
   "medicalCompliance": "Cabinet médical sécurisé et conforme",
-  "complianceDescription": "ClinicManager respecte le secret médical, la protection des données de santé (RGPD) et s'adapte aux exigences professionnelles des praticiens.",
+  "complianceDescription": "MediMaestro respecte le secret médical, la protection des données de santé (RGPD) et s'adapte aux exigences professionnelles des praticiens.",
   "statistics": "Statistiques",
   "appointments": "Rendez-vous",
   "patients": "Patients",
@@ -58,7 +58,7 @@
   "steps": "étapes",
   "onboarding": {
     "clinicInfo": "Informations professionnelles et coordonnées",
-    "addPatients": "Créez votre patientèle dans ClinicManager",
+    "addPatients": "Créez votre patientèle dans MediMaestro",
     "planConsultations": "Organisez votre planning médical",
     "createRecord": "Consultations et prescriptions"
   },

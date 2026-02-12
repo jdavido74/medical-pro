@@ -139,7 +139,7 @@ const HomeModule = ({ setActiveModule }) => {
               </div>
               <div className="flex items-center">
                 <Activity className="h-4 w-4 mr-1" />
-                ClinicManager Pro
+                MediMaestro Pro
               </div>
             </div>
           </div>

@@ -99,7 +99,7 @@ const translations = {
       clinicName: 'Nom du cabinet médical',
       medicalNumber: 'Numéro ADELI/RPPS',
       loginSubtitle: 'Accédez à votre cabinet médical',
-      signupSubtitle: 'Rejoignez ClinicManager et gérez votre cabinet médical',
+      signupSubtitle: 'Rejoignez MediMaestro et gérez votre cabinet médical',
       createAccount: 'Créer mon cabinet médical',
       alreadyAccount: 'Vous avez déjà un compte ?',
       noAccount: 'Pas encore de compte ?',
@@ -131,7 +131,7 @@ const translations = {
       planConsultations: 'Planifiez vos consultations',
       createFirstRecord: 'Créez votre premier dossier',
       medicalCompliance: 'Cabinet médical sécurisé et conforme',
-      complianceDescription: 'ClinicManager respecte le secret médical, la protection des données de santé (RGPD) et s\'adapte aux exigences professionnelles des praticiens.'
+      complianceDescription: 'MediMaestro respecte le secret médical, la protection des données de santé (RGPD) et s\'adapte aux exigences professionnelles des praticiens.'
     },
 
     // Patients
@@ -311,7 +311,7 @@ const translations = {
       clinicName: 'Medical Practice Name',
       medicalNumber: 'ADELI/RPPS Number',
       loginSubtitle: 'Access your medical practice',
-      signupSubtitle: 'Join ClinicManager and manage your medical practice',
+      signupSubtitle: 'Join MediMaestro and manage your medical practice',
       createAccount: 'Create my medical practice',
       alreadyAccount: 'Already have an account?',
       noAccount: 'Don\'t have an account yet?',
@@ -343,7 +343,7 @@ const translations = {
       planConsultations: 'Plan your consultations',
       createFirstRecord: 'Create your first record',
       medicalCompliance: 'Secure and compliant medical practice',
-      complianceDescription: 'ClinicManager respects medical confidentiality, health data protection (GDPR) and adapts to practitioners\' professional requirements.'
+      complianceDescription: 'MediMaestro respects medical confidentiality, health data protection (GDPR) and adapts to practitioners\' professional requirements.'
     },
 
     // Appointments
@@ -507,7 +507,7 @@ const translations = {
       clinicName: 'Nombre de la Consulta Médica',
       medicalNumber: 'Número de Colegiado',
       loginSubtitle: 'Accede a tu consulta médica',
-      signupSubtitle: 'Únete a ClinicManager y gestiona tu consulta médica',
+      signupSubtitle: 'Únete a MediMaestro y gestiona tu consulta médica',
       createAccount: 'Crear mi consulta médica',
       alreadyAccount: '¿Ya tienes una cuenta?',
       noAccount: '¿No tienes cuenta aún?',
@@ -539,7 +539,7 @@ const translations = {
       planConsultations: 'Planifica tus consultas',
       createFirstRecord: 'Crea tu primer historial',
       medicalCompliance: 'Consulta médica segura y conforme',
-      complianceDescription: 'ClinicManager respeta la confidencialidad médica, la protección de datos de salud (RGPD) y se adapta a los requisitos profesionales de los médicos.'
+      complianceDescription: 'MediMaestro respeta la confidencialidad médica, la protección de datos de salud (RGPD) y se adapta a los requisitos profesionales de los médicos.'
     },
 
     // Patients
