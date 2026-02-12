@@ -25,6 +25,8 @@ import EmailVerificationPage from '../components/auth/EmailVerificationPage';
 import EmailVerificationCallback from '../components/auth/EmailVerificationCallback';
 import ClinicProvisioningPage from '../components/auth/ClinicProvisioningPage';
 import SetPasswordPage from '../components/auth/SetPasswordPage';
+import ForgotPasswordPage from '../components/auth/ForgotPasswordPage';
+import ResetPasswordPage from '../components/auth/ResetPasswordPage';
 import ConsentSigningPage from '../pages/public/ConsentSigningPage';
 
 // Modules Dashboard
@@ -300,7 +302,9 @@ export const routes = [
           { path: 'email-verification', element: <EmailVerificationPage /> },
           { path: 'auth/verify-email/:token', element: <EmailVerificationCallback /> },
           { path: 'auth/provisioning', element: <ClinicProvisioningPage /> },
-          { path: 'set-password', element: <SetPasswordPage /> }
+          { path: 'set-password', element: <SetPasswordPage /> },
+          { path: 'forgot-password', element: <ForgotPasswordPage /> },
+          { path: 'reset-password', element: <ResetPasswordPage /> }
         ]
       },
 
@@ -352,6 +356,8 @@ export const routes = [
   { path: '/signup', element: <LegacyRouteRedirect /> },
   { path: '/email-verification', element: <LegacyRouteRedirect /> },
   { path: '/auth/verify-email/:token', element: <LegacyRouteRedirect /> },
+  { path: '/forgot-password', element: <LegacyRouteRedirect /> },
+  { path: '/reset-password', element: <LegacyRouteRedirect /> },
   { path: '/onboarding', element: <LegacyRouteRedirect /> },
 
   // Legacy dashboard routes

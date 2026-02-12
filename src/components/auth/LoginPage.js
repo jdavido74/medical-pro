@@ -255,7 +255,10 @@ const LoginPage = () => {
 
           {/* Liens navigation */}
           <div className="text-center mt-6 space-y-3">
-            <button className="text-green-600 hover:text-green-700 text-sm">
+            <button
+              onClick={() => navigate(buildPath('/forgot-password'))}
+              className="text-green-600 hover:text-green-700 text-sm"
+            >
               {t('forgotPassword')}
             </button>
 
