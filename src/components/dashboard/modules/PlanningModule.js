@@ -1124,9 +1124,9 @@ const PlanningModule = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4 h-[calc(100vh-7rem)]">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
           <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
@@ -1143,7 +1143,7 @@ const PlanningModule = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between bg-white rounded-lg border p-3">
+      <div className="flex items-center justify-between bg-white rounded-lg border p-3 flex-shrink-0">
         {/* Navigation - only show for calendar views */}
         <div className="flex items-center gap-2">
           {viewMode !== 'list' && (
@@ -1235,7 +1235,7 @@ const PlanningModule = () => {
 
       {/* Extended filters - only for calendar views */}
       {showFilters && viewMode !== 'list' && (
-        <div className="bg-white rounded-lg border p-4">
+        <div className="bg-white rounded-lg border p-4 flex-shrink-0">
           <div className="grid grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1279,9 +1279,9 @@ const PlanningModule = () => {
       )}
 
       {/* Calendar View */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-white rounded-lg border overflow-hidden flex-1 min-h-0">
         {viewMode === 'week' && (
-          <div className="flex flex-col max-h-[calc(100vh-300px)]">
+          <div className="flex flex-col h-full">
             {/* Sticky header row */}
             <div className="flex border-b sticky top-0 z-10 bg-white">
               {weekDays.map(renderDayHeader)}
@@ -1294,7 +1294,7 @@ const PlanningModule = () => {
         )}
 
         {viewMode === 'day' && (
-          <div className="flex max-h-[calc(100vh-300px)] overflow-y-auto">
+          <div className="flex h-full overflow-y-auto">
             {/* Time column */}
             <div className="flex-shrink-0 w-16 bg-gray-50 border-r sticky left-0 z-10">
               {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => {
