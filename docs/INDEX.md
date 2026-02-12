@@ -42,6 +42,9 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 ### Je travaille sur les consentements
 → [Gestion des consentements](./features/CONSENT_MANAGEMENT.md)
 
+### Je travaille sur les rendez-vous / planification
+→ [Workflow des rendez-vous](./features/APPOINTMENT_WORKFLOW.md)
+
 ### Je travaille sur la facturation / devis
 → [Refonte Devis & Factures](./features/BILLING_INVOICING.md)
 
@@ -78,7 +81,8 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 
 ### 🌍 Fonctionnalités & I18N
 - **[Refonte Devis & Factures](./features/BILLING_INVOICING.md)** - Backend, EN 16931, Factur-X, SaaS-ready
-- **[Gestion des consentements](./features/CONSENT_MANAGEMENT.md)** - Consentements RGPD et médicaux
+- **[Workflow des rendez-vous](./features/APPOINTMENT_WORKFLOW.md)** - Machine d'etat, actions rapides, traitements sans machine
+- **[Gestion des consentements](./features/CONSENT_MANAGEMENT.md)** - Consentements RGPD et medicaux
 - **[Support multilingue](./features/MULTILINGUAL_EMAILS.md)** - Emails en FR/ES/EN
 - **[Implémentation i18n](./features/I18N_IMPLEMENTATION.md)** - Intégration du système de traductions
 - **[Migration i18n](./features/I18N_MIGRATION.md)** - Migration vers i18n
@@ -119,4 +123,4 @@ Bienvenue dans la documentation centralisée de MedicalPro. Cette page vous aide
 ---
 
 **Dernière mise à jour**: Janvier 2026
-**Organisation**: 6 catégories, 34 documents
+**Organisation**: 6 categories, 35 documents
