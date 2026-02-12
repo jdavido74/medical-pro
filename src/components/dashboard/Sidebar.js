@@ -1,21 +1,30 @@
 // components/dashboard/Sidebar.js
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home, Users, Calendar, FileText, BarChart3, Settings,
-  LogOut, Heart, Shield, Package, Cpu, CalendarClock
+  LogOut, Heart, Shield, Package, Cpu, CalendarClock, Globe
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../auth/PermissionGuard';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '../../contexts/LocaleContext';
+import { getActiveLocales } from '../../config/locales';
 import { isPractitionerRole, canAccessAdministration } from '../../utils/userRoles';
 
 const Sidebar = () => {
   const { user, company, subscription, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { t } = useTranslation('nav');
-  const { locale, buildUrl } = useLocale();
+  const { locale, buildUrl, flag, nativeName, formatDate, changeLocale } = useLocale();
+  const [showLocaleSelector, setShowLocaleSelector] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const availableLocales = getActiveLocales();
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleLogout = () => {
     // Check if user had "remember me" enabled
@@ -146,8 +155,62 @@ const Sidebar = () => {
         </div>
       </div>
 
+      {/* Langue + Date/Heure */}
+      <div className="px-6 py-3 border-b">
+        <div className="flex items-center justify-between">
+          {/* Sélecteur de langue */}
+          <div className="relative">
+            <button
+              onClick={() => setShowLocaleSelector(!showLocaleSelector)}
+              className="flex items-center space-x-1.5 px-2 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title={t('common:changeLanguage', 'Changer de langue')}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>{flag}</span>
+            </button>
+
+            {showLocaleSelector && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowLocaleSelector(false)}
+                />
+                <div className="absolute left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
+                  <div className="py-1">
+                    {availableLocales.map((loc) => (
+                      <button
+                        key={loc.code}
+                        onClick={() => {
+                          changeLocale(loc.code);
+                          setShowLocaleSelector(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 hover:bg-gray-100 ${
+                          locale === loc.code ? 'bg-green-50 text-green-700' : 'text-gray-700'
+                        }`}
+                      >
+                        <span className="text-lg">{loc.flag}</span>
+                        <span>{loc.nativeName}</span>
+                        {locale === loc.code && (
+                          <span className="ml-auto text-green-600">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Date + Heure */}
+          <span className="text-xs text-gray-500">
+            {formatDate(currentTime, { includeTime: false })}{' '}
+            {currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+      </div>
+
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
