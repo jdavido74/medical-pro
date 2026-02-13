@@ -197,6 +197,17 @@
     "multipleOverlaps": "{{count}} superposición(es) detectada(s)."
   },
 
+  "superposition": {
+    "addTreatment": "Superponer un tratamiento",
+    "confirm": "Confirmar superposición",
+    "confirmMessage": "Este tratamiento se añadirá como superposición en el mismo horario. Solo los tratamientos superponibles están permitidos.",
+    "badge": "Superponible"
+  },
+
+  "warnings": {
+    "noMachineConfig": "El tratamiento \"{{treatment}}\" no es superponible pero no tiene ninguna máquina configurada."
+  },
+
   "actions": {
     "create": "Crear",
     "save": "Guardar",

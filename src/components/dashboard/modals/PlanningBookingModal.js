@@ -318,7 +318,8 @@ const PlanningBookingModal = ({
   const { t } = useTranslation('planning');
   const patientContext = useContext(PatientContext);
   const { company } = useAuth();
-  const isEditMode = !!appointment;
+  const isEditMode = !!appointment && !appointment._superpositionMode;
+  const isSuperpositionMode = !!appointment?._superpositionMode;
 
   // Linked group detection
   const isLinkedAppointment = appointment && (
@@ -368,11 +369,15 @@ const PlanningBookingModal = ({
   const [conflictInfo, setConflictInfo] = useState(null);
   const [pendingSaveData, setPendingSaveData] = useState(null);
 
+  // Superposition confirmation state
+  const [showSuperpositionConfirm, setShowSuperpositionConfirm] = useState(false);
+
   // Data state
   const [treatments, setTreatments] = useState([]);
   const [treatmentsByCategory, setTreatmentsByCategory] = useState([]);
   const [treatmentSearch, setTreatmentSearch] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotWarnings, setSlotWarnings] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loadingTreatments, setLoadingTreatments] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -757,8 +762,18 @@ const PlanningBookingModal = ({
       try {
         const response = await planningApi.getTreatments({ search: treatmentSearch });
         if (response.success) {
-          setTreatments(response.data?.treatments || response.data || []);
-          setTreatmentsByCategory(response.data?.byCategory || []);
+          let allTreatments = response.data?.treatments || response.data || [];
+          let byCategory = response.data?.byCategory || [];
+          // In superposition mode, only show overlappable treatments
+          if (isSuperpositionMode) {
+            allTreatments = allTreatments.filter(t => t.is_overlappable === true);
+            byCategory = byCategory.map(cat => ({
+              ...cat,
+              treatments: (cat.treatments || []).filter(t => t.is_overlappable === true)
+            })).filter(cat => cat.treatments?.length > 0);
+          }
+          setTreatments(allTreatments);
+          setTreatmentsByCategory(byCategory);
         }
       } catch (err) {
         console.error('Error loading treatments:', err);
@@ -802,6 +817,7 @@ const PlanningBookingModal = ({
           const response = await planningApi.getSlots(params);
           if (response.success) {
             setAvailableSlots(response.data?.slots || response.data?.allSlots || []);
+            setSlotWarnings(response.data?.warnings || []);
           }
         } else {
           // Multiple treatments - use multi-treatment endpoint
@@ -812,6 +828,7 @@ const PlanningBookingModal = ({
           console.log('[PlanningBookingModal] Multi-treatment slots response:', response);
           if (response.success) {
             setAvailableSlots(response.data?.slots || []);
+            setSlotWarnings(response.data?.warnings || []);
             // Show message if no slots and there's a reason
             if (response.data?.slots?.length === 0 && response.data?.message) {
               setError(response.data.message);
@@ -1117,12 +1134,12 @@ const PlanningBookingModal = ({
           const treatments = selectedSlot.segments
             ? selectedSlot.segments.map(seg => ({
                 treatmentId: seg.treatmentId,
-                machineId: seg.machineId,
+                machineId: seg.isOverlappable ? null : (seg.machineId || null),
                 duration: seg.duration
               }))
             : selectedTreatments.map((t) => ({
                 treatmentId: t.id,
-                machineId: selectedSlot.machineId,
+                machineId: selectedSlot.isOverlappable ? null : (selectedSlot.machineId || null),
                 duration: t.duration
               }));
 
@@ -1255,6 +1272,13 @@ const PlanningBookingModal = ({
       return;
     }
 
+    // In superposition mode, show confirmation dialog before saving
+    if (isSuperpositionMode) {
+      setPendingSaveData({ ...saveData, skipPatientOverlapCheck: true });
+      setShowSuperpositionConfirm(true);
+      return;
+    }
+
     // Check for conflicts (patient overlap in create & edit, resource in edit)
     if (!isEditMode || (isEditMode && editMode === 'single')) {
       setSaving(true);
@@ -1273,6 +1297,14 @@ const PlanningBookingModal = ({
     await executeSave(saveData);
   };
 
+  const handleSuperpositionConfirm = async () => {
+    setShowSuperpositionConfirm(false);
+    if (pendingSaveData) {
+      await executeSave(pendingSaveData, true);
+      setPendingSaveData(null);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -1282,7 +1314,12 @@ const PlanningBookingModal = ({
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              {isEditMode ? t('appointment.edit') : t('appointment.new')}
+              {isSuperpositionMode ? t('superposition.addTreatment') : (isEditMode ? t('appointment.edit') : t('appointment.new'))}
+              {isSuperpositionMode && (
+                <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                  {t('superposition.badge', 'Superposition')}
+                </span>
+              )}
               {isEditMode && editMode === 'group' && (
                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Link className="w-3 h-3" />
@@ -1670,6 +1707,7 @@ const PlanningBookingModal = ({
                   onChange={(e) => {
                     setDate(e.target.value);
                     setSelectedSlot(null);
+                    setSlotWarnings([]);
                   }}
                   min={new Date().toISOString().split('T')[0]}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -1816,6 +1854,23 @@ const PlanningBookingModal = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {isEditMode ? t('slots.alternatives') : t('slots.available')}
                 </label>
+
+                {/* Configuration warnings */}
+                {slotWarnings.length > 0 && (
+                  <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    {slotWarnings.map((warning, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-amber-700">
+                          {warning.type === 'noMachineConfig'
+                            ? t('warnings.noMachineConfig', { treatment: warning.treatmentTitle })
+                            : warning.message}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {loadingSlots ? (
                   <div className="text-center py-8 text-gray-500">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2" />
@@ -2238,6 +2293,42 @@ const PlanningBookingModal = ({
         onCancel={handleConflictCancel}
         conflictInfo={conflictInfo}
       />
+
+      {/* Superposition Confirmation Dialog */}
+      {showSuperpositionConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t('superposition.confirm')}
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-6">
+              {t('superposition.confirmMessage')}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowSuperpositionConfirm(false);
+                  setPendingSaveData(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                {t('actions.cancel')}
+              </button>
+              <button
+                onClick={handleSuperpositionConfirm}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                {t('superposition.addTreatment')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

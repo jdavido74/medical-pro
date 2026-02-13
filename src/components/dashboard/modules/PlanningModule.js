@@ -4,13 +4,13 @@
  * Includes calendar views (day, week, month) and list view with search and filters
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, Filter,
   Cpu, User, Clock, Check, X, Edit2, Bell, FileText, Receipt,
   CircleDot, CheckCircle2, PlayCircle, XCircle, AlertTriangle, Link,
-  List, Search, Send, Eye, MoreHorizontal, Trash2
+  List, Search, Send, Eye, MoreHorizontal, Trash2, ArrowUp, ArrowDown, Layers
 } from 'lucide-react';
 import planningApi, { getAppointmentGroup } from '../../../api/planningApi';
 import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
@@ -240,6 +240,12 @@ const PlanningModule = () => {
   const [toast, setToast] = useState(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [summaryAppointment, setSummaryAppointment] = useState(null);
+
+  // Hover popover state
+  const [hoveredAppointment, setHoveredAppointment] = useState(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const hoverTimeoutRef = useRef(null);
+  const popoverRef = useRef(null);
 
   // List view specific state
   const [listSearchQuery, setListSearchQuery] = useState('');
@@ -641,6 +647,20 @@ const PlanningModule = () => {
     }
   };
 
+  const handleSummaryAddSuperposed = () => {
+    setShowSummaryModal(false);
+    // Open booking modal in superposition mode with pre-filled data
+    setSelectedAppointment({
+      _superpositionMode: true,
+      patientId: summaryAppointment.patientId,
+      patient: summaryAppointment.patient,
+      date: summaryAppointment.date,
+      startTime: summaryAppointment.startTime,
+      category: 'treatment'
+    });
+    setShowBookingModal(true);
+  };
+
   const handleSummarySendReminder = async () => {
     if (!summaryAppointment) return;
     try {
@@ -877,6 +897,63 @@ const PlanningModule = () => {
     return { statusConfig, patientColors, duration, isLinked, categoryIndicator };
   };
 
+  // Find consecutive siblings for a given appointment (previous and next for same patient on same day)
+  const findConsecutiveSiblings = useCallback((apt) => {
+    const dateStr = apt.date;
+    const dayAppts = appointmentsByDate[dateStr] || [];
+    const patientId = apt.patientId || apt.patient?.id;
+    if (!patientId) return { prev: null, next: null };
+
+    const aptStartMin = timeToMinutes(apt.startTime);
+    const aptEndMin = timeToMinutes(apt.endTime) || (aptStartMin + (apt.duration || 30));
+
+    let prev = null;
+    let next = null;
+
+    for (const other of dayAppts) {
+      if (other.id === apt.id) continue;
+      const otherId = other.patientId || other.patient?.id;
+      if (otherId !== patientId) continue;
+
+      const otherStart = timeToMinutes(other.startTime);
+      const otherEnd = timeToMinutes(other.endTime) || (otherStart + (other.duration || 30));
+
+      // Previous: ends exactly when this one starts
+      if (otherEnd === aptStartMin) prev = other;
+      // Next: starts exactly when this one ends
+      if (otherStart === aptEndMin) next = other;
+    }
+
+    return { prev, next };
+  }, [appointmentsByDate]);
+
+  // Hover handlers
+  const handleAppointmentMouseEnter = useCallback((e, apt) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    const rect = e.currentTarget.getBoundingClientRect();
+    // Position popover to the right of the card, or left if not enough space
+    const spaceRight = window.innerWidth - rect.right;
+    const x = spaceRight > 340 ? rect.right + 8 : rect.left - 328;
+    // Vertically centered on the card, but clamped to viewport
+    const y = Math.max(8, Math.min(rect.top, window.innerHeight - 300));
+    setHoverPosition({ x, y });
+    setHoveredAppointment(apt);
+  }, []);
+
+  const handleAppointmentMouseLeave = useCallback(() => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredAppointment(null);
+    }, 150);
+  }, []);
+
+  const handlePopoverMouseEnter = useCallback(() => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  }, []);
+
+  const handlePopoverMouseLeave = useCallback(() => {
+    setHoveredAppointment(null);
+  }, []);
+
   // Get initials from a name (e.g., "Machine Laser 1" -> "ML1", "Dr. Jean Dupont" -> "JD")
   const getInitials = (name) => {
     if (!name) return '';
@@ -978,6 +1055,14 @@ const PlanningModule = () => {
           </div>
         )}
 
+        {/* Overlappable badge */}
+        {apt.isOverlappable && showDuration && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded w-fit">
+            <Layers className="w-2.5 h-2.5" />
+            {t('superposition.badge', 'Superposable')}
+          </span>
+        )}
+
         {/* Notes or reason */}
         {showNotes && notesText && (
           <div className="text-xs text-gray-400 truncate leading-tight mt-auto italic">
@@ -1007,6 +1092,8 @@ const PlanningModule = () => {
       <div
         key={apt.id}
         onClick={() => handleAppointmentSummaryClick(apt)}
+        onMouseEnter={(e) => handleAppointmentMouseEnter(e, apt)}
+        onMouseLeave={handleAppointmentMouseLeave}
         className={`p-2 ${borderRadius} border-l-4 border cursor-pointer hover:shadow-md transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
         style={{ height: `${calculatedHeight}px` }}
       >
@@ -1038,12 +1125,16 @@ const PlanningModule = () => {
 
     // Adjust border radius for consecutive appointments
     const borderRadius = isConsecutive ? 'rounded-b border-t-0' : 'rounded';
+    const isOverlappable = item.isOverlappable === true;
+    const borderStyle = isOverlappable ? 'border-dashed' : '';
 
     return (
       <div
         key={item.id}
         onClick={() => handleAppointmentSummaryClick(item)}
-        className={`absolute p-1.5 ${borderRadius} border-l-4 border cursor-pointer hover:shadow-lg hover:z-20 transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
+        onMouseEnter={(e) => handleAppointmentMouseEnter(e, item)}
+        onMouseLeave={handleAppointmentMouseLeave}
+        className={`absolute p-1.5 ${borderRadius} border-l-4 border ${borderStyle} cursor-pointer hover:shadow-lg hover:z-20 transition-shadow overflow-hidden ${patientColors.bg} ${patientColors.border} ${patientColors.accent}`}
         style={{
           top: `${top}px`,
           height: `${height}px`,
@@ -1705,6 +1796,123 @@ const PlanningModule = () => {
         )}
       </div>
 
+      {/* Hover Popover */}
+      {hoveredAppointment && (
+        <div
+          ref={popoverRef}
+          onMouseEnter={handlePopoverMouseEnter}
+          onMouseLeave={handlePopoverMouseLeave}
+          className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-80 overflow-hidden pointer-events-auto"
+          style={{
+            left: `${hoverPosition.x}px`,
+            top: `${hoverPosition.y}px`,
+          }}
+        >
+          {(() => {
+            const apt = hoveredAppointment;
+            const statusConfig = STATUS_CONFIG[apt.status] || STATUS_CONFIG.scheduled;
+            const StatusIcon = statusConfig.icon;
+            const { prev, next } = findConsecutiveSiblings(apt);
+            const resourceName = apt.category === 'treatment' && apt.machine
+              ? apt.machine.name
+              : apt.category === 'consultation' && apt.provider
+                ? apt.provider.fullName
+                : '';
+
+            const renderSiblingRow = (sibling, label, Icon) => {
+              if (!sibling) return null;
+              const sibResource = sibling.category === 'treatment' && sibling.machine
+                ? sibling.machine.name
+                : sibling.category === 'consultation' && sibling.provider
+                  ? sibling.provider.fullName
+                  : '';
+              const sibStatus = STATUS_CONFIG[sibling.status] || STATUS_CONFIG.scheduled;
+              const SibStatusIcon = sibStatus.icon;
+              return (
+                <div className="flex items-start gap-2 px-4 py-2 bg-gray-50 border-t border-gray-100">
+                  <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-gray-500 uppercase">{label}</span>
+                      <SibStatusIcon className={`w-3 h-3 ${sibStatus.color}`} />
+                    </div>
+                    <div className="text-sm text-gray-900 truncate">
+                      {sibling.startTime}-{sibling.endTime} &middot; {sibling.title || sibling.service?.title || '-'}
+                    </div>
+                    {sibResource && (
+                      <div className="text-xs text-gray-500 truncate">{sibResource}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            };
+
+            return (
+              <>
+                {/* Previous sibling */}
+                {renderSiblingRow(prev, t('hover.previous', 'Précédent'), ArrowUp)}
+
+                {/* Main appointment */}
+                <div className="px-4 py-3 space-y-2">
+                  {/* Time & Status */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      {apt.startTime} - {apt.endTime}
+                      <span className="text-gray-400 font-normal">({apt.duration || 30}min)</span>
+                    </div>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
+                      <StatusIcon className="w-3 h-3" />
+                      {t(`statuses.${apt.status}`)}
+                    </div>
+                  </div>
+
+                  {/* Patient */}
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium text-sm text-gray-900 truncate">
+                      {apt.patient?.fullName || 'Patient'}
+                    </span>
+                  </div>
+
+                  {/* Treatment/Service */}
+                  {(apt.title || apt.service?.title) && (
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-700 truncate">
+                        {apt.title || apt.service?.title}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Resource (machine or provider) */}
+                  {resourceName && (
+                    <div className="flex items-center gap-2">
+                      {apt.category === 'treatment' ? (
+                        <Cpu className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      ) : (
+                        <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      )}
+                      <span className="text-sm text-gray-700 truncate">{resourceName}</span>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {(apt.notes || apt.reason) && (
+                    <div className="text-xs text-gray-500 italic truncate mt-1">
+                      {apt.notes || apt.reason}
+                    </div>
+                  )}
+                </div>
+
+                {/* Next sibling */}
+                {renderSiblingRow(next, t('hover.next', 'Suivant'), ArrowDown)}
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Appointment Summary Modal */}
       {showSummaryModal && summaryAppointment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -1829,6 +2037,15 @@ const PlanningModule = () => {
                   <Bell className="w-4 h-4" />
                   {t('actions.sendReminder')}
                 </button>
+                {summaryAppointment.category === 'treatment' && summaryAppointment.status !== 'cancelled' && (
+                  <button
+                    onClick={handleSummaryAddSuperposed}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    <Layers className="w-4 h-4" />
+                    {t('superposition.addTreatment')}
+                  </button>
+                )}
                 {summaryAppointment.status !== 'cancelled' && (
                   <>
                     <button

@@ -197,6 +197,17 @@
     "multipleOverlaps": "{{count}} overlap(s) detected."
   },
 
+  "superposition": {
+    "addTreatment": "Superpose a treatment",
+    "confirm": "Confirm superposition",
+    "confirmMessage": "This treatment will be added as an overlay on the same time slot. Only overlappable treatments are allowed.",
+    "badge": "Overlappable"
+  },
+
+  "warnings": {
+    "noMachineConfig": "Treatment \"{{treatment}}\" is not overlappable but has no machine configured."
+  },
+
   "actions": {
     "create": "Create",
     "save": "Save",

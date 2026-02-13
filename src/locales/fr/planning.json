@@ -197,6 +197,17 @@
     "multipleOverlaps": "{{count}} chevauchement(s) au total."
   },
 
+  "superposition": {
+    "addTreatment": "Superposer un traitement",
+    "confirm": "Confirmer la superposition",
+    "confirmMessage": "Ce traitement sera ajouté en superposition sur le même créneau horaire. Seuls les traitements superposables sont autorisés.",
+    "badge": "Superposable"
+  },
+
+  "warnings": {
+    "noMachineConfig": "Le traitement « {{treatment}} » n'est pas superposable mais n'a aucune machine configurée."
+  },
+
   "actions": {
     "create": "Créer",
     "save": "Enregistrer",
