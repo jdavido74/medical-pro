@@ -908,10 +908,10 @@ const PlanningModule = () => {
     const CategoryIcon = categoryIndicator.icon;
 
     const showPatient = height >= 35 && !hidePatientName;
-    const showTitle = height >= 50;
-    const showDuration = height >= 60;
-    const showResource = height >= 80;
-    const showNotes = height >= 100;
+    const showTitle = height >= 45;
+    const showDuration = height >= 55;
+    const showResource = height >= 75;
+    const showNotes = height >= 95;
 
     // Get resource info
     const resourceName = apt.category === 'treatment' && apt.machine
