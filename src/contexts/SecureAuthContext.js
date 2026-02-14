@@ -24,7 +24,6 @@ import { redirectToLogin } from '../utils/localeRedirect';
 
 const SecureAuthContext = createContext();
 
-const STORAGE_KEY = 'clinicmanager_token';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const REFRESH_BEFORE_EXPIRY = 60 * 60 * 1000; // 1 heure avant expiration
 
@@ -123,30 +122,26 @@ export const SecureAuthProvider = ({ children }) => {
   }, [refreshTimer]);
 
   // ============ REFRESH TOKEN ============
+  // Refresh token is stored in httpOnly cookie (sent automatically)
+  // Only the access token is returned in the response body
   const refreshToken = useCallback(async () => {
     try {
-      const currentToken = localStorage.getItem(STORAGE_KEY);
-
-      if (!currentToken) {
-        console.warn('[Auth] No token to refresh');
-        return false;
-      }
-
       console.log('🔄 [Auth] Refreshing token...');
 
-      const response = await baseClient.post('/auth/refresh', {
-        token: currentToken
-      });
+      // POST to /auth/refresh — the httpOnly cookie sends the refresh token
+      const response = await baseClient.post('/auth/refresh', {});
 
-      if (!response.success || !response.data?.tokens?.accessToken) {
+      const newAccessToken = response.data?.accessToken || response.data?.tokens?.accessToken;
+
+      if (!response.success || !newAccessToken) {
         throw new Error('Token refresh failed');
       }
 
-      const newToken = response.data.tokens.accessToken;
-      localStorage.setItem(STORAGE_KEY, newToken);
+      // Store new access token in memory only
+      baseClient.setAccessToken(newAccessToken);
 
       // Replanifier le prochain refresh
-      scheduleTokenRefresh(newToken);
+      scheduleTokenRefresh(newAccessToken);
 
       console.log('✅ [Auth] Token refreshed successfully');
       return true;
@@ -194,7 +189,7 @@ export const SecureAuthProvider = ({ children }) => {
 
       // Si 401, token invalide → nettoyer
       if (error.status === 401) {
-        localStorage.removeItem(STORAGE_KEY);
+        baseClient.clearAccessToken();
         clearAuthState();
       }
 
@@ -298,8 +293,8 @@ export const SecureAuthProvider = ({ children }) => {
         throw new Error('No token received from backend');
       }
 
-      // Stocker SEULEMENT le token
-      localStorage.setItem(STORAGE_KEY, tokens.accessToken);
+      // Store access token in memory only (not localStorage)
+      baseClient.setAccessToken(tokens.accessToken);
 
       // Enrichir user avec providerId pour les opérations cliniques
       const enrichedUser = user ? { ...user, providerId } : null;
@@ -318,7 +313,7 @@ export const SecureAuthProvider = ({ children }) => {
       setError(error.message);
 
       // Nettoyer en cas d'erreur
-      localStorage.removeItem(STORAGE_KEY);
+      baseClient.clearAccessToken();
       clearAuthState();
 
       throw error;
@@ -338,8 +333,8 @@ export const SecureAuthProvider = ({ children }) => {
       console.warn('[Auth] Logout endpoint failed (continuing anyway):', error);
     }
 
-    // Nettoyer TOUT
-    localStorage.removeItem(STORAGE_KEY);
+    // Nettoyer TOUT (access token in memory, refresh token cleared by backend via cookie)
+    baseClient.clearAccessToken();
     clearAuthState();
 
     // Rediriger vers login avec locale
@@ -473,37 +468,49 @@ export const SecureAuthProvider = ({ children }) => {
   // ============ INIT ON MOUNT ============
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem(STORAGE_KEY);
+      // Check if we have an in-memory token (from previous render) or a legacy localStorage token
+      const existingToken = baseClient.getAuthToken();
 
-      if (!token) {
-        console.log('📭 [Auth] No token found');
-        setIsLoading(false);
-        return;
+      if (existingToken) {
+        // We have a token in memory — check if it's still valid
+        if (isTokenExpired(existingToken)) {
+          console.warn('⏰ [Auth] Token expired, attempting refresh via cookie...');
+          baseClient.clearAccessToken();
+        } else {
+          console.log('🔑 [Auth] Token found in memory, loading user data...');
+          const success = await loadUserFromBackend();
+          if (success) {
+            scheduleTokenRefresh(existingToken);
+            setIsLoading(false);
+            return;
+          }
+        }
       }
 
-      // Vérifier si token expiré
-      if (isTokenExpired(token)) {
-        console.warn('⏰ [Auth] Token expired, clearing session');
-        localStorage.removeItem(STORAGE_KEY);
-        clearAuthState();
-        setIsLoading(false);
-        return;
+      // No valid in-memory token — try refresh via httpOnly cookie
+      console.log('🔄 [Auth] Attempting session restore via refresh cookie...');
+      try {
+        const response = await baseClient.post('/auth/refresh', {});
+        const newAccessToken = response.data?.accessToken || response.data?.tokens?.accessToken;
+
+        if (response.success && newAccessToken) {
+          baseClient.setAccessToken(newAccessToken);
+
+          const success = await loadUserFromBackend();
+          if (success) {
+            scheduleTokenRefresh(newAccessToken);
+            console.log('✅ [Auth] Session restored from cookie');
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (error) {
+        // No valid refresh cookie — user is not authenticated
+        console.log('📭 [Auth] No valid session found');
       }
 
-      console.log('🔑 [Auth] Token found, loading user data...');
-
-      // Charger user depuis backend
-      const success = await loadUserFromBackend();
-
-      if (success) {
-        // Planifier auto-refresh
-        scheduleTokenRefresh(token);
-      } else {
-        // Failed to load → token invalide
-        localStorage.removeItem(STORAGE_KEY);
-        clearAuthState();
-      }
-
+      baseClient.clearAccessToken();
+      clearAuthState();
       setIsLoading(false);
     };
 

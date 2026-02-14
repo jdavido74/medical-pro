@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLocaleNavigation } from '../../hooks/useLocaleNavigation';
 import { provisionClinic } from '../../api/clinicProvisioningApi';
+import { baseClient } from '../../api/baseClient';
 
 const ProvisioningStep = ({ icon: Icon, title, description, status }) => {
   const getStatusIcon = () => {
@@ -127,10 +128,9 @@ const ClinicProvisioningPage = () => {
         setAuthData(response.data);
         setIsComplete(true);
 
-        // Store tokens
-        if (response.data.tokens) {
-          localStorage.setItem('clinicmanager_token', response.data.tokens.accessToken);
-          localStorage.setItem('clinicmanager_refresh_token', response.data.tokens.refreshToken);
+        // Store access token in memory (refresh token is in httpOnly cookie)
+        if (response.data.tokens?.accessToken) {
+          baseClient.setAccessToken(response.data.tokens.accessToken);
         }
 
         // Wait a moment to show completion, then redirect

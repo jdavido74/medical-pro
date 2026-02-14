@@ -162,13 +162,20 @@
             if (items.length === 0) {
                 contentDiv.innerHTML = '<div style="color: #999; font-style: italic; padding: 20px;">localStorage est vide</div>';
             } else {
-                contentDiv.innerHTML = items.map(item => {
+                contentDiv.innerHTML = '';
+                items.forEach(item => {
                     let displayValue = item.value;
                     if (displayValue.length > 100) {
                         displayValue = displayValue.substring(0, 100) + '...';
                     }
-                    return `<div class="storage-item"><strong>${item.key}:</strong> ${displayValue}</div>`;
-                }).join('');
+                    const div = document.createElement('div');
+                    div.className = 'storage-item';
+                    const strong = document.createElement('strong');
+                    strong.textContent = item.key + ':';
+                    div.appendChild(strong);
+                    div.appendChild(document.createTextNode(' ' + displayValue));
+                    contentDiv.appendChild(div);
+                });
             }
         }
 

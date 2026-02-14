@@ -1,5 +1,6 @@
 // components/dashboard/modals/PatientDetailModal.js
 import React, { useState, useEffect, useCallback } from 'react';
+import { sanitizeHTML } from '../../../utils/sanitize';
 import {
   X, Edit2, User, MapPin, Phone, Mail, Building, Calendar,
   Shield, Heart, Activity, FileText, Clock, Eye, Stethoscope, Plus,
@@ -958,7 +959,7 @@ const PatientDetailModal = ({
                   <label className="text-xs text-gray-500 uppercase tracking-wide mb-2 block">{t('patients:detail.documentContent')}</label>
                   <div
                     className="prose prose-sm max-w-none p-4 bg-gray-50 rounded-lg border"
-                    dangerouslySetInnerHTML={{ __html: viewingConsent.content }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(viewingConsent.content) }}
                   />
                 </div>
               )}

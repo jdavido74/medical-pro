@@ -1,5 +1,6 @@
 // components/dashboard/modules/ConsentTemplatesModule.js
 import React, { useState, useEffect, useCallback } from 'react';
+import { sanitizeHTML } from '../../../utils/sanitize';
 import {
   FileText, Plus, Search, Filter, Eye, Edit2, Copy, Trash2, Download,
   Upload, Settings, BarChart3, Tag, Clock, CheckCircle, XCircle,
@@ -967,9 +968,11 @@ const TemplateDetailsModal = ({ template, onClose, onEdit }) => {
                 <div
                   className="text-sm whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{
-                    __html: template.content.replace(
-                      /\[([^\]]+)\]/g,
-                      '<span class="bg-yellow-200 px-1 rounded">[$1]</span>'
+                    __html: sanitizeHTML(
+                      template.content.replace(
+                        /\[([^\]]+)\]/g,
+                        '<span class="bg-yellow-200 px-1 rounded">[$1]</span>'
+                      )
                     )
                   }}
                 />

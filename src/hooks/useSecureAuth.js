@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import baseClient from '../api/baseClient';
+import { baseClient } from '../api/baseClient';
 
 export const useSecureAuth = () => {
   const [user, setUser] = useState(null);
@@ -78,7 +78,7 @@ export const useSecureAuth = () => {
       // Si erreur 401: token invalide
       if (error.response?.status === 401) {
         setIsTokenValid(false);
-        localStorage.removeItem('clinicmanager_token');
+        baseClient.clearAccessToken();
       }
 
       setError(error.message);
@@ -126,7 +126,7 @@ export const useSecureAuth = () => {
    * Ou quand le token change
    */
   useEffect(() => {
-    const token = localStorage.getItem('clinicmanager_token');
+    const token = baseClient.getAuthToken();
 
     if (!token) {
       setIsLoading(false);

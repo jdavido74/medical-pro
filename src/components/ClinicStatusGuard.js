@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { baseClient } from '../api/baseClient';
 
 // Simple notification component
 const ClinicStatusNotification = ({ message, onClose }) => {
@@ -74,8 +75,7 @@ export const ClinicStatusGuard = ({ children }) => {
         // Redirect to home after 3 seconds
         setTimeout(() => {
           // Force logout
-          localStorage.removeItem('clinicmanager_auth');
-          localStorage.removeItem('clinicmanager_token');
+          baseClient.clearAccessToken();
           // Reload to reset app state
           window.location.href = '/';
         }, 3000);

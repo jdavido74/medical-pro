@@ -115,7 +115,9 @@ class MutationQueue {
    * Exécuter une mutation API
    */
   async executeMutation(mutation) {
-    const token = localStorage.getItem('medicalPro_auth_token');
+    // Use baseClient's in-memory token (import at top of file would create circular dep)
+    const { baseClient } = require('../api/baseClient');
+    const token = baseClient.getAuthToken();
 
     if (!token) {
       throw new Error('No auth token');

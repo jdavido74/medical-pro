@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { consentTemplatesApi } from '../../api/consentTemplatesApi';
 import { useConsentTypes, useSpecialties } from '../../hooks/useSystemCategories';
 import { useAuth } from '../../hooks/useAuth';
+import { sanitizeHTML } from '../../utils/sanitize';
 
 // Available languages for translations
 const AVAILABLE_LANGUAGES = [
@@ -1124,7 +1125,7 @@ const ConsentTemplateEditorModal = ({
                     <div
                       className="leading-relaxed"
                       dangerouslySetInnerHTML={{
-                        __html: renderPreviewContent(formData.content)
+                        __html: sanitizeHTML(renderPreviewContent(formData.content))
                       }}
                     />
                   </div>

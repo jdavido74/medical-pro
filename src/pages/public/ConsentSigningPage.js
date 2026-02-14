@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { sanitizeHTML } from '../../utils/sanitize';
 import {
   FileText,
   CheckCircle,
@@ -421,7 +422,7 @@ const ConsentSigningPage = () => {
           <div className="border-t pt-4">
             <div
               className="prose prose-sm max-w-none text-gray-700"
-              dangerouslySetInnerHTML={{ __html: consentData.consent.terms.replace(/\n/g, '<br/>') }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHTML(consentData.consent.terms.replace(/\n/g, '<br/>')) }}
             />
           </div>
         </div>

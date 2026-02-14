@@ -93,7 +93,12 @@
                 
                 console.log('✅ Session cleared successfully');
             } catch (error) {
-                document.getElementById('result').innerHTML = '<div style="color: red;">❌ Erreur: ' + error.message + '</div>';
+                const errorDiv = document.createElement('div');
+                errorDiv.style.color = 'red';
+                errorDiv.textContent = 'Erreur: ' + error.message;
+                const resultEl = document.getElementById('result');
+                resultEl.innerHTML = '';
+                resultEl.appendChild(errorDiv);
                 console.error('Error clearing session:', error);
             }
         }

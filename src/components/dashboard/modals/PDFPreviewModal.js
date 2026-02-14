@@ -5,6 +5,7 @@ import { useCountryConfig } from '../../../config/ConfigManager';
 import { useLocale } from '../../../contexts/LocaleContext';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { escapeHTML } from '../../../utils/sanitize';
 
 const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
   const { config } = useCountryConfig();
@@ -398,7 +399,7 @@ const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
       <div class="party">
         <div class="party-title">Client :</div>
         <div class="party-details">
-          <div>${data.clientName || 'Client inconnu'}</div>
+          <div>${escapeHTML(data.clientName) || 'Client inconnu'}</div>
           <div>Adresse client</div>
           <div>Code postal Ville</div>
           <div>Pays</div>
@@ -427,7 +428,7 @@ const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
           ${data.purchaseOrderNumber ? `
             <div class="date-item">
               <div class="date-label">Bon de commande :</div>
-              <div class="date-value">${data.purchaseOrderNumber}</div>
+              <div class="date-value">${escapeHTML(data.purchaseOrderNumber)}</div>
             </div>
           ` : ''}
         </div>
@@ -453,7 +454,7 @@ const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
         <tbody>
           ${items.map(item => `
             <tr>
-              <td>${item.description || ''}</td>
+              <td>${escapeHTML(item.description) || ''}</td>
               <td>${item.quantity || 0}</td>
               <td>${(item.unitPrice || 0).toFixed(2)}€</td>
               <td>${item.taxRate !== null ? item.taxRate : (config?.taxation?.defaultRate || 20)}%</td>
@@ -504,7 +505,7 @@ const PDFPreviewModal = ({ isOpen, onClose, data, type = 'invoice' }) => {
     return `
       <div class="conditions">
         <div class="conditions-title">Conditions :</div>
-        <div>${conditions}</div>
+        <div>${escapeHTML(conditions)}</div>
       </div>
     `;
   };

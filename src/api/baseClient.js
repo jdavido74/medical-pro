@@ -14,42 +14,56 @@ const API_TIMEOUT = parseInt(process.env.REACT_APP_API_TIMEOUT) || 30000;
 const DEBUG = process.env.NODE_ENV === 'development';
 
 /**
- * Get JWT token from localStorage
+ * In-memory token storage (NOT localStorage)
+ * Set by SecureAuthContext after login/refresh
+ * Cleared on logout or auth failure
+ */
+let _accessToken = null;
+
+/**
+ * Set the access token (called by auth context)
+ */
+function setAccessToken(token) {
+  _accessToken = token;
+}
+
+/**
+ * Get JWT token from memory (primary) or localStorage (migration fallback)
  */
 function getAuthToken() {
+  // Primary: in-memory token (secure, not accessible via XSS)
+  if (_accessToken) {
+    return _accessToken;
+  }
+
+  // Migration fallback: read from localStorage for existing sessions
   try {
-    // First try to get token from dedicated token storage (set during login)
     const token = localStorage.getItem('clinicmanager_token');
     if (token) {
-      return token;
-    }
-
-    // Fallback to legacy location for backward compatibility
-    const authData = localStorage.getItem('clinicmanager_auth');
-    if (authData) {
-      const parsed = JSON.parse(authData);
-      return parsed.token || null;
+      // Move to memory and clean up localStorage
+      _accessToken = token;
+      localStorage.removeItem('clinicmanager_token');
+      localStorage.removeItem('clinicmanager_auth');
+      return _accessToken;
     }
   } catch (error) {
-    console.error('[baseClient] Error reading auth token:', error);
+    // Ignore localStorage errors
   }
   return null;
 }
 
 /**
- * Get company ID from user stored in localStorage
+ * Clear the in-memory token (called on logout/auth failure)
  */
-function getCompanyId() {
+function clearAccessToken() {
+  _accessToken = null;
+  // Also clean up any legacy localStorage tokens
   try {
-    const authData = localStorage.getItem('clinicmanager_auth');
-    if (authData) {
-      const parsed = JSON.parse(authData);
-      return parsed.user?.companyId || null;
-    }
+    localStorage.removeItem('clinicmanager_token');
+    localStorage.removeItem('clinicmanager_auth');
   } catch (error) {
-    console.error('[baseClient] Error reading company ID:', error);
+    // Ignore
   }
-  return null;
 }
 
 /**
@@ -109,10 +123,11 @@ async function request(endpoint, options = {}) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-    // Make request
+    // Make request (credentials: 'include' sends httpOnly cookies)
     const response = await fetch(urlString, {
       method,
       headers: requestHeaders,
+      credentials: 'include',
       body: body ? JSON.stringify(body) : null,
       signal: controller.signal
     });
@@ -177,7 +192,7 @@ async function request(endpoint, options = {}) {
         if (DEBUG) {
           console.log('🔒 [baseClient] 401 - Redirecting to login');
         }
-        localStorage.removeItem('clinicmanager_token');
+        clearAccessToken();
         redirectToLogin();
       } else if (isRefreshPermissions && DEBUG) {
         console.log('🔒 [baseClient] 401 on refresh-permissions - ignoring (not redirecting)');
@@ -254,6 +269,7 @@ async function upload(endpoint, formData) {
     const response = await fetch(urlString, {
       method: 'POST',
       headers: requestHeaders,
+      credentials: 'include',
       body: formData, // Pass FormData directly
       signal: controller.signal
     });
@@ -311,6 +327,7 @@ export const baseClient = {
   delete: deleteRequest,
   upload,
   getAuthToken,
-  getCompanyId,
+  setAccessToken,
+  clearAccessToken,
   API_BASE_URL
 };

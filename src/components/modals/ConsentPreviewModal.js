@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { sanitizeHTML } from '../../utils/sanitize';
 import {
   X,
   Eye,
@@ -433,9 +434,11 @@ const ConsentPreviewModal = ({
                   <div
                     className="whitespace-pre-wrap text-gray-700 leading-relaxed"
                     dangerouslySetInnerHTML={{
-                      __html: previewContent
-                        // Mettre en évidence les variables non remplies
-                        .replace(/\[([^\]]+)\]/g, '<span class="bg-amber-100 text-amber-800 px-1 rounded font-mono text-sm">[$1]</span>')
+                      __html: sanitizeHTML(
+                        previewContent
+                          // Mettre en évidence les variables non remplies
+                          .replace(/\[([^\]]+)\]/g, '<span class="bg-amber-100 text-amber-800 px-1 rounded font-mono text-sm">[$1]</span>')
+                      )
                     }}
                   />
                 </div>
