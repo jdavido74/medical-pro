@@ -352,7 +352,7 @@ const ModularMedicalRecord = ({ patientData, recordId, onUpdate, onClose }) => {
             <p>Módulos activos: {activeModules.length} de {availableModules.length} disponibles</p>
           </div>
           <div className="text-right">
-            <p>Sistema modular MedicalPro</p>
+            <p>Sistema modular MediMaestro</p>
             <p>Versión 1.0 - Conformidad RGPD</p>
           </div>
         </div>

@@ -11,7 +11,7 @@ const GlobalSettingsModule = () => {
           Configuración Global
         </h3>
         <p className="text-gray-600">
-          Parámetros globales de la plataforma SaaS MedicalPro
+          Parámetros globales de la plataforma SaaS MediMaestro
         </p>
       </div>
     </div>

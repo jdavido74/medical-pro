@@ -272,7 +272,7 @@ const SaasAdminDashboard = () => {
                   {t('admin.saasAdminPanel', 'Panel de Administración SaaS')}
                 </h1>
                 <p className="text-blue-100 text-sm">
-                  {t('admin.globalPlatformManagement', 'Gestión global de la plataforma MedicalPro')}
+                  {t('admin.globalPlatformManagement', 'Gestión global de la plataforma MediMaestro')}
                 </p>
               </div>
             </div>
