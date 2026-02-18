@@ -61,8 +61,9 @@ const PermissionRoute = ({
     // Not authenticated = no access
     if (!isAuthenticated || !user) return false;
 
-    // Check medical-only restriction
-    if (medicalOnly && !isPractitionerRole(user.role)) {
+    // Check medical-only restriction: rely on the permission check below
+    // (allows admin users who were explicitly granted medical permissions)
+    if (medicalOnly && permission && !hasPermission(permission)) {
       return false;
     }
 
