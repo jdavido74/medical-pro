@@ -4,7 +4,8 @@ import {
   FileText, Activity, Heart, AlertTriangle, Plus, X, Save,
   Stethoscope, Thermometer, Scale, Ruler, Droplets, Clock,
   Pill, CheckCircle, Trash2, User, Search, Check, Loader2,
-  FileSignature, Eye, Printer, Settings, Edit3, Calendar, Users, Package
+  FileSignature, Eye, Printer, Settings, Edit3, Calendar, Users, Package,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { medicalRecordsApi } from '../../api/medicalRecordsApi';
@@ -14,8 +15,26 @@ import PrescriptionPreview from './PrescriptionPreview';
 import SmokingAssessment from './SmokingAssessment';
 import AlcoholAssessment from './AlcoholAssessment';
 import CatalogProductSelector from '../common/CatalogProductSelector';
+import MedicationSearchInput from './MedicationSearchInput';
+import DrugInteractionPanel from './DrugInteractionPanel';
+import PosologyPanel from './PosologyPanel';
 import { catalogStorage } from '../../utils/catalogStorage';
 import { useTranslation } from 'react-i18next';
+import { PERMISSIONS, permissionsStorage } from '../../utils/permissionsStorage';
+
+// Map CIMA administration routes to our route values
+const mapCimaRoute = (cimaRoute) => {
+  if (!cimaRoute) return 'oral';
+  const lower = cimaRoute.toLowerCase();
+  if (lower.includes('oral')) return 'oral';
+  if (lower.includes('intravenosa')) return 'iv';
+  if (lower.includes('intramuscular')) return 'im';
+  if (lower.includes('topica') || lower.includes('cutánea') || lower.includes('cutanea')) return 'topical';
+  if (lower.includes('inhalat')) return 'inhaled';
+  if (lower.includes('sublingual')) return 'sublingual';
+  if (lower.includes('rectal')) return 'rectal';
+  return 'oral';
+};
 
 // Accept both single patient or patients array, and both onSave/onSubmit, existingRecord/initialData
 const MedicalRecordForm = forwardRef(({
@@ -156,6 +175,9 @@ const MedicalRecordForm = forwardRef(({
 
       // Maladie actuelle - texte libre
       currentIllness: data?.currentIllness || '',
+
+      // Évolution - texte libre par visite
+      evolution: data?.evolution || '',
 
       // Examen physique - nouveau à chaque visite
       physicalExam: {
@@ -827,17 +849,23 @@ const MedicalRecordForm = forwardRef(({
     await handleSubmitInternal();
   };
 
-  const tabs = [
+  const allTabs = [
     { id: 'basic', label: t('medical:form.tabs.basic'), icon: FileText },
     { id: 'antecedents', label: t('medical:form.tabs.antecedents'), icon: Clock },
     { id: 'vitals', label: t('medical:form.tabs.vitals'), icon: Activity },
     { id: 'currentIllness', label: t('medical:form.tabs.currentIllness'), icon: AlertTriangle },
+    { id: 'evolution', label: t('medical:form.tabs.evolution'), icon: TrendingUp },
     { id: 'currentMedications', label: t('medical:form.tabs.currentMedications'), icon: Pill },
     { id: 'diagnosis', label: t('medical:form.tabs.diagnosis'), icon: Stethoscope },
     { id: 'treatments', label: t('medical:form.tabs.treatments'), icon: Pill },
     { id: 'plan', label: t('medical:form.tabs.plan'), icon: CheckCircle },
     { id: 'prescription', label: t('medical:form.tabs.prescription'), icon: FileSignature }
   ];
+
+  // Filter tabs based on user permissions (e.g., nurse cannot prescribe)
+  const userPermissions = permissionsStorage.getUserPermissions(user);
+  const canPrescribe = permissionsStorage.hasPermission(userPermissions, PERMISSIONS.MEDICAL_PRESCRIPTIONS_CREATE);
+  const tabs = canPrescribe ? allTabs : allTabs.filter(t => t.id !== 'prescription');
 
   const renderBasicTab = () => {
     console.log('[MedicalRecordForm] renderBasicTab - formData.basicInfo:', formData.basicInfo);
@@ -999,6 +1027,88 @@ const MedicalRecordForm = forwardRef(({
       </div>
     </div>
   );
+
+  const renderEvolutionTab = () => {
+    const personal = formData.antecedents?.personal || {};
+    const medicalHistory = personal.medicalHistory || [];
+    const surgicalHistory = personal.surgicalHistory || [];
+    const allergies = formData.allergies || [];
+
+    return (
+      <div className="space-y-6">
+        {/* Free text evolution notes */}
+        <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+          <h4 className="font-semibold text-gray-900 mb-1 flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2 text-indigo-600" />
+            {t('medical:form.evolutionTab.title')}
+          </h4>
+          <p className="text-sm text-gray-500 mb-4">{t('medical:form.evolutionTab.description')}</p>
+
+          <textarea
+            value={formData.evolution || ''}
+            onChange={(e) => handleInputChange(null, 'evolution', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            rows={8}
+            placeholder={t('medical:form.evolutionTab.placeholder')}
+          />
+        </div>
+
+        {/* Read-only antecedents summary */}
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <h4 className="font-semibold text-gray-700 mb-4 flex items-center">
+            <Clock className="h-5 w-5 mr-2 text-gray-500" />
+            {t('medical:form.evolutionTab.antecedentsTitle')}
+          </h4>
+
+          {/* Medical History */}
+          <div className="mb-4">
+            <h5 className="text-sm font-medium text-gray-600 mb-2">{t('medical:form.antecedents.medicalHistory')}</h5>
+            {medicalHistory.filter(h => h && h.trim()).length > 0 ? (
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {medicalHistory.filter(h => h && h.trim()).map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-400 italic">{t('medical:form.evolutionTab.noMedicalHistory')}</p>
+            )}
+          </div>
+
+          {/* Surgical History */}
+          <div className="mb-4">
+            <h5 className="text-sm font-medium text-gray-600 mb-2">{t('medical:form.antecedents.surgicalHistory')}</h5>
+            {surgicalHistory.filter(h => h && h.trim()).length > 0 ? (
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {surgicalHistory.filter(h => h && h.trim()).map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-400 italic">{t('medical:form.evolutionTab.noSurgicalHistory')}</p>
+            )}
+          </div>
+
+          {/* Allergies */}
+          <div>
+            <h5 className="text-sm font-medium text-gray-600 mb-2">{t('medical:form.allergies.title')}</h5>
+            {allergies.filter(a => a && a.allergen && a.allergen.trim()).length > 0 ? (
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {allergies.filter(a => a && a.allergen && a.allergen.trim()).map((allergy, i) => (
+                  <li key={i}>
+                    {allergy.allergen}
+                    {allergy.severity && <span className="text-gray-500"> ({allergy.severity})</span>}
+                    {allergy.reaction && <span className="text-gray-500"> - {allergy.reaction}</span>}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-400 italic">{t('medical:form.evolutionTab.noAllergies')}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderAntecedentsTab = () => (
     <div className="space-y-6">
@@ -1660,11 +1770,16 @@ const MedicalRecordForm = forwardRef(({
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       {t('medical:form.currentMedicationsTab.medication')}
                     </label>
-                    <input
-                      type="text"
+                    <MedicationSearchInput
                       value={med.medication}
-                      onChange={(e) => updateCurrentMedication(index, 'medication', e.target.value)}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                      onChange={(medicationObj) => {
+                        updateCurrentMedication(index, 'medication', medicationObj.name);
+                        if (medicationObj.administrationRoutes?.[0]) {
+                          updateCurrentMedication(index, 'route', mapCimaRoute(medicationObj.administrationRoutes[0]));
+                        }
+                      }}
+                      focusColor="green"
+                      allowCustom={true}
                       placeholder={t('medical:form.currentMedicationsTab.medicationPlaceholder')}
                     />
                   </div>
@@ -1863,11 +1978,16 @@ const MedicalRecordForm = forwardRef(({
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     {t('medical:form.treatmentsTab.medication')}
                   </label>
-                  <input
-                    type="text"
+                  <MedicationSearchInput
                     value={treatment.medication}
-                    onChange={(e) => updateTreatment(index, 'medication', e.target.value)}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                    onChange={(medicationObj) => {
+                      updateTreatment(index, 'medication', medicationObj.name);
+                      if (medicationObj.administrationRoutes?.[0]) {
+                        updateTreatment(index, 'route', mapCimaRoute(medicationObj.administrationRoutes[0]));
+                      }
+                    }}
+                    focusColor="green"
+                    allowCustom={true}
                     placeholder={t('medical:form.placeholders.medicationName')}
                   />
                   {treatment.catalogItemId && (
@@ -2860,13 +2980,30 @@ const MedicalRecordForm = forwardRef(({
               <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.medicationRequired')}</label>
-                  <input
-                    type="text"
+                  <MedicationSearchInput
                     value={med.medication}
-                    onChange={(e) => updatePrescriptionMedication(index, 'medication', e.target.value)}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    placeholder={t('medical:form.prescriptionTab.medicationPlaceholder')}
+                    onChange={(medicationObj) => {
+                      updatePrescriptionMedication(index, 'medication', medicationObj.name);
+                      updatePrescriptionMedication(index, 'source', medicationObj.source || null);
+                      updatePrescriptionMedication(index, 'nregistro', medicationObj.nregistro || null);
+                      updatePrescriptionMedication(index, 'atcCode', medicationObj.atcCode || null);
+                      updatePrescriptionMedication(index, 'activeIngredients', medicationObj.activeIngredients || null);
+                      updatePrescriptionMedication(index, 'pharmaceuticalForm', medicationObj.pharmaceuticalForm || null);
+                      updatePrescriptionMedication(index, 'requiresPrescription', medicationObj.requiresPrescription || null);
+                      if (medicationObj.customMedicationId) {
+                        updatePrescriptionMedication(index, 'customMedicationId', medicationObj.customMedicationId);
+                      }
+                      // Auto-fill route from CIMA
+                      if (medicationObj.administrationRoutes?.[0]) {
+                        updatePrescriptionMedication(index, 'route', mapCimaRoute(medicationObj.administrationRoutes[0]));
+                      }
+                    }}
+                    focusColor="blue"
+                    allowCustom={true}
                   />
+                  {med.nregistro && (
+                    <PosologyPanel nregistro={med.nregistro} medicationName={med.medication} />
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t('medical:form.prescriptionTab.dosageRequired')}</label>
@@ -2946,6 +3083,14 @@ const MedicalRecordForm = forwardRef(({
               </div>
             </div>
           ))}
+
+          {/* Drug Interaction Panel (CIMA) */}
+          {prescriptionData.medications.length >= 2 && (
+            <DrugInteractionPanel
+              medications={prescriptionData.medications}
+              hardcodedWarnings={medicationWarnings}
+            />
+          )}
 
           {prescriptionData.medications.length === 0 && (
             <div className="text-center py-8 text-gray-500">
@@ -3151,6 +3296,7 @@ const MedicalRecordForm = forwardRef(({
           {activeTab === 'antecedents' && renderAntecedentsTab()}
           {activeTab === 'vitals' && renderVitalsTab()}
           {activeTab === 'currentIllness' && renderCurrentIllnessTab()}
+          {activeTab === 'evolution' && renderEvolutionTab()}
           {activeTab === 'currentMedications' && renderCurrentMedicationsTab()}
           {activeTab === 'diagnosis' && renderDiagnosisTab()}
           {activeTab === 'treatments' && renderTreatmentsTab()}

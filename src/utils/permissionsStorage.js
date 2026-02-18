@@ -354,6 +354,34 @@ export const DEFAULT_ROLES = {
     ],
     color: 'teal'
   },
+  nurse: {
+    id: 'nurse',
+    name: 'Infirmier(e)',
+    description: 'Infirmier(e) - Accès aux données médicales SANS droit de prescription',
+    level: 45,
+    isSystemRole: true,
+    isHealthcareProfessional: true,
+    permissions: [
+      // Patients - Données admin
+      PERMISSIONS.PATIENTS_VIEW, PERMISSIONS.PATIENTS_CREATE, PERMISSIONS.PATIENTS_EDIT,
+      PERMISSIONS.PATIENTS_VIEW_ALL,
+      // Rendez-vous
+      PERMISSIONS.APPOINTMENTS_VIEW, PERMISSIONS.APPOINTMENTS_CREATE, PERMISSIONS.APPOINTMENTS_EDIT,
+      // DONNÉES MÉDICALES - Accès complet SAUF prescription
+      PERMISSIONS.MEDICAL_RECORDS_VIEW, PERMISSIONS.MEDICAL_RECORDS_CREATE, PERMISSIONS.MEDICAL_RECORDS_EDIT,
+      PERMISSIONS.MEDICAL_NOTES_CREATE,
+      PERMISSIONS.MEDICAL_ANTECEDENTS_VIEW, PERMISSIONS.MEDICAL_ANTECEDENTS_EDIT,
+      PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW, // Lecture seule - PAS de MEDICAL_PRESCRIPTIONS_CREATE
+      PERMISSIONS.MEDICAL_ALLERGIES_VIEW, PERMISSIONS.MEDICAL_ALLERGIES_EDIT,
+      PERMISSIONS.MEDICAL_VITALS_VIEW, PERMISSIONS.MEDICAL_VITALS_EDIT,
+      // Consentements - Consultation
+      PERMISSIONS.CONSENTS_VIEW,
+      PERMISSIONS.CONSENT_TEMPLATES_VIEW,
+      // Paramètres
+      PERMISSIONS.SETTINGS_VIEW
+    ],
+    color: 'pink'
+  },
   secretary: {
     id: 'secretary',
     name: 'Secrétaire médical(e)',

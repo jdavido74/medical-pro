@@ -57,7 +57,8 @@
       "basic": "Basic Information",
       "antecedents": "Medical History",
       "vitals": "Clinical Exam",
-      "currentIllness": "Current Illness",
+      "currentIllness": "Current Real Illness",
+      "evolution": "Evolution",
       "currentMedications": "Current Medications",
       "diagnosis": "Diagnosis",
       "treatments": "Treatments/Prescriptions",
@@ -65,9 +66,18 @@
       "prescription": "Prescription"
     },
     "currentIllnessTab": {
-      "title": "Current Illness",
-      "description": "Free-form description of the patient's current illness.",
-      "placeholder": "Describe the patient's current illness..."
+      "title": "Current Real Illness",
+      "description": "Free-form description of the patient's current real illness.",
+      "placeholder": "Describe the patient's current real illness..."
+    },
+    "evolutionTab": {
+      "title": "Evolution",
+      "description": "Patient evolution notes.",
+      "placeholder": "Describe the patient's evolution...",
+      "antecedentsTitle": "Patient history (read-only)",
+      "noMedicalHistory": "No medical history recorded",
+      "noSurgicalHistory": "No surgical history recorded",
+      "noAllergies": "No allergies recorded"
     },
     "antecedents": {
       "personal": "Personal History",
@@ -321,7 +331,7 @@
       "vitalSignsToday": "Today's vital signs",
       "diagnoses": "Diagnosis(es)",
       "chiefComplaintAndSymptoms": "Chief complaint and symptoms",
-      "currentIllnessText": "Current illness",
+      "currentIllnessText": "Current real illness",
       "autoAddFromRecord": "Auto-add from record:",
       "activeTreatments": "Active treatments",
       "planRecommendations": "Plan recommendations",
@@ -397,6 +407,30 @@
       "saving": "Saving...",
       "saveRecord": "Save Record"
     }
+  },
+  "medications": {
+    "search": {
+      "placeholder": "Search medication...",
+      "searching": "Searching...",
+      "noResults": "No medications found",
+      "addCustom": "Add custom medication",
+      "source": {
+        "cima": "CIMA",
+        "custom": "Custom"
+      }
+    },
+    "interactions": {
+      "title": "Drug interaction information",
+      "source": "Source: AEMPS CIMA",
+      "noData": "No interaction data available"
+    },
+    "posology": {
+      "title": "Posology",
+      "view": "View posology",
+      "noData": "No posology data available",
+      "error": "Error loading posology"
+    },
+    "rxBadge": "Rx"
   },
   "recordTypes": {
     "consultation": "Consultation",

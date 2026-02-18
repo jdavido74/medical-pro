@@ -57,7 +57,8 @@
       "basic": "Informations de base",
       "antecedents": "Antécédents",
       "vitals": "Examen clinique",
-      "currentIllness": "Maladie actuelle",
+      "currentIllness": "Maladie réelle actuelle",
+      "evolution": "Évolution",
       "currentMedications": "Traitement actuel",
       "diagnosis": "Diagnostic",
       "treatments": "Traitements/Prescriptions",
@@ -65,9 +66,18 @@
       "prescription": "Ordonnance"
     },
     "currentIllnessTab": {
-      "title": "Maladie actuelle",
-      "description": "Description libre de la maladie actuelle du patient.",
-      "placeholder": "Décrivez la maladie actuelle du patient..."
+      "title": "Maladie réelle actuelle",
+      "description": "Description libre de la maladie réelle actuelle du patient.",
+      "placeholder": "Décrivez la maladie réelle actuelle du patient..."
+    },
+    "evolutionTab": {
+      "title": "Évolution",
+      "description": "Notes d'évolution du patient.",
+      "placeholder": "Décrivez l'évolution du patient...",
+      "antecedentsTitle": "Antécédents du patient (lecture seule)",
+      "noMedicalHistory": "Aucun antécédent médical enregistré",
+      "noSurgicalHistory": "Aucun antécédent chirurgical enregistré",
+      "noAllergies": "Aucune allergie enregistrée"
     },
     "antecedents": {
       "personal": "Antécédents personnels",
@@ -321,7 +331,7 @@
       "vitalSignsToday": "Signes vitaux du jour",
       "diagnoses": "Diagnostic(s)",
       "chiefComplaintAndSymptoms": "Motif de consultation et symptômes",
-      "currentIllnessText": "Maladie actuelle",
+      "currentIllnessText": "Maladie réelle actuelle",
       "autoAddFromRecord": "Ajouter automatiquement depuis le dossier :",
       "activeTreatments": "Traitements actifs",
       "planRecommendations": "Recommandations du plan",
@@ -397,6 +407,30 @@
       "saving": "Enregistrement...",
       "saveRecord": "Enregistrer le dossier"
     }
+  },
+  "medications": {
+    "search": {
+      "placeholder": "Rechercher un médicament...",
+      "searching": "Recherche en cours...",
+      "noResults": "Aucun médicament trouvé",
+      "addCustom": "Ajouter un médicament personnalisé",
+      "source": {
+        "cima": "CIMA",
+        "custom": "Personnalisé"
+      }
+    },
+    "interactions": {
+      "title": "Informations sur les interactions",
+      "source": "Source : AEMPS CIMA",
+      "noData": "Aucune donnée d'interaction disponible"
+    },
+    "posology": {
+      "title": "Posologie",
+      "view": "Voir la posologie",
+      "noData": "Aucune donnée de posologie disponible",
+      "error": "Erreur lors du chargement de la posologie"
+    },
+    "rxBadge": "Rx"
   },
   "recordTypes": {
     "consultation": "Consultation",

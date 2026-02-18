@@ -221,7 +221,15 @@ function transformPrescriptionToBackend(prescription) {
       route: med.route || 'oral',
       duration: med.duration || '',
       quantity: med.quantity || '',
-      instructions: med.instructions || ''
+      instructions: med.instructions || '',
+      // CIMA metadata (optional, backward compatible)
+      source: med.source || null,
+      nregistro: med.nregistro || null,
+      atcCode: med.atcCode || null,
+      activeIngredients: med.activeIngredients || null,
+      pharmaceuticalForm: med.pharmaceuticalForm || null,
+      requiresPrescription: med.requiresPrescription || null,
+      customMedicationId: med.customMedicationId || null
     })),
 
     instructions: prescription.instructions || '',

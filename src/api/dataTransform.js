@@ -760,6 +760,9 @@ function transformMedicalRecordFromBackend(record) {
     duration: record.duration,
     currentIllness: record.current_illness || '',
 
+    // Evolution notes
+    evolution: record.evolution || '',
+
     // Nested structures - keep JSONB as-is but transform key names
     basicInfo: {
       chiefComplaint: record.chief_complaint,
@@ -1171,6 +1174,11 @@ function transformMedicalRecordToBackend(record) {
   // Current illness (free-text)
   if (record.currentIllness && record.currentIllness.trim()) {
     backendData.current_illness = record.currentIllness;
+  }
+
+  // Evolution notes (free-text)
+  if (record.evolution && record.evolution.trim()) {
+    backendData.evolution = record.evolution;
   }
 
   // Notes
