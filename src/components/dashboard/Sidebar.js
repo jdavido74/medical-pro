@@ -94,8 +94,9 @@ const Sidebar = () => {
   const menuItems = useMemo(() => {
     return menuConfig
       .filter(item => {
-        // Check medical-only restriction (only healthcare professionals)
-        if (item.medicalOnly && !isPractitionerRole(user?.role)) {
+        // Check medical-only restriction: show if user has the required medical permission
+        // (covers healthcare professionals AND admins who were granted medical access)
+        if (item.medicalOnly && item.permission && !hasPermission(item.permission)) {
           return false;
         }
 

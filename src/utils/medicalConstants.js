@@ -92,7 +92,7 @@ export const PRACTITIONER_ROLES = {
  * Roles available for onboarding (creating first practitioner)
  * Only clinical roles, not admin roles
  */
-export const ONBOARDING_PRACTITIONER_ROLES = ['physician', 'practitioner'];
+export const ONBOARDING_PRACTITIONER_ROLES = ['physician', 'practitioner', 'nurse'];
 
 /**
  * Administrative roles (cumulative with main role)

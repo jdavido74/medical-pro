@@ -5,7 +5,7 @@
  *
  * 1. RÔLE MÉTIER (role) - Obligatoire
  *    Définit ce que la personne fait au quotidien :
- *    - Praticiens : physician (médecins), practitioner (autres soignants)
+ *    - Praticiens : physician (médecins), practitioner (autres soignants), nurse (infirmiers)
  *    - Support : secretary, readonly
  *
  * 2. RÔLE ADMINISTRATIF (administrativeRole) - Optionnel
@@ -31,9 +31,10 @@
 /**
  * Rôles de praticiens/soignants (peuvent avoir des RDV, apparaître dans le planning)
  * - physician : Médecins (généralistes et spécialistes)
- * - practitioner : Autres professionnels de santé (infirmiers, kinés, etc.)
+ * - practitioner : Autres professionnels de santé (kinés, ostéos, etc.)
+ * - nurse : Infirmiers (accès médical sans droit de prescription)
  */
-export const PRACTITIONER_ROLES = ['physician', 'practitioner'];
+export const PRACTITIONER_ROLES = ['physician', 'practitioner', 'nurse'];
 
 /**
  * Rôles de support (pas de soins directs)
@@ -51,6 +52,7 @@ export const ALL_PROFESSIONAL_ROLES = [...PRACTITIONER_ROLES, ...SUPPORT_ROLES];
 export const ROLE_LABELS = {
   physician: 'Médecin',
   practitioner: 'Praticien de santé',
+  nurse: 'Infirmier(e)',
   secretary: 'Secrétaire',
   readonly: 'Lecture seule'
 };
@@ -60,7 +62,8 @@ export const ROLE_LABELS = {
  */
 export const ROLE_DESCRIPTIONS = {
   physician: 'Médecin généraliste ou spécialiste, peut consulter et prescrire',
-  practitioner: 'Professionnel de santé (infirmier, kiné, ostéo, etc.)',
+  practitioner: 'Professionnel de santé (kiné, ostéo, etc.)',
+  nurse: 'Infirmier(e) - Accès aux données médicales sans droit de prescription',
   secretary: 'Gestion des rendez-vous, accueil et administratif',
   readonly: 'Consultation uniquement, aucune modification possible'
 };
@@ -130,7 +133,7 @@ export const ADMINISTRATIVE_ROLE_PERMISSIONS = {
 /**
  * Rôle super admin (niveau plateforme, pas clinique)
  */
-export const SYSTEM_ROLES = ['super_admin'];
+export const SYSTEM_ROLES = ['super_admin', 'admin'];
 
 /**
  * Tous les rôles possibles dans le système
@@ -395,7 +398,8 @@ export const getUserStats = (users = []) => {
     practitioners: {
       total: practitioners.length,
       physicians: countPractitionersByType(users, 'physician'),
-      practitioners: countPractitionersByType(users, 'practitioner')
+      practitioners: countPractitionersByType(users, 'practitioner'),
+      nurses: countPractitionersByType(users, 'nurse')
     },
 
     // Support

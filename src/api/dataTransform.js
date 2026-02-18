@@ -408,7 +408,7 @@ function transformHealthcareProviderFromBackend(provider) {
 
     // UI - Map profession to standardized role types
     type: provider.profession?.toLowerCase() === 'médecin' ? 'physician' :
-          provider.profession?.toLowerCase() === 'infirmier' || provider.profession?.toLowerCase() === 'infirmière' ? 'practitioner' :
+          provider.profession?.toLowerCase() === 'infirmier' || provider.profession?.toLowerCase() === 'infirmière' ? 'nurse' :
           provider.profession?.toLowerCase() === 'kinésithérapeute' || provider.profession?.toLowerCase() === 'kiné' ? 'practitioner' :
           provider.role || 'practitioner',
     color: provider.color || 'blue',

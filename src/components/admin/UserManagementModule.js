@@ -257,7 +257,7 @@ const UserManagementModule = () => {
   };
 
   const isPractitionerRole = (role) =>
-    ['physician', 'practitioner', 'doctor'].includes(role);
+    ['physician', 'practitioner', 'nurse', 'doctor'].includes(role);
 
   const handleSaveUser = async (userData) => {
     try {
@@ -935,7 +935,7 @@ const UserManagementModule = () => {
         onConfirm={handleConfirmDelete}
         user={userToDelete}
         providers={allUsers.filter(u =>
-          u.role && ['physician', 'practitioner'].includes(u.role) && u.isActive
+          u.role && ['physician', 'practitioner', 'nurse'].includes(u.role) && u.isActive
         )}
       />
 
