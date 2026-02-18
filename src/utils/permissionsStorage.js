@@ -242,10 +242,10 @@ export const DEFAULT_ROLES = {
   admin: {
     id: 'admin',
     name: 'Administrateur',
-    description: 'Gestion de la clinique - SANS accès aux données médicales',
+    description: 'Gestion de la clinique - Accès complet incluant les données médicales (sans prescription)',
     level: 90,
     isSystemRole: true,
-    isHealthcareProfessional: false,
+    isHealthcareProfessional: true,
     permissions: [
       // Patients - Données administratives UNIQUEMENT
       PERMISSIONS.PATIENTS_VIEW, PERMISSIONS.PATIENTS_CREATE, PERMISSIONS.PATIENTS_EDIT,
@@ -254,7 +254,13 @@ export const DEFAULT_ROLES = {
       PERMISSIONS.APPOINTMENTS_VIEW, PERMISSIONS.APPOINTMENTS_CREATE, PERMISSIONS.APPOINTMENTS_EDIT,
       PERMISSIONS.APPOINTMENTS_DELETE, PERMISSIONS.APPOINTMENTS_VIEW_ALL,
       PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER,
-      // PAS DE DONNÉES MÉDICALES (Secret médical)
+      // DONNÉES MÉDICALES - Consultation complète (admin clinique a besoin de visibilité)
+      PERMISSIONS.MEDICAL_RECORDS_VIEW, PERMISSIONS.MEDICAL_RECORDS_CREATE, PERMISSIONS.MEDICAL_RECORDS_EDIT,
+      PERMISSIONS.MEDICAL_NOTES_CREATE,
+      PERMISSIONS.MEDICAL_ANTECEDENTS_VIEW, PERMISSIONS.MEDICAL_ANTECEDENTS_EDIT,
+      PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW, // Lecture seule - PAS de MEDICAL_PRESCRIPTIONS_CREATE
+      PERMISSIONS.MEDICAL_ALLERGIES_VIEW, PERMISSIONS.MEDICAL_ALLERGIES_EDIT,
+      PERMISSIONS.MEDICAL_VITALS_VIEW, PERMISSIONS.MEDICAL_VITALS_EDIT,
       // Consentements - Gestion administrative (templates et attribution)
       PERMISSIONS.CONSENTS_VIEW, PERMISSIONS.CONSENTS_ASSIGN,
       // Templates de consentements - Gestion complète (admin)
@@ -632,22 +638,40 @@ export const permissionsStorage = {
   initializeDefaultRoles: () => {
     const existingRoles = permissionsStorage.getRoles();
 
-    // Mettre à jour les rôles système avec leurs définitions actuelles
-    // Cela permet de récupérer les nouvelles permissions ajoutées
+    // Récupérer les permissions par défaut de la version précédente (pour détecter les ajouts)
+    const previousDefaults = JSON.parse(localStorage.getItem('clinic_roles_defaults') || '{}');
+
+    // Mettre à jour les rôles système: ajouter les nouvelles permissions
+    // sans écraser les personnalisations faites par l'admin
     const updatedRoles = existingRoles.map(role => {
       const defaultRole = DEFAULT_ROLES[role.id];
       if (defaultRole && defaultRole.isSystemRole) {
-        // Fusionner les rôles système avec leurs définitions actuelles
+        // Trouver les permissions nouvellement ajoutées dans le code
+        const prevDefaults = previousDefaults[role.id] || [];
+        const newPermissions = defaultRole.permissions.filter(p => !prevDefaults.includes(p));
+
+        // Fusionner: permissions existantes + nouvelles permissions du code
+        const mergedPermissions = [...new Set([...role.permissions, ...newPermissions])];
+
         return {
           ...role,
-          permissions: defaultRole.permissions,
+          permissions: mergedPermissions,
           name: defaultRole.name,
           description: defaultRole.description,
-          level: defaultRole.level
+          level: defaultRole.level,
+          isHealthcareProfessional: defaultRole.isHealthcareProfessional,
+          color: defaultRole.color
         };
       }
       return role;
     });
+
+    // Sauvegarder les permissions par défaut actuelles pour la prochaine comparaison
+    const currentDefaults = {};
+    Object.entries(DEFAULT_ROLES).forEach(([id, role]) => {
+      currentDefaults[id] = role.permissions;
+    });
+    localStorage.setItem('clinic_roles_defaults', JSON.stringify(currentDefaults));
 
     // Ajouter les rôles système manquants
     Object.values(DEFAULT_ROLES).forEach(defaultRole => {

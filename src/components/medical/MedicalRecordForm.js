@@ -862,10 +862,11 @@ const MedicalRecordForm = forwardRef(({
     { id: 'prescription', label: t('medical:form.tabs.prescription'), icon: FileSignature }
   ];
 
-  // Filter tabs based on user permissions (e.g., nurse cannot prescribe)
+  // Filter tabs based on user permissions
   const userPermissions = permissionsStorage.getUserPermissions(user);
+  const canViewPrescriptions = permissionsStorage.hasPermission(userPermissions, PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW);
   const canPrescribe = permissionsStorage.hasPermission(userPermissions, PERMISSIONS.MEDICAL_PRESCRIPTIONS_CREATE);
-  const tabs = canPrescribe ? allTabs : allTabs.filter(t => t.id !== 'prescription');
+  const tabs = canViewPrescriptions ? allTabs : allTabs.filter(t => t.id !== 'prescription');
 
   const renderBasicTab = () => {
     console.log('[MedicalRecordForm] renderBasicTab - formData.basicInfo:', formData.basicInfo);
@@ -2570,14 +2571,16 @@ const MedicalRecordForm = forwardRef(({
           <FileSignature className="h-5 w-5 mr-2 text-blue-600" />
           {t('medical:form.prescriptionTab.title')}
         </h4>
-        <button
-          type="button"
-          onClick={resetPrescriptionForm}
-          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          <Plus className="h-4 w-4" />
-          <span>{t('medical:form.prescriptionTab.newPrescription')}</span>
-        </button>
+        {canPrescribe && (
+          <button
+            type="button"
+            onClick={resetPrescriptionForm}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <Plus className="h-4 w-4" />
+            <span>{t('medical:form.prescriptionTab.newPrescription')}</span>
+          </button>
+        )}
       </div>
 
       {/* Saved prescriptions list */}
@@ -2621,7 +2624,7 @@ const MedicalRecordForm = forwardRef(({
                   >
                     <Eye className="h-4 w-4" />
                   </button>
-                  {prescription.status !== 'finalized' && (
+                  {canPrescribe && prescription.status !== 'finalized' && (
                     <>
                       <button
                         type="button"
@@ -2648,7 +2651,8 @@ const MedicalRecordForm = forwardRef(({
         </div>
       )}
 
-      {/* Configuration options with live preview */}
+      {/* Configuration, form and actions - only for users who can prescribe */}
+      {canPrescribe && (<>
       <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
         <h5 className="font-medium text-purple-900 mb-3 flex items-center">
           <Settings className="h-4 w-4 mr-2" />
@@ -3211,6 +3215,7 @@ const MedicalRecordForm = forwardRef(({
           <span className="text-green-800 text-sm">{t('medical:form.prescriptionTab.savedSuccess')}</span>
         </div>
       )}
+      </>)}
     </div>
   );
 
