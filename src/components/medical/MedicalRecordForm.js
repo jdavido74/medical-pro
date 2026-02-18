@@ -20,7 +20,8 @@ import DrugInteractionPanel from './DrugInteractionPanel';
 import PosologyPanel from './PosologyPanel';
 import { catalogStorage } from '../../utils/catalogStorage';
 import { useTranslation } from 'react-i18next';
-import { PERMISSIONS, permissionsStorage } from '../../utils/permissionsStorage';
+import { PERMISSIONS } from '../../utils/permissionsStorage';
+import { usePermissions } from '../auth/PermissionGuard';
 
 // Map CIMA administration routes to our route values
 const mapCimaRoute = (cimaRoute) => {
@@ -862,10 +863,10 @@ const MedicalRecordForm = forwardRef(({
     { id: 'prescription', label: t('medical:form.tabs.prescription'), icon: FileSignature }
   ];
 
-  // Filter tabs based on user permissions
-  const userPermissions = permissionsStorage.getUserPermissions(user);
-  const canViewPrescriptions = permissionsStorage.hasPermission(userPermissions, PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW);
-  const canPrescribe = permissionsStorage.hasPermission(userPermissions, PERMISSIONS.MEDICAL_PRESCRIPTIONS_CREATE);
+  // Filter tabs based on user permissions (from backend, not localStorage)
+  const { hasPermission: checkPerm } = usePermissions();
+  const canViewPrescriptions = checkPerm(PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW);
+  const canPrescribe = checkPerm(PERMISSIONS.MEDICAL_PRESCRIPTIONS_CREATE);
   const tabs = canViewPrescriptions ? allTabs : allTabs.filter(t => t.id !== 'prescription');
 
   const renderBasicTab = () => {
