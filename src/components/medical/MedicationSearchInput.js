@@ -37,6 +37,7 @@ const MedicationSearchInput = ({
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const debounceRef = useRef(null);
+  const blurTimeoutRef = useRef(null);
 
   // Sync external value changes
   useEffect(() => {
@@ -58,10 +59,11 @@ const MedicationSearchInput = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Cleanup debounce on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     };
   }, []);
 
@@ -108,6 +110,7 @@ const MedicationSearchInput = ({
   };
 
   const handleSelect = (med) => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     setSearchQuery(med.name);
     setShowDropdown(false);
     setIsSelected(true);
@@ -115,6 +118,7 @@ const MedicationSearchInput = ({
   };
 
   const handleCustomAdd = () => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     const customMed = {
       source: null,
       nregistro: null,
@@ -174,7 +178,7 @@ const MedicationSearchInput = ({
   // Handle blur - if text was typed but no selection, keep as free text
   const handleBlur = () => {
     // Small delay to allow click events on dropdown items
-    setTimeout(() => {
+    blurTimeoutRef.current = setTimeout(() => {
       if (!isSelected && searchQuery && searchQuery !== value) {
         // User typed text but didn't select - treat as free text
         if (onChange) {

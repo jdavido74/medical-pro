@@ -1776,6 +1776,9 @@ const MedicalRecordForm = forwardRef(({
                       value={med.medication}
                       onChange={(medicationObj) => {
                         updateCurrentMedication(index, 'medication', medicationObj.name);
+                        if (medicationObj.dosage) {
+                          updateCurrentMedication(index, 'dosage', medicationObj.dosage);
+                        }
                         if (medicationObj.administrationRoutes?.[0]) {
                           updateCurrentMedication(index, 'route', mapCimaRoute(medicationObj.administrationRoutes[0]));
                         }
@@ -1984,6 +1987,9 @@ const MedicalRecordForm = forwardRef(({
                     value={treatment.medication}
                     onChange={(medicationObj) => {
                       updateTreatment(index, 'medication', medicationObj.name);
+                      if (medicationObj.dosage) {
+                        updateTreatment(index, 'dosage', medicationObj.dosage);
+                      }
                       if (medicationObj.administrationRoutes?.[0]) {
                         updateTreatment(index, 'route', mapCimaRoute(medicationObj.administrationRoutes[0]));
                       }
@@ -2989,6 +2995,9 @@ const MedicalRecordForm = forwardRef(({
                     value={med.medication}
                     onChange={(medicationObj) => {
                       updatePrescriptionMedication(index, 'medication', medicationObj.name);
+                      if (medicationObj.dosage) {
+                        updatePrescriptionMedication(index, 'dosage', medicationObj.dosage);
+                      }
                       updatePrescriptionMedication(index, 'source', medicationObj.source || null);
                       updatePrescriptionMedication(index, 'nregistro', medicationObj.nregistro || null);
                       updatePrescriptionMedication(index, 'atcCode', medicationObj.atcCode || null);
