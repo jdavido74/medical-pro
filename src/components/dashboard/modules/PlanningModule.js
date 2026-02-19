@@ -249,7 +249,8 @@ const PlanningModule = () => {
 
   // List view specific state
   const [listSearchQuery, setListSearchQuery] = useState('');
-  const [listPeriodFilter, setListPeriodFilter] = useState('thisWeek');
+  const [listPeriodFilter, setListPeriodFilter] = useState('today');
+  const listTableRef = useRef(null);
   const [listStatusFilter, setListStatusFilter] = useState('');
   const [listConsentFilter, setListConsentFilter] = useState('');
   const [listAppointments, setListAppointments] = useState([]);
@@ -482,6 +483,48 @@ const PlanningModule = () => {
       return () => clearTimeout(debounceTimer);
     }
   }, [viewMode, loadListData]);
+
+  // Auto-scroll to the first appointment near the current time
+  useEffect(() => {
+    if (viewMode !== 'list' || listLoading || listAppointments.length === 0) return;
+
+    const container = listTableRef.current;
+    if (!container) return;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const todayStr = formatDateLocal(now);
+
+    // Find the first appointment at or after the current time today
+    let targetIndex = -1;
+    for (let i = 0; i < listAppointments.length; i++) {
+      const apt = listAppointments[i];
+      if (apt.date === todayStr && apt.startTime) {
+        const [h, m] = apt.startTime.split(':').map(Number);
+        if (h * 60 + m >= currentMinutes) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    // If no future appointment today, scroll to the last one of today
+    if (targetIndex === -1) {
+      for (let i = listAppointments.length - 1; i >= 0; i--) {
+        if (listAppointments[i].date === todayStr) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (targetIndex >= 0) {
+      const rows = container.querySelectorAll('tbody tr');
+      if (rows[targetIndex]) {
+        rows[targetIndex].scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+  }, [viewMode, listLoading, listAppointments]);
 
   // Quick status change from list view
   const handleQuickStatusChange = async (appointmentId, newStatus) => {
@@ -1580,7 +1623,7 @@ const PlanningModule = () => {
                 <p>{t('list.noResults')}</p>
               </div>
             ) : (
-              <div className="overflow-auto flex-1 min-h-0 px-4">
+              <div ref={listTableRef} className="overflow-auto flex-1 min-h-0 px-4">
                 <table className="w-full">
                   <thead className="sticky top-0 z-10">
                     <tr className="border-b bg-gray-50">
