@@ -1981,7 +1981,9 @@ const MedicalRecordForm = forwardRef(({
               <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    {t('medical:form.treatmentsTab.medication')}
+                    {treatment.catalogItemId
+                      ? t('medical:form.treatmentsTab.treatment')
+                      : t('medical:form.treatmentsTab.medication')}
                   </label>
                   <MedicationSearchInput
                     value={treatment.medication}

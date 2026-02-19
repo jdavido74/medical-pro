@@ -3,7 +3,8 @@
  * Used in QuoteFormModal and InvoiceFormModal to quickly add catalog items
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, Package, Pill, Syringe, Stethoscope, Plus, ChevronDown } from 'lucide-react';
 import { getProductsForBilling, searchCatalog, formatProductName } from '../../services/catalogIntegration';
@@ -22,6 +23,33 @@ const TYPE_COLORS = {
   service: 'text-purple-600 bg-purple-100'
 };
 
+/**
+ * Hook to compute fixed dropdown position from a container ref,
+ * and reposition on scroll/resize while open.
+ */
+function useDropdownPosition(containerRef, isOpen) {
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  const update = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  }, [containerRef]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [isOpen, update]);
+
+  return pos;
+}
+
 const CatalogProductSelector = ({
   onSelect,
   includeServices = false,
@@ -35,7 +63,10 @@ const CatalogProductSelector = ({
   const [results, setResults] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+
+  const dropdownPos = useDropdownPosition(containerRef, isOpen);
 
   // Load all products on mount
   useEffect(() => {
@@ -60,7 +91,10 @@ const CatalogProductSelector = ({
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current && !containerRef.current.contains(event.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -93,6 +127,79 @@ const CatalogProductSelector = ({
       currency: 'EUR'
     }).format(price);
   };
+
+  const dropdownContent = isOpen ? ReactDOM.createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed z-[9999] bg-white rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto"
+      style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
+    >
+      {results.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <Package className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+          <p className="text-sm">{t('empty.filteredTitle', 'Aucun résultat')}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {t('empty.filteredDescription', 'Aucun élément ne correspond à votre recherche')}
+          </p>
+        </div>
+      ) : (
+        <ul className="py-1">
+          {results.map((product) => {
+            const TypeIcon = TYPE_ICONS[product.type] || Package;
+            return (
+              <li key={product.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelect(product)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className={`p-1.5 rounded-lg ${TYPE_COLORS[product.type]}`}>
+                    <TypeIcon className="h-4 w-4" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {product.name}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>{t(`types.${product.type}`)}</span>
+                      {product.duration && (
+                        <>
+                          <span>•</span>
+                          <span>{product.duration} min</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-900">
+                      {formatPrice(product.price)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      TVA {product.vatRate}%
+                    </p>
+                  </div>
+
+                  <Plus className="h-4 w-4 text-green-600 flex-shrink-0" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* View all link */}
+      {results.length > 0 && allProducts.length > results.length && (
+        <div className="border-t border-gray-100 px-4 py-2 text-center">
+          <span className="text-xs text-gray-500">
+            {results.length} / {allProducts.length} {t('stats.total', 'éléments')}
+          </span>
+        </div>
+      )}
+    </div>,
+    document.body
+  ) : null;
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -129,74 +236,8 @@ const CatalogProductSelector = ({
         </div>
       </div>
 
-      {/* Dropdown */}
-      {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto">
-          {results.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Package className="mx-auto h-8 w-8 text-gray-300 mb-2" />
-              <p className="text-sm">{t('empty.filteredTitle', 'Aucun résultat')}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {t('empty.filteredDescription', 'Aucun élément ne correspond à votre recherche')}
-              </p>
-            </div>
-          ) : (
-            <ul className="py-1">
-              {results.map((product) => {
-                const TypeIcon = TYPE_ICONS[product.type] || Package;
-                return (
-                  <li key={product.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleSelect(product)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <div className={`p-1.5 rounded-lg ${TYPE_COLORS[product.type]}`}>
-                        <TypeIcon className="h-4 w-4" />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {product.name}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>{t(`types.${product.type}`)}</span>
-                          {product.duration && (
-                            <>
-                              <span>•</span>
-                              <span>{product.duration} min</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">
-                          {formatPrice(product.price)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          TVA {product.vatRate}%
-                        </p>
-                      </div>
-
-                      <Plus className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          {/* View all link */}
-          {results.length > 0 && allProducts.length > results.length && (
-            <div className="border-t border-gray-100 px-4 py-2 text-center">
-              <span className="text-xs text-gray-500">
-                {results.length} / {allProducts.length} {t('stats.total', 'éléments')}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Dropdown rendered via portal */}
+      {dropdownContent}
     </div>
   );
 };
@@ -216,6 +257,9 @@ export const CatalogServiceSelector = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const dropdownPos = useDropdownPosition(containerRef, isOpen);
 
   useEffect(() => {
     const allServices = getProductsForBilling({ type: 'service' });
@@ -224,7 +268,10 @@ export const CatalogServiceSelector = ({
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current && !containerRef.current.contains(event.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -253,6 +300,59 @@ export const CatalogServiceSelector = ({
     setSearchQuery('');
   };
 
+  const dropdownContent = isOpen ? ReactDOM.createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed z-[9999] bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-y-auto"
+      style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
+    >
+      {/* Search */}
+      <div className="p-2 border-b border-gray-100">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('placeholders.search')}
+            className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            autoFocus
+          />
+        </div>
+      </div>
+
+      {/* Services list */}
+      {filteredServices.length === 0 ? (
+        <div className="text-center py-4 text-sm text-gray-500">
+          {t('empty.filteredTitle')}
+        </div>
+      ) : (
+        <ul className="py-1">
+          {filteredServices.map((service) => (
+            <li key={service.id}>
+              <button
+                type="button"
+                onClick={() => handleSelect(service)}
+                className={`w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-50 ${
+                  service.id === selectedServiceId ? 'bg-green-50' : ''
+                }`}
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{service.name}</p>
+                  <p className="text-xs text-gray-500">{service.duration || 30} min</p>
+                </div>
+                {service.id === selectedServiceId && (
+                  <div className="text-green-600">✓</div>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>,
+    document.body
+  ) : null;
+
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <button
@@ -275,53 +375,8 @@ export const CatalogServiceSelector = ({
         <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-y-auto">
-          {/* Search */}
-          <div className="p-2 border-b border-gray-100">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('placeholders.search')}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                autoFocus
-              />
-            </div>
-          </div>
-
-          {/* Services list */}
-          {filteredServices.length === 0 ? (
-            <div className="text-center py-4 text-sm text-gray-500">
-              {t('empty.filteredTitle')}
-            </div>
-          ) : (
-            <ul className="py-1">
-              {filteredServices.map((service) => (
-                <li key={service.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(service)}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-50 ${
-                      service.id === selectedServiceId ? 'bg-green-50' : ''
-                    }`}
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{service.name}</p>
-                      <p className="text-xs text-gray-500">{service.duration || 30} min</p>
-                    </div>
-                    {service.id === selectedServiceId && (
-                      <div className="text-green-600">✓</div>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      {/* Dropdown rendered via portal */}
+      {dropdownContent}
     </div>
   );
 };

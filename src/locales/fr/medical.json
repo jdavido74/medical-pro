@@ -282,6 +282,7 @@
       "searchCatalog": "Rechercher dans le catalogue...",
       "fromCatalog": "Du catalogue",
       "medication": "Médicament",
+      "treatment": "Traitement",
       "route": "Voie",
       "routes": {
         "oral": "Orale",
