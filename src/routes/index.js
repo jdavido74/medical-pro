@@ -16,6 +16,7 @@ import { Navigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
+import MobileLayout from '../layouts/MobileLayout';
 
 // Pages publiques
 import HomePage from '../components/public/HomePage';
@@ -61,6 +62,12 @@ import PublicRoute from '../components/routing/PublicRoute';
 import AdminRoute from '../components/routing/AdminRoute';
 import PermissionRoute from '../components/routing/PermissionRoute';
 import OnboardingGuard from '../components/routing/OnboardingGuard';
+
+// Mobile screens
+import MobileHomeScreen from '../components/mobile/MobileHomeScreen';
+import MobileAppointmentsScreen from '../components/mobile/MobileAppointmentsScreen';
+import MobileVitalsScreen from '../components/mobile/MobileVitalsScreen';
+import MobilePlaceholderScreen from '../components/mobile/MobilePlaceholderScreen';
 
 // Onboarding
 import OnboardingWizard from '../components/onboarding/OnboardingWizard';
@@ -341,6 +348,24 @@ export const routes = [
             element: <AdminRoute><AdminLayout /></AdminRoute>,
             children: adminRoutes
           }
+        ]
+      },
+
+      // Routes mobiles (interface légère pour personnel soignant)
+      {
+        element: (
+          <ProtectedRoute>
+            <OnboardingGuard>
+              <MobileLayout />
+            </OnboardingGuard>
+          </ProtectedRoute>
+        ),
+        children: [
+          { path: 'mobile', element: <Navigate to="home" replace /> },
+          { path: 'mobile/home', element: <MobileHomeScreen /> },
+          { path: 'mobile/appointments', element: <MobileAppointmentsScreen /> },
+          { path: 'mobile/vitals', element: <MobileVitalsScreen /> },
+          { path: 'mobile/consents', element: <MobilePlaceholderScreen /> }
         ]
       }
     ]

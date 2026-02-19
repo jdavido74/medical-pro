@@ -1,0 +1,92 @@
+{
+  "tabs": {
+    "home": "Accueil",
+    "appointments": "RDV",
+    "vitals": "Constantes",
+    "consents": "Consentements"
+  },
+  "home": {
+    "greeting": "Bonjour, {{name}}",
+    "today": "Aujourd'hui",
+    "stats": {
+      "total": "Total RDV",
+      "completed": "Terminés",
+      "inProgress": "En cours",
+      "pending": "En attente"
+    },
+    "nextAppointment": "Prochain rendez-vous",
+    "noNextAppointment": "Aucun rendez-vous à venir aujourd'hui",
+    "welcomePatient": "Accueillir le patient",
+    "viewPlanning": "Voir le planning",
+    "at": "à"
+  },
+  "appointments": {
+    "title": "Rendez-vous",
+    "today": "Aujourd'hui",
+    "filterAll": "Tous",
+    "filterPending": "En attente",
+    "filterInProgress": "En cours",
+    "noAppointments": "Aucun rendez-vous pour cette date",
+    "service": "Prestation",
+    "notes": "Notes",
+    "actions": {
+      "confirm": "Confirmer",
+      "start": "Démarrer",
+      "complete": "Terminer",
+      "noShow": "Absent",
+      "cancel": "Annuler",
+      "takeVitals": "Prendre constantes",
+      "consents": "Consentements"
+    },
+    "statusChanged": "Statut mis à jour avec succès",
+    "statusError": "Erreur lors de la mise à jour du statut"
+  },
+  "vitals": {
+    "title": "Constantes vitales",
+    "patient": "Patient",
+    "appointment": "Rendez-vous",
+    "selectFromAppointment": "Sélectionnez un patient depuis l'écran des rendez-vous pour saisir les constantes vitales.",
+    "goToAppointments": "Voir les rendez-vous",
+    "fields": {
+      "bloodPressure": "Pression artérielle",
+      "systolic": "Systolique",
+      "diastolic": "Diastolique",
+      "heartRate": "Fréquence cardiaque",
+      "temperature": "Température",
+      "respiratoryRate": "Fréquence respiratoire",
+      "oxygenSaturation": "Saturation O₂",
+      "bloodGlucose": "Glycémie",
+      "weight": "Poids",
+      "height": "Taille",
+      "bmi": "IMC"
+    },
+    "units": {
+      "mmHg": "mmHg",
+      "bpm": "bpm",
+      "celsius": "°C",
+      "perMin": "/min",
+      "percent": "%",
+      "mgdl": "mg/dL",
+      "kg": "kg",
+      "cm": "cm"
+    },
+    "save": "Enregistrer les constantes",
+    "saving": "Enregistrement...",
+    "saveSuccess": "Constantes enregistrées avec succès",
+    "saveError": "Erreur lors de l'enregistrement des constantes",
+    "noData": "Aucune donnée saisie",
+    "comingSoon": "Bientôt disponible",
+    "comingSoonDesc": "La prise de constantes vitales sur mobile sera disponible dans une prochaine mise à jour."
+  },
+  "consents": {
+    "title": "Consentements",
+    "comingSoon": "Bientôt disponible",
+    "comingSoonDesc": "La gestion des consentements sur mobile sera disponible dans une prochaine mise à jour."
+  },
+  "common": {
+    "logout": "Déconnexion",
+    "loading": "Chargement...",
+    "error": "Erreur de chargement",
+    "retry": "Réessayer"
+  }
+}

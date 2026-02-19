@@ -1,0 +1,92 @@
+{
+  "tabs": {
+    "home": "Inicio",
+    "appointments": "Citas",
+    "vitals": "Signos",
+    "consents": "Consentimientos"
+  },
+  "home": {
+    "greeting": "Hola, {{name}}",
+    "today": "Hoy",
+    "stats": {
+      "total": "Total citas",
+      "completed": "Terminadas",
+      "inProgress": "En curso",
+      "pending": "Pendientes"
+    },
+    "nextAppointment": "Próxima cita",
+    "noNextAppointment": "No hay citas pendientes hoy",
+    "welcomePatient": "Recibir paciente",
+    "viewPlanning": "Ver planificación",
+    "at": "a las"
+  },
+  "appointments": {
+    "title": "Citas",
+    "today": "Hoy",
+    "filterAll": "Todas",
+    "filterPending": "Pendientes",
+    "filterInProgress": "En curso",
+    "noAppointments": "No hay citas para esta fecha",
+    "service": "Servicio",
+    "notes": "Notas",
+    "actions": {
+      "confirm": "Confirmar",
+      "start": "Iniciar",
+      "complete": "Completar",
+      "noShow": "Ausente",
+      "cancel": "Cancelar",
+      "takeVitals": "Tomar signos vitales",
+      "consents": "Consentimientos"
+    },
+    "statusChanged": "Estado actualizado con éxito",
+    "statusError": "Error al actualizar el estado"
+  },
+  "vitals": {
+    "title": "Signos vitales",
+    "patient": "Paciente",
+    "appointment": "Cita",
+    "selectFromAppointment": "Seleccione un paciente desde la pantalla de citas para registrar los signos vitales.",
+    "goToAppointments": "Ir a citas",
+    "fields": {
+      "bloodPressure": "Presión arterial",
+      "systolic": "Sistólica",
+      "diastolic": "Diastólica",
+      "heartRate": "Frecuencia cardíaca",
+      "temperature": "Temperatura",
+      "respiratoryRate": "Frecuencia respiratoria",
+      "oxygenSaturation": "Saturación O₂",
+      "bloodGlucose": "Glucemia",
+      "weight": "Peso",
+      "height": "Altura",
+      "bmi": "IMC"
+    },
+    "units": {
+      "mmHg": "mmHg",
+      "bpm": "lpm",
+      "celsius": "°C",
+      "perMin": "/min",
+      "percent": "%",
+      "mgdl": "mg/dL",
+      "kg": "kg",
+      "cm": "cm"
+    },
+    "save": "Guardar signos vitales",
+    "saving": "Guardando...",
+    "saveSuccess": "Signos vitales guardados con éxito",
+    "saveError": "Error al guardar los signos vitales",
+    "noData": "No se ingresaron datos",
+    "comingSoon": "Próximamente",
+    "comingSoonDesc": "La toma de signos vitales en móvil estará disponible en una próxima actualización."
+  },
+  "consents": {
+    "title": "Consentimientos",
+    "comingSoon": "Próximamente",
+    "comingSoonDesc": "La gestión de consentimientos en móvil estará disponible en una próxima actualización."
+  },
+  "common": {
+    "logout": "Cerrar sesión",
+    "loading": "Cargando...",
+    "error": "Error de carga",
+    "retry": "Reintentar"
+  }
+}

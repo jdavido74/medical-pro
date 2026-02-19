@@ -1,0 +1,92 @@
+{
+  "tabs": {
+    "home": "Home",
+    "appointments": "Appts",
+    "vitals": "Vitals",
+    "consents": "Consents"
+  },
+  "home": {
+    "greeting": "Hello, {{name}}",
+    "today": "Today",
+    "stats": {
+      "total": "Total Appts",
+      "completed": "Completed",
+      "inProgress": "In Progress",
+      "pending": "Pending"
+    },
+    "nextAppointment": "Next appointment",
+    "noNextAppointment": "No upcoming appointments today",
+    "welcomePatient": "Welcome patient",
+    "viewPlanning": "View schedule",
+    "at": "at"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "today": "Today",
+    "filterAll": "All",
+    "filterPending": "Pending",
+    "filterInProgress": "In Progress",
+    "noAppointments": "No appointments for this date",
+    "service": "Service",
+    "notes": "Notes",
+    "actions": {
+      "confirm": "Confirm",
+      "start": "Start",
+      "complete": "Complete",
+      "noShow": "No Show",
+      "cancel": "Cancel",
+      "takeVitals": "Take vitals",
+      "consents": "Consents"
+    },
+    "statusChanged": "Status updated successfully",
+    "statusError": "Error updating status"
+  },
+  "vitals": {
+    "title": "Vital Signs",
+    "patient": "Patient",
+    "appointment": "Appointment",
+    "selectFromAppointment": "Select a patient from the appointments screen to enter vital signs.",
+    "goToAppointments": "Go to appointments",
+    "fields": {
+      "bloodPressure": "Blood Pressure",
+      "systolic": "Systolic",
+      "diastolic": "Diastolic",
+      "heartRate": "Heart Rate",
+      "temperature": "Temperature",
+      "respiratoryRate": "Respiratory Rate",
+      "oxygenSaturation": "O₂ Saturation",
+      "bloodGlucose": "Blood Glucose",
+      "weight": "Weight",
+      "height": "Height",
+      "bmi": "BMI"
+    },
+    "units": {
+      "mmHg": "mmHg",
+      "bpm": "bpm",
+      "celsius": "°C",
+      "perMin": "/min",
+      "percent": "%",
+      "mgdl": "mg/dL",
+      "kg": "kg",
+      "cm": "cm"
+    },
+    "save": "Save vitals",
+    "saving": "Saving...",
+    "saveSuccess": "Vitals saved successfully",
+    "saveError": "Error saving vitals",
+    "noData": "No data entered",
+    "comingSoon": "Coming soon",
+    "comingSoonDesc": "Mobile vital signs capture will be available in a future update."
+  },
+  "consents": {
+    "title": "Consents",
+    "comingSoon": "Coming soon",
+    "comingSoonDesc": "Mobile consent management will be available in a future update."
+  },
+  "common": {
+    "logout": "Logout",
+    "loading": "Loading...",
+    "error": "Loading error",
+    "retry": "Retry"
+  }
+}
