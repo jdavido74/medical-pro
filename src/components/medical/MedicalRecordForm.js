@@ -45,6 +45,7 @@ const MedicalRecordForm = forwardRef(({
   initialData = null,
   lastRecord = null, // Dernier dossier du patient pour pré-remplir
   initialActiveTab = 'basic', // Onglet initial à afficher
+  appointmentId = null, // ID du rendez-vous associé pour sync traitements
   onSave,
   onSubmit,
   onCancel,
@@ -147,8 +148,14 @@ const MedicalRecordForm = forwardRef(({
         heartRate: data?.vitalSigns?.heartRate || '',
         temperature: data?.vitalSigns?.temperature || '',
         respiratoryRate: data?.vitalSigns?.respiratoryRate || '',
-        oxygenSaturation: data?.vitalSigns?.oxygenSaturation || ''
+        oxygenSaturation: data?.vitalSigns?.oxygenSaturation || '',
+        bloodGlucose: data?.vitalSigns?.bloodGlucose || '',
+        additionalReadings: data?.vitalSigns?.additionalReadings || []
       },
+
+      // Appointment link
+      appointmentId: data?.appointmentId || '',
+      originalTreatments: data?.originalTreatments || null,
 
       // Données persistantes du patient - repris du dossier précédent
       bloodType: data?.bloodType || prev?.bloodType || '',
@@ -251,7 +258,9 @@ const MedicalRecordForm = forwardRef(({
       heartRate: '',
       temperature: '',
       respiratoryRate: '',
-      oxygenSaturation: ''
+      oxygenSaturation: '',
+      bloodGlucose: '',
+      additionalReadings: []
     },
 
     bloodType: '',
@@ -329,6 +338,44 @@ const MedicalRecordForm = forwardRef(({
     };
     loadStaff();
   }, []);
+
+  // Load appointment treatments if appointmentId is provided and no existing record
+  useEffect(() => {
+    const loadAppointmentTreatments = async () => {
+      if (!appointmentId || record) return;
+      try {
+        const treatments = await medicalRecordsApi.getAppointmentTreatments(appointmentId);
+        if (treatments && treatments.length > 0) {
+          // Transform treatments from backend format
+          const mappedTreatments = treatments.map(t => ({
+            medication: t.medication,
+            dosage: '',
+            frequency: '',
+            route: '',
+            startDate: '',
+            endDate: '',
+            status: t.status || 'active',
+            prescribedBy: '',
+            notes: '',
+            catalogItemId: t.catalog_item_id || null,
+            catalogItemType: t.catalog_item_type || null,
+            origin: 'appointment',
+            appointmentItemId: t.appointment_item_id || null,
+            originalMedication: null
+          }));
+          setFormData(prev => ({
+            ...prev,
+            appointmentId,
+            treatments: mappedTreatments,
+            originalTreatments: treatments // snapshot for sync
+          }));
+        }
+      } catch (error) {
+        console.error('[MedicalRecordForm] Error loading appointment treatments:', error);
+      }
+    };
+    loadAppointmentTreatments();
+  }, [appointmentId, record]);
 
   // Notify parent when active tab changes
   useEffect(() => {
@@ -649,7 +696,8 @@ const MedicalRecordForm = forwardRef(({
       endDate: null,
       status: 'active',
       prescribedBy: user?.name || '',
-      notes: ''
+      notes: '',
+      origin: formData.appointmentId ? 'added' : null
     };
 
     setFormData(prev => ({
@@ -683,9 +731,18 @@ const MedicalRecordForm = forwardRef(({
   const updateTreatment = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      treatments: prev.treatments.map((treatment, i) =>
-        i === index ? { ...treatment, [field]: value } : treatment
-      )
+      treatments: prev.treatments.map((treatment, i) => {
+        if (i !== index) return treatment;
+        const updated = { ...treatment, [field]: value };
+        // Auto-detect modification of appointment treatments
+        if (field === 'medication' && treatment.origin === 'appointment' && value !== treatment.medication) {
+          updated.origin = 'modified';
+          if (!updated.originalMedication) {
+            updated.originalMedication = treatment.medication;
+          }
+        }
+        return updated;
+      })
     }));
   };
 
@@ -1526,7 +1583,214 @@ const MedicalRecordForm = forwardRef(({
               placeholder="98"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <Droplets className="h-4 w-4 mr-2 text-purple-600" />
+              {t('medical:form.vitals.bloodGlucose')} (mg/dL)
+            </label>
+            <input
+              type="number"
+              value={formData.vitalSigns.bloodGlucose}
+              onChange={(e) => handleInputChange('vitalSigns', 'bloodGlucose', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="100"
+            />
+          </div>
         </div>
+      </div>
+
+      {/* Constantes additionnelles per-traitement */}
+      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-semibold text-gray-900 flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
+            {t('medical:form.vitals.additionalReadings')}
+          </h4>
+          <button
+            type="button"
+            onClick={() => {
+              const newReading = {
+                timestamp: new Date().toISOString().slice(0, 16),
+                treatmentId: '',
+                treatmentName: '',
+                bloodPressure: { systolic: '', diastolic: '' },
+                heartRate: '',
+                temperature: '',
+                oxygenSaturation: '',
+                bloodGlucose: '',
+                observations: ''
+              };
+              setFormData(prev => ({
+                ...prev,
+                vitalSigns: {
+                  ...prev.vitalSigns,
+                  additionalReadings: [...(prev.vitalSigns.additionalReadings || []), newReading]
+                }
+              }));
+            }}
+            className="flex items-center space-x-1 bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span>{t('medical:form.vitals.addReading')}</span>
+          </button>
+        </div>
+
+        {(!formData.vitalSigns.additionalReadings || formData.vitalSigns.additionalReadings.length === 0) ? (
+          <p className="text-sm text-gray-500 italic">{t('medical:form.vitals.noReadings')}</p>
+        ) : (
+          <div className="space-y-4">
+            {formData.vitalSigns.additionalReadings.map((reading, idx) => (
+              <div key={idx} className="bg-white p-4 rounded-lg border-l-4 border-purple-400 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="datetime-local"
+                      value={reading.timestamp || ''}
+                      onChange={(e) => {
+                        const updated = [...formData.vitalSigns.additionalReadings];
+                        updated[idx] = { ...updated[idx], timestamp: e.target.value };
+                        setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                      }}
+                      className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500"
+                    />
+                    <select
+                      value={reading.treatmentId || ''}
+                      onChange={(e) => {
+                        const updated = [...formData.vitalSigns.additionalReadings];
+                        const selectedTreatment = formData.treatments.find((_, i) => String(i) === e.target.value);
+                        updated[idx] = {
+                          ...updated[idx],
+                          treatmentId: e.target.value,
+                          treatmentName: selectedTreatment?.medication || ''
+                        };
+                        setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                      }}
+                      className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="">{t('medical:form.vitals.noTreatmentLinked')}</option>
+                      {formData.treatments.map((tr, i) => (
+                        <option key={i} value={String(i)}>{tr.medication}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = formData.vitalSigns.additionalReadings.filter((_, i) => i !== idx);
+                      setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                    }}
+                    className="text-red-500 hover:text-red-700 p-1"
+                    title={t('medical:form.vitals.deleteReading')}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">{t('medical:bloodPressure')}</label>
+                    <div className="flex items-center space-x-1">
+                      <input
+                        type="number"
+                        value={reading.bloodPressure?.systolic || ''}
+                        onChange={(e) => {
+                          const updated = [...formData.vitalSigns.additionalReadings];
+                          updated[idx] = { ...updated[idx], bloodPressure: { ...updated[idx].bloodPressure, systolic: e.target.value } };
+                          setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                        }}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                        placeholder="120"
+                      />
+                      <span className="text-gray-400">/</span>
+                      <input
+                        type="number"
+                        value={reading.bloodPressure?.diastolic || ''}
+                        onChange={(e) => {
+                          const updated = [...formData.vitalSigns.additionalReadings];
+                          updated[idx] = { ...updated[idx], bloodPressure: { ...updated[idx].bloodPressure, diastolic: e.target.value } };
+                          setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                        }}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                        placeholder="80"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">{t('medical:heartRate')}</label>
+                    <input
+                      type="number"
+                      value={reading.heartRate || ''}
+                      onChange={(e) => {
+                        const updated = [...formData.vitalSigns.additionalReadings];
+                        updated[idx] = { ...updated[idx], heartRate: e.target.value };
+                        setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="72"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">{t('medical:temperature')}</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={reading.temperature || ''}
+                      onChange={(e) => {
+                        const updated = [...formData.vitalSigns.additionalReadings];
+                        updated[idx] = { ...updated[idx], temperature: e.target.value };
+                        setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="36.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">{t('medical:form.vitals.oxygenSaturation')}</label>
+                    <input
+                      type="number"
+                      value={reading.oxygenSaturation || ''}
+                      onChange={(e) => {
+                        const updated = [...formData.vitalSigns.additionalReadings];
+                        updated[idx] = { ...updated[idx], oxygenSaturation: e.target.value };
+                        setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="98"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">{t('medical:form.vitals.bloodGlucose')}</label>
+                    <input
+                      type="number"
+                      value={reading.bloodGlucose || ''}
+                      onChange={(e) => {
+                        const updated = [...formData.vitalSigns.additionalReadings];
+                        updated[idx] = { ...updated[idx], bloodGlucose: e.target.value };
+                        setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="100"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs text-gray-600 mb-1">{t('medical:form.vitals.observations')}</label>
+                  <textarea
+                    value={reading.observations || ''}
+                    onChange={(e) => {
+                      const updated = [...formData.vitalSigns.additionalReadings];
+                      updated[idx] = { ...updated[idx], observations: e.target.value };
+                      setFormData(prev => ({ ...prev, vitalSigns: { ...prev.vitalSigns, additionalReadings: updated } }));
+                    }}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    rows={2}
+                    placeholder={t('medical:form.vitals.observations')}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div>
@@ -2006,6 +2270,21 @@ const MedicalRecordForm = forwardRef(({
                       {t('medical:form.treatmentsTab.fromCatalog')}
                     </span>
                   )}
+                  {treatment.origin === 'appointment' && (
+                    <span className="inline-flex items-center mt-1 ml-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                      {t('medical:form.treatmentsTab.originAppointment')}
+                    </span>
+                  )}
+                  {treatment.origin === 'added' && (
+                    <span className="inline-flex items-center mt-1 ml-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                      {t('medical:form.treatmentsTab.originAdded')}
+                    </span>
+                  )}
+                  {treatment.origin === 'modified' && (
+                    <span className="inline-flex items-center mt-1 ml-1 px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                      {t('medical:form.treatmentsTab.originModified')}
+                    </span>
+                  )}
                 </div>
 
                 <div>
@@ -2105,6 +2384,26 @@ const MedicalRecordForm = forwardRef(({
           ))}
         </div>
       </div>
+
+      {/* Section lecture seule - Traitements prévus initialement */}
+      {formData.originalTreatments && formData.originalTreatments.length > 0 && (
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <h4 className="font-semibold text-gray-700 mb-3 text-sm">
+            {t('medical:form.treatmentsTab.originalTreatments')}
+          </h4>
+          <div className="space-y-2">
+            {formData.originalTreatments.map((ot, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-sm text-gray-600 bg-white px-3 py-2 rounded border border-gray-100">
+                <Pill className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <span>{ot.medication}</span>
+                {ot.status && (
+                  <span className="ml-auto text-xs text-gray-400">{ot.status}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 

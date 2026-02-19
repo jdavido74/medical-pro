@@ -203,6 +203,19 @@ async function restoreMedicalRecord(recordId) {
   }
 }
 
+/**
+ * Get treatments from an appointment for pre-filling a medical record
+ */
+async function getAppointmentTreatments(appointmentId) {
+  try {
+    const response = await baseClient.get(`/medical-records/appointment/${appointmentId}/treatments`);
+    return response.data || [];
+  } catch (error) {
+    console.error('[medicalRecordsApi] Error fetching appointment treatments:', error);
+    throw error;
+  }
+}
+
 export const medicalRecordsApi = {
   getMedicalRecords,
   getPatientMedicalRecords,
@@ -212,5 +225,6 @@ export const medicalRecordsApi = {
   updateMedicalRecord,
   signMedicalRecord,
   archiveMedicalRecord,
-  restoreMedicalRecord
+  restoreMedicalRecord,
+  getAppointmentTreatments
 };

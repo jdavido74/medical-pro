@@ -218,8 +218,17 @@
     "vitals": {
       "bmi": "IMC",
       "oxygenSaturation": "Saturation O₂",
+      "bloodGlucose": "Glycémie",
       "bloodType": "Groupe sanguin",
-      "selectBloodType": "Sélectionner le groupe sanguin"
+      "selectBloodType": "Sélectionner le groupe sanguin",
+      "additionalReadings": "Constantes per-traitement",
+      "addReading": "Ajouter un relevé",
+      "noReadings": "Aucun relevé supplémentaire",
+      "readingTimestamp": "Horodatage",
+      "linkedTreatment": "Traitement associé",
+      "observations": "Observations",
+      "noTreatmentLinked": "Aucun traitement associé",
+      "deleteReading": "Supprimer ce relevé"
     },
     "placeholders": {
       "chiefComplaint": "Décrivez le motif principal de la consultation...",
@@ -297,7 +306,11 @@
         "active": "Actif",
         "suspended": "Suspendu",
         "completed": "Terminé"
-      }
+      },
+      "originAppointment": "Du rendez-vous",
+      "originAdded": "Ajouté",
+      "originModified": "Modifié",
+      "originalTreatments": "Traitements prévus initialement"
     },
     "examTab": {
       "generalAppearance": "Aspect Général",

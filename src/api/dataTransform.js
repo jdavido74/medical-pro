@@ -779,7 +779,19 @@ function transformMedicalRecordFromBackend(record) {
       heartRate: record.vital_signs.heart_rate || record.vital_signs.heartRate,
       temperature: record.vital_signs.temperature,
       respiratoryRate: record.vital_signs.respiratory_rate || record.vital_signs.respiratoryRate,
-      oxygenSaturation: record.vital_signs.oxygen_saturation || record.vital_signs.oxygenSaturation
+      oxygenSaturation: record.vital_signs.oxygen_saturation || record.vital_signs.oxygenSaturation,
+      bloodGlucose: record.vital_signs.blood_glucose || record.vital_signs.bloodGlucose,
+      additionalReadings: (record.vital_signs.additional_readings || record.vital_signs.additionalReadings || []).map(r => ({
+        timestamp: r.timestamp,
+        treatmentId: r.treatment_id || r.treatmentId,
+        treatmentName: r.treatment_name || r.treatmentName,
+        bloodPressure: r.blood_pressure || r.bloodPressure,
+        heartRate: r.heart_rate || r.heartRate,
+        temperature: r.temperature,
+        oxygenSaturation: r.oxygen_saturation || r.oxygenSaturation,
+        bloodGlucose: r.blood_glucose || r.bloodGlucose,
+        observations: r.observations
+      }))
     } : {},
 
     // Medical history
@@ -803,6 +815,10 @@ function transformMedicalRecordFromBackend(record) {
     // Physical exam
     physicalExam: record.physical_exam || {},
 
+    // Appointment link
+    appointmentId: record.appointment_id,
+    originalTreatments: record.original_treatments,
+
     // Treatments (transform snake_case to camelCase in array)
     treatments: (record.treatments || []).map(t => ({
       medication: t.medication,
@@ -815,7 +831,10 @@ function transformMedicalRecordFromBackend(record) {
       prescribedBy: t.prescribed_by || t.prescribedBy,
       notes: t.notes,
       catalogItemId: t.catalog_item_id || t.catalogItemId || null,
-      catalogItemType: t.catalog_item_type || t.catalogItemType || null
+      catalogItemType: t.catalog_item_type || t.catalogItemType || null,
+      origin: t.origin || null,
+      appointmentItemId: t.appointment_item_id || t.appointmentItemId || null,
+      originalMedication: t.original_medication || t.originalMedication || null
     })),
 
     // Treatment plan
@@ -925,6 +944,34 @@ function transformMedicalRecordToBackend(record) {
     if (respiratoryRate !== undefined) vsData.respiratory_rate = respiratoryRate;
     if (oxygenSaturation !== undefined) vsData.oxygen_saturation = oxygenSaturation;
 
+    const bloodGlucose = toNumber(vs.bloodGlucose);
+    if (bloodGlucose !== undefined) vsData.blood_glucose = bloodGlucose;
+
+    // Additional readings (per-treatment vitals)
+    if (Array.isArray(vs.additionalReadings) && vs.additionalReadings.length > 0) {
+      vsData.additional_readings = vs.additionalReadings.map(r => {
+        const reading = {};
+        if (r.timestamp) reading.timestamp = r.timestamp;
+        if (r.treatmentId) reading.treatment_id = r.treatmentId;
+        if (r.treatmentName) reading.treatment_name = r.treatmentName;
+        const rSystolic = toInteger(r.bloodPressure?.systolic);
+        const rDiastolic = toInteger(r.bloodPressure?.diastolic);
+        if (rSystolic !== undefined || rDiastolic !== undefined) {
+          reading.blood_pressure = { systolic: rSystolic, diastolic: rDiastolic };
+        }
+        const rHr = toInteger(r.heartRate);
+        if (rHr !== undefined) reading.heart_rate = rHr;
+        const rTemp = toNumber(r.temperature);
+        if (rTemp !== undefined) reading.temperature = rTemp;
+        const rSpo2 = toNumber(r.oxygenSaturation);
+        if (rSpo2 !== undefined) reading.oxygen_saturation = rSpo2;
+        const rGlucose = toNumber(r.bloodGlucose);
+        if (rGlucose !== undefined) reading.blood_glucose = rGlucose;
+        if (r.observations) reading.observations = r.observations;
+        return reading;
+      });
+    }
+
     // Only include vital_signs if it has at least one value
     if (Object.keys(vsData).length > 0) {
       vitalSigns = vsData;
@@ -1017,6 +1064,9 @@ function transformMedicalRecordToBackend(record) {
         if (t.notes && t.notes.trim()) item.notes = t.notes;
         if (t.catalogItemId) item.catalog_item_id = t.catalogItemId;
         if (t.catalogItemType) item.catalog_item_type = t.catalogItemType;
+        if (t.origin) item.origin = t.origin;
+        if (t.appointmentItemId) item.appointment_item_id = t.appointmentItemId;
+        if (t.originalMedication) item.original_medication = t.originalMedication;
         return item;
       });
     if (cleaned.length > 0) {
@@ -1165,6 +1215,14 @@ function transformMedicalRecordToBackend(record) {
   if (treatments) backendData.treatments = treatments;
   if (treatmentPlan) backendData.treatment_plan = treatmentPlan;
   if (currentMedications) backendData.current_medications = currentMedications;
+
+  // Appointment link
+  if (record.appointmentId) {
+    backendData.appointment_id = record.appointmentId;
+  }
+  if (record.originalTreatments) {
+    backendData.original_treatments = record.originalTreatments;
+  }
 
   // Blood type
   if (record.bloodType && record.bloodType.trim()) {

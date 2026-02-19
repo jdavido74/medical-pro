@@ -14,7 +14,8 @@ import { useTranslation } from 'react-i18next';
 const MedicalHistoryModal = ({
   patient,
   isOpen,
-  onClose
+  onClose,
+  appointmentId = null
 }) => {
   const { t } = useTranslation(['medical', 'common']);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -306,6 +307,7 @@ const MedicalHistoryModal = ({
                 patient={patient}
                 existingRecord={editingRecord}
                 lastRecord={patientRecords.length > 0 ? patientRecords[0] : null}
+                appointmentId={!editingRecord ? appointmentId : null}
                 onSave={handleSaveRecord}
                 onCancel={handleCloseRecordForm}
                 hideFooter

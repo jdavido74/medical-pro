@@ -218,8 +218,17 @@
     "vitals": {
       "bmi": "BMI",
       "oxygenSaturation": "O₂ Saturation",
+      "bloodGlucose": "Blood Glucose",
       "bloodType": "Blood Type",
-      "selectBloodType": "Select blood type"
+      "selectBloodType": "Select blood type",
+      "additionalReadings": "Per-treatment vitals",
+      "addReading": "Add reading",
+      "noReadings": "No additional readings",
+      "readingTimestamp": "Timestamp",
+      "linkedTreatment": "Linked treatment",
+      "observations": "Observations",
+      "noTreatmentLinked": "No treatment linked",
+      "deleteReading": "Delete this reading"
     },
     "placeholders": {
       "chiefComplaint": "Describe the main reason for the visit...",
@@ -297,7 +306,11 @@
         "active": "Active",
         "suspended": "Suspended",
         "completed": "Completed"
-      }
+      },
+      "originAppointment": "From appointment",
+      "originAdded": "Added",
+      "originModified": "Modified",
+      "originalTreatments": "Originally planned treatments"
     },
     "examTab": {
       "generalAppearance": "General Appearance",

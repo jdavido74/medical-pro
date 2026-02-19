@@ -218,8 +218,17 @@
     "vitals": {
       "bmi": "IMC",
       "oxygenSaturation": "Saturación O₂",
+      "bloodGlucose": "Glucemia",
       "bloodType": "Grupo Sanguíneo",
-      "selectBloodType": "Seleccionar grupo sanguíneo"
+      "selectBloodType": "Seleccionar grupo sanguíneo",
+      "additionalReadings": "Constantes por tratamiento",
+      "addReading": "Agregar lectura",
+      "noReadings": "Sin lecturas adicionales",
+      "readingTimestamp": "Fecha y hora",
+      "linkedTreatment": "Tratamiento asociado",
+      "observations": "Observaciones",
+      "noTreatmentLinked": "Sin tratamiento asociado",
+      "deleteReading": "Eliminar esta lectura"
     },
     "placeholders": {
       "chiefComplaint": "Describa el motivo principal de la consulta...",
@@ -297,7 +306,11 @@
         "active": "Activo",
         "suspended": "Suspendido",
         "completed": "Completado"
-      }
+      },
+      "originAppointment": "De la cita",
+      "originAdded": "Agregado",
+      "originModified": "Modificado",
+      "originalTreatments": "Tratamientos previstos inicialmente"
     },
     "examTab": {
       "generalAppearance": "Aspecto General",
