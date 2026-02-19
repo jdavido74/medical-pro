@@ -1498,9 +1498,9 @@ const PlanningModule = () => {
 
         {/* List View */}
         {viewMode === 'list' && (
-          <div className="p-4">
+          <div className="flex flex-col h-full overflow-hidden">
             {/* List filters */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-3 p-4 pb-0 mb-4 flex-shrink-0">
               {/* Search */}
               <div className="relative flex-1 min-w-[250px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -1556,7 +1556,7 @@ const PlanningModule = () => {
 
             {/* Selected rows actions */}
             {selectedRows.length > 0 && (
-              <div className="flex items-center gap-3 mb-3 p-2 bg-blue-50 rounded-lg">
+              <div className="flex items-center gap-3 mb-3 mx-4 p-2 bg-blue-50 rounded-lg flex-shrink-0">
                 <span className="text-sm text-blue-700">
                   {t('list.selected', { count: selectedRows.length })}
                 </span>
@@ -1571,18 +1571,18 @@ const PlanningModule = () => {
 
             {/* Table */}
             {listLoading ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex items-center justify-center py-12 flex-1">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
               </div>
             ) : listAppointments.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-gray-500 flex-1">
                 <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p>{t('list.noResults')}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-auto flex-1 min-h-0 px-4">
                 <table className="w-full">
-                  <thead>
+                  <thead className="sticky top-0 z-10">
                     <tr className="border-b bg-gray-50">
                       <th className="px-3 py-2 text-left">
                         <input
