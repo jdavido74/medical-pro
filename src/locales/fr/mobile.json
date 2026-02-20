@@ -2,6 +2,7 @@
   "tabs": {
     "home": "Accueil",
     "appointments": "RDV",
+    "booking": "Planifier",
     "vitals": "Constantes",
     "consents": "Consentements"
   },
@@ -84,6 +85,32 @@
     "title": "Consentements",
     "comingSoon": "Bientôt disponible",
     "comingSoonDesc": "La gestion des consentements sur mobile sera disponible dans une prochaine mise à jour."
+  },
+  "booking": {
+    "searchTreatment": "Rechercher un traitement...",
+    "selectedTreatments": "Traitements sélectionnés",
+    "totalDuration": "Durée totale : {{minutes}} min",
+    "allMachines": "Toutes",
+    "allProviders": "Tous",
+    "search": "Rechercher les créneaux",
+    "searching": "Recherche en cours...",
+    "noSlots": "Aucun créneau disponible",
+    "selectPatient": "Sélectionner un patient",
+    "searchPatient": "Chercher par nom...",
+    "summary": "Résumé",
+    "provider": "Médecin",
+    "notes": "Notes",
+    "book": "Réserver",
+    "booking": "Réservation...",
+    "bookSuccess": "Rendez-vous créé avec succès",
+    "bookError": "Erreur lors de la réservation",
+    "next7days": "7 prochains jours",
+    "addTreatment": "Ajouter un traitement",
+    "segments": "Enchaînement",
+    "machine": "Machine",
+    "date": "Jour",
+    "noTreatments": "Sélectionnez au moins un traitement",
+    "slotAt": "à"
   },
   "common": {
     "logout": "Déconnexion",

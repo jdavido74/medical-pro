@@ -68,6 +68,7 @@ import MobileHomeScreen from '../components/mobile/MobileHomeScreen';
 import MobileAppointmentsScreen from '../components/mobile/MobileAppointmentsScreen';
 import MobileVitalsScreen from '../components/mobile/MobileVitalsScreen';
 import MobilePlaceholderScreen from '../components/mobile/MobilePlaceholderScreen';
+import MobileSlotsScreen from '../components/mobile/MobileSlotsScreen';
 
 // Onboarding
 import OnboardingWizard from '../components/onboarding/OnboardingWizard';
@@ -364,6 +365,7 @@ export const routes = [
           { path: 'mobile', element: <Navigate to="home" replace /> },
           { path: 'mobile/home', element: <MobileHomeScreen /> },
           { path: 'mobile/appointments', element: <MobileAppointmentsScreen /> },
+          { path: 'mobile/booking', element: <MobileSlotsScreen /> },
           { path: 'mobile/vitals', element: <MobileVitalsScreen /> },
           { path: 'mobile/consents', element: <MobilePlaceholderScreen /> }
         ]

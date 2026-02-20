@@ -2,6 +2,7 @@
   "tabs": {
     "home": "Home",
     "appointments": "Appts",
+    "booking": "Book",
     "vitals": "Vitals",
     "consents": "Consents"
   },
@@ -84,6 +85,32 @@
     "title": "Consents",
     "comingSoon": "Coming soon",
     "comingSoonDesc": "Mobile consent management will be available in a future update."
+  },
+  "booking": {
+    "searchTreatment": "Search a treatment...",
+    "selectedTreatments": "Selected treatments",
+    "totalDuration": "Total duration: {{minutes}} min",
+    "allMachines": "All",
+    "allProviders": "All",
+    "search": "Search slots",
+    "searching": "Searching...",
+    "noSlots": "No slots available",
+    "selectPatient": "Select a patient",
+    "searchPatient": "Search by name...",
+    "summary": "Summary",
+    "provider": "Provider",
+    "notes": "Notes",
+    "book": "Book",
+    "booking": "Booking...",
+    "bookSuccess": "Appointment created successfully",
+    "bookError": "Error creating appointment",
+    "next7days": "Next 7 days",
+    "addTreatment": "Add a treatment",
+    "segments": "Chained",
+    "machine": "Machine",
+    "date": "Day",
+    "noTreatments": "Select at least one treatment",
+    "slotAt": "at"
   },
   "common": {
     "logout": "Logout",

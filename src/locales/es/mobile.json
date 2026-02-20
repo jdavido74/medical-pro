@@ -2,6 +2,7 @@
   "tabs": {
     "home": "Inicio",
     "appointments": "Citas",
+    "booking": "Agendar",
     "vitals": "Signos",
     "consents": "Consentimientos"
   },
@@ -84,6 +85,32 @@
     "title": "Consentimientos",
     "comingSoon": "Próximamente",
     "comingSoonDesc": "La gestión de consentimientos en móvil estará disponible en una próxima actualización."
+  },
+  "booking": {
+    "searchTreatment": "Buscar un tratamiento...",
+    "selectedTreatments": "Tratamientos seleccionados",
+    "totalDuration": "Duración total: {{minutes}} min",
+    "allMachines": "Todas",
+    "allProviders": "Todos",
+    "search": "Buscar horarios",
+    "searching": "Buscando...",
+    "noSlots": "No hay horarios disponibles",
+    "selectPatient": "Seleccionar un paciente",
+    "searchPatient": "Buscar por nombre...",
+    "summary": "Resumen",
+    "provider": "Médico",
+    "notes": "Notas",
+    "book": "Reservar",
+    "booking": "Reservando...",
+    "bookSuccess": "Cita creada con éxito",
+    "bookError": "Error al crear la cita",
+    "next7days": "Próximos 7 días",
+    "addTreatment": "Agregar un tratamiento",
+    "segments": "Encadenamiento",
+    "machine": "Máquina",
+    "date": "Día",
+    "noTreatments": "Seleccione al menos un tratamiento",
+    "slotAt": "a las"
   },
   "common": {
     "logout": "Cerrar sesión",
