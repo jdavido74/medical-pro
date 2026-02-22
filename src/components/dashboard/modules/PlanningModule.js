@@ -20,17 +20,7 @@ import SendConsentRequestModal from '../../modals/SendConsentRequestModal';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import QuoteFormModal from '../modals/QuoteFormModal';
 import { createDocument, updateDocument, getDocument, buildDocumentPayload, getBillingSettings, transformDocumentForDisplay, fetchClientForBilling } from '../../../api/documentsApi';
-
-
-// Status icons and colors
-const STATUS_CONFIG = {
-  scheduled: { icon: CircleDot, color: 'text-yellow-600', bg: 'bg-yellow-100', title: 'scheduled' },
-  confirmed: { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100', title: 'confirmed' },
-  in_progress: { icon: PlayCircle, color: 'text-blue-600', bg: 'bg-blue-100', title: 'in_progress' },
-  completed: { icon: Check, color: 'text-gray-600', bg: 'bg-gray-100', title: 'completed' },
-  cancelled: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100', title: 'cancelled' },
-  no_show: { icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100', title: 'no_show' }
-};
+import { STATUS_CONFIG } from '../../../constants/appointmentStatuses';
 
 // Time grid constants for day view
 const DAY_START_HOUR = 7;  // 7:00
