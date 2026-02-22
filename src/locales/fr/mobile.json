@@ -73,11 +73,25 @@
       "kg": "kg",
       "cm": "cm"
     },
+    "dateTime": "Date et heure",
+    "treatment": "Traitement associé",
+    "treatmentNone": "Aucun (général)",
+    "observations": "Observations",
+    "observationsPlaceholder": "Notes, commentaires...",
     "save": "Enregistrer les constantes",
     "saving": "Enregistrement...",
     "saveSuccess": "Constantes enregistrées avec succès",
     "saveError": "Erreur lors de l'enregistrement des constantes",
     "noData": "Aucune donnée saisie",
+    "existingRecordBanner": "Un dossier médical existe déjà pour aujourd'hui ({{count}} mesure(s)). Les constantes seront ajoutées à ce dossier.",
+    "saveSuccessAppended": "Constantes ajoutées au dossier existant",
+    "conflict": {
+      "title": "Dossier existant détecté",
+      "message": "Un dossier médical existe déjà pour ce patient aujourd'hui (d'un autre rendez-vous). Souhaitez-vous ajouter les constantes à ce dossier ou en créer un nouveau ?",
+      "useExisting": "Ajouter au dossier existant",
+      "createNew": "Créer un nouveau dossier",
+      "cancel": "Annuler"
+    },
     "comingSoon": "Bientôt disponible",
     "comingSoonDesc": "La prise de constantes vitales sur mobile sera disponible dans une prochaine mise à jour."
   },

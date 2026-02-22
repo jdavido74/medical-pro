@@ -73,11 +73,25 @@
       "kg": "kg",
       "cm": "cm"
     },
+    "dateTime": "Fecha y hora",
+    "treatment": "Tratamiento asociado",
+    "treatmentNone": "Ninguno (general)",
+    "observations": "Observaciones",
+    "observationsPlaceholder": "Notas, comentarios...",
     "save": "Guardar signos vitales",
     "saving": "Guardando...",
     "saveSuccess": "Signos vitales guardados con éxito",
     "saveError": "Error al guardar los signos vitales",
     "noData": "No se ingresaron datos",
+    "existingRecordBanner": "Ya existe un expediente médico para hoy ({{count}} medición(es)). Los signos vitales se agregarán a este expediente.",
+    "saveSuccessAppended": "Signos vitales agregados al expediente existente",
+    "conflict": {
+      "title": "Expediente existente detectado",
+      "message": "Ya existe un expediente médico para este paciente hoy (de otra cita). ¿Desea agregar los signos vitales a este expediente o crear uno nuevo?",
+      "useExisting": "Agregar al expediente existente",
+      "createNew": "Crear un nuevo expediente",
+      "cancel": "Cancelar"
+    },
     "comingSoon": "Próximamente",
     "comingSoonDesc": "La toma de signos vitales en móvil estará disponible en una próxima actualización."
   },

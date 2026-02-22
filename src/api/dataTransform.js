@@ -947,6 +947,10 @@ function transformMedicalRecordToBackend(record) {
     const bloodGlucose = toNumber(vs.bloodGlucose);
     if (bloodGlucose !== undefined) vsData.blood_glucose = bloodGlucose;
 
+    if (vs.treatmentId) vsData.treatment_id = vs.treatmentId;
+    if (vs.treatmentName) vsData.treatment_name = vs.treatmentName;
+    if (vs.observations) vsData.observations = vs.observations;
+
     // Additional readings (per-treatment vitals)
     if (Array.isArray(vs.additionalReadings) && vs.additionalReadings.length > 0) {
       vsData.additional_readings = vs.additionalReadings.map(r => {

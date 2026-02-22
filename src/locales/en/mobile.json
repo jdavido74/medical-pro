@@ -73,11 +73,25 @@
       "kg": "kg",
       "cm": "cm"
     },
+    "dateTime": "Date and time",
+    "treatment": "Associated treatment",
+    "treatmentNone": "None (general)",
+    "observations": "Observations",
+    "observationsPlaceholder": "Notes, comments...",
     "save": "Save vitals",
     "saving": "Saving...",
     "saveSuccess": "Vitals saved successfully",
     "saveError": "Error saving vitals",
     "noData": "No data entered",
+    "existingRecordBanner": "A medical record already exists for today ({{count}} reading(s)). Vitals will be added to this record.",
+    "saveSuccessAppended": "Vitals added to existing record",
+    "conflict": {
+      "title": "Existing record detected",
+      "message": "A medical record already exists for this patient today (from another appointment). Would you like to add the vitals to this record or create a new one?",
+      "useExisting": "Add to existing record",
+      "createNew": "Create a new record",
+      "cancel": "Cancel"
+    },
     "comingSoon": "Coming soon",
     "comingSoonDesc": "Mobile vital signs capture will be available in a future update."
   },

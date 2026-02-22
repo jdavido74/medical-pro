@@ -111,8 +111,9 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
   // Contrôle des doublons en temps réel - US 1.1
   // Ne vérifier que si on a assez d'information significative
+  // Skip during submission to avoid false positives from optimistic updates
   useEffect(() => {
-    if (!patientContext) {
+    if (!patientContext || isSubmitting) {
       setDuplicateWarning(null);
       return;
     }
@@ -166,7 +167,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
     } finally {
       setIsDuplicateChecking(false);
     }
-  }, [formData.firstName, formData.lastName, formData.contact?.email, patient?.id, patientContext]);
+  }, [formData.firstName, formData.lastName, formData.contact?.email, patient?.id, patientContext, isSubmitting]);
 
   const validateForm = () => {
     const newErrors = {};

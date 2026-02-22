@@ -204,6 +204,37 @@ async function restoreMedicalRecord(recordId) {
 }
 
 /**
+ * Save vital signs using find-or-create logic
+ * - Creates a new record if none exists today
+ * - Appends to existing record if same appointment
+ * - Returns 409 conflict if different appointment (caller handles dialog)
+ */
+async function saveVitals({ patientId, appointmentId, vitalSigns, useExistingRecordId, forceCreate }) {
+  try {
+    const backendData = {
+      patient_id: patientId,
+      appointment_id: appointmentId,
+      vital_signs: dataTransform.transformMedicalRecordToBackend({ vitalSigns }).vital_signs
+    };
+    if (useExistingRecordId) backendData.use_existing_record_id = useExistingRecordId;
+    if (forceCreate) backendData.force_create = true;
+
+    const response = await baseClient.post('/medical-records/vitals', backendData);
+    return {
+      action: response.action,
+      record: dataTransform.transformMedicalRecordFromBackend(dataTransform.unwrapResponse(response))
+    };
+  } catch (error) {
+    // Re-throw 409 with structured data for conflict handling
+    if (error.status === 409 && error.data?.existingRecord) {
+      throw error;
+    }
+    console.error('[medicalRecordsApi] Error saving vitals:', error);
+    throw error;
+  }
+}
+
+/**
  * Get treatments from an appointment for pre-filling a medical record
  */
 async function getAppointmentTreatments(appointmentId) {
@@ -226,5 +257,6 @@ export const medicalRecordsApi = {
   signMedicalRecord,
   archiveMedicalRecord,
   restoreMedicalRecord,
-  getAppointmentTreatments
+  getAppointmentTreatments,
+  saveVitals
 };

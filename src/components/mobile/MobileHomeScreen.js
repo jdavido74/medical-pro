@@ -167,9 +167,12 @@ const MobileHomeScreen = () => {
 
   // Day navigation
   const changeDay = (offset) => {
-    const d = new Date(selectedDate + 'T00:00:00');
-    d.setDate(d.getDate() + offset);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const date = new Date(y, m - 1, d + offset);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    setSelectedDate(`${yyyy}-${mm}-${dd}`);
   };
 
   const goToToday = () => {
