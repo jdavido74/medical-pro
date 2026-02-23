@@ -132,9 +132,11 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
       } catch (e) {
         console.error(`Slot search error for ${day}:`, e);
       }
+
+      // Progressive update — show results as they come in
+      setSlotsByDay({ ...results });
     }
 
-    setSlotsByDay(results);
     setSearching(false);
     setSearched(true);
   }, [treatments, afterHours, dateOffset]);

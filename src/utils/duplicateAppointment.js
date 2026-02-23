@@ -15,8 +15,8 @@ export const extractDuplicateData = async (appointment) => {
     appointment.linkedAppointmentId ||
     (appointment.linkSequence && appointment.linkSequence > 1);
 
-  if (isLinked && appointment.linkedAppointmentId) {
-    const groupId = appointment.linkedAppointmentId;
+  if (isLinked) {
+    const groupId = appointment.linkedAppointmentId || appointment.id;
     const res = await getAppointmentGroup(groupId);
     if (res.success && res.data) {
       const group = Array.isArray(res.data) ? res.data : (res.data.appointments || []);

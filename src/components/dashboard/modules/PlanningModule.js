@@ -10,7 +10,7 @@ import {
   Calendar, Plus, ChevronLeft, ChevronRight, Filter,
   Cpu, User, Clock, Check, X, Edit2, Bell, FileText, Receipt,
   CircleDot, CheckCircle2, PlayCircle, XCircle, AlertTriangle, Link,
-  List, Search, Send, Eye, MoreHorizontal, Trash2, ArrowUp, ArrowDown, Layers, Copy
+  List, Search, Send, Eye, MoreHorizontal, Trash2, ArrowUp, ArrowDown, Layers, Copy, RefreshCw
 } from 'lucide-react';
 import planningApi, { getAppointmentGroup } from '../../../api/planningApi';
 import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
@@ -2108,7 +2108,7 @@ const PlanningModule = () => {
                     disabled={duplicateLoading}
                     className="flex items-center justify-center gap-2 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors"
                   >
-                    <Copy className="w-4 h-4" />
+                    {duplicateLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
                     {t('actions.duplicate')}
                   </button>
                 )}
