@@ -107,7 +107,7 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
     setSelectedSlot(null);
     setSelectedDay(null);
 
-    const startFrom = addDays(todayStr(), dateOffset);
+    const startFrom = addDays(todayStr(), 1 + dateOffset); // start from tomorrow
     const days = getNextWorkdays(startFrom, 7);
     const isMulti = treatments.length > 1;
     console.log('[DuplicateModal] Searching', days.length, 'days from', startFrom, 'isMulti:', isMulti);
@@ -125,9 +125,9 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             treatments.map(tr => ({ treatmentId: tr.id, duration: tr.duration })),
             { allowAfterHours: ah }
           );
-          console.log('[DuplicateModal] Multi-slot', day, Math.round(performance.now() - t0) + 'ms, slots:', res?.data?.slots?.length ?? 0);
+          console.log('[DuplicateModal] Multi-slot', day, Math.round(performance.now() - t0) + 'ms, data keys:', res?.data ? Object.keys(res.data) : 'none');
           if (res.success && res.data) {
-            slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
+            slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
         } else {
           const tr = treatments[0];
@@ -138,11 +138,12 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             duration: tr.duration,
             allowAfterHours: ah
           });
-          console.log('[DuplicateModal] Slot', day, Math.round(performance.now() - t0) + 'ms, slots:', res?.data?.slots?.length ?? 0);
+          console.log('[DuplicateModal] Slot', day, Math.round(performance.now() - t0) + 'ms, data keys:', res?.data ? Object.keys(res.data) : 'none');
           if (res.success && res.data) {
-            slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
+            slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
         }
+        console.log(`[DuplicateModal] ${day}: extracted ${slots.length} slots`);
         if (slots.length > 0) {
           accumulated[day] = slots;
           setSlotsByDay(prev => ({ ...prev, [day]: slots }));
@@ -171,7 +172,7 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
   // ── Date navigation ──
   const handleDatePrev = () => setDateOffset(prev => Math.max(prev - 7, 0));
   const handleDateNext = () => setDateOffset(prev => prev + 7);
-  const handleDateReset = () => setDateOffset(0);
+  const handleDateToday = () => setDateOffset(0);
 
   // ── Select slot ──
   const handleSlotSelect = (day, slot) => {
@@ -293,10 +294,10 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             <ChevronLeft size={16} className="text-gray-600" />
           </button>
           <button
-            onClick={handleDateReset}
-            className="px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 rounded transition-colors min-w-[120px] text-center"
+            onClick={handleDateToday}
+            className="px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 rounded transition-colors min-w-[180px] text-center"
           >
-            {dateOffset === 0 ? t('duplicate.next7days') : formatShortDate(addDays(todayStr(), dateOffset))}
+            {formatShortDate(addDays(todayStr(), 1 + dateOffset))} — {formatShortDate(addDays(todayStr(), 7 + dateOffset))}
           </button>
           <button
             onClick={handleDateNext}

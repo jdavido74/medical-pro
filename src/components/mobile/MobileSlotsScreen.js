@@ -201,7 +201,7 @@ const MobileSlotsScreen = () => {
             { allowAfterHours: useAfterHours }
           );
           if (res.success && res.data) {
-            slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
+            slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
         } else {
           const tr = selectedTreatments[0];
@@ -213,7 +213,7 @@ const MobileSlotsScreen = () => {
             allowAfterHours: useAfterHours
           });
           if (res.success && res.data) {
-            slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
+            slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
         }
 
