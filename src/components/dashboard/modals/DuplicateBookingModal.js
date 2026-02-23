@@ -1,12 +1,12 @@
 /**
  * DuplicateBookingModal - Desktop modal for duplicating an appointment to another day.
- * Shows slot search results and allows booking with the same treatments/patient.
+ * Shows slot search results and allows booking multiple slots at once.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   X, Copy, Clock, ChevronLeft, ChevronRight, Check, ChevronDown,
-  RefreshCw, Calendar, AlertTriangle
+  RefreshCw, Calendar, AlertTriangle, CheckCircle, XCircle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import * as planningApi from '../../../api/planningApi';
@@ -61,14 +61,14 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
   const [afterHours, setAfterHours] = useState(false);
 
   // Date navigation
-  const [dateOffset, setDateOffset] = useState(0); // 0 = starting from tomorrow
+  const [dateOffset, setDateOffset] = useState(0);
 
-  // Selection
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(null);
+  // Multi-selection: array of { day, slot, key }
+  const [selectedSlots, setSelectedSlots] = useState([]);
   const [bookingProvider, setBookingProvider] = useState('');
   const [bookingNotes, setBookingNotes] = useState('');
   const [bookingInProgress, setBookingInProgress] = useState(false);
+  const [bookingResults, setBookingResults] = useState(null); // { success: N, failed: N, errors: [] }
   const [toast, setToast] = useState(null);
   const [debugInfo, setDebugInfo] = useState('');
 
@@ -96,27 +96,19 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
 
   // ── Search slots (parallel) ──
   const searchSlots = useCallback(async (useAfterHours) => {
-    console.log('[DuplicateModal] searchSlots called, treatments:', treatments.length, treatments);
-    if (treatments.length === 0) {
-      console.warn('[DuplicateModal] No treatments, aborting search');
-      setDebugInfo('No treatments found');
-      return;
-    }
+    if (treatments.length === 0) return;
     const ah = useAfterHours !== undefined ? useAfterHours : afterHours;
     setSearching(true);
     setSearched(false);
     setSlotsByDay({});
-    setSelectedSlot(null);
-    setSelectedDay(null);
+    setBookingResults(null);
 
-    const startFrom = addDays(todayStr(), 1 + dateOffset); // start from tomorrow
+    const startFrom = addDays(todayStr(), 1 + dateOffset);
     const days = getNextWorkdays(startFrom, 7);
     const isMulti = treatments.length > 1;
     const tr0 = treatments[0];
-    setDebugInfo(`Searching ${days[0]}→${days[days.length - 1]} | ${tr0.title} (${tr0.id?.substring(0, 8)}) ${tr0.duration}min`);
-    console.log('[DuplicateModal] Searching', days, 'isMulti:', isMulti, 'treatment:', tr0);
+    setDebugInfo(`${days[0]}→${days[days.length - 1]} | ${tr0.title} (${tr0.id?.substring(0, 8)}) ${tr0.duration}min`);
 
-    // Fire all 7 day searches in parallel with progressive updates
     const accumulated = {};
     let errors = 0;
 
@@ -129,7 +121,6 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             treatments.map(tr => ({ treatmentId: tr.id, duration: tr.duration })),
             { allowAfterHours: ah }
           );
-          console.log('[DuplicateModal] Multi-slot', day, 'success:', res?.success, 'data keys:', res?.data ? Object.keys(res.data) : 'none');
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
@@ -142,12 +133,10 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             duration: tr.duration,
             allowAfterHours: ah
           });
-          console.log('[DuplicateModal] Slot', day, 'success:', res?.success, 'data keys:', res?.data ? Object.keys(res.data) : 'none', 'slots:', res?.data?.slots?.length);
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
         }
-        console.log(`[DuplicateModal] ${day}: extracted ${slots.length} slots`);
         if (slots.length > 0) {
           accumulated[day] = slots;
           setSlotsByDay(prev => ({ ...prev, [day]: slots }));
@@ -161,16 +150,13 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
     await Promise.all(days.map(fetchDay));
 
     const totalSlots = Object.values(accumulated).reduce((s, arr) => s + arr.length, 0);
-    const info = `${Object.keys(accumulated).length}/${days.length} days, ${totalSlots} slots${errors > 0 ? `, ${errors} errors` : ''}`;
-    setDebugInfo(info);
-    console.log('[DuplicateModal] Search complete:', info);
+    setDebugInfo(`${Object.keys(accumulated).length}/${days.length} jours, ${totalSlots} créneaux${errors > 0 ? `, ${errors} erreurs` : ''}`);
     setSearching(false);
     setSearched(true);
   }, [treatments, afterHours, dateOffset]);
 
-  // ── Auto-search on mount ──
+  // ── Auto-search on mount / date change ──
   useEffect(() => {
-    console.log('[DuplicateModal] useEffect triggered, isOpen:', isOpen, 'treatments.length:', treatments.length, 'dateOffset:', dateOffset);
     if (isOpen && treatments.length > 0) {
       searchSlots();
     }
@@ -182,63 +168,115 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
   const handleDateNext = () => setDateOffset(prev => prev + 7);
   const handleDateToday = () => setDateOffset(0);
 
-  // ── Select slot ──
-  const handleSlotSelect = (day, slot) => {
-    setSelectedSlot(slot);
-    setSelectedDay(day);
-    setBookingProvider(duplicateData?.providerId || '');
-    setBookingNotes('');
+  // ── Toggle slot selection ──
+  const makeSlotKey = (day, slot) => {
+    const st = slot.startTime || slot.start;
+    const et = slot.endTime || slot.end;
+    return `${day}|${st}|${et}`;
   };
 
-  // ── Book ──
-  const handleBook = async () => {
-    if (!selectedSlot || !selectedDay || !duplicateData?.patientId) return;
-    setBookingInProgress(true);
-
-    try {
-      const isMulti = treatments.length > 1 && selectedSlot.segments;
-      const startTime = selectedSlot.startTime || selectedSlot.start;
-
-      if (isMulti) {
-        const treatmentPayload = selectedSlot.segments.map(seg => ({
-          treatmentId: seg.treatmentId,
-          machineId: seg.isOverlappable ? null : (seg.machineId || null),
-          duration: seg.duration
-        }));
-        await planningApi.createMultiTreatmentAppointment({
-          patientId: duplicateData.patientId,
-          date: selectedDay,
-          startTime,
-          treatments: treatmentPayload,
-          providerId: bookingProvider || undefined,
-          notes: bookingNotes || undefined
-        });
-      } else {
-        const tr = treatments[0];
-        const endTime = selectedSlot.endTime || selectedSlot.end;
-        await planningApi.createAppointment({
-          patientId: duplicateData.patientId,
-          date: selectedDay,
-          startTime,
-          endTime,
-          category: 'treatment',
-          treatmentId: tr.id,
-          machineId: selectedSlot.isOverlappable ? null : (selectedSlot.machineId || null),
-          providerId: bookingProvider || undefined,
-          notes: bookingNotes || undefined
-        });
+  const handleSlotToggle = (day, slot) => {
+    const key = makeSlotKey(day, slot);
+    setSelectedSlots(prev => {
+      const exists = prev.find(s => s.key === key);
+      if (exists) {
+        return prev.filter(s => s.key !== key);
       }
+      return [...prev, { day, slot, key }];
+    });
+    // Set default provider on first selection
+    if (selectedSlots.length === 0) {
+      setBookingProvider(duplicateData?.providerId || '');
+    }
+  };
 
-      setToast({ message: t('duplicate.success'), type: 'success' });
+  const isSlotSelected = (day, slot) => {
+    const key = makeSlotKey(day, slot);
+    return selectedSlots.some(s => s.key === key);
+  };
+
+  // Clear selections that are no longer in visible slots when navigating
+  useEffect(() => {
+    setSelectedSlots(prev => {
+      const visibleKeys = new Set();
+      Object.entries(slotsByDay).forEach(([day, slots]) => {
+        slots.forEach(slot => visibleKeys.add(makeSlotKey(day, slot)));
+      });
+      // Keep selections from non-visible pages too (they're still valid)
+      return prev;
+    });
+  }, [slotsByDay]);
+
+  // ── Book all selected slots ──
+  const handleBookAll = async () => {
+    if (selectedSlots.length === 0 || !duplicateData?.patientId) return;
+    setBookingInProgress(true);
+    setBookingResults(null);
+
+    const isMulti = treatments.length > 1;
+    let successCount = 0;
+    const failedItems = [];
+
+    // Book sequentially to avoid race conditions on provider conflicts
+    for (const { day, slot } of selectedSlots) {
+      try {
+        const startTime = slot.startTime || slot.start;
+
+        if (isMulti && slot.segments) {
+          const treatmentPayload = slot.segments.map(seg => ({
+            treatmentId: seg.treatmentId,
+            machineId: seg.isOverlappable ? null : (seg.machineId || null),
+            duration: seg.duration
+          }));
+          await planningApi.createMultiTreatmentAppointment({
+            patientId: duplicateData.patientId,
+            date: day,
+            startTime,
+            treatments: treatmentPayload,
+            providerId: bookingProvider || undefined,
+            notes: bookingNotes || undefined
+          });
+        } else {
+          const tr = treatments[0];
+          const endTime = slot.endTime || slot.end;
+          await planningApi.createAppointment({
+            patientId: duplicateData.patientId,
+            date: day,
+            startTime,
+            endTime,
+            category: 'treatment',
+            treatmentId: tr.id,
+            machineId: slot.isOverlappable ? null : (slot.machineId || null),
+            providerId: bookingProvider || undefined,
+            notes: bookingNotes || undefined
+          });
+        }
+        successCount++;
+      } catch (e) {
+        const dayLabel = formatShortDate(day);
+        const timeLabel = (slot.startTime || slot.start)?.substring(0, 5);
+        failedItems.push(`${dayLabel} ${timeLabel}`);
+        console.error(`[DuplicateModal] Booking error ${day}:`, e);
+      }
+    }
+
+    setBookingInProgress(false);
+
+    if (failedItems.length === 0) {
+      // All succeeded
+      setToast({ message: t('duplicate.successMulti', { count: successCount }), type: 'success' });
       setTimeout(() => {
         onSuccess?.();
         onClose();
-      }, 800);
-    } catch (e) {
-      console.error('Duplicate booking error:', e);
-      setToast({ message: t('duplicate.error'), type: 'error' });
-    } finally {
-      setBookingInProgress(false);
+      }, 1200);
+    } else {
+      // Partial or full failure
+      setBookingResults({ success: successCount, failed: failedItems.length, errors: failedItems });
+      if (successCount > 0) {
+        setToast({ message: t('duplicate.partialSuccess', { success: successCount, failed: failedItems.length }), type: 'warning' });
+      } else {
+        setToast({ message: t('duplicate.error'), type: 'error' });
+      }
     }
   };
 
@@ -292,27 +330,34 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
           )}
         </div>
 
-        {/* Date navigation */}
-        <div className="px-5 py-2 border-b bg-gray-50 flex items-center justify-center gap-2 flex-shrink-0">
-          <button
-            onClick={handleDatePrev}
-            disabled={dateOffset === 0}
-            className="p-1.5 hover:bg-gray-200 rounded transition-colors disabled:opacity-30"
-          >
-            <ChevronLeft size={16} className="text-gray-600" />
-          </button>
-          <button
-            onClick={handleDateToday}
-            className="px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 rounded transition-colors min-w-[180px] text-center"
-          >
-            {formatShortDate(addDays(todayStr(), 1 + dateOffset))} — {formatShortDate(addDays(todayStr(), 7 + dateOffset))}
-          </button>
-          <button
-            onClick={handleDateNext}
-            className="p-1.5 hover:bg-gray-200 rounded transition-colors"
-          >
-            <ChevronRight size={16} className="text-gray-600" />
-          </button>
+        {/* Date navigation + selection counter */}
+        <div className="px-5 py-2 border-b bg-gray-50 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDatePrev}
+              disabled={dateOffset === 0}
+              className="p-1.5 hover:bg-gray-200 rounded transition-colors disabled:opacity-30"
+            >
+              <ChevronLeft size={16} className="text-gray-600" />
+            </button>
+            <button
+              onClick={handleDateToday}
+              className="px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 rounded transition-colors min-w-[180px] text-center"
+            >
+              {formatShortDate(addDays(todayStr(), 1 + dateOffset))} — {formatShortDate(addDays(todayStr(), 7 + dateOffset))}
+            </button>
+            <button
+              onClick={handleDateNext}
+              className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+            >
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
+          </div>
+          {selectedSlots.length > 0 && (
+            <span className="text-xs font-semibold text-cyan-700 bg-cyan-50 px-2 py-1 rounded-full">
+              {selectedSlots.length} {t('duplicate.selected', { count: selectedSlots.length })}
+            </span>
+          )}
         </div>
 
         {/* Debug info (temporary) */}
@@ -350,6 +395,31 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             </div>
           )}
 
+          {/* Booking results feedback */}
+          {bookingResults && (
+            <div className="px-4 py-3 border-b bg-gray-50">
+              {bookingResults.success > 0 && (
+                <div className="flex items-center gap-2 text-sm text-green-700 mb-1">
+                  <CheckCircle size={14} />
+                  <span>{bookingResults.success} {t('duplicate.booked')}</span>
+                </div>
+              )}
+              {bookingResults.errors.length > 0 && (
+                <div className="text-sm text-red-600">
+                  <div className="flex items-center gap-2 mb-1">
+                    <XCircle size={14} />
+                    <span>{bookingResults.failed} {t('duplicate.failedSlots')}</span>
+                  </div>
+                  <ul className="text-xs text-red-500 ml-6 list-disc">
+                    {bookingResults.errors.map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           {sortedDays.map(day => (
             <div key={day}>
               <div className="sticky top-0 z-10 bg-gray-100 px-4 py-2 border-b border-gray-200">
@@ -358,23 +428,31 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
               {slotsByDay[day].map((slot, idx) => {
                 const startTime = slot.startTime || slot.start;
                 const endTime = slot.endTime || slot.end;
-                const isSelected = selectedSlot === slot && selectedDay === day;
-                const isMulti = slot.segments && slot.segments.length > 0;
+                const selected = isSlotSelected(day, slot);
+                const isMultiSeg = slot.segments && slot.segments.length > 0;
 
                 return (
                   <button
                     key={`${startTime}-${endTime}-${idx}`}
-                    onClick={() => handleSlotSelect(day, slot)}
+                    onClick={() => handleSlotToggle(day, slot)}
                     className={`w-full text-left px-4 py-3 border-b border-gray-100 transition-colors ${
-                      isSelected ? 'bg-cyan-50' : 'bg-white hover:bg-gray-50'
+                      selected ? 'bg-cyan-50' : 'bg-white hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
+                      {/* Checkbox */}
+                      <div className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                        selected
+                          ? 'bg-cyan-600 border-cyan-600'
+                          : 'border-gray-300 bg-white'
+                      }`}>
+                        {selected && <Check size={12} className="text-white" />}
+                      </div>
                       <div className="flex-shrink-0 text-sm font-semibold text-gray-900">
                         {startTime?.substring(0, 5)} - {endTime?.substring(0, 5)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        {isMulti ? (
+                        {isMultiSeg ? (
                           <div className="flex flex-wrap gap-1">
                             {slot.segments.map((seg, si) => (
                               <span key={si} className="text-[11px] text-gray-500">
@@ -393,9 +471,6 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
                         <span className="flex-shrink-0 text-[10px] font-medium bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded">
                           {t('duplicate.afterHoursBadge')}
                         </span>
-                      )}
-                      {isSelected && (
-                        <Check size={16} className="text-cyan-600 flex-shrink-0" />
                       )}
                     </div>
                   </button>
@@ -421,8 +496,8 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
           )}
         </div>
 
-        {/* Booking section (shown when slot selected) */}
-        {selectedSlot && (
+        {/* Booking section (shown when at least 1 slot selected) */}
+        {selectedSlots.length > 0 && (
           <div className="border-t bg-gray-50 px-5 py-4 flex-shrink-0 space-y-3">
             {/* Provider */}
             <div>
@@ -459,7 +534,7 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
 
             {/* Book button */}
             <button
-              onClick={handleBook}
+              onClick={handleBookAll}
               disabled={bookingInProgress}
               className={`w-full py-2.5 text-sm font-medium rounded transition-colors ${
                 bookingInProgress
@@ -467,7 +542,12 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
                   : 'bg-cyan-600 text-white hover:bg-cyan-700'
               }`}
             >
-              {bookingInProgress ? t('duplicate.booking') : t('duplicate.book')}
+              {bookingInProgress
+                ? t('duplicate.booking')
+                : selectedSlots.length === 1
+                  ? t('duplicate.book')
+                  : t('duplicate.bookMulti', { count: selectedSlots.length })
+              }
             </button>
           </div>
         )}
@@ -475,7 +555,7 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
         {/* Toast */}
         {toast && (
           <div className={`absolute bottom-4 left-4 right-4 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-center text-white ${
-            toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
+            toast.type === 'error' ? 'bg-red-600' : toast.type === 'warning' ? 'bg-orange-500' : 'bg-green-600'
           }`}>
             {toast.message}
           </div>
