@@ -47,12 +47,18 @@ export const VOLUME_UNITS = [
 
 // Duration presets in minutes
 export const DURATION_PRESETS = [
+  { value: 5, label: '5 min' },
+  { value: 10, label: '10 min' },
   { value: 15, label: '15 min' },
   { value: 30, label: '30 min' },
   { value: 45, label: '45 min' },
   { value: 60, label: '1h' },
   { value: 90, label: '1h30' },
-  { value: 120, label: '2h' }
+  { value: 120, label: '2h' },
+  { value: 135, label: '2h15' },
+  { value: 150, label: '2h30' },
+  { value: 165, label: '2h45' },
+  { value: 180, label: '3h' }
 ];
 
 // Field configuration for conditional rendering
@@ -144,6 +150,7 @@ export const getDefaultCatalogItem = (type = 'medication') => ({
   dosageUnit: null,
   volume: null,
   duration: getDefaultDuration(type),
+  isOverlappable: true,
   prepBefore: 0,
   prepAfter: 0,
   variants: [],
