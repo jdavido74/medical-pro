@@ -39,8 +39,10 @@
       "noShow": "No Show",
       "cancel": "Cancel",
       "takeVitals": "Take vitals",
-      "consents": "Consents"
+      "consents": "Consents",
+      "duplicate": "Duplicate"
     },
+    "duplicateError": "Error duplicating",
     "statusChanged": "Status updated successfully",
     "statusError": "Error updating status"
   },
@@ -126,7 +128,8 @@
     "noTreatments": "Select at least one treatment",
     "slotAt": "at",
     "afterHoursButton": "Show slots outside opening hours",
-    "afterHoursBadge": "After hours"
+    "afterHoursBadge": "After hours",
+    "duplicateMode": "Duplicating for {{patient}}"
   },
   "common": {
     "logout": "Logout",

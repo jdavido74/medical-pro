@@ -221,6 +221,7 @@
     "next": "Siguiente",
     "saving": "Guardando...",
     "sendConsent": "Enviar consentimiento",
+    "duplicate": "Duplicar",
     "edit": "Editar",
     "sendReminder": "Enviar recordatorio",
     "start": "Iniciar",
@@ -348,6 +349,22 @@
     "invoiceCreated": "Factura creada con éxito",
     "createQuote": "Presupuesto",
     "createInvoice": "Factura"
+  },
+
+  "duplicate": {
+    "title": "Duplicar la cita",
+    "totalDuration": "Total: {{minutes}} min",
+    "next7days": "Próximos 7 días",
+    "noSlots": "No hay horarios",
+    "provider": "Médico",
+    "notes": "Notas",
+    "book": "Reservar",
+    "booking": "Reservando...",
+    "success": "Cita duplicada",
+    "error": "Error al duplicar",
+    "searching": "Buscando...",
+    "afterHoursButton": "Horarios fuera del horario",
+    "afterHoursBadge": "Fuera de horario"
   },
 
   "staffAssignment": {

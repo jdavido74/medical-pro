@@ -4,13 +4,15 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search, X, ChevronLeft, ChevronRight, Clock, RefreshCw,
-  Calendar, Check, ChevronDown, User, AlertTriangle
+  Calendar, Check, ChevronDown, User, AlertTriangle, Copy
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import * as planningApi from '../../api/planningApi';
 import { usePatients } from '../../contexts/PatientContext';
+import { parseDuplicateParams } from '../../utils/duplicateAppointment';
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -49,6 +51,7 @@ const formatShortDate = (dateStr) => {
 const MobileSlotsScreen = () => {
   const { t } = useTranslation('mobile');
   const { patients, searchPatients } = usePatients();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // ── Treatment search ──
   const [treatmentQuery, setTreatmentQuery] = useState('');
@@ -80,6 +83,12 @@ const MobileSlotsScreen = () => {
   const [bookingInProgress, setBookingInProgress] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // ── Duplicate mode ──
+  const [duplicateMode, setDuplicateMode] = useState(false);
+  const [duplicatePatientId, setDuplicatePatientId] = useState('');
+  const [duplicatePatientName, setDuplicatePatientName] = useState('');
+  const duplicateInitRef = useRef(false);
+
   // ── Load resources on mount ──
   useEffect(() => {
     const load = async () => {
@@ -95,6 +104,29 @@ const MobileSlotsScreen = () => {
     };
     load();
   }, []);
+
+  // ── Duplicate mode initialization ──
+  useEffect(() => {
+    if (duplicateInitRef.current) return;
+    const dupData = parseDuplicateParams(searchParams);
+    if (dupData) {
+      duplicateInitRef.current = true;
+      setSelectedTreatments(dupData.treatments);
+      setDuplicatePatientId(dupData.patientId);
+      setDuplicatePatientName(dupData.patientName);
+      setDuplicateMode(true);
+      if (dupData.providerId) setFilterProvider(dupData.providerId);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  // ── Auto-search when duplicate treatments are set ──
+  useEffect(() => {
+    if (duplicateMode && selectedTreatments.length > 0 && !searched && !searching) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duplicateMode, selectedTreatments.length]);
 
   // ── Treatment search with debounce ──
   const handleTreatmentSearch = useCallback((query) => {
@@ -249,8 +281,13 @@ const MobileSlotsScreen = () => {
   const handleSlotTap = (day, slot) => {
     setSelectedSlot(slot);
     setSelectedDay(day);
-    setSelectedPatientId('');
-    setPatientQuery('');
+    if (duplicateMode && duplicatePatientId) {
+      setSelectedPatientId(duplicatePatientId);
+      setPatientQuery('');
+    } else {
+      setSelectedPatientId('');
+      setPatientQuery('');
+    }
     setBookingProvider(filterProvider || '');
     setBookingNotes('');
   };
@@ -261,7 +298,10 @@ const MobileSlotsScreen = () => {
     : [];
 
   const selectedPatient = selectedPatientId
-    ? patients.find(p => p.id === selectedPatientId)
+    ? (patients.find(p => p.id === selectedPatientId) ||
+       (duplicateMode && duplicatePatientId === selectedPatientId
+         ? { id: duplicatePatientId, firstName: duplicatePatientName, lastName: '' }
+         : null))
     : null;
 
   // ── Book appointment ──
@@ -312,6 +352,9 @@ const MobileSlotsScreen = () => {
       setSelectedTreatments([]);
       setSlotsByDay({});
       setSearched(false);
+      setDuplicateMode(false);
+      setDuplicatePatientId('');
+      setDuplicatePatientName('');
     } catch (e) {
       console.error('Booking error:', e);
       showToast(t('booking.bookError'), 'error');
@@ -343,6 +386,30 @@ const MobileSlotsScreen = () => {
 
   return (
     <div className="flex flex-col h-full relative">
+      {/* ── Duplicate mode banner ── */}
+      {duplicateMode && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-2.5 flex items-center gap-2">
+          <Copy size={14} className="text-blue-600 flex-shrink-0" />
+          <span className="text-sm font-medium text-blue-700 flex-1 truncate">
+            {t('booking.duplicateMode', { patient: duplicatePatientName || '—' })}
+          </span>
+          <button
+            onClick={() => {
+              setDuplicateMode(false);
+              setDuplicatePatientId('');
+              setDuplicatePatientName('');
+              setSelectedTreatments([]);
+              setSlotsByDay({});
+              setSearched(false);
+              setSelectedSlot(null);
+            }}
+            className="p-1 text-blue-500 active:text-blue-700"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* ── Step 1: Treatment selection + filters (sticky top) ── */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 space-y-3">
         {/* Treatment search input */}

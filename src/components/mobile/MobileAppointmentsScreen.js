@@ -6,12 +6,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, RefreshCw, Activity, Calendar
+  ChevronLeft, ChevronRight, RefreshCw, Activity, Calendar, Copy
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '../../contexts/LocaleContext';
 import * as planningApi from '../../api/planningApi';
 import { STATUS_TRANSITIONS } from '../../constants/appointmentStatuses';
+import { extractDuplicateData, serializeDuplicateParams } from '../../utils/duplicateAppointment';
 
 const ACTION_MAP = {
   confirmed: { key: 'confirm', primary: true },
@@ -55,6 +56,7 @@ const MobileAppointmentsScreen = () => {
   const [filter, setFilter] = useState('all');
   const [toast, setToast] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [duplicatingId, setDuplicatingId] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -124,6 +126,20 @@ const MobileAppointmentsScreen = () => {
       showToast(t('appointments.statusError'), 'error');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDuplicate = async (apt) => {
+    setDuplicatingId(apt.id);
+    try {
+      const data = await extractDuplicateData(apt);
+      const qs = serializeDuplicateParams(data);
+      navigate(buildUrl(`/mobile/booking?${qs}`));
+    } catch (err) {
+      console.error('Duplicate error:', err);
+      showToast(t('appointments.duplicateError'), 'error');
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -204,7 +220,8 @@ const MobileAppointmentsScreen = () => {
             const transitions = STATUS_TRANSITIONS[apt.status] || [];
             const isUpdating = updatingId === apt.id;
             const showVitals = ['in_progress', 'completed', 'confirmed'].includes(apt.status) && apt.patient?.id;
-            const hasActions = transitions.length > 0 || showVitals;
+            const showDuplicate = apt.status !== 'cancelled' && (apt.service || apt.serviceId);
+            const hasActions = transitions.length > 0 || showVitals || showDuplicate;
 
             return (
               <div
@@ -271,6 +288,20 @@ const MobileAppointmentsScreen = () => {
                         >
                           <Activity size={11} />
                           {t('appointments.actions.takeVitals')}
+                        </button>
+                      )}
+                      {showDuplicate && (
+                        <button
+                          onClick={() => handleDuplicate(apt)}
+                          disabled={duplicatingId === apt.id}
+                          className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 flex items-center gap-1 active:opacity-70"
+                        >
+                          {duplicatingId === apt.id ? (
+                            <RefreshCw size={11} className="animate-spin" />
+                          ) : (
+                            <Copy size={11} />
+                          )}
+                          {t('appointments.actions.duplicate')}
                         </button>
                       )}
                     </div>

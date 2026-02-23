@@ -39,8 +39,10 @@
       "noShow": "Absent",
       "cancel": "Annuler",
       "takeVitals": "Prendre constantes",
-      "consents": "Consentements"
+      "consents": "Consentements",
+      "duplicate": "Dupliquer"
     },
+    "duplicateError": "Erreur lors de la duplication",
     "statusChanged": "Statut mis à jour avec succès",
     "statusError": "Erreur lors de la mise à jour du statut"
   },
@@ -126,7 +128,8 @@
     "noTreatments": "Sélectionnez au moins un traitement",
     "slotAt": "à",
     "afterHoursButton": "Proposer des créneaux hors horaires",
-    "afterHoursBadge": "Hors horaires"
+    "afterHoursBadge": "Hors horaires",
+    "duplicateMode": "Duplication pour {{patient}}"
   },
   "common": {
     "logout": "Déconnexion",

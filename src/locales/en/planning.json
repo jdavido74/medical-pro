@@ -221,6 +221,7 @@
     "next": "Next",
     "saving": "Saving...",
     "sendConsent": "Send consent",
+    "duplicate": "Duplicate",
     "edit": "Edit",
     "sendReminder": "Send reminder",
     "start": "Start",
@@ -348,6 +349,22 @@
     "invoiceCreated": "Invoice created successfully",
     "createQuote": "Quote",
     "createInvoice": "Invoice"
+  },
+
+  "duplicate": {
+    "title": "Duplicate appointment",
+    "totalDuration": "Total: {{minutes}} min",
+    "next7days": "Next 7 days",
+    "noSlots": "No slots available",
+    "provider": "Provider",
+    "notes": "Notes",
+    "book": "Book",
+    "booking": "Booking...",
+    "success": "Appointment duplicated",
+    "error": "Error duplicating",
+    "searching": "Searching...",
+    "afterHoursButton": "After hours slots",
+    "afterHoursBadge": "After hours"
   },
 
   "staffAssignment": {

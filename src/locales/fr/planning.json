@@ -221,6 +221,7 @@
     "next": "Suivant",
     "saving": "Enregistrement...",
     "sendConsent": "Envoyer consentement",
+    "duplicate": "Dupliquer",
     "edit": "Modifier",
     "sendReminder": "Envoyer rappel",
     "start": "Démarrer",
@@ -348,6 +349,22 @@
     "invoiceCreated": "Facture créée avec succès",
     "createQuote": "Devis",
     "createInvoice": "Facture"
+  },
+
+  "duplicate": {
+    "title": "Dupliquer le rendez-vous",
+    "totalDuration": "Durée totale : {{minutes}} min",
+    "next7days": "7 prochains jours",
+    "noSlots": "Aucun créneau disponible",
+    "provider": "Médecin",
+    "notes": "Notes",
+    "book": "Réserver",
+    "booking": "Réservation...",
+    "success": "RDV dupliqué avec succès",
+    "error": "Erreur lors de la duplication",
+    "searching": "Recherche...",
+    "afterHoursButton": "Créneaux hors horaires",
+    "afterHoursBadge": "Hors horaires"
   },
 
   "staffAssignment": {

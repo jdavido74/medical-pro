@@ -39,8 +39,10 @@
       "noShow": "Ausente",
       "cancel": "Cancelar",
       "takeVitals": "Tomar signos vitales",
-      "consents": "Consentimientos"
+      "consents": "Consentimientos",
+      "duplicate": "Duplicar"
     },
+    "duplicateError": "Error al duplicar",
     "statusChanged": "Estado actualizado con éxito",
     "statusError": "Error al actualizar el estado"
   },
@@ -126,7 +128,8 @@
     "noTreatments": "Seleccione al menos un tratamiento",
     "slotAt": "a las",
     "afterHoursButton": "Mostrar horarios fuera del horario",
-    "afterHoursBadge": "Fuera de horario"
+    "afterHoursBadge": "Fuera de horario",
+    "duplicateMode": "Duplicando para {{patient}}"
   },
   "common": {
     "logout": "Cerrar sesión",

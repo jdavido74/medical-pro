@@ -10,12 +10,14 @@ import {
   Calendar, Plus, ChevronLeft, ChevronRight, Filter,
   Cpu, User, Clock, Check, X, Edit2, Bell, FileText, Receipt,
   CircleDot, CheckCircle2, PlayCircle, XCircle, AlertTriangle, Link,
-  List, Search, Send, Eye, MoreHorizontal, Trash2, ArrowUp, ArrowDown, Layers
+  List, Search, Send, Eye, MoreHorizontal, Trash2, ArrowUp, ArrowDown, Layers, Copy
 } from 'lucide-react';
 import planningApi, { getAppointmentGroup } from '../../../api/planningApi';
 import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
 import { usePermissions } from '../../auth/PermissionGuard';
 import PlanningBookingModal from '../modals/PlanningBookingModal';
+import DuplicateBookingModal from '../modals/DuplicateBookingModal';
+import { extractDuplicateData } from '../../../utils/duplicateAppointment';
 import SendConsentRequestModal from '../../modals/SendConsentRequestModal';
 import InvoiceFormModal from '../modals/InvoiceFormModal';
 import QuoteFormModal from '../modals/QuoteFormModal';
@@ -258,6 +260,11 @@ const PlanningModule = () => {
   const [billingLoading, setBillingLoading] = useState(false);
   const [editingBillingQuote, setEditingBillingQuote] = useState(null);
   const [editingBillingInvoice, setEditingBillingInvoice] = useState(null);
+
+  // Duplicate state
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateData, setDuplicateData] = useState(null);
+  const [duplicateLoading, setDuplicateLoading] = useState(false);
 
   // Calculate date range based on view mode
   const dateRange = useMemo(() => {
@@ -692,6 +699,22 @@ const PlanningModule = () => {
       category: 'treatment'
     });
     setShowBookingModal(true);
+  };
+
+  const handleSummaryDuplicate = async () => {
+    if (!summaryAppointment) return;
+    setDuplicateLoading(true);
+    try {
+      const data = await extractDuplicateData(summaryAppointment);
+      setShowSummaryModal(false);
+      setDuplicateData(data);
+      setShowDuplicateModal(true);
+    } catch (err) {
+      console.error('Duplicate extract error:', err);
+      showToast(t('duplicate.error'), 'error');
+    } finally {
+      setDuplicateLoading(false);
+    }
   };
 
   const handleSummarySendReminder = async () => {
@@ -2079,6 +2102,16 @@ const PlanningModule = () => {
                     {t('superposition.addTreatment')}
                   </button>
                 )}
+                {summaryAppointment.category === 'treatment' && summaryAppointment.status !== 'cancelled' && (
+                  <button
+                    onClick={handleSummaryDuplicate}
+                    disabled={duplicateLoading}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {t('actions.duplicate')}
+                  </button>
+                )}
                 {summaryAppointment.status !== 'cancelled' && (
                   <>
                     <button
@@ -2129,6 +2162,16 @@ const PlanningModule = () => {
           resources={resources}
           initialDate={formatDateLocal(currentDate)}
           clinicSettings={clinicSettings}
+        />
+      )}
+
+      {/* Duplicate Booking Modal */}
+      {showDuplicateModal && duplicateData && (
+        <DuplicateBookingModal
+          isOpen={showDuplicateModal}
+          onClose={() => { setShowDuplicateModal(false); setDuplicateData(null); }}
+          onSuccess={() => { loadData(); }}
+          duplicateData={duplicateData}
         />
       )}
 
