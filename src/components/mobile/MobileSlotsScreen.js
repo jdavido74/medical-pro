@@ -16,12 +16,19 @@ import { parseDuplicateParams } from '../../utils/duplicateAppointment';
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-const todayStr = () => new Date().toISOString().split('T')[0];
+const toLocalDateStr = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const todayStr = () => toLocalDateStr(new Date());
 
 const addDays = (dateStr, n) => {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(dateStr + 'T12:00:00'); // noon avoids DST edge cases
   d.setDate(d.getDate() + n);
-  return d.toISOString().split('T')[0];
+  return toLocalDateStr(d);
 };
 
 /** Generate the next N weekdays (Mon-Sat) starting from a given date */
