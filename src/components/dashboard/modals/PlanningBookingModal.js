@@ -383,6 +383,7 @@ const PlanningBookingModal = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [isAddingTreatment, setIsAddingTreatment] = useState(false);
+  const [afterHours, setAfterHours] = useState(false);
 
   // Calculate total duration
   const totalDuration = selectedTreatments.reduce((sum, t) => sum + (t.duration || 30), 0);
@@ -812,7 +813,8 @@ const PlanningBookingModal = ({
             date,
             category: 'treatment',
             treatmentId: selectedTreatments[0].id,
-            duration: selectedTreatments[0].duration
+            duration: selectedTreatments[0].duration,
+            allowAfterHours: afterHours
           };
           const response = await planningApi.getSlots(params);
           if (response.success) {
@@ -824,7 +826,7 @@ const PlanningBookingModal = ({
           const response = await planningApi.getMultiTreatmentSlots(date, selectedTreatments.map(t => ({
             treatmentId: t.id,
             duration: t.duration
-          })));
+          })), { allowAfterHours: afterHours });
           console.log('[PlanningBookingModal] Multi-treatment slots response:', response);
           if (response.success) {
             setAvailableSlots(response.data?.slots || []);
@@ -847,7 +849,8 @@ const PlanningBookingModal = ({
           date,
           category: 'consultation',
           providerId,
-          duration: 30
+          duration: 30,
+          allowAfterHours: afterHours
         };
         const response = await planningApi.getSlots(params);
         if (response.success) {
@@ -859,13 +862,18 @@ const PlanningBookingModal = ({
     } finally {
       setLoadingSlots(false);
     }
-  }, [date, category, selectedTreatments, providerId, closedDayInfo]);
+  }, [date, category, selectedTreatments, providerId, closedDayInfo, afterHours]);
 
   useEffect(() => {
     if (step === 3) {
       loadSlots();
     }
   }, [step, loadSlots]);
+
+  // Reset afterHours when date or treatments change
+  useEffect(() => {
+    setAfterHours(false);
+  }, [date, selectedTreatments.length]);
 
   // Handle create new patient
   const handleCreateNewPatient = (searchQuery) => {
@@ -1879,6 +1887,15 @@ const PlanningBookingModal = ({
                 ) : availableSlots.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 text-sm">
                     {isEditMode ? t('slots.noAlternatives') : t('slots.noSlots')}
+                    {!afterHours && (
+                      <button
+                        onClick={() => setAfterHours(true)}
+                        className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-orange-400 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <AlertTriangle className="w-4 h-4" />
+                        {t('duplicate.afterHoursButton')}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -1915,6 +1932,11 @@ const PlanningBookingModal = ({
                                 {slot.segments.length} {slot.segments.length > 1 ? 'machines' : 'machine'}
                               </span>
                             )}
+                            {slot.afterHours && (
+                              <span className="text-[10px] font-medium bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded">
+                                {t('duplicate.afterHoursBadge')}
+                              </span>
+                            )}
                           </div>
 
                           {/* Show segments for multi-treatment slots */}
@@ -1938,6 +1960,16 @@ const PlanningBookingModal = ({
                       );
                     })}
                   </div>
+                )}
+
+                {!loadingSlots && availableSlots.length > 0 && !afterHours && (
+                  <button
+                    onClick={() => setAfterHours(true)}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-orange-400 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    {t('duplicate.afterHoursButton')}
+                  </button>
                 )}
               </div>
               )}
