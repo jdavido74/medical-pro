@@ -10,6 +10,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.npmrc'
+      - '.env.production'
       - '.github/workflows/build-and-deploy.yml'
   workflow_dispatch:
 
@@ -34,9 +35,16 @@ jobs:
 
       - name: Build ES Frontend
         env:
-          REACT_APP_COUNTRY: ES
           CI: false
         run: npm run build
+
+      - name: Verify no dev URLs in production build
+        run: |
+          if grep -q 'localhost:3001' build/static/js/*.js; then
+            echo "::error::localhost:3001 found in production build! Check .env.production"
+            exit 1
+          fi
+          echo "Build OK — no dev API URLs detected"
 
       - name: Upload ES build artifact
         uses: actions/upload-artifact@v4
@@ -85,6 +93,10 @@ jobs:
             git reset --hard origin/master
             npm ci --legacy-peer-deps
             npm run build
+            if grep -q 'localhost:3001' build/static/js/*.js; then
+              echo "FATAL: localhost:3001 found in production build!"
+              exit 1
+            fi
             sudo pm2 restart medical-pro-frontend 2>/dev/null || true
             sleep 3
             echo "Frontend deployment complete!"
