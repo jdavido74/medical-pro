@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Search, X, ChevronLeft, ChevronRight, Clock, RefreshCw,
-  Calendar, Check, ChevronDown, User
+  Calendar, Check, ChevronDown, User, AlertTriangle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import * as planningApi from '../../api/planningApi';
@@ -68,6 +68,7 @@ const MobileSlotsScreen = () => {
   const [slotsByDay, setSlotsByDay] = useState({});
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [afterHours, setAfterHours] = useState(false);
 
   // ── Booking panel ──
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -124,18 +125,21 @@ const MobileSlotsScreen = () => {
     setTreatmentQuery('');
     setTreatmentResults([]);
     setSearched(false);
+    setAfterHours(false);
   };
 
   const removeTreatment = (id) => {
     setSelectedTreatments(prev => prev.filter(t => t.id !== id));
     setSearched(false);
+    setAfterHours(false);
   };
 
   const totalDuration = selectedTreatments.reduce((sum, t) => sum + (t.duration || 0), 0);
 
   // ── Search slots ──
-  const handleSearch = useCallback(async () => {
+  const handleSearch = useCallback(async (overrideAfterHours) => {
     if (selectedTreatments.length === 0) return;
+    const useAfterHours = overrideAfterHours !== undefined ? overrideAfterHours : afterHours;
     setSearching(true);
     setSearched(false);
     setSlotsByDay({});
@@ -154,7 +158,8 @@ const MobileSlotsScreen = () => {
         if (isMulti) {
           const res = await planningApi.getMultiTreatmentSlots(
             day,
-            selectedTreatments.map(tr => ({ treatmentId: tr.id, duration: tr.duration }))
+            selectedTreatments.map(tr => ({ treatmentId: tr.id, duration: tr.duration })),
+            { allowAfterHours: useAfterHours }
           );
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
@@ -165,7 +170,8 @@ const MobileSlotsScreen = () => {
             date: day,
             category: 'treatment',
             treatmentId: tr.id,
-            duration: tr.duration
+            duration: tr.duration,
+            allowAfterHours: useAfterHours
           });
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
@@ -218,7 +224,7 @@ const MobileSlotsScreen = () => {
     setSlotsByDay(results);
     setSearching(false);
     setSearched(true);
-  }, [selectedTreatments, filterDate, filterMachine, filterProvider]);
+  }, [selectedTreatments, filterDate, filterMachine, filterProvider, afterHours]);
 
   // ── Date filter navigation ──
   const handleDatePrev = () => {
@@ -485,6 +491,18 @@ const MobileSlotsScreen = () => {
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
             <Calendar size={32} className="text-gray-300 mb-3" />
             <p className="text-sm text-gray-400">{t('booking.noSlots')}</p>
+            {!afterHours && (
+              <button
+                onClick={() => {
+                  setAfterHours(true);
+                  handleSearch(true);
+                }}
+                className="mt-4 px-4 py-2.5 text-sm font-medium border-2 border-orange-400 text-orange-600 bg-orange-50 active:bg-orange-100 transition-colors"
+              >
+                <AlertTriangle size={14} className="inline mr-1.5 -mt-0.5" />
+                {t('booking.afterHoursButton')}
+              </button>
+            )}
           </div>
         )}
 
@@ -536,6 +554,11 @@ const MobileSlotsScreen = () => {
                         </span>
                       )}
                     </div>
+                    {slot.afterHours && (
+                      <span className="flex-shrink-0 text-[10px] font-medium bg-orange-100 text-orange-600 px-1.5 py-0.5">
+                        {t('booking.afterHoursBadge')}
+                      </span>
+                    )}
                     {isSelected && (
                       <Check size={16} className="text-green-600 flex-shrink-0" />
                     )}
@@ -545,6 +568,22 @@ const MobileSlotsScreen = () => {
             })}
           </div>
         ))}
+
+        {/* After-hours button — shown after slot list when not yet active */}
+        {searched && hasSlots && !afterHours && !searching && (
+          <div className="flex justify-center py-4 px-4">
+            <button
+              onClick={() => {
+                setAfterHours(true);
+                handleSearch(true);
+              }}
+              className="px-4 py-2.5 text-sm font-medium border-2 border-orange-400 text-orange-600 bg-orange-50 active:bg-orange-100 transition-colors"
+            >
+              <AlertTriangle size={14} className="inline mr-1.5 -mt-0.5" />
+              {t('booking.afterHoursButton')}
+            </button>
+          </div>
+        )}
 
         {/* Extra space when panel is open */}
         {selectedSlot && <div className="h-80" />}

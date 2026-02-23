@@ -17,7 +17,11 @@ const ENDPOINT = '/planning';
  * @param {number} params.duration - Duration in minutes
  */
 export const getSlots = async (params) => {
-  return baseClient.get(`${ENDPOINT}/slots`, { query: params });
+  const query = { ...params };
+  if (query.allowAfterHours !== undefined) {
+    query.allowAfterHours = String(query.allowAfterHours);
+  }
+  return baseClient.get(`${ENDPOINT}/slots`, { query });
 };
 
 /**
@@ -89,8 +93,12 @@ export const getTreatments = async (params = {}) => {
  * @param {string} date - Date (YYYY-MM-DD)
  * @param {Array} treatments - Array of { treatmentId, duration }
  */
-export const getMultiTreatmentSlots = async (date, treatments) => {
-  return baseClient.post(`${ENDPOINT}/slots/multi-treatment`, { date, treatments });
+export const getMultiTreatmentSlots = async (date, treatments, options = {}) => {
+  return baseClient.post(`${ENDPOINT}/slots/multi-treatment`, {
+    date,
+    treatments,
+    allowAfterHours: options.allowAfterHours || false
+  });
 };
 
 /**

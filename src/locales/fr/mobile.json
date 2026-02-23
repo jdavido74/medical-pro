@@ -124,7 +124,9 @@
     "machine": "Machine",
     "date": "Jour",
     "noTreatments": "Sélectionnez au moins un traitement",
-    "slotAt": "à"
+    "slotAt": "à",
+    "afterHoursButton": "Proposer des créneaux hors horaires",
+    "afterHoursBadge": "Hors horaires"
   },
   "common": {
     "logout": "Déconnexion",

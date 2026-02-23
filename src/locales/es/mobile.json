@@ -124,7 +124,9 @@
     "machine": "Máquina",
     "date": "Día",
     "noTreatments": "Seleccione al menos un tratamiento",
-    "slotAt": "a las"
+    "slotAt": "a las",
+    "afterHoursButton": "Mostrar horarios fuera del horario",
+    "afterHoursBadge": "Fuera de horario"
   },
   "common": {
     "logout": "Cerrar sesión",
