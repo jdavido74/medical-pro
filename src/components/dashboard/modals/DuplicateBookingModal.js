@@ -70,6 +70,7 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
   const [bookingNotes, setBookingNotes] = useState('');
   const [bookingInProgress, setBookingInProgress] = useState(false);
   const [toast, setToast] = useState(null);
+  const [debugInfo, setDebugInfo] = useState('');
 
   const treatments = duplicateData?.treatments || [];
   const totalDuration = treatments.reduce((sum, tr) => sum + (tr.duration || 0), 0);
@@ -95,9 +96,10 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
 
   // ── Search slots (parallel) ──
   const searchSlots = useCallback(async (useAfterHours) => {
-    console.log('[DuplicateModal] searchSlots called, treatments:', treatments.length);
+    console.log('[DuplicateModal] searchSlots called, treatments:', treatments.length, treatments);
     if (treatments.length === 0) {
       console.warn('[DuplicateModal] No treatments, aborting search');
+      setDebugInfo('No treatments found');
       return;
     }
     const ah = useAfterHours !== undefined ? useAfterHours : afterHours;
@@ -110,22 +112,24 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
     const startFrom = addDays(todayStr(), 1 + dateOffset); // start from tomorrow
     const days = getNextWorkdays(startFrom, 7);
     const isMulti = treatments.length > 1;
-    console.log('[DuplicateModal] Searching', days.length, 'days from', startFrom, 'isMulti:', isMulti);
+    const tr0 = treatments[0];
+    setDebugInfo(`Searching ${days[0]}→${days[days.length - 1]} | ${tr0.title} (${tr0.id?.substring(0, 8)}) ${tr0.duration}min`);
+    console.log('[DuplicateModal] Searching', days, 'isMulti:', isMulti, 'treatment:', tr0);
 
     // Fire all 7 day searches in parallel with progressive updates
     const accumulated = {};
+    let errors = 0;
 
     const fetchDay = async (day) => {
       try {
         let slots = [];
-        const t0 = performance.now();
         if (isMulti) {
           const res = await planningApi.getMultiTreatmentSlots(
             day,
             treatments.map(tr => ({ treatmentId: tr.id, duration: tr.duration })),
             { allowAfterHours: ah }
           );
-          console.log('[DuplicateModal] Multi-slot', day, Math.round(performance.now() - t0) + 'ms, data keys:', res?.data ? Object.keys(res.data) : 'none');
+          console.log('[DuplicateModal] Multi-slot', day, 'success:', res?.success, 'data keys:', res?.data ? Object.keys(res.data) : 'none');
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
@@ -138,7 +142,7 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             duration: tr.duration,
             allowAfterHours: ah
           });
-          console.log('[DuplicateModal] Slot', day, Math.round(performance.now() - t0) + 'ms, data keys:', res?.data ? Object.keys(res.data) : 'none');
+          console.log('[DuplicateModal] Slot', day, 'success:', res?.success, 'data keys:', res?.data ? Object.keys(res.data) : 'none', 'slots:', res?.data?.slots?.length);
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || res.data.allSlots || []);
           }
@@ -149,13 +153,17 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
           setSlotsByDay(prev => ({ ...prev, [day]: slots }));
         }
       } catch (e) {
+        errors++;
         console.error(`[DuplicateModal] Slot error ${day}:`, e);
       }
     };
 
     await Promise.all(days.map(fetchDay));
 
-    console.log('[DuplicateModal] Search complete, days with slots:', Object.keys(accumulated).length);
+    const totalSlots = Object.values(accumulated).reduce((s, arr) => s + arr.length, 0);
+    const info = `${Object.keys(accumulated).length}/${days.length} days, ${totalSlots} slots${errors > 0 ? `, ${errors} errors` : ''}`;
+    setDebugInfo(info);
+    console.log('[DuplicateModal] Search complete:', info);
     setSearching(false);
     setSearched(true);
   }, [treatments, afterHours, dateOffset]);
@@ -306,6 +314,13 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             <ChevronRight size={16} className="text-gray-600" />
           </button>
         </div>
+
+        {/* Debug info (temporary) */}
+        {debugInfo && (
+          <div className="px-5 py-1 bg-yellow-50 border-b text-[10px] font-mono text-yellow-700 flex-shrink-0">
+            {debugInfo}
+          </div>
+        )}
 
         {/* Slot results */}
         <div className="flex-1 overflow-y-auto">

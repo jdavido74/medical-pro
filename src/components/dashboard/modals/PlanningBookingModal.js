@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, ChevronDown, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { PatientContext } from '../../../contexts/PatientContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -384,6 +384,7 @@ const PlanningBookingModal = ({
   const [error, setError] = useState(null);
   const [isAddingTreatment, setIsAddingTreatment] = useState(false);
   const [afterHours, setAfterHours] = useState(false);
+  const [collapsedCategories, setCollapsedCategories] = useState(new Set());
 
   // Calculate total duration
   const totalDuration = selectedTreatments.reduce((sum, t) => sum + (t.duration || 30), 0);
@@ -1572,53 +1573,66 @@ const PlanningBookingModal = ({
                         </div>
                       )}
 
-                      {/* Results grouped by category */}
+                      {/* Results grouped by category (accordion) */}
                       {!loadingTreatments && treatmentsByCategory.length > 0 && (
-                        <div className="max-h-64 overflow-y-auto border rounded-lg divide-y">
-                          {treatmentsByCategory.map(cat => (
-                            <div key={cat.id || 'uncategorized'}>
-                              <div
-                                className="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider sticky top-0"
-                                style={cat.color ? {
-                                  borderLeft: `3px solid ${cat.color}`
-                                } : {}}
-                              >
-                                {cat.isUncategorized ? t('booking.uncategorized') : cat.name}
-                              </div>
-                              {cat.treatments.map(treatment => {
-                                const isAlreadySelected = selectedTreatments.find(t => t.id === treatment.id);
-                                return (
-                                  <button
-                                    key={treatment.id}
-                                    onClick={() => !isAlreadySelected && handleTreatmentSelect(treatment)}
-                                    disabled={isAlreadySelected}
-                                    className={`w-full p-3 text-left transition-colors flex items-center justify-between ${
-                                      isAlreadySelected
-                                        ? 'bg-gray-100 opacity-50 cursor-not-allowed'
-                                        : 'hover:bg-blue-50'
-                                    }`}
-                                  >
-                                    <div>
-                                      <div className="font-medium text-sm text-gray-900">
-                                        {treatment.title}
-                                        {isAlreadySelected && (
-                                          <span className="ml-2 text-xs text-green-600">
-                                            <Check className="w-3 h-3 inline" />
-                                          </span>
+                        <div className="max-h-80 overflow-y-auto border rounded-lg divide-y">
+                          {treatmentsByCategory.map(cat => {
+                            const catKey = cat.id || 'uncategorized';
+                            const isCollapsed = collapsedCategories.has(catKey);
+                            const catLabel = cat.isUncategorized ? t('booking.uncategorized') : cat.name;
+                            return (
+                              <div key={catKey}>
+                                <button
+                                  type="button"
+                                  onClick={() => setCollapsedCategories(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(catKey)) next.delete(catKey); else next.add(catKey);
+                                    return next;
+                                  })}
+                                  className="w-full px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider sticky top-0 flex items-center justify-between hover:bg-gray-100 transition-colors cursor-pointer"
+                                  style={cat.color ? { borderLeft: `3px solid ${cat.color}` } : {}}
+                                >
+                                  <span>{catLabel} ({cat.treatments.length})</span>
+                                  {isCollapsed
+                                    ? <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                                    : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                                  }
+                                </button>
+                                {!isCollapsed && cat.treatments.map(treatment => {
+                                  const isAlreadySelected = selectedTreatments.find(t => t.id === treatment.id);
+                                  return (
+                                    <button
+                                      key={treatment.id}
+                                      onClick={() => !isAlreadySelected && handleTreatmentSelect(treatment)}
+                                      disabled={isAlreadySelected}
+                                      className={`w-full p-3 text-left transition-colors flex items-center justify-between ${
+                                        isAlreadySelected
+                                          ? 'bg-gray-100 opacity-50 cursor-not-allowed'
+                                          : 'hover:bg-blue-50'
+                                      }`}
+                                    >
+                                      <div>
+                                        <div className="font-medium text-sm text-gray-900">
+                                          {treatment.title}
+                                          {isAlreadySelected && (
+                                            <span className="ml-2 text-xs text-green-600">
+                                              <Check className="w-3 h-3 inline" />
+                                            </span>
+                                          )}
+                                        </div>
+                                        {treatment.description && (
+                                          <div className="text-xs text-gray-500 truncate max-w-xs">{treatment.description}</div>
                                         )}
                                       </div>
-                                      {treatment.description && (
-                                        <div className="text-xs text-gray-500 truncate max-w-xs">{treatment.description}</div>
-                                      )}
-                                    </div>
-                                    <div className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                                      {treatment.duration} min
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ))}
+                                      <div className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                                        {treatment.duration} min
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 
