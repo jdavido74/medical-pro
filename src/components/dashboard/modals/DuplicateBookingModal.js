@@ -88,7 +88,11 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
 
   // ── Search slots ──
   const searchSlots = useCallback(async (useAfterHours) => {
-    if (treatments.length === 0) return;
+    console.log('[DuplicateModal] searchSlots called, treatments:', treatments.length, 'isOpen:', isOpen);
+    if (treatments.length === 0) {
+      console.warn('[DuplicateModal] No treatments, aborting search');
+      return;
+    }
     const ah = useAfterHours !== undefined ? useAfterHours : afterHours;
     setSearching(true);
     setSearched(false);
@@ -100,16 +104,19 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
     const days = getNextWorkdays(startFrom, 7);
     const isMulti = treatments.length > 1;
     const results = {};
+    console.log('[DuplicateModal] Searching', days.length, 'days starting from', startFrom, 'isMulti:', isMulti);
 
     for (const day of days) {
       try {
         let slots = [];
+        const t0 = performance.now();
         if (isMulti) {
           const res = await planningApi.getMultiTreatmentSlots(
             day,
             treatments.map(tr => ({ treatmentId: tr.id, duration: tr.duration })),
             { allowAfterHours: ah }
           );
+          console.log('[DuplicateModal] Multi-slot response for', day, 'in', Math.round(performance.now() - t0), 'ms:', res?.success, 'slots:', (res?.data?.slots || res?.data)?.length);
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
           }
@@ -122,6 +129,7 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
             duration: tr.duration,
             allowAfterHours: ah
           });
+          console.log('[DuplicateModal] Slot response for', day, 'in', Math.round(performance.now() - t0), 'ms:', res?.success, 'data keys:', res?.data && Object.keys(res.data));
           if (res.success && res.data) {
             slots = Array.isArray(res.data) ? res.data : (res.data.slots || []);
           }
@@ -130,19 +138,21 @@ const DuplicateBookingModal = ({ isOpen, onClose, onSuccess, duplicateData }) =>
           results[day] = slots;
         }
       } catch (e) {
-        console.error(`Slot search error for ${day}:`, e);
+        console.error(`[DuplicateModal] Slot search error for ${day}:`, e);
       }
 
       // Progressive update — show results as they come in
       setSlotsByDay({ ...results });
     }
 
+    console.log('[DuplicateModal] Search complete, days with slots:', Object.keys(results).length);
     setSearching(false);
     setSearched(true);
-  }, [treatments, afterHours, dateOffset]);
+  }, [treatments, afterHours, dateOffset, isOpen]);
 
   // ── Auto-search on mount ──
   useEffect(() => {
+    console.log('[DuplicateModal] useEffect triggered, isOpen:', isOpen, 'treatments.length:', treatments.length, 'dateOffset:', dateOffset);
     if (isOpen && treatments.length > 0) {
       searchSlots();
     }

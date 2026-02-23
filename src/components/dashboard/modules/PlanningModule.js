@@ -703,9 +703,17 @@ const PlanningModule = () => {
 
   const handleSummaryDuplicate = async () => {
     if (!summaryAppointment) return;
+    console.log('[Duplicate] Starting extraction for appointment:', {
+      id: summaryAppointment.id, isLinked: summaryAppointment.isLinked,
+      linkedAppointmentId: summaryAppointment.linkedAppointmentId,
+      linkSequence: summaryAppointment.linkSequence,
+      serviceId: summaryAppointment.serviceId, category: summaryAppointment.category
+    });
     setDuplicateLoading(true);
     try {
+      const t0 = performance.now();
       const data = await extractDuplicateData(summaryAppointment);
+      console.log('[Duplicate] Extraction done in', Math.round(performance.now() - t0), 'ms, treatments:', data.treatments?.length, data);
       setShowSummaryModal(false);
       setDuplicateData(data);
       setShowDuplicateModal(true);
