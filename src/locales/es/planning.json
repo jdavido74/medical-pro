@@ -389,5 +389,16 @@
     "consultationConflict": "Consulta en curso en esta cita — asignación bloqueada",
     "treatmentConflict": "{{count}} tratamiento(s) en paralelo en esta cita",
     "treatmentConflictWarning": "Este profesional ya tiene tratamientos en esta cita"
+  },
+
+  "substitute": {
+    "button": "Cambiar tratamiento",
+    "selectNew": "Seleccionar un tratamiento sustituto",
+    "changed": "Tratamiento modificado: {{from}} → {{to}}",
+    "undo": "Deshacer",
+    "current": "actual",
+    "recalculateChain": "Recalcular los horarios de la cadena",
+    "recalculateChainDesc": "La duración cambia {{direction}}{{diff}} min — las citas siguientes se desplazarán",
+    "noMachineAvailable": "No hay máquina compatible disponible para este horario"
   }
 }

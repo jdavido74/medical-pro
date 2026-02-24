@@ -389,5 +389,16 @@
     "consultationConflict": "Consultation en cours sur ce créneau — attribution bloquée",
     "treatmentConflict": "{{count}} traitement(s) en parallèle sur ce créneau",
     "treatmentConflictWarning": "Ce praticien a déjà des traitements sur ce créneau"
+  },
+
+  "substitute": {
+    "button": "Changer le traitement",
+    "selectNew": "Sélectionner un traitement de substitution",
+    "changed": "Traitement modifié : {{from}} → {{to}}",
+    "undo": "Annuler",
+    "current": "actuel",
+    "recalculateChain": "Recalculer les horaires de la chaîne",
+    "recalculateChainDesc": "La durée change de {{direction}}{{diff}} min — les RDV suivants seront décalés",
+    "noMachineAvailable": "Aucune machine compatible disponible pour ce créneau"
   }
 }

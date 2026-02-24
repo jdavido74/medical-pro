@@ -389,5 +389,16 @@
     "consultationConflict": "Consultation in progress on this slot — assignment blocked",
     "treatmentConflict": "{{count}} treatment(s) in parallel on this slot",
     "treatmentConflictWarning": "This practitioner already has treatments on this slot"
+  },
+
+  "substitute": {
+    "button": "Change treatment",
+    "selectNew": "Select a substitute treatment",
+    "changed": "Treatment changed: {{from}} → {{to}}",
+    "undo": "Undo",
+    "current": "current",
+    "recalculateChain": "Recalculate chain schedule",
+    "recalculateChainDesc": "Duration changes by {{direction}}{{diff}} min — following appointments will be shifted",
+    "noMachineAvailable": "No compatible machine available at this time slot"
   }
 }

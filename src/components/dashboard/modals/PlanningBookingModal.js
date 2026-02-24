@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, ChevronDown, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, ChevronDown, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { PatientContext } from '../../../contexts/PatientContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -386,6 +386,17 @@ const PlanningBookingModal = ({
   const [afterHours, setAfterHours] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState(new Set());
 
+  // Treatment substitution state
+  const [showSubstituteSelector, setShowSubstituteSelector] = useState(false);
+  const [substituteTreatmentSearch, setSubstituteTreatmentSearch] = useState('');
+  const [substituteTreatments, setSubstituteTreatments] = useState([]);
+  const [substituteTreatmentsByCategory, setSubstituteTreatmentsByCategory] = useState([]);
+  const [loadingSubstituteTreatments, setLoadingSubstituteTreatments] = useState(false);
+  const [substituteCollapsedCategories, setSubstituteCollapsedCategories] = useState(new Set());
+  const [substitutionPending, setSubstitutionPending] = useState(null);
+  // { treatmentId, title, duration, isOverlappable }
+  const [recalculateChain, setRecalculateChain] = useState(true);
+
   // Calculate total duration
   const totalDuration = selectedTreatments.reduce((sum, t) => sum + (t.duration || 30), 0);
 
@@ -707,6 +718,62 @@ const PlanningBookingModal = ({
     setSelectedSlot(null);
   };
 
+  // Handle treatment substitution selection
+  const handleSubstituteSelect = (treatment) => {
+    setSelectedTreatments([{
+      id: treatment.id,
+      title: treatment.title,
+      duration: treatment.duration || 30,
+      categories: treatment.categories || [],
+      is_overlappable: treatment.is_overlappable
+    }]);
+    setSubstitutionPending({
+      treatmentId: treatment.id,
+      title: treatment.title,
+      duration: treatment.duration || 30,
+      isOverlappable: treatment.is_overlappable
+    });
+    // Update selectedSlot end time to reflect new duration
+    if (selectedSlot) {
+      const startMinutes = timeToMinutes(selectedSlot.startTime || selectedSlot.start);
+      const newEndMinutes = startMinutes + (treatment.duration || 30);
+      const newEnd = `${String(Math.floor(newEndMinutes / 60)).padStart(2, '0')}:${String(newEndMinutes % 60).padStart(2, '0')}`;
+      setSelectedSlot(prev => ({
+        ...prev,
+        end: newEnd,
+        endTime: newEnd,
+        duration: treatment.duration || 30,
+        machineId: treatment.is_overlappable ? null : prev.machineId
+      }));
+    }
+    setShowSubstituteSelector(false);
+    setSubstituteTreatmentSearch('');
+  };
+
+  // Cancel treatment substitution — restore original
+  const handleSubstituteCancel = () => {
+    if (appointment?.service) {
+      setSelectedTreatments([{
+        id: appointment.serviceId,
+        title: appointment.service.title,
+        duration: appointment.service.duration || appointment.duration || 30,
+        categories: []
+      }]);
+      // Restore original slot end time
+      if (selectedSlot) {
+        setSelectedSlot(prev => ({
+          ...prev,
+          end: appointment.endTime,
+          endTime: appointment.endTime,
+          duration: appointment.duration || 30,
+          machineId: appointment.machineId
+        }));
+      }
+    }
+    setSubstitutionPending(null);
+    setRecalculateChain(true);
+  };
+
   // Load providers from resources
   useEffect(() => {
     if (isOpen && resources?.providers) {
@@ -787,6 +854,31 @@ const PlanningBookingModal = ({
     const debounce = setTimeout(searchTreatments, 300);
     return () => clearTimeout(debounce);
   }, [treatmentSearch]);
+
+  // Search substitute treatments with debounce
+  useEffect(() => {
+    if (!showSubstituteSelector) return;
+
+    const searchSubstituteTreatments = async () => {
+      setLoadingSubstituteTreatments(true);
+      try {
+        const response = await planningApi.getTreatments({ search: substituteTreatmentSearch });
+        if (response.success) {
+          const allTreatments = response.data?.treatments || response.data || [];
+          const byCategory = response.data?.byCategory || [];
+          setSubstituteTreatments(allTreatments);
+          setSubstituteTreatmentsByCategory(byCategory);
+        }
+      } catch (err) {
+        console.error('Error loading substitute treatments:', err);
+      } finally {
+        setLoadingSubstituteTreatments(false);
+      }
+    };
+
+    const debounce = setTimeout(searchSubstituteTreatments, 300);
+    return () => clearTimeout(debounce);
+  }, [substituteTreatmentSearch, showSubstituteSelector]);
 
   // Get selected patient from context
   const selectedPatient = patientId ? patientContext?.patients?.find(p => p.id === patientId) : null;
@@ -1186,10 +1278,39 @@ const PlanningBookingModal = ({
       }
 
       if (response.success) {
+        // After successful substitution with chain recalculation
+        if (substitutionPending && isLinkedAppointment && recalculateChain && linkedGroup?.appointments) {
+          const originalDuration = appointment.duration || 30;
+          const newDuration = substitutionPending.duration;
+          if (newDuration !== originalDuration) {
+            const currentSequence = appointment.linkSequence || 1;
+            const followingAppts = linkedGroup.appointments
+              .filter(a => (a.linkSequence || 1) > currentSequence && a.status !== 'completed' && a.status !== 'cancelled');
+
+            if (followingAppts.length > 0) {
+              // Calculate new end time for the substituted appointment
+              const effectiveStart = selectedSlot?.startTime || selectedSlot?.start || appointment.startTime;
+              const startMins = timeToMinutes(effectiveStart);
+              let nextStart = `${String(Math.floor((startMins + newDuration) / 60)).padStart(2, '0')}:${String((startMins + newDuration) % 60).padStart(2, '0')}`;
+
+              for (const apt of followingAppts) {
+                await planningApi.updateAppointment(apt.id, {
+                  startTime: nextStart,
+                  date: apt.date
+                });
+                const [h, m] = nextStart.split(':').map(Number);
+                const nextMins = h * 60 + m + (apt.duration || 30);
+                nextStart = `${String(Math.floor(nextMins / 60)).padStart(2, '0')}:${String(nextMins % 60).padStart(2, '0')}`;
+              }
+            }
+          }
+        }
         onSave(response.data);
       } else {
-        // Check if it's a conflict error from backend
-        if (response.error?.message?.includes('conflict') || response.error?.message?.includes('disponible')) {
+        // Check for specific error codes
+        if (response.error?.code === 'NO_MACHINE_AVAILABLE') {
+          setError(t('substitute.noMachineAvailable'));
+        } else if (response.error?.message?.includes('conflict') || response.error?.message?.includes('disponible')) {
           setError(t('validation.slotConflict'));
         } else {
           setError(response.error?.message || t('messages.error'));
@@ -1468,32 +1589,30 @@ const PlanningBookingModal = ({
 
           {/* Step 2: Choose type and treatments */}
           {step === 2 && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setCategory('treatment')}
-                  className={`p-6 rounded-xl border-2 text-left transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
                     category === 'treatment'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
                   }`}
                 >
-                  <Cpu className={`w-8 h-8 mb-3 ${category === 'treatment' ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <h3 className="font-semibold text-gray-900">{t('appointment.treatment')}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{t('booking.treatmentDescription')}</p>
+                  <Cpu className="w-4 h-4" />
+                  <span className="font-medium text-sm">{t('appointment.treatment')}</span>
                 </button>
 
                 <button
                   onClick={() => setCategory('consultation')}
-                  className={`p-6 rounded-xl border-2 text-left transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
                     category === 'consultation'
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
                   }`}
                 >
-                  <User className={`w-8 h-8 mb-3 ${category === 'consultation' ? 'text-purple-600' : 'text-gray-400'}`} />
-                  <h3 className="font-semibold text-gray-900">{t('appointment.consultation')}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{t('booking.consultationDescription')}</p>
+                  <User className="w-4 h-4" />
+                  <span className="font-medium text-sm">{t('appointment.consultation')}</span>
                 </button>
               </div>
 
@@ -2023,11 +2142,139 @@ const PlanningBookingModal = ({
               {/* Treatment details */}
               {category === 'treatment' && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    {selectedTreatments.length > 1
-                      ? t('multiTreatment.treatmentChain')
-                      : t('appointment.treatment')}
-                  </h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-gray-700">
+                      {selectedTreatments.length > 1
+                        ? t('multiTreatment.treatmentChain')
+                        : t('appointment.treatment')}
+                    </h4>
+                    {isEditMode && category === 'treatment' && !showSubstituteSelector && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSubstituteSelector(true)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        {t('substitute.button')}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Substitution pending banner */}
+                  {substitutionPending && (
+                    <div className="mb-2 flex items-center justify-between gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+                      <span className="text-amber-800">
+                        {t('substitute.changed', {
+                          from: appointment?.service?.title || '',
+                          to: substitutionPending.title
+                        })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleSubstituteCancel}
+                        className="text-xs font-medium text-amber-700 hover:text-amber-900 whitespace-nowrap"
+                      >
+                        {t('substitute.undo')}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Inline substitute treatment selector */}
+                  {showSubstituteSelector && (
+                    <div className="mb-3 border-2 border-amber-300 bg-amber-50/50 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-amber-800">{t('substitute.selectNew')}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setShowSubstituteSelector(false); setSubstituteTreatmentSearch(''); }}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="relative mb-2">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={substituteTreatmentSearch}
+                          onChange={(e) => setSubstituteTreatmentSearch(e.target.value)}
+                          placeholder={t('booking.searchTreatment')}
+                          className="w-full pl-9 pr-4 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-amber-400"
+                          autoFocus
+                        />
+                      </div>
+                      {loadingSubstituteTreatments && (
+                        <div className="text-center py-3 text-gray-500">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600 mx-auto" />
+                        </div>
+                      )}
+                      {!loadingSubstituteTreatments && substituteTreatmentsByCategory.length > 0 && (
+                        <div className="max-h-60 overflow-y-auto border rounded-lg divide-y bg-white">
+                          {substituteTreatmentsByCategory.map(cat => {
+                            const catKey = cat.id || 'uncategorized';
+                            const isCollapsed = substituteCollapsedCategories.has(catKey);
+                            const catLabel = cat.isUncategorized ? t('booking.uncategorized') : cat.name;
+                            return (
+                              <div key={catKey}>
+                                <button
+                                  type="button"
+                                  onClick={() => setSubstituteCollapsedCategories(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(catKey)) next.delete(catKey); else next.add(catKey);
+                                    return next;
+                                  })}
+                                  className="w-full px-3 py-1.5 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider sticky top-0 flex items-center justify-between hover:bg-gray-100 transition-colors cursor-pointer"
+                                  style={cat.color ? { borderLeft: `3px solid ${cat.color}` } : {}}
+                                >
+                                  <span>{catLabel} ({cat.treatments.length})</span>
+                                  {isCollapsed
+                                    ? <ChevronRight className="w-3 h-3 text-gray-400" />
+                                    : <ChevronDown className="w-3 h-3 text-gray-400" />
+                                  }
+                                </button>
+                                {!isCollapsed && cat.treatments.map(treatment => {
+                                  const isCurrent = treatment.id === appointment?.serviceId;
+                                  return (
+                                    <button
+                                      key={treatment.id}
+                                      onClick={() => !isCurrent && handleSubstituteSelect(treatment)}
+                                      disabled={isCurrent}
+                                      className={`w-full p-2.5 text-left transition-colors flex items-center justify-between ${
+                                        isCurrent
+                                          ? 'bg-gray-100 opacity-50 cursor-not-allowed'
+                                          : 'hover:bg-amber-50'
+                                      }`}
+                                    >
+                                      <div>
+                                        <div className="font-medium text-sm text-gray-900">
+                                          {treatment.title}
+                                          {isCurrent && (
+                                            <span className="ml-2 text-xs text-gray-500">({t('substitute.current')})</span>
+                                          )}
+                                        </div>
+                                        {treatment.description && (
+                                          <div className="text-xs text-gray-500 truncate max-w-xs">{treatment.description}</div>
+                                        )}
+                                      </div>
+                                      <div className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                                        {treatment.duration} min
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {!loadingSubstituteTreatments && substituteTreatments.length === 0 && substituteTreatmentSearch && (
+                        <div className="text-center py-3 text-gray-500 text-sm">
+                          {t('booking.noTreatmentsFound')}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="bg-blue-50 rounded-lg p-3 space-y-2">
                     {selectedSlot?.segments ? (
                       // Multi-treatment with segments
@@ -2057,6 +2304,27 @@ const PlanningBookingModal = ({
                       ))
                     )}
                   </div>
+
+                  {/* Chain recalculation checkbox */}
+                  {isLinkedAppointment && substitutionPending && (appointment?.duration || 30) !== substitutionPending.duration && (
+                    <label className="mt-2 flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={recalculateChain}
+                        onChange={(e) => setRecalculateChain(e.target.checked)}
+                        className="mt-0.5 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-purple-800">{t('substitute.recalculateChain')}</div>
+                        <div className="text-xs text-purple-600">
+                          {t('substitute.recalculateChainDesc', {
+                            direction: substitutionPending.duration > (appointment?.duration || 30) ? '+' : '-',
+                            diff: Math.abs(substitutionPending.duration - (appointment?.duration || 30))
+                          })}
+                        </div>
+                      </div>
+                    </label>
+                  )}
                 </div>
               )}
 
