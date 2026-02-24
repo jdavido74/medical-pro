@@ -14,7 +14,7 @@ const PatientSearchSelect = ({
 }) => {
   const { t } = useTranslation();
   const patientContext = useContext(PatientContext);
-  const displayPlaceholder = placeholder || t('common.patientSearch.placeholder');
+  const displayPlaceholder = placeholder || t('patientSearch.placeholder');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -150,7 +150,7 @@ const PatientSearchSelect = ({
               }}
               disabled={disabled}
               className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
-              title={t('common.patientSearch.resetSelection')}
+              title={t('patientSearch.resetSelection')}
             >
               ✕
             </button>
@@ -196,7 +196,7 @@ const PatientSearchSelect = ({
                       </div>
                       {patient.isIncomplete && (
                         <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded">
-                          {t('common.patientSearch.incompleteRecord')}
+                          {t('patientSearch.incompleteRecord')}
                         </span>
                       )}
                     </div>
@@ -213,14 +213,14 @@ const PatientSearchSelect = ({
                     className="w-full flex items-center px-4 py-3 text-green-700 hover:bg-green-50 transition-colors border-t border-gray-200"
                   >
                     <Plus className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="text-sm font-medium">{t('common.patientSearch.createNewPatient')}</span>
+                    <span className="text-sm font-medium">{t('patientSearch.createNewPatient')}</span>
                   </button>
                 )}
               </div>
             ) : noResults ? (
               <div className="p-4 text-center">
                 <p className="text-sm text-gray-600 mb-3">
-                  {t('common.patientSearch.noPatientFound', { query: searchQuery })}
+                  {t('patientSearch.noPatientFound', { query: searchQuery })}
                 </p>
                 {onCreateNew && (
                   <button
@@ -232,13 +232,13 @@ const PatientSearchSelect = ({
                     className="flex items-center justify-center w-full px-4 py-2 bg-green-50 text-green-700 border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    {t('common.patientSearch.createNewPatient')}
+                    {t('patientSearch.createNewPatient')}
                   </button>
                 )}
               </div>
             ) : (
               <div className="p-4 text-center text-sm text-gray-500">
-                {t('common.patientSearch.startTyping')}
+                {t('patientSearch.startTyping')}
               </div>
             )}
           </div>
@@ -255,7 +255,7 @@ const PatientSearchSelect = ({
               </div>
               <div>
                 <p className="text-sm font-bold text-green-900">
-                  {t('common.patientSearch.patientSelected')}
+                  {t('patientSearch.patientSelected')}
                 </p>
                 <p className="text-lg font-bold text-gray-900">
                   {selectedPatient.firstName} {selectedPatient.lastName}
@@ -279,14 +279,14 @@ const PatientSearchSelect = ({
           {/* Numéro patient */}
           {selectedPatient.patientNumber && (
             <p className="text-xs text-gray-500 ml-10 mt-1">
-              {t('common.patientSearch.patientNumber')} {selectedPatient.patientNumber}
+              {t('patientSearch.patientNumber')} {selectedPatient.patientNumber}
             </p>
           )}
 
           {/* Avertissement fiche incomplète */}
           {selectedPatient.isIncomplete && (
             <p className="text-xs text-orange-700 mt-2 ml-10 p-2 bg-orange-100 rounded">
-              ⚠️ {t('common.patientSearch.incompleteWarning')}
+              ⚠️ {t('patientSearch.incompleteWarning')}
             </p>
           )}
         </div>

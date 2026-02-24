@@ -131,8 +131,8 @@
   },
 
   "booking": {
-    "step1": "Choose type",
-    "step2": "Select patient",
+    "step1": "Select patient",
+    "step2": "Choose type",
     "step3": "Choose date and time",
     "step4": "Confirm",
     "treatmentDescription": "Book a machine slot for a treatment",

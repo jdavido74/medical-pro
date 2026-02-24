@@ -244,7 +244,7 @@ const ConflictModal = ({ isOpen, onClose, onOverlap, onCancel, conflictInfo }) =
           <div className="text-sm">
             <div className="flex justify-between py-1 border-b">
               <span className="text-gray-500">{t('conflict.existingAppointment')}</span>
-              <span className="font-medium">{conflictInfo.existingTitle || 'RDV existant'}</span>
+              <span className="font-medium">{conflictInfo.existingTitle || t('conflict.existingAppointment')}</span>
             </div>
             <div className="flex justify-between py-1 border-b">
               <span className="text-gray-500">{t('appointment.time')}</span>
@@ -920,12 +920,12 @@ const PlanningBookingModal = ({
   const canProceed = () => {
     switch (step) {
       case 1:
+        return !!patientId;
+      case 2:
         return category && (
           (category === 'treatment' && selectedTreatments.length > 0) ||
           (category === 'consultation' && providerId)
         );
-      case 2:
-        return !!patientId;
       case 3:
         return !!selectedSlot;
       default:
@@ -1006,7 +1006,7 @@ const PlanningBookingModal = ({
           return {
             conflictType: 'patient',
             totalConflicts: pConflicts.length,
-            existingTitle: first.title || 'Rendez-vous',
+            existingTitle: first.title || t('appointment.details'),
             existingTime: `${first.startTime} - ${first.endTime}`,
             existingMachine: first.machineName || null,
             existingProvider: first.providerName || null,
@@ -1450,8 +1450,24 @@ const PlanningBookingModal = ({
             </div>
           )}
 
-          {/* Step 1: Choose type and treatments */}
+          {/* Step 1: Select patient */}
           {step === 1 && (
+            <div className="space-y-4 min-h-[350px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('appointment.selectPatient')} *
+              </label>
+              <PatientSearchSelect
+                value={patientId}
+                onChange={(id) => setPatientId(id)}
+                onCreateNew={handleCreateNewPatient}
+                error={error && !patientId ? t('appointment.patientRequired') : null}
+                placeholder={t('appointment.searchPatient')}
+              />
+            </div>
+          )}
+
+          {/* Step 2: Choose type and treatments */}
+          {step === 2 && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <button
@@ -1697,22 +1713,6 @@ const PlanningBookingModal = ({
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Step 2: Select patient */}
-          {step === 2 && (
-            <div className="space-y-4 min-h-[350px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('appointment.selectPatient')} *
-              </label>
-              <PatientSearchSelect
-                value={patientId}
-                onChange={(id) => setPatientId(id)}
-                onCreateNew={handleCreateNewPatient}
-                error={error && !patientId ? t('appointment.patientRequired') : null}
-                placeholder={t('appointment.searchPatient')}
-              />
             </div>
           )}
 

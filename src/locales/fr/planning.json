@@ -131,8 +131,8 @@
   },
 
   "booking": {
-    "step1": "Choisir le type",
-    "step2": "Sélectionner le patient",
+    "step1": "Sélectionner le patient",
+    "step2": "Choisir le type",
     "step3": "Choisir la date et l'heure",
     "step4": "Confirmer",
     "treatmentDescription": "Réservez un créneau machine pour un traitement",

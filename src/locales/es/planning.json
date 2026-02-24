@@ -131,8 +131,8 @@
   },
 
   "booking": {
-    "step1": "Elegir tipo",
-    "step2": "Seleccionar paciente",
+    "step1": "Seleccionar paciente",
+    "step2": "Elegir tipo",
     "step3": "Elegir fecha y hora",
     "step4": "Confirmar",
     "treatmentDescription": "Reserve un horario de máquina para un tratamiento",
