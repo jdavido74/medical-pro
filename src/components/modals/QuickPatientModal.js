@@ -13,7 +13,7 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
   const { t } = useTranslation(['patients', 'common']);
   const [isLoading, setIsLoading] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
-  const [phoneValid, setPhoneValid] = useState(true); // Optional field
+  const [phoneValid, setPhoneValid] = useState(true);
 
   // Use standardized error handling
   const {
@@ -35,11 +35,9 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
   // Réinitialiser le formulaire et les erreurs à l'ouverture/fermeture
   useEffect(() => {
     if (isOpen) {
-      // Reset form when opening
       clearErrors();
       setDuplicateWarning(null);
 
-      // Pré-remplir le nom et prénom si présent
       if (initialSearchQuery) {
         const parts = initialSearchQuery.trim().split(' ');
         if (parts.length === 1) {
@@ -57,71 +55,64 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             phone: ''
           });
         } else {
-          setFormData({
-            firstName: '',
-            lastName: '',
-            email: '',
-            phone: ''
-          });
+          setFormData({ firstName: '', lastName: '', email: '', phone: '' });
         }
       } else {
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: ''
-        });
+        setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       }
     }
   }, [isOpen, initialSearchQuery, clearErrors]);
 
-  // Vérifier les doublons en temps réel (email + nom)
-  // Ne vérifier que lorsque les champs ont des valeurs significatives
+  // Vérifier les doublons en temps réel (téléphone + email + nom)
   useEffect(() => {
     if (!patientContext) return;
 
     const firstName = formData.firstName?.trim();
     const lastName = formData.lastName?.trim();
     const email = formData.email?.trim();
+    const phone = formData.phone?.trim();
 
-    // Ne vérifier que si on a assez d'information (nom complet ou email valide)
+    // Check by phone (primary for provisional)
+    if (phone && phone.length >= 8) {
+      const duplicateByPhone = patientContext.checkDuplicateByPhone(phone);
+      if (duplicateByPhone) {
+        setDuplicateWarning({
+          message: t('patients:provisional.duplicatePhone', 'Un patient avec ce numéro de téléphone existe déjà'),
+          patientNumber: duplicateByPhone.patientNumber,
+          type: 'phone',
+          patient: duplicateByPhone
+        });
+        return;
+      }
+    }
+
+    // Also check by name/email if available
     const hasFullName = firstName && firstName.length >= 2 && lastName && lastName.length >= 2;
     const hasValidEmail = email && email.includes('@') && email.includes('.');
 
     if (hasFullName || hasValidEmail) {
-      // Use PatientContext's checkDuplicate method (local search in loaded patients)
-      const duplicate = patientContext.checkDuplicate(
-        firstName,
-        lastName,
-        email
-      );
-
+      const duplicate = patientContext.checkDuplicate(firstName, lastName, email);
       if (duplicate) {
-        // Déterminer le type de correspondance
         const emailMatch = hasValidEmail && duplicate.contact?.email?.toLowerCase() === email.toLowerCase();
-        const nameMatch = hasFullName &&
-          duplicate.firstName?.toLowerCase() === firstName.toLowerCase() &&
-          duplicate.lastName?.toLowerCase() === lastName.toLowerCase();
-
         setDuplicateWarning({
-          message: emailMatch && nameMatch
-            ? 'Un patient avec ce nom et cet email existe déjà'
-            : emailMatch
-              ? 'Un patient avec cet email existe déjà'
-              : 'Un patient avec ce nom existe déjà',
+          message: emailMatch
+            ? t('patients:errors.duplicatePatient', 'Un patient avec cet email existe déjà')
+            : t('patients:errors.duplicatePatient', 'Un patient avec ce nom existe déjà'),
           patientNumber: duplicate.patientNumber,
           type: emailMatch ? 'email' : 'name',
           patient: duplicate
         });
-      } else {
-        setDuplicateWarning(null);
+        return;
       }
-    } else {
-      setDuplicateWarning(null);
     }
-  }, [formData.firstName, formData.lastName, formData.email, patientContext]);
 
-  // Validation du formulaire - Using useFormErrors
+    setDuplicateWarning(null);
+  }, [formData.firstName, formData.lastName, formData.email, formData.phone, patientContext, t]);
+
+  // Determine if this will be a provisional or complete creation
+  const isProvisionalMode = !formData.lastName?.trim() || !formData.email?.trim();
+
+  // Validation: only firstName + phone are required
   const validateForm = () => {
     clearErrors();
     let isValid = true;
@@ -131,26 +122,18 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
       isValid = false;
     }
 
-    if (!formData.lastName?.trim()) {
-      setFieldError('lastName', t('patients:validation.lastNameRequired', 'Le nom est requis'));
-      isValid = false;
-    }
-
-    // Email est obligatoire
-    if (!formData.email?.trim()) {
-      setFieldError('email', t('patients:validation.emailRequired', 'L\'email est requis'));
-      isValid = false;
-    } else if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      setFieldError('email', t('patients:validation.emailInvalid', 'Email invalide'));
-      isValid = false;
-    }
-
-    // Téléphone est obligatoire
+    // Phone is always required
     if (!formData.phone?.trim()) {
       setFieldError('phone', t('patients:validation.phoneRequired', 'Le téléphone est requis'));
       isValid = false;
     } else if (!phoneValid) {
       setFieldError('phone', t('patients:validation.phoneInvalid', 'Format de téléphone invalide'));
+      isValid = false;
+    }
+
+    // Email validation only if provided
+    if (formData.email?.trim() && !formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setFieldError('email', t('patients:validation.emailInvalid', 'Email invalide'));
       isValid = false;
     }
 
@@ -164,7 +147,10 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
     // Vérifier les doublons
     if (duplicateWarning) {
       if (!window.confirm(
-        `Un patient "${formData.firstName} ${formData.lastName}" existe déjà (${duplicateWarning.patientNumber}).\n\nÊtes-vous sûr de vouloir créer un doublon ?`
+        t('patients:provisional.duplicateConfirm',
+          `Un patient avec ce téléphone existe déjà ({{patientNumber}}).\n\nÊtes-vous sûr de vouloir créer un doublon ?`,
+          { patientNumber: duplicateWarning.patientNumber }
+        )
       )) {
         return;
       }
@@ -172,31 +158,35 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
 
     setIsLoading(true);
     try {
-      // ✅ SYNCHRONISATION IMMÉDIATE : Créer le patient via le contexte
-      // PatientContext gère l'optimistic update + API sync en background
-      const newPatient = await patientContext.createPatient({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        // Structure standardisée de données
-        address: {
-          street: '',
-          city: '',
-          postalCode: '',
-          country: ''
-        },
-        contact: {
-          phone: formData.phone.trim(),
-          email: formData.email.trim(),
-          emergencyContact: {
-            name: '',
-            relationship: '',
-            phone: ''
-          }
-        },
-        status: 'active'
-      });
+      let newPatient;
 
-      // L'API call s'est bien déroulée
+      // If all 4 fields are filled → full creation; otherwise → provisional
+      const hasAllFields = formData.firstName?.trim() &&
+        formData.lastName?.trim() &&
+        formData.email?.trim() &&
+        formData.phone?.trim();
+
+      if (hasAllFields) {
+        newPatient = await patientContext.createPatient({
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          address: { street: '', city: '', postalCode: '', country: '' },
+          contact: {
+            phone: formData.phone.trim(),
+            email: formData.email.trim(),
+            emergencyContact: { name: '', relationship: '', phone: '' }
+          },
+          status: 'active'
+        });
+      } else {
+        newPatient = await patientContext.createProvisionalPatient({
+          firstName: formData.firstName.trim(),
+          phone: formData.phone.trim(),
+          ...(formData.lastName?.trim() ? { lastName: formData.lastName.trim() } : {}),
+          ...(formData.email?.trim() ? { email: formData.email.trim() } : {})
+        });
+      }
+
       onSave(newPatient);
       onClose();
     } catch (error) {
@@ -220,10 +210,10 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                Nouveau patient rapide
+                {t('patients:provisional.quickCreateTitle', 'Nouveau patient rapide')}
               </h2>
               <p className="text-xs text-gray-500">
-                Créez un profil minimal et complétez-le plus tard
+                {t('patients:provisional.quickCreateSubtitle', 'Créez un profil minimal et complétez-le plus tard')}
               </p>
             </div>
           </div>
@@ -245,23 +235,24 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
                 <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-orange-800">
-                    ⚠️ Patient détecté
+                    {t('patients:provisional.duplicateDetected', 'Patient détecté')}
                   </p>
                   <p className="text-sm text-orange-700 mt-1 font-semibold">
                     {duplicateWarning.message}
                   </p>
                   <div className="mt-2 text-xs text-orange-700 space-y-1 bg-white bg-opacity-50 p-2 rounded">
-                    <p><strong>Type de correspondance :</strong> {duplicateWarning.type === 'email' ? '📧 Email' : '👤 Nom et prénom'}</p>
+                    <p><strong>{t('patients:provisional.matchType', 'Correspondance')} :</strong> {
+                      duplicateWarning.type === 'phone' ? t('patients:phone', 'Téléphone') :
+                      duplicateWarning.type === 'email' ? t('patients:email', 'Email') :
+                      t('patients:fullName', 'Nom')
+                    }</p>
                     {duplicateWarning.patient && (
                       <>
-                        <p><strong>Numéro patient :</strong> {duplicateWarning.patient.patientNumber}</p>
-                        <p><strong>Status :</strong> {duplicateWarning.patient.status === 'active' ? '✓ Actif' : '⚠️ Inactif'}</p>
+                        <p><strong>{t('patients:detail.patientNumber', { number: '' })} :</strong> {duplicateWarning.patient.patientNumber}</p>
+                        <p><strong>{t('patients:tableHeaders.status', 'Status')} :</strong> {duplicateWarning.patient.status === 'active' ? t('patients:statuses.active') : t('patients:statuses.inactive')}</p>
                       </>
                     )}
                   </div>
-                  <p className="text-xs text-orange-700 mt-2">
-                    Vérifiez que vous ne créez pas un doublon. Vous pouvez procéder si vous êtes certain qu'il s'agit d'une nouvelle personne.
-                  </p>
                 </div>
               </div>
             </div>
@@ -274,10 +265,10 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             </div>
           )}
 
-          {/* Prénom */}
+          {/* Prénom (required) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('patients:fields.firstName', 'Prénom')} *
+              {t('patients:firstName', 'Prénom')} *
             </label>
             <input
               type="text"
@@ -297,10 +288,28 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             )}
           </div>
 
-          {/* Nom */}
+          {/* Téléphone (required) */}
+          <PhoneInput
+            value={formData.phone}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, phone: e.target.value }));
+              clearFieldError('phone');
+            }}
+            onValidationChange={(isValid) => setPhoneValid(isValid)}
+            defaultCountry={localeCountry}
+            name="phone"
+            label={t('patients:phone', 'Téléphone')}
+            required={true}
+            disabled={isLoading}
+            error={getFieldError('phone')}
+            showValidation
+            compact
+          />
+
+          {/* Nom (optional) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('patients:fields.lastName', 'Nom')} *
+              {t('patients:lastName', 'Nom')}
             </label>
             <input
               type="text"
@@ -320,10 +329,10 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             )}
           </div>
 
-          {/* Email */}
+          {/* Email (optional) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('patients:fields.email', 'Email')} *
+              {t('patients:email', 'Email')}
             </label>
             <input
               type="email"
@@ -343,28 +352,13 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             )}
           </div>
 
-          {/* Téléphone */}
-          <PhoneInput
-            value={formData.phone}
-            onChange={(e) => {
-              setFormData(prev => ({ ...prev, phone: e.target.value }));
-              clearFieldError('phone');
-            }}
-            onValidationChange={(isValid) => setPhoneValid(isValid)}
-            defaultCountry={localeCountry}
-            name="phone"
-            label={t('patients:fields.phone', 'Téléphone')}
-            required={true}
-            disabled={isLoading}
-            error={getFieldError('phone')}
-            showValidation
-            compact
-          />
-
-          {/* Info */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-700">
-              💡 <span className="font-medium">Champs obligatoires :</span> Prénom, nom, email et téléphone sont requis. Vous pourrez compléter le reste du profil (date de naissance, adresse, assurance, etc.) ultérieurement.
+          {/* Info banner */}
+          <div className={`p-3 border rounded-lg ${isProvisionalMode ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200'}`}>
+            <p className={`text-xs ${isProvisionalMode ? 'text-orange-700' : 'text-blue-700'}`}>
+              {isProvisionalMode
+                ? t('patients:provisional.quickCreateInfo', 'Ce patient sera créé en mode provisoire. Vous pourrez compléter son profil (nom, email) ultérieurement. Un badge orange le distinguera dans la liste.')
+                : t('patients:provisional.quickCreateComplete', 'Tous les champs sont remplis. Le patient sera créé avec un profil complet.')
+              }
             </p>
           </div>
         </div>
@@ -376,15 +370,19 @@ const QuickPatientModal = ({ isOpen, onClose, onSave, initialSearchQuery = '' })
             disabled={isLoading}
             className="flex-1 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
           >
-            Annuler
+            {t('common:cancel', 'Annuler')}
           </button>
           <button
             onClick={handleSave}
             disabled={isLoading}
-            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isProvisionalMode
+                ? 'bg-orange-500 hover:bg-orange-600'
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
             <Save className="h-4 w-4" />
-            <span>{isLoading ? 'Création...' : 'Créer'}</span>
+            <span>{isLoading ? t('patients:saving', 'Création...') : t('common:create', 'Créer')}</span>
           </button>
         </div>
       </div>

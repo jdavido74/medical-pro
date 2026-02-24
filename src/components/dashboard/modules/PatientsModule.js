@@ -68,6 +68,8 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
       filtered = filtered.filter(p => p.status === 'active');
     } else if (filterType === 'inactive') {
       filtered = filtered.filter(p => p.status === 'inactive');
+    } else if (filterType === 'provisional') {
+      filtered = filtered.filter(p => p.profileStatus === 'provisional');
     }
 
     // Recherche textuelle
@@ -272,6 +274,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
             <option value="all">{t('filters.all')}</option>
             <option value="active">{t('filters.active')}</option>
             <option value="inactive">{t('filters.inactive')}</option>
+            <option value="provisional">{t('filters.provisional', 'Provisoires')}</option>
           </select>
 
           <button onClick={() => { patientContext?.refreshPatients?.(); }} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"><RefreshCw className="w-4 h-4" /></button>
@@ -302,10 +305,10 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
 
         <div className="bg-white p-4 rounded-lg border">
           <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-orange-600 mr-3" />
+            <AlertCircle className="h-8 w-8 text-orange-500 mr-3" />
             <div>
-              <p className="text-sm text-gray-600">{t('stats.newMonth')}</p>
-              <p className="text-xl font-bold text-gray-900">{stats.incomplete || 0}</p>
+              <p className="text-sm text-gray-600">{t('stats.provisional', 'Provisoires')}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.provisional || 0}</p>
             </div>
           </div>
         </div>
@@ -364,15 +367,22 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                           {getGenderIcon(patient.gender)}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-gray-900 flex items-center gap-2">
                             {patient.firstName} {patient.lastName}
+                            {patient.profileStatus === 'provisional' && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                                {t('statuses.provisional', 'Provisoire')}
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500">
                             {patient.patientNumber}
                           </div>
-                          <div className="text-xs text-gray-400">
-                            {t('labels.birthDateShort')} {new Date(patient.birthDate).toLocaleDateString()}
-                          </div>
+                          {patient.birthDate && (
+                            <div className="text-xs text-gray-400">
+                              {t('labels.birthDateShort')} {new Date(patient.birthDate).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>

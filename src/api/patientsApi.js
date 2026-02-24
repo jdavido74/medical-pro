@@ -78,6 +78,35 @@ async function createPatient(patientData) {
 }
 
 /**
+ * Create a provisional patient (quick create: first_name + phone only)
+ */
+async function createProvisionalPatient(patientData) {
+  try {
+    // Send minimal data directly (not through full transform)
+    const backendData = {
+      first_name: patientData.firstName?.trim(),
+      phone: patientData.phone?.trim()
+    };
+
+    // Include optional fields if provided
+    if (patientData.lastName?.trim()) {
+      backendData.last_name = patientData.lastName.trim();
+    }
+    if (patientData.email?.trim()) {
+      backendData.email = patientData.email.trim();
+    }
+
+    const response = await baseClient.post('/patients/provisional', backendData);
+    const data = dataTransform.unwrapResponse(response);
+
+    return dataTransform.transformPatientFromBackend(data);
+  } catch (error) {
+    console.error('[patientsApi] Error creating provisional patient:', error);
+    throw error;
+  }
+}
+
+/**
  * Update an existing patient
  */
 async function updatePatient(patientId, patientData) {
@@ -178,6 +207,7 @@ export const patientsApi = {
   getPatients,
   getPatientById,
   createPatient,
+  createProvisionalPatient,
   updatePatient,
   deletePatient,
   searchPatients,

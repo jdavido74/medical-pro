@@ -352,6 +352,24 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
           {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
+
+          {/* Bandeau info pour profils provisoires en édition */}
+          {patient && patient.profileStatus === 'provisional' && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <AlertCircle className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-orange-800">
+                    {t('provisional.completingProfile', 'Complétion du profil provisoire')}
+                  </p>
+                  <p className="text-xs text-orange-600 mt-0.5">
+                    {t('provisional.fillRequiredFields', 'Remplissez les champs manquants (nom, email) pour finaliser le profil. Le statut passera automatiquement à complet.')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Section 1: Identité - US 1.1 */}
           <div className="space-y-6">
             <div className="flex items-center space-x-2 mb-4">

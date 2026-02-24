@@ -4,7 +4,7 @@ import { sanitizeHTML } from '../../../utils/sanitize';
 import {
   X, Edit2, User, MapPin, Phone, Mail, Building, Calendar,
   Shield, Heart, Activity, FileText, Clock, Eye, Stethoscope, Plus,
-  ClipboardCheck, CheckCircle, Loader, ExternalLink
+  ClipboardCheck, CheckCircle, Loader, ExternalLink, AlertCircle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MedicalHistoryViewer from '../../medical/MedicalHistoryViewer';
@@ -193,13 +193,45 @@ const PatientDetailModal = ({
               {t('patients:detail.patientNumber', { number: patient.patientNumber })}
             </p>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            {patient.profileStatus === 'provisional' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-700">
+                {t('patients:statuses.provisional', 'Provisoire')}
+              </span>
+            )}
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(patient.status)}`}>
               {patient.status === 'active' ? t('patients:status.active') : t('patients:status.inactive')}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Bandeau de complétion pour profils provisoires */}
+      {patient.profileStatus === 'provisional' && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <AlertCircle className="h-5 w-5 text-orange-500 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-orange-800">
+                  {t('patients:provisional.incompleteProfile', 'Profil provisoire')}
+                </p>
+                <p className="text-xs text-orange-600 mt-0.5">
+                  {t('patients:provisional.completeInvitation', 'Complétez le nom et l\'email pour finaliser le profil patient.')}
+                </p>
+              </div>
+            </div>
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="px-3 py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors whitespace-nowrap"
+              >
+                {t('patients:provisional.completeNow', 'Compléter le profil')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Datos personales */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

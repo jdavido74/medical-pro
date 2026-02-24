@@ -96,6 +96,7 @@
   "stats": {
     "totalPatients": "Patients total",
     "active": "Actifs",
+    "provisional": "Provisoires",
     "newMonth": "Nouveaux (mois)",
     "newYear": "Nouveaux (année)"
   },
@@ -110,7 +111,8 @@
   "filters": {
     "all": "Tous les patients",
     "active": "Actifs",
-    "inactive": "Inactifs"
+    "inactive": "Inactifs",
+    "provisional": "Provisoires"
   },
   "tableHeaders": {
     "patient": "Patient",
@@ -128,7 +130,8 @@
   },
   "statuses": {
     "active": "Actif",
-    "inactive": "Inactif"
+    "inactive": "Inactif",
+    "provisional": "Provisoire"
   },
   "tooltips": {
     "viewDetails": "Voir les détails",
@@ -271,5 +274,21 @@
     "ipAddress": "Adresse IP",
     "documentContent": "Contenu du document",
     "digitalSignature": "Signature numérique"
+  },
+  "provisional": {
+    "incompleteProfile": "Profil provisoire",
+    "completeInvitation": "Complétez le nom et l'email pour finaliser le profil patient.",
+    "completeNow": "Compléter le profil",
+    "completingProfile": "Complétion du profil provisoire",
+    "fillRequiredFields": "Remplissez les champs manquants (nom, email) pour finaliser le profil. Le statut passera automatiquement à complet.",
+    "quickCreateTitle": "Nouveau patient rapide",
+    "quickCreateSubtitle": "Créez un profil minimal et complétez-le plus tard",
+    "quickCreateInfo": "Ce patient sera créé en mode provisoire. Vous pourrez compléter son profil (nom, email) ultérieurement. Un badge orange le distinguera dans la liste.",
+    "quickCreateComplete": "Tous les champs sont remplis. Le patient sera créé avec un profil complet.",
+    "duplicatePhone": "Un patient avec ce numéro de téléphone existe déjà",
+    "duplicateConfirm": "Un patient avec ce téléphone existe déjà ({{patientNumber}}).\n\nÊtes-vous sûr de vouloir créer un doublon ?",
+    "duplicateDetected": "Patient détecté",
+    "matchType": "Correspondance",
+    "badge": "Provisoire"
   }
 }

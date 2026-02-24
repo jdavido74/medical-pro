@@ -235,9 +235,12 @@ function transformPatientFromBackend(patient) {
     chronicConditions: patient.chronic_conditions,
     socialSecurityNumber: patient.social_security_number,
 
+    // Profile completeness status (provisional / complete)
+    profileStatus: patient.profile_status || 'complete',
+
     // Status - Map from is_active boolean
     status: patient.is_active === false ? 'inactive' : 'active',
-    isIncomplete: patient.is_incomplete || false,
+    isIncomplete: patient.is_incomplete || patient.profile_status === 'provisional' || false,
     archived: patient.archived || false,
 
     // Notes
@@ -330,6 +333,7 @@ function transformPatientToBackend(patient) {
 
     // Status
     is_active: patient.status ? patient.status === 'active' : true,
+    profile_status: patient.profileStatus,
     is_incomplete: patient.isIncomplete || false,
 
     // Notes

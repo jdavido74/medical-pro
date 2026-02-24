@@ -109,6 +109,46 @@ export const PatientProvider = ({ children }) => {
   );
 
   /**
+   * Créer un patient provisoire (prénom + téléphone uniquement)
+   * Utilise l'endpoint /patients/provisional
+   */
+  const createProvisionalPatient = useCallback(
+    async (patientData) => {
+      try {
+        setError(null);
+
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const optimisticPatient = {
+          ...patientData,
+          id: tempId,
+          profileStatus: 'provisional',
+          isIncomplete: true,
+          status: 'active',
+          createdAt: new Date().toISOString()
+        };
+
+        setPatients((prev) => [...prev, optimisticPatient]);
+
+        const newPatient = await patientsApi.createProvisionalPatient(patientData);
+
+        setPatients((prev) =>
+          prev.map((p) => (p.id === tempId ? newPatient : p))
+        );
+
+        return newPatient;
+      } catch (error) {
+        console.error('[PatientContext] Error creating provisional patient:', error);
+        setPatients((prev) =>
+          prev.filter((p) => !p.id.startsWith('temp_'))
+        );
+        setError(error.message || 'Failed to create provisional patient');
+        throw error;
+      }
+    },
+    []
+  );
+
+  /**
    * Mettre à jour un patient
    */
   const updatePatient = useCallback(
@@ -272,9 +312,26 @@ export const PatientProvider = ({ children }) => {
       active: patients.filter(p => p.status === 'active').length,
       inactive: patients.filter(p => p.status !== 'active').length,
       incomplete: patients.filter(p => p.isIncomplete).length,
+      provisional: patients.filter(p => p.profileStatus === 'provisional').length,
       deleted: patients.filter(p => p.deleted).length
     };
   }, [patients]);
+
+  /**
+   * Vérifier si un patient existe déjà par téléphone - recherche locale
+   * Utile pour la validation de doublons en mode provisoire
+   */
+  const checkDuplicateByPhone = useCallback(
+    (phone) => {
+      if (!phone) return null;
+      const cleanPhone = phone.replace(/\s/g, '');
+      return patients.find(patient => {
+        const patientPhone = (patient.contact?.phone || '').replace(/\s/g, '');
+        return patientPhone && patientPhone === cleanPhone;
+      }) || null;
+    },
+    [patients]
+  );
 
   /**
    * Obtenir les patients incomplets (créés en mode rapide)
@@ -319,6 +376,7 @@ export const PatientProvider = ({ children }) => {
 
     // Opérations principales
     createPatient,
+    createProvisionalPatient,
     updatePatient,
     deletePatient,
     getPatientById,
@@ -326,6 +384,7 @@ export const PatientProvider = ({ children }) => {
 
     // Opérations utilitaires
     checkDuplicate,
+    checkDuplicateByPhone,
     getPatientStatistics,
     getIncompletePatients,
     completePatient,

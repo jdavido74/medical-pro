@@ -155,5 +155,46 @@
     "ipAddress": "IP Address",
     "documentContent": "Document content",
     "digitalSignature": "Digital signature"
+  },
+  "statuses": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "provisional": "Provisional"
+  },
+  "filters": {
+    "all": "All patients",
+    "active": "Active",
+    "inactive": "Inactive",
+    "provisional": "Provisional"
+  },
+  "stats": {
+    "totalPatients": "Total Patients",
+    "active": "Active",
+    "provisional": "Provisional",
+    "newMonth": "New (month)",
+    "newYear": "New (year)"
+  },
+  "tableHeaders": {
+    "patient": "Patient",
+    "contact": "Contact",
+    "information": "Information",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "provisional": {
+    "incompleteProfile": "Provisional profile",
+    "completeInvitation": "Complete the last name and email to finalize the patient profile.",
+    "completeNow": "Complete profile",
+    "completingProfile": "Completing provisional profile",
+    "fillRequiredFields": "Fill in the missing fields (last name, email) to finalize the profile. The status will automatically change to complete.",
+    "quickCreateTitle": "Quick new patient",
+    "quickCreateSubtitle": "Create a minimal profile and complete it later",
+    "quickCreateInfo": "This patient will be created in provisional mode. You can complete their profile (last name, email) later. An orange badge will distinguish them in the list.",
+    "quickCreateComplete": "All fields are filled. The patient will be created with a complete profile.",
+    "duplicatePhone": "A patient with this phone number already exists",
+    "duplicateConfirm": "A patient with this phone already exists ({{patientNumber}}).\n\nAre you sure you want to create a duplicate?",
+    "duplicateDetected": "Patient detected",
+    "matchType": "Match type",
+    "badge": "Provisional"
   }
 }
