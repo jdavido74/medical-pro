@@ -42,8 +42,10 @@ const HomeModule = ({ setActiveModule }) => {
   const today = new Date().toISOString().split('T')[0];
 
   // Fetch today's appointments
+  const canViewAppointments = hasPermission('appointments.view');
+
   const loadAppointments = useCallback(async () => {
-    if (!hasPermission('appointments.view')) return;
+    if (!canViewAppointments) return;
     setLoadingAppointments(true);
     try {
       const [calendarResponse, resourcesResponse] = await Promise.all([
@@ -61,11 +63,14 @@ const HomeModule = ({ setActiveModule }) => {
     } finally {
       setLoadingAppointments(false);
     }
-  }, [today, hasPermission]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today]);
 
   useEffect(() => {
-    loadAppointments();
-  }, [loadAppointments]);
+    if (canViewAppointments) {
+      loadAppointments();
+    }
+  }, [canViewAppointments, loadAppointments]);
 
   // Filter & sort appointments: exclude cancelled, sort by startTime
   const todayAppointments = appointments
@@ -212,8 +217,6 @@ const HomeModule = ({ setActiveModule }) => {
     setShowBookingModal(false);
     loadAppointments();
   };
-
-  const canViewAppointments = hasPermission('appointments.view');
 
   return (
     <div className="space-y-6">
