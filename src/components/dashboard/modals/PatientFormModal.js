@@ -46,7 +46,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
       street: '',
       city: '',
       postalCode: '',
-      country: localeName
+      country: localeCountry || ''
     },
     contact: {
       phone: '',
@@ -88,7 +88,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
           street: patient.address?.street || '',
           city: patient.address?.city || '',
           postalCode: patient.address?.postalCode || '',
-          country: patient.address?.country || 'España'
+          country: patient.address?.country || ''
         },
         contact: {
           phone: patient.contact?.phone || '',
