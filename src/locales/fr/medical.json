@@ -56,8 +56,8 @@
     "tabs": {
       "basic": "Informations de base",
       "antecedents": "Antécédents",
-      "vitals": "Examen clinique",
-      "currentIllness": "Maladie réelle actuelle",
+      "vitals": "Examen physique",
+      "currentIllness": "Maladie actuelle",
       "evolution": "Évolution",
       "currentMedications": "Traitement actuel",
       "diagnosis": "Diagnostic",
@@ -66,9 +66,9 @@
       "prescription": "Ordonnance"
     },
     "currentIllnessTab": {
-      "title": "Maladie réelle actuelle",
-      "description": "Description libre de la maladie réelle actuelle du patient.",
-      "placeholder": "Décrivez la maladie réelle actuelle du patient..."
+      "title": "Maladie actuelle",
+      "description": "Description libre de la maladie actuelle du patient.",
+      "placeholder": "Décrivez la maladie actuelle du patient..."
     },
     "evolutionTab": {
       "title": "Évolution",

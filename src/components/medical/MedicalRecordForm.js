@@ -910,8 +910,8 @@ const MedicalRecordForm = forwardRef(({
   const allTabs = [
     { id: 'basic', label: t('medical:form.tabs.basic'), icon: FileText },
     { id: 'antecedents', label: t('medical:form.tabs.antecedents'), icon: Clock },
-    { id: 'vitals', label: t('medical:form.tabs.vitals'), icon: Activity },
     { id: 'currentIllness', label: t('medical:form.tabs.currentIllness'), icon: AlertTriangle },
+    { id: 'vitals', label: t('medical:form.tabs.vitals'), icon: Activity },
     { id: 'evolution', label: t('medical:form.tabs.evolution'), icon: TrendingUp },
     { id: 'currentMedications', label: t('medical:form.tabs.currentMedications'), icon: Pill },
     { id: 'diagnosis', label: t('medical:form.tabs.diagnosis'), icon: Stethoscope },
