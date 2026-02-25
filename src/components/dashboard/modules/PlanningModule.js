@@ -452,6 +452,9 @@ const PlanningModule = () => {
           });
         }
 
+        // Hide cancelled appointments
+        filtered = filtered.filter(apt => apt.status !== 'cancelled');
+
         // Sort by date and time
         filtered.sort((a, b) => {
           const dateCompare = a.date.localeCompare(b.date);
@@ -1689,10 +1692,16 @@ const PlanningModule = () => {
                       const isLinked = apt.isLinked || apt.linkedAppointmentId || apt.linkSequence > 1;
                       const consentStatus = apt.consentStatus || 'notRequired';
 
+                      const rowBg = selectedRows.includes(apt.id) ? 'bg-blue-50'
+                        : apt.status === 'in_progress' ? 'bg-blue-50'
+                        : apt.status === 'completed' ? 'bg-gray-100'
+                        : apt.status === 'confirmed' ? 'bg-green-50'
+                        : '';
+
                       return (
                         <tr
                           key={apt.id}
-                          className={`hover:bg-gray-50 ${selectedRows.includes(apt.id) ? 'bg-blue-50' : ''}`}
+                          className={`hover:bg-gray-100 ${rowBg}`}
                         >
                           <td className="px-3 py-2">
                             <input
