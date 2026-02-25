@@ -253,6 +253,22 @@ const PlanningModule = () => {
   const [consentAppointmentId, setConsentAppointmentId] = useState(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
 
+  // Live clock for late detection (updates every minute)
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Detect late appointments: startTime passed and not yet started
+  const isAptLate = useCallback((apt) => {
+    if (!apt.startTime || !apt.date) return false;
+    const [h, m] = apt.startTime.split(':').map(Number);
+    const aptStart = new Date(apt.date);
+    aptStart.setHours(h, m, 0, 0);
+    return now > aptStart;
+  }, [now]);
+
   // Billing state
   const [showBillingQuoteModal, setShowBillingQuoteModal] = useState(false);
   const [showBillingInvoiceModal, setShowBillingInvoiceModal] = useState(false);
@@ -1081,7 +1097,10 @@ const PlanningModule = () => {
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header: time + icons */}
         <div className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
-          <Clock className="w-3 h-3 flex-shrink-0" />
+          <Clock className={`w-3 h-3 flex-shrink-0 ${isAptLate(apt) && ['scheduled', 'confirmed'].includes(apt.status) ? 'text-red-500' : ''}`} />
+          {isAptLate(apt) && !['completed', 'cancelled'].includes(apt.status) && (
+            <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-500" />
+          )}
           <span className="truncate">{apt.startTime}-{apt.endTime}</span>
           {showDuration && <span className="text-gray-400 flex-shrink-0">({duration}min)</span>}
           <div className="flex items-center gap-0.5 ml-auto flex-shrink-0">
@@ -1716,7 +1735,10 @@ const PlanningModule = () => {
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">
                             <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-gray-400" />
+                              <Clock className={`w-3 h-3 ${isAptLate(apt) && ['scheduled', 'confirmed'].includes(apt.status) ? 'text-red-500' : 'text-gray-400'}`} />
+                              {isAptLate(apt) && !['completed', 'cancelled'].includes(apt.status) && (
+                                <AlertTriangle className="w-3 h-3 text-red-500" />
+                              )}
                               {apt.startTime} - {apt.endTime}
                             </div>
                           </td>
@@ -1930,7 +1952,10 @@ const PlanningModule = () => {
                   {/* Time & Status */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
-                      <Clock className="w-4 h-4 text-gray-400" />
+                      <Clock className={`w-4 h-4 ${isAptLate(apt) && ['scheduled', 'confirmed'].includes(apt.status) ? 'text-red-500' : 'text-gray-400'}`} />
+                      {isAptLate(apt) && !['completed', 'cancelled'].includes(apt.status) && (
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                      )}
                       {apt.startTime} - {apt.endTime}
                       <span className="text-gray-400 font-normal">({apt.duration || 30}min)</span>
                     </div>
@@ -2015,7 +2040,10 @@ const PlanningModule = () => {
             <div className="px-5 py-4 space-y-3">
               {/* Time */}
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-gray-400" />
+                <Clock className={`w-5 h-5 ${isAptLate(summaryAppointment) && ['scheduled', 'confirmed'].includes(summaryAppointment.status) ? 'text-red-500' : 'text-gray-400'}`} />
+                {isAptLate(summaryAppointment) && !['completed', 'cancelled'].includes(summaryAppointment.status) && (
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                )}
                 <div>
                   <span className="font-medium text-gray-900">
                     {summaryAppointment.startTime} - {summaryAppointment.endTime}
