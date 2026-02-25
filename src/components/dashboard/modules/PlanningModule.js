@@ -1764,16 +1764,16 @@ const PlanningModule = () => {
                               {apt.status === 'confirmed' && (
                                 <>
                                   <button
-                                    onClick={() => handleQuickStatusChange(apt.id, 'completed')}
-                                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
-                                  >
-                                    {t('actions.completed')}
-                                  </button>
-                                  <button
                                     onClick={() => handleQuickStatusChange(apt.id, 'in_progress')}
-                                    className="px-2 py-1 text-xs font-medium rounded-md border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors"
+                                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                                   >
                                     {t('actions.start')}
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'completed')}
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-green-300 text-green-600 hover:bg-green-50 transition-colors"
+                                  >
+                                    {t('actions.completed')}
                                   </button>
                                   <button
                                     onClick={() => handleQuickStatusChange(apt.id, 'no_show')}
