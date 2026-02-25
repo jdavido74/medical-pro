@@ -68,5 +68,26 @@
     "gdpr": "RGPD Sanitario",
     "auditTrail": "Registro de auditoría",
     "secureBackup": "Copia de seguridad segura"
+  },
+  "todayAppointments": {
+    "title": "Citas de hoy",
+    "total": "cita(s)",
+    "empty": "No hay citas para hoy",
+    "loading": "Cargando citas...",
+    "refresh": "Actualizar",
+    "start": "Iniciar",
+    "confirm": "Confirmar",
+    "finish": "Terminar",
+    "scheduled": "Programada",
+    "confirmed": "Confirmada",
+    "inProgress": "En curso",
+    "completed": "Terminada",
+    "noShow": "No show",
+    "lateMinutes": "Retrasada {{count}} min"
+  },
+  "lateAppointments": {
+    "title": "Pacientes en espera",
+    "subtitle": "cita(s) con retraso",
+    "lateMinutes": "Retrasada {{count}} min"
   }
 }

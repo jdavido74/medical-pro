@@ -1,91 +1,135 @@
 // components/dashboard/modules/HomeModule.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Users, Calendar, FileText, Heart, Plus, UserPlus,
-  CalendarPlus, ArrowRight, Activity, Stethoscope,
-  Clipboard, Clock, AlertCircle, Edit2, CheckCircle2
+  Heart, UserPlus, CalendarPlus, ArrowRight, Activity, Stethoscope,
+  Clock, AlertCircle, Edit2, AlertTriangle, PlayCircle, RefreshCw,
+  CheckCircle2, Plus, Users
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
-import { patientsStorage } from '../../../utils/patientsStorage';
+import { usePermissions } from '../../auth/PermissionGuard';
+import { usePatients } from '../../../contexts/PatientContext';
+import planningApi from '../../../api/planningApi';
+import PatientFormModal from '../modals/PatientFormModal';
+import PlanningBookingModal from '../modals/PlanningBookingModal';
 
 const HomeModule = ({ setActiveModule }) => {
   const { user } = useAuth();
   const { t } = useTranslation('dashboard');
-  const [incompletePatients, setIncompletePatients] = useState([]);
-  const [stats, setStats] = useState({
-    patients: 0,
-    appointments: 0,
-    consultations: 0,
-    pending: 0
-  });
+  const { hasPermission } = usePermissions();
+  const { patients, createPatient, getIncompletePatients } = usePatients();
 
-  // Charger les patients incomplets
+  // Appointments state
+  const [appointments, setAppointments] = useState([]);
+  const [resources, setResources] = useState({ machines: [], providers: [] });
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+
+  // Modal state
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+
+  // Live clock for late detection (updates every minute)
+  const [now, setNow] = useState(new Date());
   useEffect(() => {
-    const allPatients = patientsStorage.getAll().filter(p => !p.deleted);
-    const incomplete = allPatients.filter(p => p.isIncomplete);
-    setIncompletePatients(incomplete);
-
-    // Mettre à jour les stats
-    setStats({
-      patients: allPatients.length,
-      appointments: 0,
-      consultations: 0,
-      pending: incomplete.length
-    });
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
   }, []);
 
-  const quickActions = [
-    {
-      id: 'new-patient',
-      title: t('newPatient'),
-      description: t('quickActions.addPatient'),
-      icon: UserPlus,
-      color: 'green',
-      action: () => setActiveModule('patients')
-    },
-    {
-      id: 'new-appointment',
-      title: t('newAppointment'),
-      description: t('quickActions.planConsultation'),
-      icon: CalendarPlus,
-      color: 'blue',
-      action: () => setActiveModule('appointments')
-    },
-    {
-      id: 'new-consultation',
-      title: t('newConsultation'),
-      description: t('quickActions.createRecord'),
-      icon: Plus,
-      color: 'purple',
-      action: () => setActiveModule('medical-records')
-    }
-  ];
+  // Incomplete patients from context
+  const incompletePatients = getIncompletePatients ? getIncompletePatients() : patients.filter(p => p.isIncomplete && !p.deleted);
 
-  const medicalInsights = [
-    {
-      title: t('dailyAppointments'),
-      value: '0',
-      subtitle: t('insights.noConsultations'),
-      icon: Calendar,
-      color: 'blue'
-    },
-    {
-      title: t('patientsWaiting'),
-      value: '0',
-      subtitle: t('insights.emptyWaitingRoom'),
-      icon: Clock,
-      color: 'orange'
-    },
-    {
-      title: t('emergencies'),
-      value: '0',
-      subtitle: t('insights.noAlerts'),
-      icon: AlertCircle,
-      color: 'red'
-    }
-  ];
+  // Today's date in YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
 
+  // Fetch today's appointments
+  const loadAppointments = useCallback(async () => {
+    if (!hasPermission('appointments.view')) return;
+    setLoadingAppointments(true);
+    try {
+      const [calendarResponse, resourcesResponse] = await Promise.all([
+        planningApi.getCalendar({ startDate: today, endDate: today }),
+        planningApi.getResources()
+      ]);
+      if (calendarResponse.success) {
+        setAppointments(calendarResponse.data || []);
+      }
+      if (resourcesResponse.success) {
+        setResources(resourcesResponse.data || { machines: [], providers: [] });
+      }
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+    } finally {
+      setLoadingAppointments(false);
+    }
+  }, [today, hasPermission]);
+
+  useEffect(() => {
+    loadAppointments();
+  }, [loadAppointments]);
+
+  // Filter & sort appointments: exclude cancelled, sort by startTime
+  const todayAppointments = appointments
+    .filter(apt => apt.status !== 'cancelled')
+    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+  // Late appointments: startTime passed but still scheduled or confirmed
+  const isAptLate = useCallback((apt) => {
+    if (!apt.startTime || !apt.date) return false;
+    if (apt.status !== 'scheduled' && apt.status !== 'confirmed') return false;
+    const [h, m] = apt.startTime.split(':').map(Number);
+    const aptStart = new Date(apt.date);
+    aptStart.setHours(h, m, 0, 0);
+    return now > aptStart;
+  }, [now]);
+
+  const lateAppointments = todayAppointments.filter(isAptLate);
+
+  // Calculate late minutes
+  const getLateMinutes = useCallback((apt) => {
+    if (!apt.startTime || !apt.date) return 0;
+    const [h, m] = apt.startTime.split(':').map(Number);
+    const aptStart = new Date(apt.date);
+    aptStart.setHours(h, m, 0, 0);
+    return Math.floor((now - aptStart) / 60000);
+  }, [now]);
+
+  // Quick status change
+  const handleQuickStatusChange = async (appointmentId, newStatus) => {
+    try {
+      await planningApi.updateAppointment(appointmentId, { status: newStatus });
+      setAppointments(prev => prev.map(apt =>
+        apt.id === appointmentId ? { ...apt, status: newStatus } : apt
+      ));
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  // Patient name display: "Maria O."
+  const formatPatientName = (apt) => {
+    const firstName = apt.patient?.firstName || '';
+    const lastName = apt.patient?.lastName || '';
+    if (lastName) return `${firstName} ${lastName.charAt(0)}.`;
+    return firstName;
+  };
+
+  // Status badge config
+  const statusConfig = {
+    scheduled: { label: t('todayAppointments.scheduled', 'Programada'), bg: 'bg-yellow-100', text: 'text-yellow-800' },
+    confirmed: { label: t('todayAppointments.confirmed', 'Confirmada'), bg: 'bg-green-100', text: 'text-green-800' },
+    in_progress: { label: t('todayAppointments.inProgress', 'En curso'), bg: 'bg-blue-100', text: 'text-blue-800' },
+    completed: { label: t('todayAppointments.completed', 'Terminada'), bg: 'bg-gray-100', text: 'text-gray-600' },
+    no_show: { label: t('todayAppointments.noShow', 'No show'), bg: 'bg-red-100', text: 'text-red-800' }
+  };
+
+  // Row background by status
+  const rowBgByStatus = {
+    confirmed: 'bg-green-50',
+    in_progress: 'bg-blue-50',
+    completed: 'bg-gray-50'
+  };
+
+  // Onboarding
   const onboardingSteps = [
     {
       step: 1,
@@ -98,21 +142,21 @@ const HomeModule = ({ setActiveModule }) => {
       step: 2,
       title: t('addPatients'),
       description: t('onboarding.addPatients'),
-      completed: stats.patients > 0,
+      completed: patients.length > 0,
       action: () => setActiveModule('patients')
     },
     {
       step: 3,
       title: t('planConsultations'),
       description: t('onboarding.planConsultations'),
-      completed: stats.appointments > 0,
+      completed: appointments.length > 0,
       action: () => setActiveModule('appointments')
     },
     {
       step: 4,
       title: t('createFirstRecord'),
       description: t('onboarding.createRecord'),
-      completed: stats.consultations > 0,
+      completed: false,
       action: () => setActiveModule('medical-records')
     }
   ];
@@ -120,9 +164,60 @@ const HomeModule = ({ setActiveModule }) => {
   const completedSteps = onboardingSteps.filter(step => step.completed).length;
   const progress = (completedSteps / onboardingSteps.length) * 100;
 
+  // Quick actions with modals
+  const quickActions = [];
+  if (hasPermission('patients.create') || hasPermission('patients.view')) {
+    quickActions.push({
+      id: 'new-patient',
+      title: t('newPatient'),
+      description: t('quickActions.addPatient'),
+      icon: UserPlus,
+      color: 'green',
+      action: () => setShowPatientModal(true)
+    });
+  }
+  if (hasPermission('appointments.create')) {
+    quickActions.push({
+      id: 'new-appointment',
+      title: t('newAppointment'),
+      description: t('quickActions.planConsultation'),
+      icon: CalendarPlus,
+      color: 'blue',
+      action: () => setShowBookingModal(true)
+    });
+  }
+  if (hasPermission('medical_records.view')) {
+    quickActions.push({
+      id: 'new-consultation',
+      title: t('newConsultation'),
+      description: t('quickActions.createRecord'),
+      icon: Plus,
+      color: 'purple',
+      action: () => setActiveModule('medical-records')
+    });
+  }
+
+  // Handle new patient save
+  const handlePatientSave = async (formData) => {
+    try {
+      await createPatient(formData);
+      setShowPatientModal(false);
+    } catch (error) {
+      console.error('Error creating patient:', error);
+    }
+  };
+
+  // Handle new booking save
+  const handleBookingSave = async () => {
+    setShowBookingModal(false);
+    loadAppointments();
+  };
+
+  const canViewAppointments = hasPermission('appointments.view');
+
   return (
     <div className="space-y-6">
-      {/* Accueil personnalisé */}
+      {/* Welcome banner */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
@@ -156,98 +251,199 @@ const HomeModule = ({ setActiveModule }) => {
         </div>
       </div>
 
-      {/* Statistiques médicales rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">{t('totalPatients')}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.patients}</p>
-            </div>
-            <Users className="h-10 w-10 text-green-600" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">{t('appointmentsMonth')}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.appointments}</p>
-            </div>
-            <Calendar className="h-10 w-10 text-blue-600" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">{t('consultations')}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.consultations}</p>
-            </div>
-            <FileText className="h-10 w-10 text-purple-600" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">{t('pending')}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-            </div>
-            <Clipboard className="h-10 w-10 text-orange-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* Aperçu médical du jour */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {medicalInsights.map((insight, index) => {
-          const Icon = insight.icon;
-          return (
-            <div key={index} className="bg-white p-6 rounded-xl shadow-sm border">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">{insight.title}</h3>
-                <Icon className={`h-6 w-6 text-${insight.color}-600`} />
+      {/* Today's appointments */}
+      {canViewAppointments && (
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <CalendarPlus className="h-6 w-6 text-blue-600" />
               </div>
-              <div className="mb-2">
-                <span className="text-2xl font-bold text-gray-900">{insight.value}</span>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {t('todayAppointments.title', 'Citas de hoy')}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {todayAppointments.length} {t('todayAppointments.total', 'cita(s)')}
+                </p>
               </div>
-              <p className="text-sm text-gray-500">{insight.subtitle}</p>
             </div>
-          );
-        })}
-      </div>
+            <button
+              onClick={loadAppointments}
+              disabled={loadingAppointments}
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title={t('todayAppointments.refresh', 'Actualizar')}
+            >
+              <RefreshCw className={`h-5 w-5 ${loadingAppointments ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
 
-      {/* Actions rapides */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('quickActionsTitle')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.id}
-                onClick={action.action}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left group"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 bg-${action.color}-100 rounded-lg`}>
-                    <Icon className={`h-6 w-6 text-${action.color}-600`} />
+          {loadingAppointments && todayAppointments.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <RefreshCw className="h-8 w-8 mx-auto mb-2 animate-spin text-blue-400" />
+              <p>{t('todayAppointments.loading', 'Cargando citas...')}</p>
+            </div>
+          ) : todayAppointments.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <CalendarPlus className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-medium">{t('todayAppointments.empty', 'No hay citas para hoy')}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {todayAppointments.map((apt) => {
+                const status = statusConfig[apt.status] || statusConfig.scheduled;
+                const late = isAptLate(apt);
+                const lateMin = late ? getLateMinutes(apt) : 0;
+                const rowBg = rowBgByStatus[apt.status] || '';
+                return (
+                  <div
+                    key={apt.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${rowBg} ${late ? 'border-red-300' : 'border-gray-100'} transition-colors`}
+                  >
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      {/* Time */}
+                      <div className="text-sm font-mono text-gray-700 whitespace-nowrap">
+                        {apt.startTime?.slice(0, 5)} - {apt.endTime?.slice(0, 5)}
+                      </div>
+                      {/* Late indicator */}
+                      {late && (
+                        <div className="flex items-center space-x-1 text-red-600" title={t('todayAppointments.lateMinutes', { count: lateMin })}>
+                          <Clock className="h-4 w-4" />
+                          <AlertTriangle className="h-4 w-4" />
+                        </div>
+                      )}
+                      {/* Patient name */}
+                      <span className="font-medium text-gray-900 truncate">
+                        {formatPatientName(apt)}
+                      </span>
+                      {/* Status badge */}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.bg} ${status.text} whitespace-nowrap`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    {/* Action buttons */}
+                    <div className="flex items-center space-x-2 ml-2">
+                      {apt.status === 'scheduled' && (
+                        <button
+                          onClick={() => handleQuickStatusChange(apt.id, 'confirmed')}
+                          className="px-3 py-1 text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors"
+                        >
+                          {t('todayAppointments.confirm', 'Confirmar')}
+                        </button>
+                      )}
+                      {apt.status === 'confirmed' && (
+                        <button
+                          onClick={() => handleQuickStatusChange(apt.id, 'in_progress')}
+                          className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center space-x-1"
+                        >
+                          <PlayCircle className="h-3.5 w-3.5" />
+                          <span>{t('todayAppointments.start', 'Iniciar')}</span>
+                        </button>
+                      )}
+                      {apt.status === 'in_progress' && (
+                        <button
+                          onClick={() => handleQuickStatusChange(apt.id, 'completed')}
+                          className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center space-x-1"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>{t('todayAppointments.finish', 'Terminar')}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 group-hover:text-gray-700">
-                      {action.title}
-                    </h4>
-                    <p className="text-sm text-gray-500">{action.description}</p>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Late appointments alert */}
+      {canViewAppointments && lateAppointments.length > 0 && (
+        <div className="bg-orange-50 rounded-xl shadow-sm border border-orange-300 p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <AlertTriangle className="h-6 w-6 text-orange-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-orange-900">
+                {t('lateAppointments.title', 'Pacientes en espera')}
+              </h3>
+              <p className="text-sm text-orange-700">
+                {lateAppointments.length} {t('lateAppointments.subtitle', 'cita(s) con retraso')}
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {lateAppointments.map((apt) => {
+              const lateMin = getLateMinutes(apt);
+              return (
+                <div
+                  key={apt.id}
+                  className="flex items-center justify-between p-3 bg-white border border-orange-200 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className="text-sm font-mono text-gray-700 whitespace-nowrap">
+                      {apt.startTime?.slice(0, 5)}
+                    </div>
+                    <span className="font-medium text-gray-900 truncate">
+                      {formatPatientName(apt)}
+                    </span>
+                    <span className="text-sm text-red-600 font-medium whitespace-nowrap flex items-center space-x-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>{t('lateAppointments.lateMinutes', { count: lateMin, defaultValue: `Retrasada ${lateMin} min` })}</span>
+                    </span>
+                  </div>
+                  <div className="ml-2">
+                    {(apt.status === 'scheduled' || apt.status === 'confirmed') && (
+                      <button
+                        onClick={() => handleQuickStatusChange(apt.id, apt.status === 'scheduled' ? 'confirmed' : 'in_progress')}
+                        className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center space-x-1"
+                      >
+                        <PlayCircle className="h-3.5 w-3.5" />
+                        <span>{apt.status === 'scheduled' ? t('todayAppointments.confirm', 'Confirmar') : t('todayAppointments.start', 'Iniciar')}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-              </button>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Fiches patients à compléter */}
+      {/* Quick actions */}
+      {quickActions.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('quickActionsTitle')}</h3>
+          <div className={`grid grid-cols-1 md:grid-cols-${quickActions.length} gap-4`}>
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={action.id}
+                  onClick={action.action}
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 bg-${action.color}-100 rounded-lg`}>
+                      <Icon className={`h-6 w-6 text-${action.color}-600`} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 group-hover:text-gray-700">
+                        {action.title}
+                      </h4>
+                      <p className="text-sm text-gray-500">{action.description}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Incomplete patients */}
       {incompletePatients.length > 0 && (
         <div className="bg-orange-50 rounded-xl shadow-sm border border-orange-200 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -282,7 +478,7 @@ const HomeModule = ({ setActiveModule }) => {
                       {patient.firstName} {patient.lastName}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {patient.email || patient.phone || t('noContact')}
+                      {patient.email || patient.contact?.email || patient.phone || patient.contact?.phone || t('noContact')}
                     </p>
                   </div>
                 </div>
@@ -309,7 +505,7 @@ const HomeModule = ({ setActiveModule }) => {
         </div>
       )}
 
-      {/* Configuration initiale */}
+      {/* Onboarding */}
       {completedSteps < onboardingSteps.length && (
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
@@ -363,7 +559,7 @@ const HomeModule = ({ setActiveModule }) => {
         </div>
       )}
 
-      {/* Informations conformité médicale */}
+      {/* Compliance */}
       <div className="bg-green-50 border border-green-200 rounded-xl p-6">
         <div className="flex items-start space-x-3">
           <Heart className="h-6 w-6 text-green-600 mt-1" />
@@ -391,6 +587,27 @@ const HomeModule = ({ setActiveModule }) => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {showPatientModal && (
+        <PatientFormModal
+          isOpen={showPatientModal}
+          onClose={() => setShowPatientModal(false)}
+          onSave={handlePatientSave}
+          patient={null}
+        />
+      )}
+
+      {showBookingModal && (
+        <PlanningBookingModal
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          onSave={handleBookingSave}
+          appointment={null}
+          resources={resources}
+          initialDate={today}
+        />
+      )}
     </div>
   );
 };

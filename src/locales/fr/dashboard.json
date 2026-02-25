@@ -68,5 +68,26 @@
     "gdpr": "RGPD Santé",
     "auditTrail": "Audit trail",
     "secureBackup": "Sauvegarde sécurisée"
+  },
+  "todayAppointments": {
+    "title": "Rendez-vous du jour",
+    "total": "rendez-vous",
+    "empty": "Aucun rendez-vous aujourd'hui",
+    "loading": "Chargement des rendez-vous...",
+    "refresh": "Actualiser",
+    "start": "Démarrer",
+    "confirm": "Confirmer",
+    "finish": "Terminer",
+    "scheduled": "Planifié",
+    "confirmed": "Confirmé",
+    "inProgress": "En cours",
+    "completed": "Terminé",
+    "noShow": "Absent",
+    "lateMinutes": "En retard de {{count}} min"
+  },
+  "lateAppointments": {
+    "title": "Patients en attente",
+    "subtitle": "rendez-vous en retard",
+    "lateMinutes": "En retard de {{count}} min"
   }
 }
