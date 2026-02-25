@@ -1,5 +1,5 @@
 // components/dashboard/modules/HomeModule.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Heart, UserPlus, CalendarPlus, ArrowRight, Stethoscope,
   Clock, AlertCircle, Edit2, AlertTriangle, PlayCircle, RefreshCw,
@@ -39,13 +39,16 @@ const HomeModule = ({ setActiveModule }) => {
   const incompletePatients = getIncompletePatients ? getIncompletePatients() : patients.filter(p => p.isIncomplete && !p.deleted);
 
   // Today's date in YYYY-MM-DD
-  const today = new Date().toISOString().split('T')[0];
+  const today = useRef(new Date().toISOString().split('T')[0]).current;
 
-  // Fetch today's appointments
+  // Permission check (stable boolean)
   const canViewAppointments = hasPermission('appointments.view');
 
+  // Guard: only load once on mount
+  const hasFetchedRef = useRef(false);
+
+  // Fetch today's appointments (manual refresh resets the guard)
   const loadAppointments = useCallback(async () => {
-    if (!canViewAppointments) return;
     setLoadingAppointments(true);
     try {
       const [calendarResponse, resourcesResponse] = await Promise.all([
@@ -63,14 +66,15 @@ const HomeModule = ({ setActiveModule }) => {
     } finally {
       setLoadingAppointments(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
+  // Single fetch on mount — no dependency that can oscillate
   useEffect(() => {
-    if (canViewAppointments) {
+    if (canViewAppointments && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       loadAppointments();
     }
-  }, [canViewAppointments, loadAppointments]);
+  }); // intentionally no deps — runs on every render but the ref guard prevents re-fetch
 
   // Filter & sort appointments: exclude cancelled, sort by startTime
   const todayAppointments = appointments
