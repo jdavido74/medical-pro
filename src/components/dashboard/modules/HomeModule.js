@@ -1,7 +1,7 @@
 // components/dashboard/modules/HomeModule.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Heart, UserPlus, CalendarPlus, ArrowRight, Activity, Stethoscope,
+  Heart, UserPlus, CalendarPlus, ArrowRight, Stethoscope,
   Clock, AlertCircle, Edit2, AlertTriangle, PlayCircle, RefreshCw,
   CheckCircle2, Plus, Users
 } from 'lucide-react';
@@ -221,22 +221,9 @@ const HomeModule = ({ setActiveModule }) => {
       <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-2">
-              {t('welcome', { name: user?.name?.split(' ')[0] || 'Doctor' })}
+            <h1 className="text-2xl font-bold">
+              {t('welcome', { name: user?.name?.split(' ')[0] || '' })}
             </h1>
-            <p className="text-green-100 mb-4">
-              {t('welcomeSubtitle')}
-            </p>
-            <div className="flex items-center space-x-4 text-sm">
-              <div className="flex items-center">
-                <Heart className="h-4 w-4 mr-1" />
-                {t('clinic')}: {user?.companyName || t('toSetup')}
-              </div>
-              <div className="flex items-center">
-                <Activity className="h-4 w-4 mr-1" />
-                MediMaestro Pro
-              </div>
-            </div>
           </div>
           <div className="text-right">
             <Stethoscope className="h-16 w-16 text-green-200 mb-2" />
@@ -261,7 +248,7 @@ const HomeModule = ({ setActiveModule }) => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {t('todayAppointments.title', 'Citas de hoy')}
+                  {t('todayAppointments.title', 'Citas de hoy')} — {new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}
                 </h3>
                 <p className="text-sm text-gray-500">
                   {todayAppointments.length} {t('todayAppointments.total', 'cita(s)')}
@@ -315,6 +302,10 @@ const HomeModule = ({ setActiveModule }) => {
                       {/* Patient name */}
                       <span className="font-medium text-gray-900 truncate">
                         {formatPatientName(apt)}
+                      </span>
+                      {/* Treatment / Consultation label */}
+                      <span className="text-xs text-gray-500 truncate">
+                        {apt.title || apt.service?.title || (apt.category === 'consultation' ? t('todayAppointments.consultation', 'Consulta') : '')}
                       </span>
                       {/* Status badge */}
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.bg} ${status.text} whitespace-nowrap`}>

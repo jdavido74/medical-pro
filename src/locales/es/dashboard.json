@@ -1,5 +1,5 @@
 {
-  "welcome": "Hola Dr {{name}}",
+  "welcome": "Hola {{name}}",
   "welcomeSubtitle": "Bienvenido a tu consulta médica digital",
   "clinic": "Consulta",
   "toSetup": "Configurar",
@@ -83,7 +83,8 @@
     "inProgress": "En curso",
     "completed": "Terminada",
     "noShow": "No show",
-    "lateMinutes": "Retrasada {{count}} min"
+    "lateMinutes": "Retrasada {{count}} min",
+    "consultation": "Consulta"
   },
   "lateAppointments": {
     "title": "Pacientes en espera",

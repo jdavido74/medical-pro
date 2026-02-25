@@ -1,5 +1,5 @@
 {
-  "welcome": "Bonjour Dr {{name}}",
+  "welcome": "Bonjour {{name}}",
   "welcomeSubtitle": "Bienvenue dans votre cabinet médical numérique",
   "clinic": "Cabinet",
   "toSetup": "À configurer",
@@ -83,7 +83,8 @@
     "inProgress": "En cours",
     "completed": "Terminé",
     "noShow": "Absent",
-    "lateMinutes": "En retard de {{count}} min"
+    "lateMinutes": "En retard de {{count}} min",
+    "consultation": "Consultation"
   },
   "lateAppointments": {
     "title": "Patients en attente",
