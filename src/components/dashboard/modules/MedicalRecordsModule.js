@@ -26,12 +26,11 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // Utiliser les contextes
   const {
     isLoading: recordsLoading,
-    createRecord,
-    updateRecord,
     archiveRecord,
     getRecordById,
     getPatientRecords: fetchPatientRecords,
-    getRecordsByPatient
+    getRecordsByPatient,
+    refreshRecords
   } = useMedicalRecords();
 
   const { patients: contextPatients, isLoading: patientsLoading } = usePatients();
@@ -273,34 +272,32 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   };
 
   // Soumission du formulaire
-  const handleFormSubmit = async (formData) => {
+  // Callback appelé par MedicalRecordForm APRÈS qu'il a déjà sauvegardé via l'API.
+  // On ne refait PAS d'appel API ici — on met juste à jour l'état local.
+  const handleFormSubmit = async (savedRecord) => {
     try {
       if (formState?.mode === 'edit' && formState.record?.id) {
-        // Mode édition - exclure patientId
-        const { patientId, ...dataWithoutPatientId } = formData;
-        await updateRecord(formState.record.id, dataWithoutPatientId);
         setSuccessMessage(t('medical:module.messages.updateSuccess'));
 
         // Mettre à jour le record dans formState avec les nouvelles données
         const updatedRecord = await getRecordById(formState.record.id);
         setFormState({ mode: 'edit', record: updatedRecord });
       } else {
-        // Mode création
-        const dataWithPatient = {
-          ...formData,
-          patientId: selectedPatient?.id
-        };
-        const newRecord = await createRecord(dataWithPatient);
+        // Mode création — le record a déjà été créé par MedicalRecordForm
         setSuccessMessage(t('medical:module.messages.createSuccess'));
 
         // Passer en mode édition sur le nouveau record
-        if (newRecord?.id) {
-          const fullRecord = await getRecordById(newRecord.id);
+        const recordId = savedRecord?.id;
+        if (recordId) {
+          const fullRecord = await getRecordById(recordId);
           setFormState({ mode: 'edit', record: fullRecord });
         }
       }
 
-      // Recharger les dossiers du patient
+      // Rafraîchir le contexte et les dossiers du patient
+      if (refreshRecords) {
+        await refreshRecords();
+      }
       await loadPatientRecords(selectedPatient?.id);
 
     } catch (err) {
