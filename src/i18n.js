@@ -23,6 +23,7 @@ import frMachines from './locales/fr/machines.json';
 import frPlanning from './locales/fr/planning.json';
 import frQuotes from './locales/fr/quotes.json';
 import frMobile from './locales/fr/mobile.json';
+import frPreconsultation from './locales/fr/preconsultation.json';
 
 // Import English translations
 import enCommon from './locales/en/common.json';
@@ -44,6 +45,7 @@ import enMachines from './locales/en/machines.json';
 import enPlanning from './locales/en/planning.json';
 import enQuotes from './locales/en/quotes.json';
 import enMobile from './locales/en/mobile.json';
+import enPreconsultation from './locales/en/preconsultation.json';
 
 // Import Spanish translations
 import esCommon from './locales/es/common.json';
@@ -65,6 +67,7 @@ import esMachines from './locales/es/machines.json';
 import esPlanning from './locales/es/planning.json';
 import esQuotes from './locales/es/quotes.json';
 import esMobile from './locales/es/mobile.json';
+import esPreconsultation from './locales/es/preconsultation.json';
 
 /**
  * Detect language from URL locale first, then fall back to region detection
@@ -122,7 +125,8 @@ i18n
         machines: frMachines,
         planning: frPlanning,
         quotes: frQuotes,
-        mobile: frMobile
+        mobile: frMobile,
+        preconsultation: frPreconsultation
       },
       en: {
         common: enCommon,
@@ -143,7 +147,8 @@ i18n
         machines: enMachines,
         planning: enPlanning,
         quotes: enQuotes,
-        mobile: enMobile
+        mobile: enMobile,
+        preconsultation: enPreconsultation
       },
       es: {
         common: esCommon,
@@ -164,13 +169,14 @@ i18n
         machines: esMachines,
         planning: esPlanning,
         quotes: esQuotes,
-        mobile: esMobile
+        mobile: esMobile,
+        preconsultation: esPreconsultation
       }
     },
     lng: defaultLanguage,
     fallbackLng: 'fr', // French as fallback for missing translations
     defaultNS: 'common',
-    ns: ['common', 'auth', 'nav', 'home', 'public', 'dashboard', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'quotes', 'analytics', 'admin', 'onboarding', 'catalog', 'machines', 'planning', 'mobile'],
+    ns: ['common', 'auth', 'nav', 'home', 'public', 'dashboard', 'patients', 'appointments', 'medical', 'consents', 'invoices', 'quotes', 'analytics', 'admin', 'onboarding', 'catalog', 'machines', 'planning', 'mobile', 'preconsultation'],
 
     interpolation: {
       escapeValue: false // React already escapes values
