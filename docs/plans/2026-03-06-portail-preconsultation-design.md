@@ -204,8 +204,15 @@ Filtre par etat disponible dans la liste des RDV.
 ### 6.2 Page pre-consultation (tokenisee)
 
 **Etape 1 — Fiche patient** :
-- Champs : nom, prenom, telephone, email, date de naissance, adresse (rue, CP, ville, pays)
-- Pre-remplie si le patient existe deja (profil provisoire)
+- Option "Scanner ma piece d'identite" : prise de photo (mobile) ou upload scan (desktop)
+  - Lecture de la zone MRZ cote client (librairies JS `mrz-detection` + `mrz`)
+  - Pre-remplit : nom, prenom, date de naissance, sexe, nationalite, numero de document
+  - La photo n'est PAS envoyee au serveur (traitement 100% client, minimisation RGPD)
+  - Le patient peut choisir d'uploader le document comme piece justificative (optionnel)
+  - Supporte : passeports (OACI), DNI espagnol, NIE, cartes d'identite UE
+- Champs : nom, prenom, telephone, email, date de naissance, sexe, nationalite, numero document, adresse (rue, CP, ville, pays)
+- Pre-remplie si le patient existe deja (profil provisoire) ou via MRZ
+- Le patient verifie, corrige si besoin, et complete l'adresse manuellement
 - Validation cote client + serveur
 
 **Etape 2 — Documents** :
@@ -270,6 +277,7 @@ Filtre par etat disponible dans la liste des RDV.
 - Base legale : interet legitime (gestion du RDV) + consentement implicite (upload volontaire)
 - Retention : 15 ans (dossier medical), configurable par type
 - Droit a l'effacement : suppression des documents via admin avec trace audit
+- Scan MRZ piece d'identite : traitement 100% cote client (navigateur), la photo ne transite pas par le serveur — principe de minimisation des donnees Art. 5.1.c RGPD
 
 ## 8. Permissions RBAC
 
