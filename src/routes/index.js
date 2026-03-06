@@ -29,6 +29,7 @@ import SetPasswordPage from '../components/auth/SetPasswordPage';
 import ForgotPasswordPage from '../components/auth/ForgotPasswordPage';
 import ResetPasswordPage from '../components/auth/ResetPasswordPage';
 import ConsentSigningPage from '../pages/public/ConsentSigningPage';
+import PreconsultationPage from '../pages/public/PreconsultationPage';
 
 // Modules Dashboard
 import HomeModule from '../components/dashboard/modules/HomeModule';
@@ -283,6 +284,10 @@ export const routes = [
   {
     path: '/public/consent/:token',
     element: <ConsentSigningPage />
+  },
+  {
+    path: '/preconsultation/:token',
+    element: <PreconsultationPage />
   },
 
   // ============================================
