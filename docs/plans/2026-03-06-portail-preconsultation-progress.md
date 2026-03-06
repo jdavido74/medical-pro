@@ -11,16 +11,16 @@
 
 | Phase | Description | Statut | Notes |
 |---|---|---|---|
-| 1 | Migrations DB + modeles Sequelize | EN ATTENTE | Taches 1-5 |
-| 2 | Service stockage fichiers chiffre | EN ATTENTE | Tache 6 |
-| 3 | Permissions RBAC | EN ATTENTE | Tache 7 |
-| 4 | Templates email (FR/ES/EN) | EN ATTENTE | Tache 8 |
-| 5 | Routes publiques (portail patient) | EN ATTENTE | Tache 9 |
-| 6 | Routes staff + cron rappel | EN ATTENTE | Taches 10-11 |
-| 7 | Traductions i18n | EN ATTENTE | Tache 12 |
-| 8 | Client API frontend | EN ATTENTE | Tache 13 |
-| 9 | UI portail patient (6 composants) | EN ATTENTE | Taches 14-19 |
-| 10 | Integration dashboard staff | EN ATTENTE | Taches 20-22 |
+| 1 | Migrations DB + modeles Sequelize | TERMINE | Taches 1-5 |
+| 2 | Service stockage fichiers chiffre | TERMINE | Tache 6 |
+| 3 | Permissions RBAC | TERMINE | Tache 7 |
+| 4 | Templates email (FR/ES/EN) | TERMINE | Tache 8 |
+| 5 | Routes publiques (portail patient) | TERMINE | Tache 9 |
+| 6 | Routes staff + cron rappel | TERMINE | Taches 10-11 |
+| 7 | Traductions i18n | TERMINE | Tache 12 |
+| 8 | Client API frontend | TERMINE | Tache 13 |
+| 9 | UI portail patient (6 composants) | TERMINE | Taches 14-19 |
+| 10 | Integration dashboard staff | TERMINE | Taches 20-22 |
 | 11 | Deploiement production | EN ATTENTE | Tache 23 |
 | 12 | Tests integration E2E | EN ATTENTE | Tache 24 |
 
@@ -28,28 +28,28 @@
 
 | Tache | Description | Statut | Commit | Blockers |
 |---|---|---|---|---|
-| 1 | Migration: preconsultation_tokens | EN ATTENTE | - | - |
-| 2 | Migration: patient_documents | EN ATTENTE | - | - |
-| 3 | Migration: appointment preconsultation_status | EN ATTENTE | - | - |
-| 4 | Modele: PreconsultationToken | EN ATTENTE | - | - |
-| 5 | Modele: PatientDocument | EN ATTENTE | - | - |
-| 6 | Service stockage fichiers chiffre | EN ATTENTE | - | - |
-| 7 | Permissions RBAC (backend + frontend) | EN ATTENTE | - | - |
-| 8 | Templates email preconsultation | EN ATTENTE | - | - |
-| 9 | Routes publiques (patient portal API) | EN ATTENTE | - | - |
-| 10 | Routes staff (preconsultation + documents) | EN ATTENTE | - | - |
-| 11 | Cron rappel 24h (desactive) | EN ATTENTE | - | - |
-| 12 | Traductions i18n (ES/FR/EN) | EN ATTENTE | - | - |
-| 13 | Client API frontend | EN ATTENTE | - | - |
-| 14 | Page preconsultation: routing + layout | EN ATTENTE | - | - |
-| 15 | Patient info form + MRZ scanner | EN ATTENTE | - | - |
-| 16 | Document upload step | EN ATTENTE | - | - |
-| 17 | Confirmation step | EN ATTENTE | - | - |
-| 18 | Date selection step | EN ATTENTE | - | - |
-| 19 | Quote validation step | EN ATTENTE | - | - |
-| 20 | Status badge sur appointments dashboard | EN ATTENTE | - | - |
-| 21 | Boutons action preconsultation | EN ATTENTE | - | - |
-| 22 | Onglet documents dans PatientDetailModal | EN ATTENTE | - | - |
+| 1 | Migration: preconsultation_tokens | TERMINE | e8b9c40 | - |
+| 2 | Migration: patient_documents | TERMINE | e8b9c40 | - |
+| 3 | Migration: appointment preconsultation_status | TERMINE | e8b9c40 | - |
+| 4 | Modele: PreconsultationToken | TERMINE | 8df84bb | - |
+| 5 | Modele: PatientDocument | TERMINE | 8df84bb | - |
+| 6 | Service stockage fichiers chiffre | TERMINE | ffd3365 | file-type v16 (CJS) au lieu de v21 (ESM) |
+| 7 | Permissions RBAC (backend + frontend) | TERMINE | fa08e21 / 9fcb31c | - |
+| 8 | Templates email preconsultation | TERMINE | 3877638 | Service separé (emailService.js fait 2475 lignes) |
+| 9 | Routes publiques (patient portal API) | TERMINE | 30d9bc7 | + preconsultation_status dans Appointment model |
+| 10 | Routes staff (preconsultation + documents) | TERMINE | 015bdb5 | - |
+| 11 | Cron rappel 24h (desactive) | TERMINE | 015bdb5 | ENABLE_APPOINTMENT_REMINDERS=false |
+| 12 | Traductions i18n (ES/FR/EN) | TERMINE | 98d3bfd | - |
+| 13 | Client API frontend | TERMINE | 98d3bfd | - |
+| 14 | Page preconsultation: routing + layout | TERMINE | b4952df | - |
+| 15 | Patient info form + MRZ scanner | TERMINE | b4952df | mrz@5.0.1 |
+| 16 | Document upload step | TERMINE | b4952df | react-dropzone@15.0.0 |
+| 17 | Confirmation step | TERMINE | b4952df | - |
+| 18 | Date selection step | TERMINE | b4952df | - |
+| 19 | Quote validation step | TERMINE | b4952df | - |
+| 20 | Status badge sur appointments dashboard | TERMINE | c723cc3 | - |
+| 21 | Boutons action preconsultation | TERMINE | c723cc3 | send-link + send-reminder |
+| 22 | Onglet documents dans PatientDetailModal | TERMINE | c723cc3 | preview image/PDF + delete RBAC |
 | 23 | Deploiement production | EN ATTENTE | - | - |
 | 24 | Tests integration E2E | EN ATTENTE | - | - |
 
@@ -66,7 +66,11 @@
 
 ## Decisions prises en cours d'execution
 
-(Section pour noter tout ecart par rapport au plan ou decision prise pendant l'implementation)
+- Branches: `feature/preconsultation` sur les deux repos (backend + frontend)
+- Taches 1-3 groupees en un seul commit (migrations liees)
+- Taches 4-5 groupees en un seul commit (modeles + ModelFactory)
+- Le modele PreconsultationToken utilise STRING(30) au lieu d'ENUM Sequelize pour le status (plus flexible, la DB a le vrai ENUM)
+- PatientDocument a `updatedAt: false` car la table n'a pas de colonne updated_at
 
 ## Erreurs rencontrees et solutions
 
