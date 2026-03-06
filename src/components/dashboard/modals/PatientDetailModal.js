@@ -16,6 +16,7 @@ import { appointmentsStorage } from '../../../utils/appointmentsStorage';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
 import { baseClient } from '../../../api/baseClient';
+import { getPatientDocuments, getPatientDocumentFile, deletePatientDocument } from '../../../api/preconsultationApi';
 
 const PatientDetailModal = ({
   patient,
@@ -26,7 +27,7 @@ const PatientDetailModal = ({
   canViewAllData,
   initialTab = 'general'
 }) => {
-  const { t } = useTranslation(['patients', 'common']);
+  const { t } = useTranslation(['patients', 'common', 'preconsultation']);
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // Reset to initialTab when modal opens or initialTab changes
@@ -76,6 +77,8 @@ const PatientDetailModal = ({
   // Permissions pour les rendez-vous
   const canViewAppointments = hasPermission(PERMISSIONS.APPOINTMENTS_VIEW);
   const canCreateAppointments = hasPermission(PERMISSIONS.APPOINTMENTS_CREATE);
+  const canViewDocuments = hasPermission(PERMISSIONS.PATIENT_DOCUMENTS_VIEW);
+  const canDeleteDocuments = hasPermission(PERMISSIONS.PATIENT_DOCUMENTS_DELETE);
 
   // Gestionnaires pour les enregistrements médicaux
   const handleEditMedicalRecord = (record) => {
@@ -168,6 +171,12 @@ const PatientDetailModal = ({
       label: t('patients:detail.tabs.consents'),
       icon: ClipboardCheck,
       visible: true
+    },
+    {
+      id: 'documents',
+      label: t('preconsultation:staff.documentsTab'),
+      icon: FileText,
+      visible: canViewDocuments
     },
     {
       id: 'access',
@@ -814,6 +823,125 @@ const PatientDetailModal = ({
     <PatientConsentsTab patient={patient} />
   );
 
+  const [patientDocuments, setPatientDocuments] = useState([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsLoaded, setDocumentsLoaded] = useState(false);
+  const [documentPreview, setDocumentPreview] = useState(null);
+
+  const loadDocuments = useCallback(async () => {
+    if (!patient?.id || documentsLoaded) return;
+    try {
+      setDocumentsLoading(true);
+      const response = await getPatientDocuments(patient.id);
+      setPatientDocuments(response?.data || []);
+      setDocumentsLoaded(true);
+    } catch {
+      setPatientDocuments([]);
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }, [patient?.id, documentsLoaded]);
+
+  useEffect(() => {
+    if (activeTab === 'documents') loadDocuments();
+  }, [activeTab, loadDocuments]);
+
+  const handleViewDocument = async (doc) => {
+    try {
+      const result = await getPatientDocumentFile(patient.id, doc.id);
+      setDocumentPreview({ url: result.url, type: result.type, name: doc.originalFilename });
+    } catch (err) {
+      console.error('Failed to load document:', err);
+    }
+  };
+
+  const handleDeleteDocument = async (doc) => {
+    if (!window.confirm(t('preconsultation:documents.deleteConfirm'))) return;
+    try {
+      await deletePatientDocument(patient.id, doc.id);
+      setPatientDocuments(prev => prev.filter(d => d.id !== doc.id));
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+    }
+  };
+
+  const renderDocumentsTab = () => {
+    if (documentsLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader className="h-6 w-6 text-blue-500 animate-spin" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Document preview overlay */}
+        {documentPreview && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="text-sm font-medium text-gray-900 truncate">{documentPreview.name}</h3>
+                <button onClick={() => { URL.revokeObjectURL(documentPreview.url); setDocumentPreview(null); }}
+                  className="p-1 hover:bg-gray-100 rounded">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-4 overflow-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
+                {documentPreview.type?.startsWith('image/') ? (
+                  <img src={documentPreview.url} alt={documentPreview.name} className="max-w-full mx-auto" />
+                ) : documentPreview.type === 'application/pdf' ? (
+                  <iframe src={documentPreview.url} title={documentPreview.name} className="w-full" style={{ height: '70vh' }} />
+                ) : (
+                  <a href={documentPreview.url} download={documentPreview.name} className="text-blue-600 underline">
+                    {t('preconsultation:staff.viewDocument')}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {patientDocuments.length === 0 ? (
+          <div className="text-center py-12">
+            <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">{t('preconsultation:staff.noDocuments')}</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {patientDocuments.map(doc => (
+              <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <FileText className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{doc.originalFilename}</p>
+                  <p className="text-xs text-gray-500">
+                    {doc.mimeType} · {(doc.size / 1024).toFixed(0)} KB · {new Date(doc.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleViewDocument(doc)}
+                  className="p-2 hover:bg-blue-100 rounded text-blue-500 transition-colors"
+                  title={t('preconsultation:staff.viewDocument')}
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+                {canDeleteDocuments && (
+                  <button
+                    onClick={() => handleDeleteDocument(doc)}
+                    className="p-2 hover:bg-red-100 rounded text-red-400 hover:text-red-600 transition-colors"
+                    title={t('preconsultation:staff.deleteDocument')}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'general':
@@ -826,6 +954,8 @@ const PatientDetailModal = ({
         return renderAppointmentsTab();
       case 'consents':
         return renderConsentsTab();
+      case 'documents':
+        return renderDocumentsTab();
       case 'administrative':
         return renderAdministrativeTab();
       case 'access':

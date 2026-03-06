@@ -22,6 +22,8 @@ import {
 } from '../../../utils/appointmentPermissions';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
 import { useLocale } from '../../../contexts/LocaleContext';
+import PreconsultationStatusBadge from '../../preconsultation/PreconsultationStatusBadge';
+import { sendPreconsultationLink, sendReminder } from '../../../api/preconsultationApi';
 
 const AppointmentsModule = ({ navigateToPatient }) => {
   const { t } = useTranslation();
@@ -636,6 +638,9 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
                     {getStatusText(appointment.status)}
                   </span>
+                  {appointment.preconsultationStatus && (
+                    <PreconsultationStatusBadge status={appointment.preconsultationStatus} />
+                  )}
 
                   {/* Actions rapides selon le statut */}
                   {appointment.status === 'scheduled' && (
@@ -663,6 +668,41 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                       title={t('appointments:actions.complete')}
                     >
                       <Check className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  {/* Pre-consultation actions */}
+                  {hasPermission(PERMISSIONS.PRECONSULTATION_SEND) && !appointment.preconsultationStatus && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await sendPreconsultationLink(appointment.id, 'es');
+                          if (appointmentContext?.refreshAppointments) appointmentContext.refreshAppointments();
+                        } catch (err) {
+                          console.error('Failed to send preconsultation link:', err);
+                        }
+                      }}
+                      className="p-1 hover:bg-blue-100 rounded text-blue-400 hover:text-blue-600 transition-colors"
+                      title={t('preconsultation:actions.sendLink')}
+                    >
+                      <Bell className="h-4 w-4" />
+                    </button>
+                  )}
+                  {hasPermission(PERMISSIONS.PRECONSULTATION_SEND) && ['sent', 'patient_info_completed', 'documents_uploaded'].includes(appointment.preconsultationStatus) && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await sendReminder(appointment.id);
+                        } catch (err) {
+                          console.error('Failed to send reminder:', err);
+                        }
+                      }}
+                      className="p-1 hover:bg-yellow-100 rounded text-yellow-500 hover:text-yellow-600 transition-colors"
+                      title={t('preconsultation:actions.sendReminder')}
+                    >
+                      <Bell className="h-4 w-4" />
                     </button>
                   )}
 

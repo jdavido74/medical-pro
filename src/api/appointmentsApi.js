@@ -240,6 +240,9 @@ function transformAppointmentFromBackend(appointment) {
     items: appointment.items || [],
     quote: appointment.quote,
 
+    // Pre-consultation
+    preconsultationStatus: appointment.preconsultation_status || null,
+
     // Timestamps
     createdAt: appointment.created_at,
     updatedAt: appointment.updated_at
