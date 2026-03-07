@@ -80,6 +80,30 @@ const PatientDetailModal = ({
   const canViewDocuments = hasPermission(PERMISSIONS.PATIENT_DOCUMENTS_VIEW);
   const canDeleteDocuments = hasPermission(PERMISSIONS.PATIENT_DOCUMENTS_DELETE);
 
+  // State pour les documents patient (must be before early return)
+  const [patientDocuments, setPatientDocuments] = useState([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsLoaded, setDocumentsLoaded] = useState(false);
+  const [documentPreview, setDocumentPreview] = useState(null);
+
+  const loadDocuments = useCallback(async () => {
+    if (!patient?.id || documentsLoaded) return;
+    try {
+      setDocumentsLoading(true);
+      const response = await getPatientDocuments(patient.id);
+      setPatientDocuments(response?.data || []);
+      setDocumentsLoaded(true);
+    } catch {
+      setPatientDocuments([]);
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }, [patient?.id, documentsLoaded]);
+
+  useEffect(() => {
+    if (activeTab === 'documents') loadDocuments();
+  }, [activeTab, loadDocuments]);
+
   // Gestionnaires pour les enregistrements médicaux
   const handleEditMedicalRecord = (record) => {
     // Ici on pourrait ouvrir un modal d'édition d'enregistrement médical
@@ -822,29 +846,6 @@ const PatientDetailModal = ({
   const renderConsentsTab = () => (
     <PatientConsentsTab patient={patient} />
   );
-
-  const [patientDocuments, setPatientDocuments] = useState([]);
-  const [documentsLoading, setDocumentsLoading] = useState(false);
-  const [documentsLoaded, setDocumentsLoaded] = useState(false);
-  const [documentPreview, setDocumentPreview] = useState(null);
-
-  const loadDocuments = useCallback(async () => {
-    if (!patient?.id || documentsLoaded) return;
-    try {
-      setDocumentsLoading(true);
-      const response = await getPatientDocuments(patient.id);
-      setPatientDocuments(response?.data || []);
-      setDocumentsLoaded(true);
-    } catch {
-      setPatientDocuments([]);
-    } finally {
-      setDocumentsLoading(false);
-    }
-  }, [patient?.id, documentsLoaded]);
-
-  useEffect(() => {
-    if (activeTab === 'documents') loadDocuments();
-  }, [activeTab, loadDocuments]);
 
   const handleViewDocument = async (doc) => {
     try {
