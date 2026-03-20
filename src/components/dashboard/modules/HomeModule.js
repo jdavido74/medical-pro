@@ -330,13 +330,22 @@ const HomeModule = ({ setActiveModule }) => {
                         </button>
                       )}
                       {apt.status === 'confirmed' && (
-                        <button
-                          onClick={() => handleQuickStatusChange(apt.id, 'in_progress')}
-                          className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center space-x-1"
-                        >
-                          <PlayCircle className="h-3.5 w-3.5" />
-                          <span>{t('todayAppointments.start', 'Iniciar')}</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleQuickStatusChange(apt.id, 'completed')}
+                            className="px-3 py-1 text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors flex items-center space-x-1"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>{t('todayAppointments.validate', 'Validar')}</span>
+                          </button>
+                          <button
+                            onClick={() => handleQuickStatusChange(apt.id, 'in_progress')}
+                            className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center space-x-1"
+                          >
+                            <PlayCircle className="h-3.5 w-3.5" />
+                            <span>{t('todayAppointments.start', 'Iniciar')}</span>
+                          </button>
+                        </>
                       )}
                       {apt.status === 'in_progress' && (
                         <button

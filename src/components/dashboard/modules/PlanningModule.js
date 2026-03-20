@@ -1785,12 +1785,6 @@ const PlanningModule = () => {
                                     {t('actions.confirm')}
                                   </button>
                                   <button
-                                    onClick={() => handleQuickStatusChange(apt.id, 'no_show')}
-                                    className="px-2 py-1 text-xs font-medium rounded-md border border-orange-300 text-orange-600 hover:bg-orange-50 transition-colors"
-                                  >
-                                    {t('actions.noShow')}
-                                  </button>
-                                  <button
                                     onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
                                     className="px-2 py-1 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
                                   >
@@ -1801,22 +1795,16 @@ const PlanningModule = () => {
                               {apt.status === 'confirmed' && (
                                 <>
                                   <button
+                                    onClick={() => handleQuickStatusChange(apt.id, 'completed')}
+                                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                  >
+                                    {t('actions.validate', 'Valider')}
+                                  </button>
+                                  <button
                                     onClick={() => handleQuickStatusChange(apt.id, 'in_progress')}
-                                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                    className="px-2 py-1 text-xs font-medium rounded-md border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors"
                                   >
                                     {t('actions.start')}
-                                  </button>
-                                  <button
-                                    onClick={() => handleQuickStatusChange(apt.id, 'completed')}
-                                    className="px-2 py-1 text-xs font-medium rounded-md border border-green-300 text-green-600 hover:bg-green-50 transition-colors"
-                                  >
-                                    {t('actions.completed')}
-                                  </button>
-                                  <button
-                                    onClick={() => handleQuickStatusChange(apt.id, 'no_show')}
-                                    className="px-2 py-1 text-xs font-medium rounded-md border border-orange-300 text-orange-600 hover:bg-orange-50 transition-colors"
-                                  >
-                                    {t('actions.noShow')}
                                   </button>
                                   <button
                                     onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
@@ -1903,6 +1891,18 @@ const PlanningModule = () => {
                                       >
                                         <Bell className="w-4 h-4 text-yellow-500" />
                                         {t('preconsultation:actions.sendReminder', 'Rappel pré-consultation')}
+                                      </button>
+                                    )}
+                                    {['scheduled', 'confirmed'].includes(apt.status) && (
+                                      <button
+                                        onClick={() => {
+                                          handleQuickStatusChange(apt.id, 'no_show');
+                                          setActionMenuOpen(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-orange-600"
+                                      >
+                                        <AlertTriangle className="w-4 h-4" />
+                                        {t('actions.noShow')}
                                       </button>
                                     )}
                                     {canEdit && (

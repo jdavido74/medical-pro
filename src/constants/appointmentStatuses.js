@@ -19,7 +19,7 @@ export const STATUS_CONFIG = {
 // Allowed status transitions: current status → array of allowed next statuses
 export const STATUS_TRANSITIONS = {
   scheduled: ['confirmed', 'cancelled', 'no_show'],
-  confirmed: ['in_progress', 'cancelled', 'no_show'],
+  confirmed: ['in_progress', 'completed', 'cancelled', 'no_show'],
   in_progress: ['completed', 'cancelled'],
   completed: [],
   cancelled: ['scheduled'],
