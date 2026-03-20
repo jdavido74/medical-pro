@@ -1256,7 +1256,7 @@ const PlanningModule = () => {
     return (
       <div
         key={`header-${dateStr}`}
-        className={`flex-1 min-w-[140px] p-2 text-center border-r last:border-r-0 ${bgClass}`}
+        className={`flex-1 min-w-[100px] p-2 text-center border-r last:border-r-0 ${bgClass}`}
       >
         <div className={`text-xs ${isClosed ? 'text-gray-400' : 'text-gray-500'}`}>
           {day.toLocaleDateString('fr-FR', { weekday: 'short' })}
@@ -1282,7 +1282,7 @@ const PlanningModule = () => {
     return (
       <div
         key={`content-${dateStr}`}
-        className={`flex-1 min-w-[140px] border-r last:border-r-0 p-2 ${isClosed ? 'bg-gray-100 bg-stripes' : ''}`}
+        className={`flex-1 min-w-[100px] border-r last:border-r-0 p-2 ${isClosed ? 'bg-gray-100 bg-stripes' : ''}`}
         style={isClosed ? {
           backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px)'
         } : {}}
@@ -1326,23 +1326,23 @@ const PlanningModule = () => {
     <div className="flex flex-col gap-4 h-[calc(100vh-7rem)]">
       {/* Header */}
       <div className="flex items-center justify-between flex-shrink-0">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
-          <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
+          <p className="text-sm text-gray-500 mt-1 hidden xl:block">{t('subtitle')}</p>
         </div>
         {canCreate && (
           <button
             onClick={handleNewAppointment}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
-            {t('appointment.new')}
+            <span className="hidden lg:inline">{t('appointment.new')}</span>
           </button>
         )}
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between bg-white rounded-lg border p-3 flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-2 bg-white rounded-lg border p-3 flex-shrink-0">
         {/* Navigation - only show for calendar views */}
         <div className="flex items-center gap-2">
           {viewMode !== 'list' && (
@@ -1365,7 +1365,7 @@ const PlanningModule = () => {
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
-              <span className="ml-2 font-medium text-gray-900">{formatDateRange()}</span>
+              <span className="ml-2 font-medium text-gray-900 truncate">{formatDateRange()}</span>
             </>
           )}
           {viewMode === 'list' && (
@@ -1374,9 +1374,9 @@ const PlanningModule = () => {
         </div>
 
         {/* View mode & filters */}
-        <div className="flex items-center gap-3">
-          {/* Category filter */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex items-center gap-2 ml-auto">
+          {/* Category filter - hidden on narrow, accessible via filter button */}
+          <div className="hidden xl:flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             {['all', 'treatment', 'consultation'].map(cat => (
               <button
                 key={cat}
@@ -1398,7 +1398,7 @@ const PlanningModule = () => {
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                className={`px-2 xl:px-3 py-1 text-sm rounded-md transition-colors ${
                   viewMode === mode
                     ? 'bg-white shadow text-gray-900'
                     : 'text-gray-600 hover:text-gray-900'
@@ -1409,14 +1409,14 @@ const PlanningModule = () => {
             ))}
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors flex items-center gap-1 ${
+              className={`px-2 xl:px-3 py-1 text-sm rounded-md transition-colors flex items-center gap-1 ${
                 viewMode === 'list'
                   ? 'bg-white shadow text-gray-900'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <List className="w-4 h-4" />
-              {t('list.title')}
+              <span className="hidden xl:inline">{t('list.title')}</span>
             </button>
           </div>
 
@@ -1435,7 +1435,7 @@ const PlanningModule = () => {
       {/* Extended filters - only for calendar views */}
       {showFilters && viewMode !== 'list' && (
         <div className="bg-white rounded-lg border p-4 flex-shrink-0">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t('filters.machine')}
@@ -1693,16 +1693,16 @@ const PlanningModule = () => {
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         {t('list.columns.patient')}
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         {t('list.columns.treatment')}
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         {t('list.columns.machine')}
                       </th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         {t('list.columns.status')}
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="hidden xl:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         {t('list.columns.consent')}
                       </th>
                       <th className="px-3 py-2 text-xs font-medium text-gray-500 uppercase">
@@ -1758,10 +1758,10 @@ const PlanningModule = () => {
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-600">
+                          <td className="hidden xl:table-cell px-3 py-2 text-sm text-gray-600">
                             {apt.title || apt.service?.title || '-'}
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-600">
+                          <td className="hidden xl:table-cell px-3 py-2 text-sm text-gray-600">
                             {apt.machine?.name || apt.provider?.fullName || '-'}
                           </td>
                           <td className="px-3 py-2">
@@ -1770,7 +1770,7 @@ const PlanningModule = () => {
                               {t(`statuses.${apt.status}`)}
                             </div>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="hidden xl:table-cell px-3 py-2">
                             {getConsentBadge(consentStatus)}
                           </td>
                           <td className="px-3 py-2">
