@@ -1877,7 +1877,7 @@ const PlanningModule = () => {
                                         onClick={async () => {
                                           try {
                                             await sendPreconsultationLink(apt.id, apt.patient?.preferredLanguage || 'es');
-                                            fetchAppointments();
+                                            loadData();
                                             setActionMenuOpen(null);
                                           } catch (err) {
                                             console.error('Failed to send preconsultation link:', err);
@@ -2186,8 +2186,8 @@ const PlanningModule = () => {
                     onClick={async () => {
                       try {
                         await sendPreconsultationLink(summaryAppointment.id, summaryAppointment.patient?.preferredLanguage || 'es');
-                        fetchAppointments();
-                        setShowSummary(false);
+                        loadData();
+                        setShowSummaryModal(false);
                       } catch (err) {
                         console.error('Failed to send preconsultation link:', err);
                       }
@@ -2203,7 +2203,7 @@ const PlanningModule = () => {
                     onClick={async () => {
                       try {
                         await sendReminder(summaryAppointment.id);
-                        setShowSummary(false);
+                        setShowSummaryModal(false);
                       } catch (err) {
                         console.error('Failed to send preconsultation reminder:', err);
                       }
