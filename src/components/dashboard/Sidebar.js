@@ -53,8 +53,8 @@ const Sidebar = () => {
     // Patients - Données admin (secrétaire, admin, soignants)
     { id: 'patients', path: '/patients', icon: Users, permission: 'patients.view', labelKey: 'patients' },
 
-    // Rendez-vous (secrétaire, admin, soignants)
-    { id: 'appointments', path: '/appointments', icon: Calendar, permission: 'appointments.view', labelKey: 'appointments' },
+    // Rendez-vous — masqué temporairement (doublon avec planning)
+    // { id: 'appointments', path: '/appointments', icon: Calendar, permission: 'appointments.view', labelKey: 'appointments' },
 
     // Planning (calendrier unifié traitements et consultations)
     { id: 'planning', path: '/planning', icon: CalendarClock, permission: 'appointments.view', labelKey: 'planning' },

@@ -13,8 +13,8 @@
     "expired": "Link expired"
   },
   "actions": {
-    "sendLink": "Send pre-consultation link",
-    "sendReminder": "Send reminder",
+    "sendLink": "Send consultation confirmation",
+    "sendReminder": "Resend confirmation",
     "proposeDates": "Propose dates",
     "sendQuote": "Send quote",
     "viewStatus": "View status"
@@ -153,7 +153,7 @@
     "errorNetwork": "Connection error. Please check your internet connection."
   },
   "staff": {
-    "sendLinkTitle": "Send pre-consultation link",
+    "sendLinkTitle": "Send consultation confirmation",
     "sendLinkDescription": "An email will be sent to the patient with a secure link.",
     "language": "Patient language",
     "expiresIn": "Valid for",

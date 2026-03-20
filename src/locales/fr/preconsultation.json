@@ -13,8 +13,8 @@
     "expired": "Lien expiré"
   },
   "actions": {
-    "sendLink": "Envoyer le lien de pré-consultation",
-    "sendReminder": "Envoyer un rappel",
+    "sendLink": "Envoyer confirmation consultation",
+    "sendReminder": "Renvoyer confirmation",
     "proposeDates": "Proposer des dates",
     "sendQuote": "Envoyer le devis",
     "viewStatus": "Voir le statut"
@@ -153,7 +153,7 @@
     "errorNetwork": "Erreur de connexion. Vérifiez votre connexion Internet."
   },
   "staff": {
-    "sendLinkTitle": "Envoyer le lien de pré-consultation",
+    "sendLinkTitle": "Envoyer confirmation consultation",
     "sendLinkDescription": "Un e-mail sera envoyé au patient avec un lien sécurisé.",
     "language": "Langue du patient",
     "expiresIn": "Valide pendant",
