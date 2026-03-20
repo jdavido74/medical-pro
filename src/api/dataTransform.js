@@ -183,7 +183,7 @@ function transformPatientFromBackend(patient) {
     dateOfBirth: patient.birth_date || patient.date_of_birth, // Backward compatibility
     gender: patient.gender,
     patientNumber: patient.patient_number,
-    idNumber: patient.social_security_number,
+    idNumber: patient.id_number,
     nationality: patient.nationality,
 
     // Address (nested structure for frontend)
