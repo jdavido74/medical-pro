@@ -13,6 +13,8 @@ import {
   List, Search, Send, Eye, MoreHorizontal, Trash2, ArrowUp, ArrowDown, Layers, Copy, RefreshCw
 } from 'lucide-react';
 import planningApi, { getAppointmentGroup } from '../../../api/planningApi';
+import { sendPreconsultationLink, sendReminder } from '../../../api/preconsultationApi';
+import PreconsultationStatusBadge from '../../preconsultation/PreconsultationStatusBadge';
 import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
 import { usePermissions } from '../../auth/PermissionGuard';
 import PlanningBookingModal from '../modals/PlanningBookingModal';
@@ -210,7 +212,7 @@ const PATIENT_COLORS = [
 ];
 
 const PlanningModule = () => {
-  const { t } = useTranslation('planning');
+  const { t } = useTranslation(['planning', 'preconsultation']);
   const { hasPermission } = usePermissions();
 
   // Permissions
@@ -1112,6 +1114,10 @@ const PlanningModule = () => {
               className={`w-3.5 h-3.5 ${statusConfig.color}`}
               title={t(`statuses.${apt.status}`)}
             />
+            {apt.preconsultationStatus && (
+              <Bell className={`w-3 h-3 ${apt.preconsultationStatus === 'confirmed' ? 'text-green-500' : 'text-blue-400'}`}
+                title={t(`preconsultation:status.${apt.preconsultationStatus}`, apt.preconsultationStatus)} />
+            )}
           </div>
         </div>
 
@@ -1866,6 +1872,39 @@ const PlanningModule = () => {
                                         {t('actions.sendConsent')}
                                       </button>
                                     )}
+                                    {hasPermission('preconsultation.send') && apt.patient && !apt.preconsultationStatus && (
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await sendPreconsultationLink(apt.id, apt.patient?.preferredLanguage || 'es');
+                                            fetchAppointments();
+                                            setActionMenuOpen(null);
+                                          } catch (err) {
+                                            console.error('Failed to send preconsultation link:', err);
+                                          }
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                      >
+                                        <Bell className="w-4 h-4 text-blue-500" />
+                                        {t('preconsultation:actions.sendLink', 'Pré-consultation')}
+                                      </button>
+                                    )}
+                                    {hasPermission('preconsultation.send') && ['sent', 'patient_info_completed', 'documents_uploaded'].includes(apt.preconsultationStatus) && (
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await sendReminder(apt.id);
+                                            setActionMenuOpen(null);
+                                          } catch (err) {
+                                            console.error('Failed to send preconsultation reminder:', err);
+                                          }
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                                      >
+                                        <Bell className="w-4 h-4 text-yellow-500" />
+                                        {t('preconsultation:actions.sendReminder', 'Rappel pré-consultation')}
+                                      </button>
+                                    )}
                                     {canEdit && (
                                       <button
                                         onClick={() => handleListDelete(apt)}
@@ -2001,6 +2040,14 @@ const PlanningModule = () => {
                       {apt.notes || apt.reason}
                     </div>
                   )}
+
+                  {/* Preconsultation status */}
+                  {apt.preconsultationStatus && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Bell className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                      <PreconsultationStatusBadge status={apt.preconsultationStatus} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Next sibling */}
@@ -2098,6 +2145,9 @@ const PlanningModule = () => {
                     </>
                   );
                 })()}
+                {summaryAppointment.preconsultationStatus && (
+                  <PreconsultationStatusBadge status={summaryAppointment.preconsultationStatus} />
+                )}
               </div>
             </div>
 
@@ -2129,6 +2179,39 @@ const PlanningModule = () => {
                   >
                     <Send className="w-4 h-4" />
                     {t('actions.sendConsent')}
+                  </button>
+                )}
+                {hasPermission('preconsultation.send') && summaryAppointment.patient && !summaryAppointment.preconsultationStatus && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await sendPreconsultationLink(summaryAppointment.id, summaryAppointment.patient?.preferredLanguage || 'es');
+                        fetchAppointments();
+                        setShowSummary(false);
+                      } catch (err) {
+                        console.error('Failed to send preconsultation link:', err);
+                      }
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Bell className="w-4 h-4" />
+                    {t('preconsultation:actions.sendLink', 'Pré-consultation')}
+                  </button>
+                )}
+                {hasPermission('preconsultation.send') && ['sent', 'patient_info_completed', 'documents_uploaded'].includes(summaryAppointment.preconsultationStatus) && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await sendReminder(summaryAppointment.id);
+                        setShowSummary(false);
+                      } catch (err) {
+                        console.error('Failed to send preconsultation reminder:', err);
+                      }
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors"
+                  >
+                    <Bell className="w-4 h-4" />
+                    {t('preconsultation:actions.sendReminder', 'Rappel pré-consultation')}
                   </button>
                 )}
                 <button
