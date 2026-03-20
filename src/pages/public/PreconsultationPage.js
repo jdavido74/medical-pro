@@ -237,6 +237,19 @@ export default function PreconsultationPage() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
+          {/* Clinic branding */}
+          <div className="flex items-center gap-3 mb-3">
+            {data.clinic?.logoUrl && (
+              <img
+                src={data.clinic.logoUrl}
+                alt={data.clinic.name || ''}
+                className="h-10 sm:h-12 w-auto object-contain"
+              />
+            )}
+            {data.clinic?.name && (
+              <span className="text-lg sm:text-xl font-bold text-gray-900">{data.clinic.name}</span>
+            )}
+          </div>
           <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
             {t('page.title')}
           </h1>
