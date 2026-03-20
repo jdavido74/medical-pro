@@ -323,6 +323,8 @@ export const DEFAULT_ROLES = {
       // Rendez-vous
       PERMISSIONS.APPOINTMENTS_VIEW, PERMISSIONS.APPOINTMENTS_CREATE, PERMISSIONS.APPOINTMENTS_EDIT,
       PERMISSIONS.APPOINTMENTS_DELETE,
+      // Pré-consultation
+      PERMISSIONS.PRECONSULTATION_SEND, PERMISSIONS.PRECONSULTATION_MANAGE,
       // Documents patient
       PERMISSIONS.PATIENT_DOCUMENTS_VIEW,
       // DONNÉES MÉDICALES COMPLÈTES (Secret partagé - équipe de soins)
@@ -425,6 +427,10 @@ export const DEFAULT_ROLES = {
       PERMISSIONS.APPOINTMENTS_VIEW, PERMISSIONS.APPOINTMENTS_CREATE, PERMISSIONS.APPOINTMENTS_EDIT,
       PERMISSIONS.APPOINTMENTS_DELETE, PERMISSIONS.APPOINTMENTS_VIEW_ALL,
       PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER,
+      // Pré-consultation
+      PERMISSIONS.PRECONSULTATION_SEND, PERMISSIONS.PRECONSULTATION_MANAGE,
+      // Documents patient
+      PERMISSIONS.PATIENT_DOCUMENTS_VIEW,
       // PAS DE DONNÉES MÉDICALES (Secret médical - Art. L1110-4 CSP)
       // Consentements - Attribution et signature (pas de création de templates)
       PERMISSIONS.CONSENTS_VIEW, PERMISSIONS.CONSENTS_ASSIGN,
@@ -495,6 +501,16 @@ export const PERMISSION_CATEGORIES = {
       PERMISSIONS.APPOINTMENTS_VIEW, PERMISSIONS.APPOINTMENTS_CREATE, PERMISSIONS.APPOINTMENTS_EDIT,
       PERMISSIONS.APPOINTMENTS_DELETE, PERMISSIONS.APPOINTMENTS_VIEW_ALL,
       PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER
+    ]
+  },
+  preconsultation: {
+    name: 'Pré-consultation',
+    icon: 'ClipboardList',
+    description: 'Envoi et gestion des parcours de pré-consultation patient',
+    isMedicalData: false,
+    permissions: [
+      PERMISSIONS.PRECONSULTATION_SEND, PERMISSIONS.PRECONSULTATION_MANAGE,
+      PERMISSIONS.PATIENT_DOCUMENTS_VIEW, PERMISSIONS.PATIENT_DOCUMENTS_DELETE
     ]
   },
   finance: {
@@ -971,6 +987,12 @@ export const permissionsStorage = {
       [PERMISSIONS.APPOINTMENTS_DELETE]: 'Supprimer les rendez-vous',
       [PERMISSIONS.APPOINTMENTS_VIEW_ALL]: 'Voir tous les rendez-vous',
       [PERMISSIONS.APPOINTMENTS_VIEW_PRACTITIONER]: 'Voir le nom du praticien',
+
+      // Pré-consultation
+      [PERMISSIONS.PRECONSULTATION_SEND]: 'Envoyer un lien de pré-consultation',
+      [PERMISSIONS.PRECONSULTATION_MANAGE]: 'Gérer les parcours pré-consultation',
+      [PERMISSIONS.PATIENT_DOCUMENTS_VIEW]: 'Voir les documents patient',
+      [PERMISSIONS.PATIENT_DOCUMENTS_DELETE]: 'Supprimer les documents patient',
 
       // Finances
       [PERMISSIONS.INVOICES_VIEW]: 'Voir les factures',
