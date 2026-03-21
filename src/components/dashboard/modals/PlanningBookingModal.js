@@ -1278,36 +1278,25 @@ const PlanningBookingModal = ({
       }
 
       if (response.success) {
-        // After successful substitution with chain recalculation
-        if (substitutionPending && isLinkedAppointment && recalculateChain && linkedGroup?.appointments) {
-          const originalDuration = appointment.duration || 30;
-          const newDuration = substitutionPending.duration;
-          if (newDuration !== originalDuration) {
-            const currentSequence = appointment.linkSequence || 1;
-            const followingAppts = linkedGroup.appointments
-              .filter(a => (a.linkSequence || 1) > currentSequence && a.status !== 'completed' && a.status !== 'cancelled');
-
-            if (followingAppts.length > 0) {
-              // Calculate new end time for the substituted appointment
-              const effectiveStart = selectedSlot?.startTime || selectedSlot?.start || appointment.startTime;
-              const startMins = timeToMinutes(effectiveStart);
-              let nextStart = `${String(Math.floor((startMins + newDuration) / 60)).padStart(2, '0')}:${String((startMins + newDuration) % 60).padStart(2, '0')}`;
-
-              for (const apt of followingAppts) {
-                await planningApi.updateAppointment(apt.id, {
-                  startTime: nextStart,
-                  date: apt.date
-                });
-                const [h, m] = nextStart.split(':').map(Number);
-                const nextMins = h * 60 + m + (apt.duration || 30);
-                nextStart = `${String(Math.floor(nextMins / 60)).padStart(2, '0')}:${String(nextMins % 60).padStart(2, '0')}`;
-              }
-            }
-          }
-        }
         onSave(response.data);
       } else {
         // Check for specific error codes
+        if (response.error?.code === 'CHAIN_CONFLICT') {
+          const confirmed = window.confirm(
+            `${response.error.message}\n\nVoulez-vous continuer quand même ?`
+          );
+          if (confirmed) {
+            const forcePayload = { ...payload, force: true };
+            const forceResponse = await planningApi.updateAppointment(appointment.id, forcePayload);
+            if (forceResponse.success) {
+              onSave(forceResponse.data);
+              setSaving(false);
+              return;
+            }
+          }
+          setSaving(false);
+          return;
+        }
         if (response.error?.code === 'NO_MACHINE_AVAILABLE') {
           setError(t('substitute.noMachineAvailable'));
         } else if (response.error?.message?.includes('conflict') || response.error?.message?.includes('disponible')) {
