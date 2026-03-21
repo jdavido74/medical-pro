@@ -20,7 +20,7 @@ export default function PatientInfoStep({ token, patient, onComplete }) {
     last_name: patient?.lastName || '',
     email: patient?.email || '',
     phone: patient?.phone || '',
-    date_of_birth: patient?.dateOfBirth ? patient.dateOfBirth.split('T')[0] : '',
+    birth_date: patient?.dateOfBirth ? patient.dateOfBirth.split('T')[0] : '',
     gender: patient?.gender || '',
     nationality: patient?.nationality || '',
     id_number: patient?.idNumber || '',
@@ -28,7 +28,6 @@ export default function PatientInfoStep({ token, patient, onComplete }) {
     address_line1: patient?.addressLine1 || '',
     address_line2: patient?.addressLine2 || '',
     city: patient?.city || '',
-    state: patient?.state || '',
     postal_code: patient?.postalCode || '',
     country: patient?.country || ''
   });
@@ -49,7 +48,7 @@ export default function PatientInfoStep({ token, patient, onComplete }) {
       ...prev,
       first_name: mrzData.firstName || prev.first_name,
       last_name: mrzData.lastName || prev.last_name,
-      date_of_birth: mrzData.dateOfBirth || prev.date_of_birth,
+      birth_date: mrzData.dateOfBirth || prev.birth_date,
       gender: mrzData.gender || prev.gender,
       nationality: mrzData.nationality || prev.nationality,
       id_number: mrzData.documentNumber || prev.id_number
@@ -166,8 +165,8 @@ export default function PatientInfoStep({ token, patient, onComplete }) {
             <label className={labelClasses}>{t('patientForm.dateOfBirth')}</label>
             <input
               type="date"
-              name="date_of_birth"
-              value={form.date_of_birth}
+              name="birth_date"
+              value={form.birth_date}
               onChange={handleChange}
               className={inputClasses}
             />
@@ -178,9 +177,9 @@ export default function PatientInfoStep({ token, patient, onComplete }) {
             <label className={labelClasses}>{t('patientForm.gender')}</label>
             <select name="gender" value={form.gender} onChange={handleChange} className={inputClasses}>
               <option value="">-</option>
-              <option value="male">{t('patientForm.genderMale')}</option>
-              <option value="female">{t('patientForm.genderFemale')}</option>
-              <option value="other">{t('patientForm.genderOther')}</option>
+              <option value="M">{t('patientForm.genderMale')}</option>
+              <option value="F">{t('patientForm.genderFemale')}</option>
+              <option value="O">{t('patientForm.genderOther')}</option>
             </select>
           </div>
 
