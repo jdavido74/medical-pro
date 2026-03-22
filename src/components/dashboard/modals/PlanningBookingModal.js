@@ -495,6 +495,16 @@ const PlanningBookingModal = ({
   const handleChooseSingleEdit = () => {
     setEditMode('single');
     setShowLinkedChoiceModal(false);
+    // Initialize current treatment for substitution
+    if (appointment?.service) {
+      setSelectedTreatments([{
+        id: appointment.serviceId,
+        title: appointment.service.title,
+        duration: appointment.service.duration || appointment.duration || 30,
+        categories: [],
+        is_overlappable: appointment.service.isOverlappable || appointment.isOverlappable
+      }]);
+    }
     // Jump to confirmation step, pre-fill slot
     if (appointment?.startTime && appointment?.endTime) {
       setSelectedSlot({
@@ -1224,9 +1234,13 @@ const PlanningBookingModal = ({
       let response;
 
       if (category === 'treatment') {
-        if (selectedTreatments.length === 1) {
+        if (selectedTreatments.length === 1 || (isEditMode && substitutionPending)) {
           if (isEditMode) {
-            response = await planningApi.updateAppointment(appointment.id, payload);
+            // For substitution in a chain, ensure we send the new serviceId
+            const editPayload = substitutionPending
+              ? { ...payload, serviceId: substitutionPending.treatmentId }
+              : payload;
+            response = await planningApi.updateAppointment(appointment.id, editPayload);
           } else {
             response = await planningApi.createAppointment(payload);
           }
