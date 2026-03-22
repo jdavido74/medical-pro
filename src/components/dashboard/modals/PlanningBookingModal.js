@@ -1369,8 +1369,17 @@ const PlanningBookingModal = ({
       };
     }
 
-    // Handle group edit: update the entire group with provider/assistant
+    // Handle group edit: substitution uses single PUT, otherwise update group
     if (isEditMode && editMode === 'group' && groupId) {
+      if (substitutionPending) {
+        // Substitution in chain: use single PUT on the target appointment
+        executeSave({
+          ...saveData,
+          serviceId: substitutionPending.treatmentId
+        });
+        return;
+      }
+
       setSaving(true);
       setError(null);
       try {
