@@ -1983,9 +1983,6 @@ const PlanningModule = () => {
 
             return (
               <>
-                {/* Previous sibling */}
-                {renderSiblingRow(prev, t('hover.previous', 'Précédent'), ArrowUp)}
-
                 {/* Main appointment */}
                 <div className="px-4 py-3 space-y-2">
                   {/* Time & Status */}
@@ -2050,8 +2047,84 @@ const PlanningModule = () => {
                   )}
                 </div>
 
-                {/* Next sibling */}
+                {/* Quick actions */}
+                <div className="px-4 py-2 border-t bg-gray-50 flex items-center gap-2">
+                  {/* Status actions */}
+                  {apt.status === 'scheduled' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleQuickStatusChange(apt.id, 'confirmed'); setHoveredAppointment(null); }}
+                      className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                    >
+                      {t('actions.confirm')}
+                    </button>
+                  )}
+                  {apt.status === 'confirmed' && (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleQuickStatusChange(apt.id, 'completed'); setHoveredAppointment(null); }}
+                        className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                      >
+                        {t('actions.validate', 'Valider')}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleQuickStatusChange(apt.id, 'in_progress'); setHoveredAppointment(null); }}
+                        className="px-2 py-1 text-xs font-medium rounded-md border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors"
+                      >
+                        {t('actions.start')}
+                      </button>
+                    </>
+                  )}
+                  {apt.status === 'in_progress' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleQuickStatusChange(apt.id, 'completed'); setHoveredAppointment(null); }}
+                      className="px-2.5 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                    >
+                      {t('actions.completed')}
+                    </button>
+                  )}
+
+                  {/* Spacer */}
+                  <div className="flex-1" />
+
+                  {/* Edit */}
+                  {canEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHoveredAppointment(null);
+                        setSummaryAppointment(apt);
+                        setSelectedAppointment(apt);
+                        setShowBookingModal(true);
+                      }}
+                      className="p-1.5 rounded-md hover:bg-blue-100 text-blue-600 transition-colors"
+                      title={t('actions.edit')}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {/* Delete */}
+                  {canEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHoveredAppointment(null);
+                        if (window.confirm(t('actions.deleteConfirm', 'Supprimer ce rendez-vous ?'))) {
+                          planningApi.cancelAppointment(apt.id).then(() => loadData());
+                        }
+                      }}
+                      className="p-1.5 rounded-md hover:bg-red-100 text-red-600 transition-colors"
+                      title={t('actions.delete')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Siblings kept for future use
+                {renderSiblingRow(prev, t('hover.previous', 'Précédent'), ArrowUp)}
                 {renderSiblingRow(next, t('hover.next', 'Suivant'), ArrowDown)}
+                */}
               </>
             );
           })()}
