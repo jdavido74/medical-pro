@@ -311,14 +311,14 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   };
 
   // Formater la date
-  const formatDate = (date) => {
+  const formatDate = (date, includeTime = true) => {
     if (!date) return '-';
     const locale = i18n.language === 'es' ? 'es-ES' : i18n.language === 'en' ? 'en-US' : 'fr-FR';
-    return new Date(date).toLocaleDateString(locale, {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    const d = new Date(date);
+    const datePart = d.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!includeTime) return datePart;
+    const timePart = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    return `${datePart} ${timePart}`;
   };
 
   const getTypeLabel = (type) => {
@@ -563,6 +563,26 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       <span className="hidden xl:inline">{t('medical:module.masterDetail.newRecord')}</span>
                     </button>
                   )}
+                  {formState && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={handleBackToList}
+                        className="px-3 py-2 text-gray-600 bg-white border rounded-lg hover:bg-gray-50 text-sm flex items-center gap-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="hidden xl:inline">{t('medical:module.masterDetail.backToList')}</span>
+                      </button>
+                      {canCreateRecords && (
+                        <button
+                          onClick={() => formRef.current?.handleSubmit()}
+                          className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                        >
+                          <Save className="h-4 w-4" />
+                          <span className="hidden xl:inline">{t('medical:module.masterDetail.save')}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -573,42 +593,15 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                   <div ref={formSectionRef} className="bg-white border rounded-lg shadow-sm">
                     {/* En-tête du formulaire */}
                     <div className="border-b bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-t-lg">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="p-2 bg-white rounded-lg shadow-sm flex-shrink-0">
-                            <Stethoscope className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {formState.mode === 'create'
-                                ? t('medical:module.masterDetail.newRecord')
-                                : `${formatDate(formState.record?.createdAt)} - ${selectedPatient.firstName} ${selectedPatient.lastName}`}
-                            </h3>
-                            {formState.mode === 'create' && (
-                              <p className="text-sm text-gray-600 truncate">
-                                {selectedPatient.firstName} {selectedPatient.lastName}
-                              </p>
-                            )}
-                          </div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 bg-white rounded-lg shadow-sm flex-shrink-0">
+                          <Stethoscope className="h-5 w-5 text-green-600" />
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <button
-                            onClick={handleBackToList}
-                            className="px-3 py-2 text-gray-600 bg-white border rounded-lg hover:bg-gray-50 text-sm flex items-center gap-2"
-                          >
-                            <ArrowLeft className="h-4 w-4" />
-                            <span className="hidden xl:inline">{t('medical:module.masterDetail.backToList')}</span>
-                          </button>
-                          {canCreateRecords && (
-                            <button
-                              onClick={() => formRef.current?.handleSubmit()}
-                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
-                            >
-                              <Save className="h-4 w-4" />
-                              <span>{t('medical:module.masterDetail.save')}</span>
-                            </button>
-                          )}
-                        </div>
+                        <h3 className="font-semibold text-gray-900 truncate">
+                          {formState.mode === 'create'
+                            ? t('medical:module.masterDetail.newRecord')
+                            : formatDate(formState.record?.createdAt)}
+                        </h3>
                       </div>
 
                       {/* Message de succès dans le formulaire */}
@@ -637,6 +630,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                         onSave={handleFormSubmit}
                         onCancel={handleBackToList}
                         onActiveTabChange={setCurrentFormTab}
+                        hideFooter
                       />
                     </div>
                   </div>
