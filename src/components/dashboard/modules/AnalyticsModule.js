@@ -10,7 +10,7 @@ import {
   Clock, XCircle, UserX, FileText, ChevronDown
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getDashboardData } from '../../../api/analyticsApi';
+import { getDashboardData, getActivityData } from '../../../api/analyticsApi';
 import planningApi from '../../../api/planningApi';
 
 // ─── Date helpers ───────────────────────────────────────────
@@ -144,7 +144,9 @@ const KpiCard = ({ icon: Icon, title, value, subtitle, trend, trendLabel, color 
 
 const AnalyticsModule = () => {
   const { t, i18n } = useTranslation(['analytics', 'common']);
+  const [activeTab, setActiveTab] = useState('activity'); // 'activity' | 'billing'
   const [data, setData] = useState(null);
+  const [activityData, setActivityData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -198,11 +200,15 @@ const AnalyticsModule = () => {
     try {
       const params = { dateFrom, dateTo, year: new Date(dateFrom).getFullYear() };
       if (practitionerId) params.practitionerId = practitionerId;
-      const res = await getDashboardData(params);
-      if (res.success) {
-        setData(res.data);
+
+      if (activeTab === 'billing') {
+        const res = await getDashboardData(params);
+        if (res.success) setData(res.data);
+        else setError(res.error?.message || 'Error loading analytics');
       } else {
-        setError(res.error?.message || 'Error loading analytics');
+        const res = await getActivityData(params);
+        if (res.success) setActivityData(res.data);
+        else setError(res.error?.message || 'Error loading activity data');
       }
     } catch (err) {
       console.error('Analytics error:', err);
@@ -210,7 +216,7 @@ const AnalyticsModule = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, practitionerId]);
+  }, [dateFrom, dateTo, practitionerId, activeTab]);
 
   useEffect(() => {
     loadData();
@@ -256,6 +262,43 @@ const AnalyticsModule = () => {
 
   const appointments = data?.appointments || {};
 
+  // Activity tab derived data
+  const actMonthly = useMemo(() => {
+    if (!activityData?.monthlyActivity) return [];
+    return Array.from({ length: 12 }, (_, i) => {
+      const m = activityData.monthlyActivity.find(r => parseInt(r.month) === i + 1);
+      return { label: monthNames[i], total: parseFloat(m?.total || 0), count: parseInt(m?.count || 0) };
+    });
+  }, [activityData?.monthlyActivity, monthNames]);
+
+  const actServices = useMemo(() => {
+    if (!activityData?.revenueByService) return [];
+    return activityData.revenueByService.slice(0, 10).map(s => ({
+      label: `${s.title || 'N/A'} (${s.count})`,
+      total: parseFloat(s.total || 0),
+      count: parseInt(s.count || 0)
+    }));
+  }, [activityData?.revenueByService]);
+
+  const actPractitioners = useMemo(() => {
+    if (!activityData?.revenueByPractitioner) return [];
+    return activityData.revenueByPractitioner.map(p => ({
+      label: `${p.name || 'N/A'} (${p.count})`,
+      total: parseFloat(p.total || 0),
+      count: parseInt(p.count || 0)
+    }));
+  }, [activityData?.revenueByPractitioner]);
+
+  const actTopPatients = useMemo(() => {
+    if (!activityData?.topPatients) return [];
+    return activityData.topPatients.map(p => ({
+      label: `${p.name || 'N/A'} (${p.sessions} séances)`,
+      total: parseFloat(p.total || 0)
+    }));
+  }, [activityData?.topPatients]);
+
+  const actAppts = activityData?.appointments || {};
+
   return (
     <div className="flex flex-col gap-5 p-4 xl:p-6 h-[calc(100vh-7rem)] overflow-y-auto">
       {/* Header */}
@@ -268,7 +311,29 @@ const AnalyticsModule = () => {
           <p className="text-sm text-gray-500 mt-0.5 hidden xl:block">{t('analytics:subtitle', 'Indicadores financieros y de actividad')}</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Tabs */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`px-3 py-1 text-sm rounded-md transition-colors flex items-center gap-1.5 ${
+                activeTab === 'activity' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              {t('analytics:tabs.activity', 'Actividad')}
+            </button>
+            <button
+              onClick={() => setActiveTab('billing')}
+              className={`px-3 py-1 text-sm rounded-md transition-colors flex items-center gap-1.5 ${
+                activeTab === 'billing' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <DollarSign className="h-3.5 w-3.5" />
+              {t('analytics:tabs.billing', 'Facturación')}
+            </button>
+          </div>
+
           {/* Presets */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             {PRESETS.map(p => (
@@ -348,6 +413,104 @@ const AnalyticsModule = () => {
         </div>
       )}
 
+      {/* ═══ ACTIVITY TAB ═══ */}
+      {activeTab === 'activity' && (
+        <>
+          {/* Activity KPIs */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <KpiCard
+              icon={DollarSign}
+              title={t('analytics:kpi.estimatedRevenue', 'CA estimado')}
+              value={formatCurrency(activityData?.estimatedRevenue?.currentPeriod)}
+              trend={activityData?.estimatedRevenue?.changePercent}
+              subtitle={`${activityData?.estimatedRevenue?.completedCount || 0} ${t('analytics:kpi.completedSessions', 'sesiones')}`}
+              color="green"
+              loading={loading}
+            />
+            <KpiCard
+              icon={Activity}
+              title={t('analytics:kpi.occupationRate', 'Ocupación')}
+              value={activityData?.occupation?.rate ? `${activityData.occupation.rate}%` : '—'}
+              subtitle={`${Math.round((activityData?.occupation?.completedMinutes || 0) / 60)}h / ${Math.round((activityData?.occupation?.totalMinutes || 0) / 60)}h`}
+              color="blue"
+              loading={loading}
+            />
+            <KpiCard
+              icon={CheckCircle}
+              title={t('analytics:kpi.completed', 'Realizadas')}
+              value={actAppts.completed || 0}
+              subtitle={`${actAppts.total || 0} ${t('analytics:kpi.totalAppointments', 'total citas')}`}
+              color="purple"
+              loading={loading}
+            />
+            <KpiCard
+              icon={UserX}
+              title={t('analytics:kpi.noShowRate', 'Tasa ausencia')}
+              value={activityData?.noShowRate ? `${activityData.noShowRate}%` : '0%'}
+              subtitle={`${actAppts.noShow || 0} ${t('analytics:kpi.noShow', 'ausentes')} · ${actAppts.cancelled || 0} ${t('analytics:kpi.cancelled', 'anuladas')}`}
+              color="amber"
+              loading={loading}
+            />
+          </div>
+
+          {/* Activity Charts */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            {/* Monthly activity */}
+            <div className="bg-white rounded-xl border p-5 xl:col-span-2">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-emerald-600" />
+                {t('analytics:charts.monthlyActivity', 'Actividad mensual (CA estimado)')}
+              </h3>
+              {loading ? <div className="h-48 bg-gray-50 rounded animate-pulse" /> : (
+                <BarChart data={actMonthly} labelKey="label" valueKey="total" formatValue={formatCurrency} color="#10b981" />
+              )}
+            </div>
+
+            {/* By service */}
+            <div className="bg-white rounded-xl border p-5">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-600" />
+                {t('analytics:charts.byService', 'Por tratamiento')}
+              </h3>
+              {loading ? (
+                <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-8 bg-gray-50 rounded animate-pulse" />)}</div>
+              ) : (
+                <HorizontalBarChart data={actServices} labelKey="label" valueKey="total" formatValue={formatCurrency} color="#6366f1" />
+              )}
+            </div>
+
+            {/* By practitioner */}
+            <div className="bg-white rounded-xl border p-5">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Users className="h-4 w-4 text-blue-600" />
+                {t('analytics:charts.byPractitioner', 'Por profesional')}
+              </h3>
+              {loading ? (
+                <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-8 bg-gray-50 rounded animate-pulse" />)}</div>
+              ) : (
+                <HorizontalBarChart data={actPractitioners} labelKey="label" valueKey="total" formatValue={formatCurrency} color="#3b82f6" />
+              )}
+            </div>
+
+            {/* Top patients */}
+            <div className="bg-white rounded-xl border p-5 xl:col-span-2">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Users className="h-4 w-4 text-emerald-600" />
+                {t('analytics:charts.topPatients', 'Top pacientes')}
+              </h3>
+              {loading ? (
+                <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-8 bg-gray-50 rounded animate-pulse" />)}</div>
+              ) : (
+                <HorizontalBarChart data={actTopPatients} labelKey="label" valueKey="total" formatValue={formatCurrency} color="#10b981" />
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ═══ BILLING TAB ═══ */}
+      {activeTab === 'billing' && (
+        <>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
@@ -448,6 +611,8 @@ const AnalyticsModule = () => {
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };
