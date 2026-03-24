@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Plus, Search, Edit2, Trash2, User,
-  AlertTriangle, ChevronRight, ChevronDown,
+  AlertTriangle, ChevronRight, ChevronLeft, ChevronDown,
   X, Check, UserPlus, Clock, Save, ArrowLeft,
   Pill, FileText, Stethoscope, Eye, Activity, Heart
 } from 'lucide-react';
@@ -375,18 +375,6 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
         {/* Panel gauche - Liste des patients (collapsible) */}
         {!panelCollapsed && (
           <div className="w-64 xl:w-80 border-r bg-gray-50 flex flex-col flex-shrink-0">
-            {/* Collapse button — visible when a form is open */}
-            {formState && (
-              <div className="p-2 border-b bg-white flex justify-end">
-                <button
-                  onClick={() => setPanelCollapsed(true)}
-                  className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
-                  title={t('medical:module.masterDetail.hidePatients', 'Masquer les patients')}
-                >
-                  <ArrowLeft className="h-4 w-4 text-gray-500" />
-                </button>
-              </div>
-            )}
             {/* Recherche et filtres patients */}
             <div className="p-3 border-b bg-white space-y-2">
               <div className="relative">
@@ -538,13 +526,19 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
               <div className="border-b bg-gray-50 p-4 sticky top-0 z-10">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center min-w-0">
-                    {panelCollapsed && (
+                    {formState && (
                       <button
-                        onClick={() => setPanelCollapsed(false)}
+                        onClick={() => setPanelCollapsed(!panelCollapsed)}
                         className="p-1.5 mr-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
-                        title={t('medical:module.masterDetail.showPatients', 'Afficher les patients')}
+                        title={panelCollapsed
+                          ? t('medical:module.masterDetail.showPatients', 'Afficher les patients')
+                          : t('medical:module.masterDetail.hidePatients', 'Masquer les patients')
+                        }
                       >
-                        <ChevronRight className="h-5 w-5 text-gray-500" />
+                        {panelCollapsed
+                          ? <ChevronRight className="h-5 w-5 text-gray-500" />
+                          : <ChevronLeft className="h-5 w-5 text-gray-500" />
+                        }
                       </button>
                     )}
                     <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-full bg-green-100 flex items-center justify-center mr-3 flex-shrink-0">
