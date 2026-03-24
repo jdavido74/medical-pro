@@ -126,11 +126,11 @@ const MedicalHistoryModal = ({
     return age;
   };
 
-  const getGenderIcon = (gender) => {
+  const getGenderLabel = (gender) => {
     switch (gender) {
-      case 'male': return '👨';
-      case 'female': return '👩';
-      default: return '👤';
+      case 'M': case 'male': return t('medical:gender.male', 'Masculino');
+      case 'F': case 'female': return t('medical:gender.female', 'Femenino');
+      default: return '';
     }
   };
 
@@ -141,16 +141,16 @@ const MedicalHistoryModal = ({
           <div className="text-center">
             <Stethoscope className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Acceso no autorizado
+              {t('medical:access.unauthorized', 'Acceso no autorizado')}
             </h3>
             <p className="text-gray-600 mb-4">
-              No tiene permisos para ver el historial médico.
+              {t('medical:access.noPermission', 'No tiene permisos para ver el historial médico.')}
             </p>
             <button
               onClick={onClose}
               className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
             >
-              Cerrar
+              {t('common:close', 'Cerrar')}
             </button>
           </div>
         </div>
@@ -163,77 +163,40 @@ const MedicalHistoryModal = ({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-green-50 to-blue-50">
-            <div className="flex items-center space-x-4">
-              <div className="text-3xl">
-                {getGenderIcon(patient.gender)}
+          <div className="flex items-center justify-between gap-3 p-4 xl:p-6 border-b bg-gradient-to-r from-green-50 to-blue-50">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <User className="h-5 w-5 text-green-600" />
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                  <Stethoscope className="h-6 w-6 mr-2 text-green-600" />
-                  Historial Médico
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 truncate">
+                  <Stethoscope className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  {patient.firstName} {patient.lastName}
                 </h2>
-                <p className="text-gray-600">
-                  {patient.firstName} {patient.lastName} - {calculateAge(patient.birthDate)} años
-                </p>
-                <p className="text-sm text-gray-500">
-                  Paciente #{patient.patientNumber} | ID: {patient.idNumber}
+                <p className="text-sm text-gray-500 truncate">
+                  {patient.patientNumber && `#${patient.patientNumber}`}
+                  {patient.birthDate && ` · ${calculateAge(patient.birthDate)} ${t('medical:years', 'años')}`}
+                  {getGenderLabel(patient.gender) && ` · ${getGenderLabel(patient.gender)}`}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {canCreateMedicalRecords && (
                 <button
                   onClick={handleCreateRecord}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                  title="Crear nuevo registro médico"
+                  className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Nuevo Registro</span>
+                  <span className="hidden xl:inline">{t('medical:module.masterDetail.newRecord', 'Nuevo Registro')}</span>
                 </button>
               )}
-
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-                title="Cerrar"
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5" />
               </button>
-            </div>
-          </div>
-
-          {/* Patient Info Summary */}
-          <div className="px-6 py-4 bg-gray-50 border-b">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600">Nac:</span>
-                <span className="font-medium">{new Date(patient.birthDate).toLocaleDateString('es-ES')}</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600">Registro:</span>
-                <span className="font-medium">{new Date(patient.createdAt).toLocaleDateString('es-ES')}</span>
-              </div>
-
-              {patient.insurance?.provider && (
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600">Seguro:</span>
-                  <span className="font-medium">{patient.insurance.provider}</span>
-                </div>
-              )}
-
-              <div className="flex items-center space-x-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  patient.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {patient.status === 'active' ? 'Activo' : 'Inactivo'}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -261,10 +224,11 @@ const MedicalHistoryModal = ({
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    {editingRecord ? 'Editar Historial Médico' : 'Nuevo Historial Médico'}
+                    {editingRecord ? t('medical:module.masterDetail.editRecord', 'Editar Historial') : t('medical:module.masterDetail.newRecord', 'Nuevo Historial')}
                   </h2>
                   <p className="text-gray-600">
-                    {patient.firstName} {patient.lastName} - {calculateAge(patient.birthDate)} años
+                    {patient.firstName} {patient.lastName}
+                    {patient.birthDate && ` - ${calculateAge(patient.birthDate)} ${t('medical:years', 'años')}`}
                   </p>
                 </div>
               </div>
@@ -275,7 +239,7 @@ const MedicalHistoryModal = ({
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   disabled={isSubmitting}
                 >
-                  Cancelar
+                  {t('common:cancel', 'Cancelar')}
                 </button>
                 <button
                   onClick={handleFormSubmit}
