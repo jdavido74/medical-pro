@@ -1,6 +1,7 @@
 // components/dashboard/modules/MedicalRecordsModule.js
 // Refonte UX : Liste d'historiques avec formulaire au-dessus
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Plus, Search, Edit2, Trash2, User,
   AlertTriangle, ChevronRight, ChevronLeft, ChevronDown,
@@ -20,6 +21,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   const { t, i18n } = useTranslation(['medical', 'common']);
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
+  const location = useLocation();
   const formRef = useRef(null);
   const formSectionRef = useRef(null);
 
@@ -183,6 +185,34 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   }, [todayAppointments, patients, patientSearchQuery]);
 
   const otherPatients = filteredPatients.filter(p => !todayPatientIds.has(p.id));
+
+  // Handle navigation from patient detail modal (location.state)
+  useEffect(() => {
+    if (location.state?.patientId && patients.length > 0) {
+      const targetPatient = patients.find(p => p.id === location.state.patientId);
+      if (targetPatient && selectedPatient?.id !== targetPatient.id) {
+        setSelectedPatient(targetPatient);
+        if (location.state.createNew) {
+          setTimeout(() => {
+            setFormState({ mode: 'create' });
+            setPanelCollapsed(true);
+          }, 100);
+        } else if (location.state.recordId) {
+          setTimeout(async () => {
+            try {
+              const fullRecord = await getRecordById(location.state.recordId);
+              setFormState({ mode: 'edit', record: fullRecord });
+              setPanelCollapsed(true);
+            } catch (err) {
+              console.error('Error loading record from navigation:', err);
+            }
+          }, 100);
+        }
+      }
+      // Clear location state to avoid re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, patients]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sélection d'un patient
   const handleSelectPatient = (patient) => {
