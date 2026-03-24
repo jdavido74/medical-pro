@@ -375,6 +375,18 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
         {/* Panel gauche - Liste des patients (collapsible) */}
         {!panelCollapsed && (
           <div className="w-64 xl:w-80 border-r bg-gray-50 flex flex-col flex-shrink-0">
+            {/* Collapse button — visible when a form is open */}
+            {formState && (
+              <div className="p-2 border-b bg-white flex justify-end">
+                <button
+                  onClick={() => setPanelCollapsed(true)}
+                  className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                  title={t('medical:module.masterDetail.hidePatients', 'Masquer les patients')}
+                >
+                  <ArrowLeft className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
+            )}
             {/* Recherche et filtres patients */}
             <div className="p-3 border-b bg-white space-y-2">
               <div className="relative">
