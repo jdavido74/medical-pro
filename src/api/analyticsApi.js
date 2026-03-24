@@ -21,6 +21,7 @@ export const getActivityData = async (params = {}) => {
   if (params.dateTo) query.append('dateTo', params.dateTo);
   if (params.practitionerId) query.append('practitionerId', params.practitionerId);
   if (params.year) query.append('year', params.year);
+  if (params.statuses) query.append('statuses', params.statuses);
   const qs = query.toString();
   return baseClient.get(`${ENDPOINT}/activity${qs ? `?${qs}` : ''}`);
 };

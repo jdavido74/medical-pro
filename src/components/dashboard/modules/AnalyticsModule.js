@@ -157,6 +157,7 @@ const AnalyticsModule = () => {
   const [practitionerId, setPractitionerId] = useState('');
   const [practitioners, setPractitioners] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState(['completed']);
 
   const locale = i18n.language === 'es' ? 'es-ES' : i18n.language === 'en' ? 'en-US' : 'fr-FR';
 
@@ -206,7 +207,7 @@ const AnalyticsModule = () => {
         if (res.success) setData(res.data);
         else setError(res.error?.message || 'Error loading analytics');
       } else {
-        const res = await getActivityData(params);
+        const res = await getActivityData({ ...params, statuses: selectedStatuses.join(',') });
         if (res.success) setActivityData(res.data);
         else setError(res.error?.message || 'Error loading activity data');
       }
@@ -216,7 +217,7 @@ const AnalyticsModule = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, practitionerId, activeTab]);
+  }, [dateFrom, dateTo, practitionerId, activeTab, selectedStatuses]);
 
   useEffect(() => {
     loadData();
@@ -370,38 +371,79 @@ const AnalyticsModule = () => {
 
       {/* Filters panel */}
       {showFilters && (
-        <div className="bg-white rounded-xl border p-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('analytics:filters.from', 'Desde')}</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => { setDateFrom(e.target.value); setPreset('custom'); }}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            />
+        <div className="bg-white rounded-xl border p-4 space-y-4">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('analytics:filters.from', 'Desde')}</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => { setDateFrom(e.target.value); setPreset('custom'); }}
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('analytics:filters.to', 'Hasta')}</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => { setDateTo(e.target.value); setPreset('custom'); }}
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('analytics:filters.practitioner', 'Profesional')}</label>
+              <select
+                value={practitionerId}
+                onChange={(e) => setPractitionerId(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="">{t('analytics:filters.allPractitioners', 'Todos')}</option>
+                {practitioners.map(p => (
+                  <option key={p.id} value={p.id}>{p.name || `${p.firstName || p.first_name} ${p.lastName || p.last_name}`}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('analytics:filters.to', 'Hasta')}</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => { setDateTo(e.target.value); setPreset('custom'); }}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('analytics:filters.practitioner', 'Profesional')}</label>
-            <select
-              value={practitionerId}
-              onChange={(e) => setPractitionerId(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="">{t('analytics:filters.allPractitioners', 'Todos')}</option>
-              {practitioners.map(p => (
-                <option key={p.id} value={p.id}>{p.name || `${p.firstName || p.first_name} ${p.lastName || p.last_name}`}</option>
-              ))}
-            </select>
-          </div>
+          {activeTab === 'activity' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('analytics:filters.statuses', 'Statuts à inclure')}</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'scheduled', label: t('analytics:statuses.scheduled', 'Programada'), color: 'yellow' },
+                  { id: 'confirmed', label: t('analytics:statuses.confirmed', 'Confirmada'), color: 'green' },
+                  { id: 'in_progress', label: t('analytics:statuses.inProgress', 'En curso'), color: 'blue' },
+                  { id: 'completed', label: t('analytics:statuses.completed', 'Terminada'), color: 'gray' }
+                ].map(s => {
+                  const isActive = selectedStatuses.includes(s.id);
+                  const colorMap = {
+                    yellow: isActive ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 'bg-white text-gray-500 border-gray-200',
+                    green: isActive ? 'bg-green-100 text-green-800 border-green-300' : 'bg-white text-gray-500 border-gray-200',
+                    blue: isActive ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-white text-gray-500 border-gray-200',
+                    gray: isActive ? 'bg-gray-200 text-gray-800 border-gray-400' : 'bg-white text-gray-500 border-gray-200'
+                  };
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setSelectedStatuses(prev => {
+                          if (prev.includes(s.id)) {
+                            const next = prev.filter(x => x !== s.id);
+                            return next.length > 0 ? next : prev; // keep at least one
+                          }
+                          return [...prev, s.id];
+                        });
+                      }}
+                      className={`px-3 py-1.5 text-sm rounded-lg border transition-colors font-medium ${colorMap[s.color]}`}
+                    >
+                      {isActive && <span className="mr-1">✓</span>}
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
