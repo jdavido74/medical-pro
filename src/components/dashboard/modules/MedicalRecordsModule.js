@@ -51,6 +51,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
   // État du formulaire - null = pas de formulaire ouvert
   const [formState, setFormState] = useState(null); // null | { mode: 'create' } | { mode: 'edit', record: {...} }
+  const [panelCollapsed, setPanelCollapsed] = useState(false); // Patient list panel collapsed
 
   // Onglet actif du formulaire (pour le préserver après sauvegarde)
   const [currentFormTab, setCurrentFormTab] = useState('basic');
@@ -194,6 +195,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // Créer un nouveau dossier
   const handleCreateRecord = () => {
     setFormState({ mode: 'create' });
+    setPanelCollapsed(true);
     setCurrentFormTab('basic'); // Reset tab to basic for new records
     setSuccessMessage(null);
     setError(null);
@@ -209,6 +211,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
       setIsLoadingRecords(true);
       const fullRecord = await getRecordById(record.id);
       setFormState({ mode: 'edit', record: fullRecord });
+      setPanelCollapsed(true);
       setSuccessMessage(null);
       setError(null);
       // Scroll vers le formulaire
@@ -268,6 +271,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
   // Fermer le formulaire et retourner à la liste
   const handleBackToList = () => {
     setFormState(null);
+    setPanelCollapsed(false);
     setSuccessMessage(null);
   };
 
@@ -368,135 +372,147 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
       {/* Layout Master-Detail */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Panel gauche - Liste des patients */}
-        <div className="w-64 xl:w-80 border-r bg-gray-50 flex flex-col flex-shrink-0">
-          {/* Recherche et filtres patients */}
-          <div className="p-3 border-b bg-white space-y-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t('medical:module.masterDetail.searchPatients')}
-                value={patientSearchQuery}
-                onChange={(e) => setPatientSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex space-x-1">
-              {['all', 'recent', 'older'].map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setDateFilter(filter)}
-                  className={`flex-1 px-2 py-1.5 text-xs rounded ${
-                    dateFilter === filter
-                      ? 'bg-green-100 text-green-700 font-medium'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {t(`medical:module.masterDetail.filters.${filter}`)}
-                </button>
-              ))}
-            </div>
+        {/* Panel gauche - Liste des patients (collapsible) */}
+        {panelCollapsed ? (
+          <div className="border-r bg-gray-50 flex flex-col items-center py-3 flex-shrink-0">
+            <button
+              onClick={() => setPanelCollapsed(false)}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              title={t('medical:module.masterDetail.showPatients', 'Afficher les patients')}
+            >
+              <ChevronRight className="h-5 w-5 text-gray-500" />
+            </button>
           </div>
-
-          {/* Liste des patients */}
-          <div className="flex-1 overflow-y-auto">
-            {patientsWithTodayAppointment.length === 0 && otherPatients.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                <User className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p>{t('medical:module.masterDetail.noPatientFound')}</p>
+        ) : (
+          <div className="w-64 xl:w-80 border-r bg-gray-50 flex flex-col flex-shrink-0">
+            {/* Recherche et filtres patients */}
+            <div className="p-3 border-b bg-white space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={t('medical:module.masterDetail.searchPatients')}
+                  value={patientSearchQuery}
+                  onChange={(e) => setPatientSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
               </div>
-            ) : (
-              <>
-                {/* Section: Rendez-vous du jour */}
-                {patientsWithTodayAppointment.length > 0 && (
-                  <div>
-                    <div className="px-3 py-2 bg-blue-50 border-b border-blue-100 sticky top-0 z-10">
-                      <div className="flex items-center text-blue-700 text-xs font-semibold">
-                        <Clock className="h-3.5 w-3.5 mr-1.5" />
-                        {t('medical:module.masterDetail.todayAppointments')} ({patientsWithTodayAppointment.length})
-                      </div>
-                    </div>
-                    <div className="divide-y divide-gray-200">
-                      {patientsWithTodayAppointment.map((patient) => (
-                        <button
-                          key={`today-${patient.id}`}
-                          onClick={() => handleSelectPatient(patient)}
-                          className={`w-full p-3 text-left hover:bg-blue-50 transition-colors ${
-                            selectedPatient?.id === patient.id ? 'bg-blue-100 border-l-4 border-blue-500' : 'bg-blue-50/30'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                              <Clock className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 truncate">
-                                {patient.firstName} {patient.lastName}
-                              </p>
-                              <p className="text-xs text-blue-600 font-medium">
-                                {patient.appointmentTimes?.join(' • ') || patient.appointmentTime}
-                                {patient.appointments?.length > 1 && (
-                                  <span className="ml-1 text-blue-400">({patient.appointments.length} RDV)</span>
-                                )}
-                              </p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-blue-400" />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div className="flex space-x-1">
+                {['all', 'recent', 'older'].map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setDateFilter(filter)}
+                    className={`flex-1 px-2 py-1.5 text-xs rounded ${
+                      dateFilter === filter
+                        ? 'bg-green-100 text-green-700 font-medium'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {t(`medical:module.masterDetail.filters.${filter}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                {/* Section: Autres patients */}
-                {otherPatients.length > 0 && (
-                  <div>
-                    {patientsWithTodayAppointment.length > 0 && (
-                      <div className="px-3 py-2 bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                        <div className="flex items-center text-gray-600 text-xs font-semibold">
-                          <User className="h-3.5 w-3.5 mr-1.5" />
-                          {t('medical:module.masterDetail.allPatients')} ({otherPatients.length})
+            {/* Liste des patients */}
+            <div className="flex-1 overflow-y-auto">
+              {patientsWithTodayAppointment.length === 0 && otherPatients.length === 0 ? (
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  <User className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p>{t('medical:module.masterDetail.noPatientFound')}</p>
+                </div>
+              ) : (
+                <>
+                  {/* Section: Rendez-vous du jour */}
+                  {patientsWithTodayAppointment.length > 0 && (
+                    <div>
+                      <div className="px-3 py-2 bg-blue-50 border-b border-blue-100 sticky top-0 z-10">
+                        <div className="flex items-center text-blue-700 text-xs font-semibold">
+                          <Clock className="h-3.5 w-3.5 mr-1.5" />
+                          {t('medical:module.masterDetail.todayAppointments')} ({patientsWithTodayAppointment.length})
                         </div>
                       </div>
-                    )}
-                    <div className="divide-y divide-gray-200">
-                      {otherPatients.map((patient) => (
-                        <button
-                          key={patient.id}
-                          onClick={() => handleSelectPatient(patient)}
-                          className={`w-full p-3 text-left hover:bg-gray-100 transition-colors ${
-                            selectedPatient?.id === patient.id ? 'bg-green-50 border-l-4 border-green-500' : ''
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                              <User className="h-5 w-5 text-green-600" />
+                      <div className="divide-y divide-gray-200">
+                        {patientsWithTodayAppointment.map((patient) => (
+                          <button
+                            key={`today-${patient.id}`}
+                            onClick={() => handleSelectPatient(patient)}
+                            className={`w-full p-3 text-left hover:bg-blue-50 transition-colors ${
+                              selectedPatient?.id === patient.id ? 'bg-blue-100 border-l-4 border-blue-500' : 'bg-blue-50/30'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                <Clock className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">
+                                  {patient.firstName} {patient.lastName}
+                                </p>
+                                <p className="text-xs text-blue-600 font-medium">
+                                  {patient.appointmentTimes?.join(' • ') || patient.appointmentTime}
+                                  {patient.appointments?.length > 1 && (
+                                    <span className="ml-1 text-blue-400">({patient.appointments.length} RDV)</span>
+                                  )}
+                                </p>
+                              </div>
+                              <ChevronRight className="h-4 w-4 text-blue-400" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 truncate">
-                                {patient.firstName} {patient.lastName}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {patient.patientNumber || t('medical:module.masterDetail.noPatientNumber')}
-                              </p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-gray-400" />
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                  )}
 
-          {/* Compteur patients */}
-          <div className="p-2 border-t bg-white text-center text-xs text-gray-500">
-            {t('medical:module.masterDetail.patientCount', { count: patientsWithTodayAppointment.length + otherPatients.length })}
+                  {/* Section: Autres patients */}
+                  {otherPatients.length > 0 && (
+                    <div>
+                      {patientsWithTodayAppointment.length > 0 && (
+                        <div className="px-3 py-2 bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                          <div className="flex items-center text-gray-600 text-xs font-semibold">
+                            <User className="h-3.5 w-3.5 mr-1.5" />
+                            {t('medical:module.masterDetail.allPatients')} ({otherPatients.length})
+                          </div>
+                        </div>
+                      )}
+                      <div className="divide-y divide-gray-200">
+                        {otherPatients.map((patient) => (
+                          <button
+                            key={patient.id}
+                            onClick={() => handleSelectPatient(patient)}
+                            className={`w-full p-3 text-left hover:bg-gray-100 transition-colors ${
+                              selectedPatient?.id === patient.id ? 'bg-green-50 border-l-4 border-green-500' : ''
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                                <User className="h-5 w-5 text-green-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">
+                                  {patient.firstName} {patient.lastName}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {patient.patientNumber || t('medical:module.masterDetail.noPatientNumber')}
+                                </p>
+                              </div>
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Compteur patients */}
+            <div className="p-2 border-t bg-white text-center text-xs text-gray-500">
+              {t('medical:module.masterDetail.patientCount', { count: patientsWithTodayAppointment.length + otherPatients.length })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Panel droit - Zone de travail */}
         <div className="flex-1 flex flex-col bg-white overflow-hidden">
