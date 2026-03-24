@@ -81,7 +81,7 @@ const Sidebar = () => {
     { id: 'machines', path: '/machines', icon: Cpu, permission: 'machines.view', labelKey: 'equipment' },
 
     // Statistiques (admin, direction)
-    { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.view', labelKey: 'analytics' },
+    { id: 'analytics', path: '/analytics', icon: BarChart3, permission: 'analytics.admin', labelKey: 'analytics' },
 
     // Administration clinique (admin, super_admin, direction, clinic_admin)
     { id: 'admin', path: '/admin', icon: Shield, permission: null, adminOnly: true, labelKey: 'admin' },

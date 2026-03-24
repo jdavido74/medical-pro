@@ -44,6 +44,7 @@ import CatalogModule from '../components/dashboard/modules/CatalogModule';
 import MachinesModule from '../components/dashboard/modules/MachinesModule';
 import PlanningModule from '../components/dashboard/modules/PlanningModule';
 import SettingsModule from '../components/dashboard/modules/SettingsModule';
+import AnalyticsModule from '../components/dashboard/modules/AnalyticsModule';
 
 // Modules Admin
 import UserManagementModule from '../components/admin/UserManagementModule';
@@ -247,6 +248,16 @@ const dashboardRoutes = [
     element: (
       <PermissionRoute permission="appointments.view">
         <PlanningModule />
+      </PermissionRoute>
+    )
+  },
+
+  // Analytics - dashboard admin uniquement
+  {
+    path: 'analytics',
+    element: (
+      <PermissionRoute permission="analytics.admin">
+        <AnalyticsModule />
       </PermissionRoute>
     )
   },
