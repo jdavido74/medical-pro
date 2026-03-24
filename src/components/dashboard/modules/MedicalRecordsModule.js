@@ -369,7 +369,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
       {/* Layout Master-Detail */}
       <div className="flex-1 flex overflow-hidden">
         {/* Panel gauche - Liste des patients */}
-        <div className="w-80 border-r bg-gray-50 flex flex-col">
+        <div className="w-64 xl:w-80 border-r bg-gray-50 flex flex-col flex-shrink-0">
           {/* Recherche et filtres patients */}
           <div className="p-3 border-b bg-white space-y-2">
             <div className="relative">
@@ -518,21 +518,30 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
             <div className="flex-1 overflow-y-auto">
               {/* En-tête patient */}
               <div className="border-b bg-gray-50 p-4 sticky top-0 z-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
-                      <User className="h-6 w-6 text-green-600" />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center min-w-0">
+                    <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-full bg-green-100 flex items-center justify-center mr-3 flex-shrink-0">
+                      <User className="h-5 w-5 xl:h-6 xl:w-6 text-green-600" />
                     </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900">
+                    <div className="min-w-0">
+                      <h2 className="text-base xl:text-lg font-bold text-gray-900 truncate">
                         {selectedPatient.firstName} {selectedPatient.lastName}
                       </h2>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 truncate">
                         {selectedPatient.patientNumber && `N° ${selectedPatient.patientNumber} • `}
                         {t('medical:module.masterDetail.records', { count: patientRecords.length })}
                       </p>
                     </div>
                   </div>
+                  {canCreateRecords && !formState && (
+                    <button
+                      onClick={handleCreateRecord}
+                      className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm flex-shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden xl:inline">{t('medical:module.masterDetail.newRecord')}</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -543,31 +552,31 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                   <div ref={formSectionRef} className="bg-white border rounded-lg shadow-sm">
                     {/* En-tête du formulaire */}
                     <div className="border-b bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-t-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-white rounded-lg shadow-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2 bg-white rounded-lg shadow-sm flex-shrink-0">
                             <Stethoscope className="h-5 w-5 text-green-600" />
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-gray-900 truncate">
                               {formState.mode === 'create'
                                 ? t('medical:module.masterDetail.newRecord')
                                 : `${formatDate(formState.record?.createdAt)} - ${selectedPatient.firstName} ${selectedPatient.lastName}`}
                             </h3>
                             {formState.mode === 'create' && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-600 truncate">
                                 {selectedPatient.firstName} {selectedPatient.lastName}
                               </p>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <button
                             onClick={handleBackToList}
-                            className="px-3 py-2 text-gray-600 bg-white border rounded-lg hover:bg-gray-50 text-sm flex items-center space-x-2"
+                            className="px-3 py-2 text-gray-600 bg-white border rounded-lg hover:bg-gray-50 text-sm flex items-center gap-2"
                           >
                             <ArrowLeft className="h-4 w-4" />
-                            <span>{t('medical:module.masterDetail.backToList')}</span>
+                            <span className="hidden xl:inline">{t('medical:module.masterDetail.backToList')}</span>
                           </button>
                           {canCreateRecords && (
                             <button
@@ -615,23 +624,12 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                 {/* Section Liste des historiques */}
                 <div className="bg-white border rounded-lg">
                   {/* En-tête de la liste */}
-                  <div className="border-b bg-gray-50 p-4 rounded-t-lg flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="h-5 w-5 text-gray-600" />
-                      <h3 className="font-semibold text-gray-900">
-                        {t('medical:module.masterDetail.patientRecords')}
-                      </h3>
-                      <span className="text-sm text-gray-500">({patientRecords.length})</span>
-                    </div>
-                    {canCreateRecords && !formState && (
-                      <button
-                        onClick={handleCreateRecord}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>{t('medical:module.masterDetail.newRecord')}</span>
-                      </button>
-                    )}
+                  <div className="border-b bg-gray-50 p-4 rounded-t-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                    <h3 className="font-semibold text-gray-900">
+                      {t('medical:module.masterDetail.patientRecords')}
+                    </h3>
+                    <span className="text-sm text-gray-500">({patientRecords.length})</span>
                   </div>
 
                   {/* Liste des dossiers */}
