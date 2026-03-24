@@ -877,6 +877,24 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                   </div>
                 )}
 
+                {/* Date et type */}
+                {(viewRecordModal.record.recordDate || viewRecordModal.record.type) && (
+                  <div className="mb-3 flex flex-wrap gap-3">
+                    {viewRecordModal.record.recordDate && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">{t('medical:form.recordDate', 'Date')}</p>
+                        <p className="text-gray-800 text-sm">{formatDate(viewRecordModal.record.recordDate)}</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.type && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">{t('medical:form.recordType', 'Type')}</p>
+                        <p className="text-gray-800 text-sm">{getTypeLabel(viewRecordModal.record.type)}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Symptômes */}
                 {viewRecordModal.record.basicInfo?.symptoms?.length > 0 && (
                   <div className="mb-3">
@@ -897,6 +915,17 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                   </div>
                 )}
               </div>
+
+              {/* === MALADIE ACTUELLE === */}
+              {viewRecordModal.record.currentIllness && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    {t('medical:form.tabs.currentIllness', 'Maladie actuelle')}
+                  </h4>
+                  <p className="text-gray-800 bg-amber-50 p-3 rounded-lg whitespace-pre-wrap">{viewRecordModal.record.currentIllness}</p>
+                </div>
+              )}
 
               {/* === SIGNES VITAUX === */}
               {viewRecordModal.record.vitalSigns && Object.values(viewRecordModal.record.vitalSigns).some(v => v && v !== '') && (
@@ -952,6 +981,12 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       <div className="bg-cyan-50 p-3 rounded-lg">
                         <p className="text-xs text-cyan-600">{t('medical:form.vitals.oxygenSaturation', 'Saturation O2')}</p>
                         <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.oxygenSaturation} %</p>
+                      </div>
+                    )}
+                    {viewRecordModal.record.vitalSigns.bloodGlucose && (
+                      <div className="bg-violet-50 p-3 rounded-lg">
+                        <p className="text-xs text-violet-600">{t('medical:form.vitals.bloodGlucose', 'Glycémie')}</p>
+                        <p className="text-lg font-semibold">{viewRecordModal.record.vitalSigns.bloodGlucose} mg/dL</p>
                       </div>
                     )}
                   </div>
@@ -1165,6 +1200,17 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       <div><span className="text-xs text-gray-500 font-medium">{t('medical:form.physicalExam.otherSystems', 'Autre')}:</span> <span className="text-gray-800">{viewRecordModal.record.physicalExam.other}</span></div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* === ÉVOLUTION === */}
+              {viewRecordModal.record.evolution && (
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-indigo-500" />
+                    {t('medical:form.tabs.evolution', 'Évolution')}
+                  </h4>
+                  <p className="text-gray-800 bg-indigo-50 p-3 rounded-lg whitespace-pre-wrap">{viewRecordModal.record.evolution}</p>
                 </div>
               )}
 
