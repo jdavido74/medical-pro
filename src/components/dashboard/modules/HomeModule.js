@@ -12,12 +12,14 @@ import { usePatients } from '../../../contexts/PatientContext';
 import planningApi from '../../../api/planningApi';
 import PatientFormModal from '../modals/PatientFormModal';
 import PlanningBookingModal from '../modals/PlanningBookingModal';
+import { useLocaleNavigation } from '../../../hooks/useLocaleNavigation';
 
 const HomeModule = ({ setActiveModule }) => {
   const { user } = useAuth();
   const { t } = useTranslation('dashboard');
   const { hasPermission } = usePermissions();
   const { patients, createPatient, getIncompletePatients } = usePatients();
+  const { navigateTo } = useLocaleNavigation();
 
   // Appointments state
   const [appointments, setAppointments] = useState([]);
@@ -306,10 +308,14 @@ const HomeModule = ({ setActiveModule }) => {
                           <AlertTriangle className="h-4 w-4" />
                         </div>
                       )}
-                      {/* Patient name */}
-                      <span className="font-medium text-gray-900 truncate">
+                      {/* Patient name — link to clinical history */}
+                      <button
+                        onClick={() => navigateTo(`/medical-records/${apt.patientId}`)}
+                        className="font-medium text-blue-700 hover:text-blue-900 hover:underline truncate text-left"
+                        title={t('todayAppointments.viewHistory', 'Ver historial clínico')}
+                      >
                         {formatPatientName(apt)}
-                      </span>
+                      </button>
                       {/* Treatment / Consultation label */}
                       <span className="text-xs text-gray-500 truncate">
                         {apt.title || apt.service?.title || (apt.category === 'consultation' ? t('todayAppointments.consultation', 'Consulta') : '')}
@@ -393,9 +399,13 @@ const HomeModule = ({ setActiveModule }) => {
                     <div className="text-sm font-mono text-gray-700 whitespace-nowrap">
                       {apt.startTime?.slice(0, 5)}
                     </div>
-                    <span className="font-medium text-gray-900 truncate">
+                    <button
+                      onClick={() => navigateTo(`/medical-records/${apt.patientId}`)}
+                      className="font-medium text-blue-700 hover:text-blue-900 hover:underline truncate text-left"
+                      title={t('todayAppointments.viewHistory', 'Ver historial clínico')}
+                    >
                       {formatPatientName(apt)}
-                    </span>
+                    </button>
                     <span className="text-sm text-red-600 font-medium whitespace-nowrap flex items-center space-x-1">
                       <Clock className="h-3.5 w-3.5" />
                       <span>{t('lateAppointments.lateMinutes', { count: lateMin, defaultValue: `Retrasada ${lateMin} min` })}</span>
