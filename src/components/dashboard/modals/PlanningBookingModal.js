@@ -1420,13 +1420,26 @@ const PlanningBookingModal = ({
         }
         const response = await planningApi.updateAppointmentGroup(groupId, groupUpdateData);
         if (response.success) {
+          setReorderDirty(false);
           onSave(response.data);
         } else {
           setError(response.error?.message || t('messages.error'));
         }
       } catch (err) {
         console.error('Error updating group:', err);
-        setError(t('messages.error'));
+        if (err?.data?.error?.code === 'REORDER_MACHINE_CONFLICT') {
+          const d = err.data.error.details || {};
+          setError(t('multiTreatment.reorderMachineConflict', {
+            treatment: d.treatmentTitle || '?',
+            machine: d.machineName || '?',
+            time: d.requestedTime || '?',
+            conflictPatient: d.conflictPatient || '?',
+            conflictTime: d.conflictTime || '?',
+            conflictTitle: d.conflictTitle || ''
+          }));
+        } else {
+          setError(err?.message || t('messages.error'));
+        }
       } finally {
         setSaving(false);
       }

@@ -157,7 +157,8 @@
     "conflictDetected": "Conflict detected for treatment {{index}}",
     "allTreatmentsRequired": "All treatments must have an available machine",
     "moveUp": "Move up",
-    "moveDown": "Move down"
+    "moveDown": "Move down",
+    "reorderMachineConflict": "Cannot move \"{{treatment}}\": machine {{machine}} is busy from {{conflictTime}} with {{conflictPatient}} ({{conflictTitle}}). Requested time: {{time}}"
   },
 
   "linkedGroup": {

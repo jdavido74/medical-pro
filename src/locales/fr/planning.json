@@ -157,7 +157,8 @@
     "conflictDetected": "Conflit détecté pour le traitement {{index}}",
     "allTreatmentsRequired": "Tous les traitements doivent avoir une machine disponible",
     "moveUp": "Monter",
-    "moveDown": "Descendre"
+    "moveDown": "Descendre",
+    "reorderMachineConflict": "Impossible de déplacer \"{{treatment}}\" : la machine {{machine}} est occupée de {{conflictTime}} par {{conflictPatient}} ({{conflictTitle}}). Créneau demandé : {{time}}"
   },
 
   "linkedGroup": {
