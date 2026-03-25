@@ -20,6 +20,8 @@ export const countries = [
   { code: 'CZ', name: 'Česko', flag: '🇨🇿', phone: '+420', digits: 9 },
   { code: 'GR', name: 'Ελλάδα', flag: '🇬🇷', phone: '+30', digits: 10 },
   { code: 'RO', name: 'România', flag: '🇷🇴', phone: '+40', digits: 10 },
+  { code: 'US', name: 'United States', flag: '🇺🇸', phone: '+1', digits: 10 },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦', phone: '+1', digits: 10 },
 ];
 
 export const nationalities = [

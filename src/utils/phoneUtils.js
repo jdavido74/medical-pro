@@ -180,6 +180,22 @@ export const phoneRules = {
     example: '721 234 567',
     mobileStart: ['7'],
     landlineStart: ['2', '3']
+  },
+  US: {
+    // USA: 10 digits (area code + number), cannot start with 0 or 1
+    digits: 10,
+    pattern: /^[2-9][0-9]{9}$/,
+    example: '212 555 1234',
+    mobileStart: ['2', '3', '4', '5', '6', '7', '8', '9'],
+    landlineStart: ['2', '3', '4', '5', '6', '7', '8', '9']
+  },
+  CA: {
+    // Canada: 10 digits (same NANP format as US)
+    digits: 10,
+    pattern: /^[2-9][0-9]{9}$/,
+    example: '416 555 1234',
+    mobileStart: ['2', '3', '4', '5', '6', '7', '8', '9'],
+    landlineStart: ['2', '3', '4', '5', '6', '7', '8', '9']
   }
 };
 
@@ -317,6 +333,13 @@ export const formatPhoneDisplay = (phone, countryCode) => {
       // German format: XXX XXXX XXXX
       if (cleaned.length >= 10) {
         return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 7)} ${cleaned.slice(7)}`;
+      }
+      break;
+    case 'US':
+    case 'CA':
+      // NANP format: (XXX) XXX-XXXX
+      if (cleaned.length === 10) {
+        return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
       }
       break;
     default:
