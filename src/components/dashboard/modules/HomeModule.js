@@ -310,7 +310,7 @@ const HomeModule = ({ setActiveModule }) => {
                       )}
                       {/* Patient name — link to clinical history */}
                       <button
-                        onClick={() => navigateTo(`/medical-records/${apt.patientId}`)}
+                        onClick={() => navigateTo('/medical-records', { state: { patientId: apt.patientId } })}
                         className="font-medium text-blue-700 hover:text-blue-900 hover:underline truncate text-left"
                         title={t('todayAppointments.viewHistory', 'Ver historial clínico')}
                       >
@@ -400,7 +400,7 @@ const HomeModule = ({ setActiveModule }) => {
                       {apt.startTime?.slice(0, 5)}
                     </div>
                     <button
-                      onClick={() => navigateTo(`/medical-records/${apt.patientId}`)}
+                      onClick={() => navigateTo('/medical-records', { state: { patientId: apt.patientId } })}
                       className="font-medium text-blue-700 hover:text-blue-900 hover:underline truncate text-left"
                       title={t('todayAppointments.viewHistory', 'Ver historial clínico')}
                     >
