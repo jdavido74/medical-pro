@@ -92,7 +92,8 @@
     "in_progress": "En curso",
     "completed": "Completada",
     "cancelled": "Cancelada",
-    "no_show": "No asistió"
+    "no_show": "No asistió",
+    "interrupted": "Interrumpido"
   },
 
   "resources": {

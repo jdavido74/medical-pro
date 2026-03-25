@@ -83,6 +83,8 @@
     "inProgress": "En curso",
     "completed": "Terminada",
     "noShow": "No show",
+    "interrupted": "Interrumpido",
+    "interrupt": "Interrumpir",
     "lateMinutes": "Retrasada {{count}} min",
     "consultation": "Consulta"
   },

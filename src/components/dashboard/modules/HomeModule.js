@@ -124,20 +124,22 @@ const HomeModule = ({ setActiveModule }) => {
     return firstName;
   };
 
-  // Status badge config
+  // Status badge config with icons
   const statusConfig = {
-    scheduled: { label: t('todayAppointments.scheduled', 'Programada'), bg: 'bg-yellow-100', text: 'text-yellow-800' },
-    confirmed: { label: t('todayAppointments.confirmed', 'Confirmada'), bg: 'bg-green-100', text: 'text-green-800' },
-    in_progress: { label: t('todayAppointments.inProgress', 'En curso'), bg: 'bg-blue-100', text: 'text-blue-800' },
-    completed: { label: t('todayAppointments.completed', 'Terminada'), bg: 'bg-gray-100', text: 'text-gray-600' },
-    no_show: { label: t('todayAppointments.noShow', 'No show'), bg: 'bg-red-100', text: 'text-red-800' }
+    scheduled: { label: t('todayAppointments.scheduled', 'Programada'), bg: 'bg-yellow-100', text: 'text-yellow-800', icon: Clock },
+    confirmed: { label: t('todayAppointments.confirmed', 'Confirmada'), bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle2 },
+    in_progress: { label: t('todayAppointments.inProgress', 'En curso'), bg: 'bg-blue-100', text: 'text-blue-800', icon: PlayCircle },
+    completed: { label: t('todayAppointments.completed', 'Terminada'), bg: 'bg-gray-100', text: 'text-gray-600', icon: CheckCircle2 },
+    no_show: { label: t('todayAppointments.noShow', 'No show'), bg: 'bg-red-100', text: 'text-red-800', icon: AlertTriangle },
+    interrupted: { label: t('todayAppointments.interrupted', 'Interrumpido'), bg: 'bg-purple-100', text: 'text-purple-800', icon: AlertCircle }
   };
 
   // Row background by status
   const rowBgByStatus = {
     confirmed: 'bg-green-50',
     in_progress: 'bg-blue-50',
-    completed: 'bg-gray-50'
+    completed: 'bg-gray-50',
+    interrupted: 'bg-purple-50'
   };
 
   // Onboarding
@@ -297,6 +299,11 @@ const HomeModule = ({ setActiveModule }) => {
                     className={`flex items-center justify-between p-3 rounded-lg border ${rowBg} ${late ? 'border-red-300' : 'border-gray-100'} transition-colors`}
                   >
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      {/* Status badge with icon — fixed width for alignment */}
+                      <span className={`inline-flex items-center gap-1 w-28 px-2 py-0.5 rounded-full text-xs font-medium ${status.bg} ${status.text} whitespace-nowrap`}>
+                        {status.icon && <status.icon className="h-3 w-3 flex-shrink-0" />}
+                        {status.label}
+                      </span>
                       {/* Time */}
                       <div className="text-sm font-mono text-gray-700 whitespace-nowrap">
                         {apt.startTime?.slice(0, 5)} - {apt.endTime?.slice(0, 5)}
@@ -319,10 +326,6 @@ const HomeModule = ({ setActiveModule }) => {
                       {/* Treatment / Consultation label */}
                       <span className="text-xs text-gray-500 truncate">
                         {apt.title || apt.service?.title || (apt.category === 'consultation' ? t('todayAppointments.consultation', 'Consulta') : '')}
-                      </span>
-                      {/* Status badge */}
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.bg} ${status.text} whitespace-nowrap`}>
-                        {status.label}
                       </span>
                     </div>
                     {/* Action buttons */}
@@ -354,13 +357,22 @@ const HomeModule = ({ setActiveModule }) => {
                         </>
                       )}
                       {apt.status === 'in_progress' && (
-                        <button
-                          onClick={() => handleQuickStatusChange(apt.id, 'completed')}
-                          className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center space-x-1"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          <span>{t('todayAppointments.finish', 'Terminar')}</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleQuickStatusChange(apt.id, 'completed')}
+                            className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center space-x-1"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>{t('todayAppointments.finish', 'Terminar')}</span>
+                          </button>
+                          <button
+                            onClick={() => handleQuickStatusChange(apt.id, 'interrupted')}
+                            className="px-3 py-1 text-xs font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 rounded-lg transition-colors flex items-center space-x-1"
+                          >
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            <span>{t('todayAppointments.interrupt', 'Interrumpir')}</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
