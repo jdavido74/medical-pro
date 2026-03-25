@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, ChevronDown, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
+import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, ChevronDown, ChevronUp, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
 import { PatientContext } from '../../../contexts/PatientContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -396,6 +396,7 @@ const PlanningBookingModal = ({
   const [substitutionPending, setSubstitutionPending] = useState(null);
   // { treatmentId, title, duration, isOverlappable }
   const [recalculateChain, setRecalculateChain] = useState(true);
+  const [reorderDirty, setReorderDirty] = useState(false);
 
   // Calculate total duration
   const totalDuration = selectedTreatments.reduce((sum, t) => sum + (t.duration || 30), 0);
@@ -521,6 +522,7 @@ const PlanningBookingModal = ({
 
   // Handle linked choice: edit group
   const handleChooseGroupEdit = () => {
+    setReorderDirty(false);
     setEditMode('group');
     setShowLinkedChoiceModal(false);
     // Initialize form with group data
@@ -1013,6 +1015,18 @@ const PlanningBookingModal = ({
     setSelectedTreatments(prev => prev.filter(t => t.id !== treatmentId));
   };
 
+  // Move treatment up or down in chain (group edit mode)
+  const handleMoveTreatment = (index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= selectedTreatments.length) return;
+    setSelectedTreatments(prev => {
+      const next = [...prev];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+    setReorderDirty(true);
+  };
+
   // Handle slot selection
   const handleSlotSelect = (slot) => {
     setSelectedSlot(slot);
@@ -1383,22 +1397,27 @@ const PlanningBookingModal = ({
       setSaving(true);
       setError(null);
       try {
-        // Detect newly added treatments (those without appointmentId = not yet in DB)
-        const newTreatments = selectedTreatments
-          .filter(t => !t.appointmentId)
-          .map(t => ({
-            treatmentId: t.id,
-            duration: t.duration || 30,
-            machineId: t.machineId || null
-          }));
-
         const groupUpdateData = {
           notes,
           priority,
           providerId: providerId || null,
           assistantId: assistantId || null,
-          ...(newTreatments.length > 0 && { newTreatments })
         };
+
+        if (reorderDirty) {
+          // Send the new order of existing appointment IDs
+          groupUpdateData.reorder = selectedTreatments.map(t => t.appointmentId);
+        } else {
+          // Detect newly added treatments (those without appointmentId = not yet in DB)
+          const newTreatments = selectedTreatments
+            .filter(t => !t.appointmentId)
+            .map(t => ({
+              treatmentId: t.id,
+              duration: t.duration || 30,
+              machineId: t.machineId || null
+            }));
+          if (newTreatments.length > 0) groupUpdateData.newTreatments = newTreatments;
+        }
         const response = await planningApi.updateAppointmentGroup(groupId, groupUpdateData);
         if (response.success) {
           onSave(response.data);
@@ -1657,12 +1676,36 @@ const PlanningBookingModal = ({
                               </div>
                             </div>
                           </div>
-                          <button
-                            onClick={() => handleRemoveTreatment(treatment.id)}
-                            className="p-1 text-blue-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {isEditMode && editMode === 'group' && selectedTreatments.length > 1 && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveTreatment(index, 'up')}
+                                  disabled={index === 0}
+                                  className="p-1 text-blue-400 hover:text-blue-700 hover:bg-blue-100 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                  title={t('multiTreatment.moveUp', 'Subir')}
+                                >
+                                  <ChevronUp className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveTreatment(index, 'down')}
+                                  disabled={index === selectedTreatments.length - 1}
+                                  className="p-1 text-blue-400 hover:text-blue-700 hover:bg-blue-100 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                  title={t('multiTreatment.moveDown', 'Bajar')}
+                                >
+                                  <ChevronDown className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => handleRemoveTreatment(treatment.id)}
+                              className="p-1 text-blue-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       ))}
 

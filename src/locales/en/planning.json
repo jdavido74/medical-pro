@@ -155,7 +155,9 @@
     "machineAssignment": "Machine assignment",
     "noMachineAvailable": "No machine available for this treatment",
     "conflictDetected": "Conflict detected for treatment {{index}}",
-    "allTreatmentsRequired": "All treatments must have an available machine"
+    "allTreatmentsRequired": "All treatments must have an available machine",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
 
   "linkedGroup": {
