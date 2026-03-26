@@ -87,11 +87,13 @@ Add `parentRecordId` and a new field `evolutions: []` — array of summary objec
   "id": "...",
   "parentRecordId": null,
   "evolutions": [
-    { "id": "...", "recordDate": "2026-03-25T10:00", "chiefComplaint": "Évolution", "providerName": "Dr. Moya" },
-    { "id": "...", "recordDate": "2026-03-26T10:00", "chiefComplaint": "Évolution", "providerName": "Dr. Moya" }
+    { "id": "...", "recordDate": "2026-03-25T10:00", "chiefComplaint": "Évolution", "providerId": "uuid" },
+    { "id": "...", "recordDate": "2026-03-26T10:00", "chiefComplaint": "Évolution", "providerId": "uuid" }
   ]
 }
 ```
+
+The `evolutions` array uses `providerId` only — the frontend resolves provider names from its already-loaded providers list (avoids a join that requires undefined Sequelize associations).
 
 If the record is an evolution (has `parentRecordId`), `evolutions` is an empty array.
 
@@ -151,6 +153,8 @@ Hidden tabs (data inherited from parent, not duplicated):
 - Diagnostic
 - Médicaments actuels
 
+**Initial active tab:** The evolution entry point must pass `initialActiveTab='vitals'` so the form opens on the first visible tab (not the hidden `'basic'` tab).
+
 **Save behavior:** Synchronous — the save button calls the API and waits for the response before showing success/error feedback.
 
 ### 3.7 Data Flow
@@ -203,7 +207,10 @@ Zero transformation needed. All existing records have `parent_record_id = NULL` 
 - The API accepts `parentRecordId` as optional — omitting it preserves current behavior
 - The form without `parentRecordId` shows all 10 tabs as before
 - The list groups records with evolutions but displays standalone records identically to today
-- `dataTransform.js` passes through `parentRecordId` ↔ `parent_record_id` like other camelCase/snake_case fields
+- `dataTransform.js` requires **explicit** field mappings (the transform functions are hand-mapped, not generic):
+  - `transformMedicalRecordFromBackend`: add `parentRecordId: record.parent_record_id ?? null`
+  - `transformMedicalRecordToBackend`: add `if (record.parentRecordId) backendData.parent_record_id = record.parentRecordId`
+- The `GET /patient/:patientId` endpoint returns records that pass through the frontend's `medicalRecordsApi` transform layer — the above mappings cover this endpoint automatically
 
 ## 5. Validation Rules
 
@@ -214,6 +221,8 @@ Zero transformation needed. All existing records have `parent_record_id = NULL` 
 | No nesting | Backend: 400 if parent itself has a parent_record_id (depth > 1) |
 | Type forced | Backend: if parent_record_id is set, record_type is forced to `follow_up` |
 | Parent immutability | An evolution cannot change its parent_record_id after creation |
+| Parent not archived | Backend: 400 if parent record is archived (`archived = true`) |
+| Cascade archive | Backend: archiving a parent also archives all its evolutions (same transaction) |
 
 ## 6. Files to Modify
 
@@ -223,8 +232,9 @@ Zero transformation needed. All existing records have `parent_record_id = NULL` 
 | `scripts/run-clinic-migrations.js` | Add clinic_070 to list |
 | `src/services/clinicProvisioningService.js` | Add clinic_070 to provisioning list |
 | `src/models/clinic/MedicalRecord.js` | Add `parent_record_id` field + validation |
-| `src/routes/medical-records.js` | Validate parent on create, include `parentRecordId` in responses, load evolutions on GET /:id |
-| `src/api/dataTransform.js` | Add `parentRecordId` ↔ `parent_record_id` mapping |
+| `src/base/validationSchemas.js` | Add `parent_record_id: Joi.string().uuid().allow(null).optional()` to `createMedicalRecordSchema` |
+| `src/routes/medical-records.js` | Validate parent on create, cascade archive, include `parentRecordId` in responses, load evolutions on GET /:id |
+| `src/api/dataTransform.js` | Add explicit `parentRecordId` ↔ `parent_record_id` in both `transformMedicalRecordFromBackend` and `transformMedicalRecordToBackend` |
 | `src/api/medicalRecordsApi.js` | Pass `parentRecordId` in create payload |
 | `src/components/medical/MedicalRecordForm.js` | Filter tabs when `parentRecordId` is set (5 tabs only) |
 | `src/components/dashboard/modules/MedicalRecordsModule.js` | Group records by episode, add "+ Évolution" button in list, add button in record header |
