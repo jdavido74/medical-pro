@@ -886,7 +886,11 @@ function transformMedicalRecordFromBackend(record) {
     // Timestamps
     createdAt: record.created_at,
     updatedAt: record.updated_at,
-    createdBy: record.created_by
+    createdBy: record.created_by,
+
+    // Clinical episodes (parent/child relationship)
+    parentRecordId: record.parent_record_id ?? null,
+    evolutions: record.evolutions || [],
   };
 }
 
@@ -1253,6 +1257,11 @@ function transformMedicalRecordToBackend(record) {
   }
   if (record.privateNotes && record.privateNotes.trim()) {
     backendData.private_notes = record.privateNotes;
+  }
+
+  // Clinical episodes (parent/child relationship)
+  if (record.parentRecordId) {
+    backendData.parent_record_id = record.parentRecordId;
   }
 
   return backendData;
