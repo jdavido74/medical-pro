@@ -933,8 +933,8 @@ const MedicalRecordForm = forwardRef(({
   const { hasPermission: checkPerm } = usePermissions();
   const canViewPrescriptions = checkPerm(PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW);
   const canPrescribe = checkPerm(PERMISSIONS.MEDICAL_PRESCRIPTIONS_CREATE);
-  // Evolution mode: show only vitals, evolution, treatments, plan, prescription
-  const EVOLUTION_TABS = ['vitals', 'evolution', 'treatments', 'plan', 'prescription'];
+  // Evolution mode: only vitals and evolution (treatments, plan, prescription belong to the initial record)
+  const EVOLUTION_TABS = ['vitals', 'evolution'];
   const isEvolution = !!existingRecord?.parentRecordId || !!formData?.parentRecordId;
   let tabs = canViewPrescriptions ? allTabs : allTabs.filter(t => t.id !== 'prescription');
   if (isEvolution) {

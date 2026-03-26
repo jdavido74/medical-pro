@@ -560,6 +560,7 @@
   },
   "episode": {
     "addEvolution": "+ Ajouter une évolution",
+    "newEvolution": "Nouvelle évolution",
     "evolution": "Évolution",
     "badge": "Épisode"
   }

@@ -154,13 +154,13 @@ const GroupedRecordsList = React.memo(({
 
             {/* "+ Ajouter une évolution" button for parent records */}
             {!record._isEvolution && !record.parentRecordId && canEditRecords && (
-              <div className="ml-6 border-l-2 border-blue-200">
+              <div className="ml-6 py-1">
                 <button
                   onClick={() => handleCreateEvolution(record)}
-                  className="w-full p-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-2"
+                  className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
                 >
                   <Plus className="h-4 w-4" />
-                  {t('medical:episode.addEvolution', '+ Ajouter une évolution')}
+                  {t('medical:episode.addEvolution', '+ Añadir una evolución')}
                 </button>
               </div>
             )}
@@ -795,7 +795,9 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                         </div>
                         <h3 className="font-semibold text-gray-900 truncate">
                           {formState.mode === 'create'
-                            ? t('medical:module.masterDetail.newRecord')
+                            ? (formState.parentRecordId
+                              ? t('medical:episode.newEvolution', 'Nueva evolución')
+                              : t('medical:module.masterDetail.newRecord'))
                             : formatDate(formState.record?.createdAt)}
                         </h3>
                         {formState.mode === 'edit' && !formState.record?.parentRecordId && canEditRecords && (
