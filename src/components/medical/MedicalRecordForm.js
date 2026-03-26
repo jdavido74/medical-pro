@@ -52,6 +52,7 @@ const MedicalRecordForm = forwardRef(({
   onClose,
   onActiveTabChange, // Callback pour notifier du changement d'onglet
   hideFooter = false, // Masquer le footer interne quand le modal parent fournit ses propres boutons
+  parentRecordId: parentRecordIdProp,
   isOpen
 }, ref) => {
   const { user } = useAuth();
@@ -205,7 +206,10 @@ const MedicalRecordForm = forwardRef(({
       },
 
       // Référence aux dernières valeurs vitales pour comparaison
-      _previousVitalSigns: prev?.vitalSigns || null
+      _previousVitalSigns: prev?.vitalSigns || null,
+
+      // Épisode clinique — lien vers le dossier parent
+      parentRecordId: data?.parentRecordId || existingRecord?.parentRecordId || parentRecordIdProp || null
     };
   };
 
@@ -863,6 +867,11 @@ const MedicalRecordForm = forwardRef(({
         providerId: user?.providerId // Use clinic provider ID, not central user ID
       };
 
+      // Épisode clinique — attacher au dossier parent si fourni
+      if (parentRecordIdProp) {
+        recordData.parentRecordId = parentRecordIdProp;
+      }
+
       // Debug: Log full recordData being sent
       console.log('[MedicalRecordForm] handleSubmitInternal - recordData keys:', Object.keys(recordData));
       console.log('[MedicalRecordForm] handleSubmitInternal - recordData.treatmentPlan:', JSON.stringify(recordData.treatmentPlan, null, 2));
@@ -924,7 +933,13 @@ const MedicalRecordForm = forwardRef(({
   const { hasPermission: checkPerm } = usePermissions();
   const canViewPrescriptions = checkPerm(PERMISSIONS.MEDICAL_PRESCRIPTIONS_VIEW);
   const canPrescribe = checkPerm(PERMISSIONS.MEDICAL_PRESCRIPTIONS_CREATE);
-  const tabs = canViewPrescriptions ? allTabs : allTabs.filter(t => t.id !== 'prescription');
+  // Evolution mode: show only vitals, evolution, treatments, plan, prescription
+  const EVOLUTION_TABS = ['vitals', 'evolution', 'treatments', 'plan', 'prescription'];
+  const isEvolution = !!existingRecord?.parentRecordId || !!formData?.parentRecordId;
+  let tabs = canViewPrescriptions ? allTabs : allTabs.filter(t => t.id !== 'prescription');
+  if (isEvolution) {
+    tabs = tabs.filter(t => EVOLUTION_TABS.includes(t.id));
+  }
 
   const renderBasicTab = () => {
     console.log('[MedicalRecordForm] renderBasicTab - formData.basicInfo:', formData.basicInfo);
