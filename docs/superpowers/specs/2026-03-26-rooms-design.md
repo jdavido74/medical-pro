@@ -43,20 +43,21 @@ Add a `rooms` entity. Machines are assigned to a room. The room is deduced from 
 
 ### 3.1 Data Model
 
-**New table: `rooms`** (per clinic database)
+**New table: `rooms`** (per clinic database, uses `company_id` as tenant key — same as `machines`)
 
 ```sql
 CREATE TABLE rooms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  facility_id UUID NOT NULL REFERENCES medical_facilities(id),
+  company_id UUID NOT NULL,
   name VARCHAR(100) NOT NULL,
-  short_code VARCHAR(10) NOT NULL,
+  short_code VARCHAR(10) NOT NULL UNIQUE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX idx_rooms_facility ON rooms(facility_id);
 ```
+
+Note: `short_code` has a simple UNIQUE constraint (not compound). Each clinic has its own database, so uniqueness within the DB is sufficient — no need for a `(company_id, short_code)` compound key.
 
 **Modify table: `machines`** — add room assignment
 
@@ -89,6 +90,10 @@ rooms (1) ←── (N) machines (N) ──→ (M) products_services
 - A machine belongs to 0..1 room
 - A treatment has `exclusive_room` flag (independent of which machine/room)
 - An appointment stores `room_id` (denormalized from its machine's room for fast filtering)
+
+**Denormalization staleness rules:**
+- When a machine's `room_id` changes (admin reassigns machine to another room): cascade update `room_id` on all future non-cancelled, non-completed appointments for that machine.
+- When `machine_id` changes on an existing appointment (`PUT /planning/appointments/:id`): recalculate `room_id` from the new machine's `room_id`.
 
 ### 3.3 Slot Calculation Changes
 
@@ -138,6 +143,26 @@ WHERE a.room_id = :roomId
   AND (a.start_time < :endTime AND a.end_time > :startTime);
 ```
 
+**Multi-treatment chain: in-memory room state propagation**
+
+In `getMultiTreatmentSlots`, after allocating a segment to a machine, the segment's room state must be tracked in-memory for subsequent segments — analogous to how `alreadyUsedInSlot` tracks machines claimed by prior segments.
+
+```
+alreadyClaimedRooms = Map<roomId, [{ startTime, endTime, exclusive }]>
+
+For each segment in the chain:
+  1. Assign machine (existing logic)
+  2. Get roomId from machine
+  3. Check against alreadyClaimedRooms:
+     - If current treatment.exclusive_room = true:
+       → reject if any prior segment uses this room at overlapping times
+     - If current treatment.exclusive_room = false:
+       → reject if any prior exclusive segment uses this room at overlapping times
+  4. Add this segment to alreadyClaimedRooms[roomId]
+```
+
+This prevents a chain from booking two treatments in the same room when one is exclusive, even though neither is yet in the database.
+
 ### 3.4 Appointment Creation
 
 When creating an appointment with a `machine_id`:
@@ -147,6 +172,10 @@ When creating an appointment with a `machine_id`:
 
 When creating an overlappable appointment (no machine):
 - `room_id` stays NULL (no room constraint for now — future option C)
+
+When updating an appointment (`PUT /planning/appointments/:id`):
+- If `machine_id` changes, recalculate `room_id` from the new machine's `room_id`
+- Run room conflict check with the new room before saving
 
 ### 3.5 Frontend — Planning Display
 
@@ -229,6 +258,8 @@ Add a "Salle exclusive" toggle in the treatment create/edit form. Default: off. 
 | Exclusive room blocks all | Slot calculator: no other appointments in room during exclusive treatment |
 | Non-exclusive respects exclusive | Slot calculator: non-exclusive treatment blocked only by exclusive treatments in same room |
 | No room = no constraint | Slot calculator: room_id NULL → skip room check entirely |
+| Inactive room = no constraint | Slot calculator: if room.is_active = false → skip room check (treat as no room) |
+| Deactivate room guard | Admin UI: warn if machines are still assigned; optionally unassign them |
 | Room auto-filled | Appointment creation: room_id copied from machine.room_id |
 
 ## 5. Backward Compatibility
@@ -238,7 +269,24 @@ Add a "Salle exclusive" toggle in the treatment create/edit form. Default: off. 
 - **No exclusive treatments:** All treatments have `exclusive_room = false` by default. Room checks pass trivially (no exclusive treatment blocks anything).
 - **Existing appointments:** `room_id = NULL`. No room badge displayed. Filtering by room shows only new appointments.
 
-Migration path: admin configures rooms → assigns machines to rooms → marks exclusive treatments → new bookings get room constraints automatically.
+**Transition period risk:** Immediately after migration, existing future appointments have `room_id = NULL` and will bypass room conflict checks. A new exclusive-room treatment could overlap with existing bookings in the same room.
+
+**Backfill step (recommended):** After the admin configures rooms and assigns machines, run a one-time backfill:
+
+```sql
+UPDATE appointments a
+SET room_id = m.room_id
+FROM machines m
+WHERE a.machine_id = m.id
+  AND m.room_id IS NOT NULL
+  AND a.room_id IS NULL
+  AND a.status NOT IN ('cancelled', 'completed')
+  AND a.appointment_date >= CURRENT_DATE;
+```
+
+This is included as an optional admin action in the rooms admin UI ("Actualizar citas existentes") after room configuration.
+
+Migration path: admin configures rooms → assigns machines to rooms → marks exclusive treatments → runs backfill → new bookings get room constraints automatically.
 
 ## 6. Migrations
 
@@ -260,14 +308,14 @@ All use `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS` for safety.
 | `migrations/clinic_071-074_*.sql` | Create — 4 migration files |
 | `scripts/run-clinic-migrations.js` | Add clinic_071-074 |
 | `src/services/clinicProvisioningService.js` | Add clinic_071-074 |
-| `src/models/clinic/Room.js` | Create — Room model |
+| `src/models/clinic/Room.js` | Create — Room model, register in ModelFactory via `getModel(clinicDb, 'Room')` |
 | `src/models/clinic/Machine.js` (or base Machine.js) | Add room_id field + room association |
 | `src/models/clinic/Appointment.js` | Add room_id field |
 | `src/models/ProductService.js` | Add exclusive_room field |
 | `src/routes/rooms.js` | Create — CRUD endpoints |
 | `src/routes/planning.js` | Auto-fill room_id on create, include room in calendar response |
 | `src/routes/machines.js` | Accept/return roomId |
-| `src/services/planningService.js` | Add room conflict checks in getTreatmentSlots + getMultiTreatmentSlots |
+| `src/services/planningService.js` | Add room conflict checks in getTreatmentSlots + getMultiTreatmentSlots (uses DB-layer reads via `getModel`, not API-level permissions) |
 | `src/base/validationSchemas.js` | Add room schemas, update machine/appointment schemas |
 | `server.js` | Mount rooms routes |
 
