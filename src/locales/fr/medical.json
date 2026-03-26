@@ -557,5 +557,10 @@
       "type": "Type",
       "date": "Date"
     }
+  },
+  "episode": {
+    "addEvolution": "+ Ajouter une évolution",
+    "evolution": "Évolution",
+    "badge": "Épisode"
   }
 }
