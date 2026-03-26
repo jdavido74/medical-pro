@@ -562,6 +562,8 @@
     "addEvolution": "+ Añadir una evolución",
     "newEvolution": "Nueva evolución",
     "evolution": "Evolución",
+    "evolutions": "Evoluciones",
+    "evolutionOf": "Evolución del historial inicial",
     "badge": "Episodio"
   }
 }

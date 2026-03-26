@@ -562,6 +562,8 @@
     "addEvolution": "+ Add an evolution",
     "newEvolution": "New evolution",
     "evolution": "Evolution",
+    "evolutions": "Evolutions",
+    "evolutionOf": "Evolution of the initial record",
     "badge": "Episode"
   }
 }
