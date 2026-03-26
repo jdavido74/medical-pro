@@ -17,6 +17,160 @@ import { usePatients } from '../../../contexts/PatientContext';
 import { appointmentsApi } from '../../../api/appointmentsApi';
 import MedicalRecordForm from '../../medical/MedicalRecordForm';
 
+// Sous-composant pour la liste groupée par épisode
+const GroupedRecordsList = React.memo(({
+  patientRecords, formState, hasContent, formatDate, getTypeColor, getTypeLabel,
+  handleViewRecord, handleEditRecord, handleDeleteRecord, handleCreateEvolution,
+  canEditRecords, canDeleteRecords, t
+}) => {
+  const groupedRecords = useMemo(() => {
+    if (!patientRecords.length) return [];
+
+    // Sort by recordDate descending (newest first)
+    const sorted = [...patientRecords].sort(
+      (a, b) => new Date(b.recordDate || b.createdAt) - new Date(a.recordDate || a.createdAt)
+    );
+
+    const parentMap = new Map();
+    const parents = [];
+
+    for (const record of sorted) {
+      if (record.parentRecordId) {
+        if (!parentMap.has(record.parentRecordId)) {
+          parentMap.set(record.parentRecordId, []);
+        }
+        parentMap.get(record.parentRecordId).push(record);
+      } else {
+        parents.push(record);
+      }
+    }
+
+    const result = [];
+    for (const parent of parents) {
+      const evos = parentMap.get(parent.id) || [];
+      result.push({ ...parent, _isParent: true, _evolutions: evos });
+      for (const evo of evos) {
+        result.push({ ...evo, _isEvolution: true });
+      }
+      parentMap.delete(parent.id);
+    }
+
+    // Orphaned evolutions
+    for (const evos of parentMap.values()) {
+      for (const evo of evos) {
+        result.push({ ...evo, _isEvolution: true });
+      }
+    }
+
+    return result;
+  }, [patientRecords]);
+
+  return (
+    <div className="divide-y">
+      {groupedRecords.map((record) => {
+        const content = hasContent(record);
+        const isCurrentlyEditing = formState?.mode === 'edit' && formState.record?.id === record.id;
+
+        return (
+          <React.Fragment key={record.id}>
+            <div
+              className={`p-4 hover:bg-gray-50 transition-colors ${
+                record._isEvolution ? 'ml-6 border-l-2 border-blue-200 bg-blue-50/30' : ''
+              } ${isCurrentlyEditing ? 'bg-green-50 border-l-4 border-green-500' : ''}`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <span className="text-lg font-bold text-gray-900">
+                      {formatDate(record.createdAt)}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(record.type)}`}>
+                      {record._isEvolution
+                        ? t('medical:episode.evolution', 'Evolución')
+                        : getTypeLabel(record.type)}
+                    </span>
+                    {record._evolutions?.length > 0 && (
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                        {t('medical:episode.badge', 'Episodio')} ({record._evolutions.length})
+                      </span>
+                    )}
+                    {record.status === 'signed' && (
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                        Signé
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-700 mb-2">
+                    {record.basicInfo?.chiefComplaint || record.diagnosis?.primary || t('medical:module.masterDetail.noDescription')}
+                  </p>
+                  <div className="flex items-center space-x-3 text-sm">
+                    {content.hasTreatments && (
+                      <span className="flex items-center text-purple-600" title="Traitements">
+                        <Pill className="h-4 w-4 mr-1" />
+                        <span>{record.treatments?.length}</span>
+                      </span>
+                    )}
+                    {content.hasMedications && (
+                      <span className="flex items-center text-blue-600" title="Médicaments actuels">
+                        <Stethoscope className="h-4 w-4 mr-1" />
+                        <span>{record.currentMedications?.length}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1 ml-4">
+                  <button
+                    onClick={() => handleViewRecord(record)}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title={t('medical:module.masterDetail.viewRecord', 'Voir le dossier')}
+                  >
+                    <Eye className="h-5 w-5" />
+                  </button>
+                  {canEditRecords && (
+                    <button
+                      onClick={() => handleEditRecord(record)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        isCurrentlyEditing
+                          ? 'bg-green-100 text-green-700'
+                          : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                      }`}
+                      title={t('common:edit')}
+                    >
+                      <Edit2 className="h-5 w-5" />
+                    </button>
+                  )}
+                  {canDeleteRecords && (
+                    <button
+                      onClick={() => handleDeleteRecord(record)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title={t('common:delete')}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* "+ Ajouter une évolution" button for parent records */}
+            {!record._isEvolution && !record.parentRecordId && canEditRecords && (
+              <div className="ml-6 border-l-2 border-blue-200">
+                <button
+                  onClick={() => handleCreateEvolution(record)}
+                  className="w-full p-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('medical:episode.addEvolution', '+ Ajouter une évolution')}
+                </button>
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+});
+
 const MedicalRecordsModule = ({ navigateToPatient }) => {
   const { t, i18n } = useTranslation(['medical', 'common']);
   const { user } = useAuth();
@@ -254,6 +408,18 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
     } finally {
       setIsLoadingRecords(false);
     }
+  };
+
+  // Créer une évolution liée à un dossier parent (épisode clinique)
+  const handleCreateEvolution = (parentRecord) => {
+    setFormState({ mode: 'create', parentRecordId: parentRecord.id });
+    setCurrentFormTab('vitals');
+    setPanelCollapsed(true);
+    setSuccessMessage(null);
+    setError(null);
+    setTimeout(() => {
+      formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   // Ouvrir la modal de visualisation complète
@@ -632,6 +798,15 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                             ? t('medical:module.masterDetail.newRecord')
                             : formatDate(formState.record?.createdAt)}
                         </h3>
+                        {formState.mode === 'edit' && !formState.record?.parentRecordId && canEditRecords && (
+                          <button
+                            onClick={() => handleCreateEvolution(formState.record)}
+                            className="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center gap-1 flex-shrink-0"
+                          >
+                            <Plus className="h-4 w-4" />
+                            {t('medical:episode.addEvolution', 'Évolution')}
+                          </button>
+                        )}
                       </div>
 
                       {/* Message de succès dans le formulaire */}
@@ -657,6 +832,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                         existingRecord={formState.mode === 'edit' ? formState.record : null}
                         lastRecord={patientRecords.length > 0 ? patientRecords[0] : null}
                         initialActiveTab={currentFormTab}
+                        parentRecordId={formState?.parentRecordId || null}
                         onSave={handleFormSubmit}
                         onCancel={handleBackToList}
                         onActiveTabChange={setCurrentFormTab}
@@ -696,95 +872,21 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       )}
                     </div>
                   ) : (
-                    <div className="divide-y">
-                      {patientRecords.map((record) => {
-                        const content = hasContent(record);
-                        const isCurrentlyEditing = formState?.mode === 'edit' && formState.record?.id === record.id;
-
-                        return (
-                          <div
-                            key={record.id}
-                            className={`p-4 hover:bg-gray-50 transition-colors ${
-                              isCurrentlyEditing ? 'bg-green-50 border-l-4 border-green-500' : ''
-                            }`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                {/* Date en majeur */}
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <span className="text-lg font-bold text-gray-900">
-                                    {formatDate(record.createdAt)}
-                                  </span>
-                                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(record.type)}`}>
-                                    {getTypeLabel(record.type)}
-                                  </span>
-                                  {record.status === 'signed' && (
-                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                                      Signé
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Motif de consultation */}
-                                <p className="text-gray-700 mb-2">
-                                  {record.basicInfo?.chiefComplaint || record.diagnosis?.primary || t('medical:module.masterDetail.noDescription')}
-                                </p>
-
-                                {/* Icônes indicateurs */}
-                                <div className="flex items-center space-x-3 text-sm">
-                                  {content.hasTreatments && (
-                                    <span className="flex items-center text-purple-600" title="Traitements">
-                                      <Pill className="h-4 w-4 mr-1" />
-                                      <span>{record.treatments?.length}</span>
-                                    </span>
-                                  )}
-                                  {content.hasMedications && (
-                                    <span className="flex items-center text-blue-600" title="Médicaments actuels">
-                                      <Stethoscope className="h-4 w-4 mr-1" />
-                                      <span>{record.currentMedications?.length}</span>
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Actions */}
-                              <div className="flex items-center space-x-1 ml-4">
-                                {/* Voir le dossier complet */}
-                                <button
-                                  onClick={() => handleViewRecord(record)}
-                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                  title={t('medical:module.masterDetail.viewRecord', 'Voir le dossier')}
-                                >
-                                  <Eye className="h-5 w-5" />
-                                </button>
-                                {canEditRecords && (
-                                  <button
-                                    onClick={() => handleEditRecord(record)}
-                                    className={`p-2 rounded-lg transition-colors ${
-                                      isCurrentlyEditing
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-                                    }`}
-                                    title={t('common:edit')}
-                                  >
-                                    <Edit2 className="h-5 w-5" />
-                                  </button>
-                                )}
-                                {canDeleteRecords && (
-                                  <button
-                                    onClick={() => handleDeleteRecord(record)}
-                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                    title={t('common:delete')}
-                                  >
-                                    <Trash2 className="h-5 w-5" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <GroupedRecordsList
+                      patientRecords={patientRecords}
+                      formState={formState}
+                      hasContent={hasContent}
+                      formatDate={formatDate}
+                      getTypeColor={getTypeColor}
+                      getTypeLabel={getTypeLabel}
+                      handleViewRecord={handleViewRecord}
+                      handleEditRecord={handleEditRecord}
+                      handleDeleteRecord={handleDeleteRecord}
+                      handleCreateEvolution={handleCreateEvolution}
+                      canEditRecords={canEditRecords}
+                      canDeleteRecords={canDeleteRecords}
+                      t={t}
+                    />
                   )}
                 </div>
               </div>
