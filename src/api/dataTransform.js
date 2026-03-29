@@ -877,6 +877,12 @@ function transformMedicalRecordFromBackend(record) {
     signedBy: record.signed_by,
     isLocked: record.is_locked,
 
+    // Epicrisis / episode closure
+    isClosed: record.is_closed ?? false,
+    closedAt: record.closed_at ?? null,
+    closedBy: record.closed_by ?? null,
+    epicrisisId: record.epicrisis_id ?? null,
+
     // Soft delete
     archived: record.archived || false,
     archivedAt: record.archived_at,
