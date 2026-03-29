@@ -1,10 +1,10 @@
 // components/medical/MedicalRecordForm.js
-import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
   FileText, Activity, Heart, AlertTriangle, Plus, X, Save,
   Stethoscope, Thermometer, Scale, Ruler, Droplets, Clock,
   Pill, CheckCircle, Trash2, User, Search, Check, Loader2,
-  FileSignature, Eye, Printer, Settings, Edit3, Calendar, Users, Package,
+  FileSignature, Eye, Printer, Edit3, Calendar, Users, Package,
   TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -398,17 +398,6 @@ const MedicalRecordForm = forwardRef(({
     renewalsRemaining: 0
   });
   // Options pour configurer ce qui est inclus dans l'ordonnance
-  const [prescriptionOptions, setPrescriptionOptions] = useState({
-    includeBasicInfo: false,        // Motif + symptômes + durée
-    includeCurrentIllness: false,   // Maladie actuelle (textarea)
-    includeAntecedents: false,      // Antécédents médicaux
-    includeVitalSigns: true,
-    includePhysicalExam: false,     // Examen clinique
-    includeCurrentMedications: false, // Traitement actuel
-    includeDiagnosis: true,
-    includeFromTreatments: false,  // Copier depuis l'onglet Traitements
-    includeFromPlan: false          // Copier depuis l'onglet Plan
-  });
   const [showPrescriptionPreview, setShowPrescriptionPreview] = useState(false);
   const [currentPrescription, setCurrentPrescription] = useState(null);
   const [prescriptionSaveStatus, setPrescriptionSaveStatus] = useState('idle');
@@ -2608,16 +2597,7 @@ const MedicalRecordForm = forwardRef(({
         rpps: user?.rpps,
         adeli: user?.adeli
       },
-      basicInfo: prescriptionOptions.includeBasicInfo ? {
-        chiefComplaint: formData.basicInfo?.chiefComplaint,
-        symptoms: formData.basicInfo?.symptoms,
-        duration: formData.basicInfo?.duration
-      } : undefined,
-      currentIllness: prescriptionOptions.includeCurrentIllness ? formData.currentIllness : undefined,
-      antecedents: prescriptionOptions.includeAntecedents ? formData.antecedents : undefined,
       vitalSigns: formData.vitalSigns,
-      physicalExam: prescriptionOptions.includePhysicalExam ? formData.physicalExam : undefined,
-      currentMedications: prescriptionOptions.includeCurrentMedications ? formData.currentMedications : undefined,
       diagnosis: formData.diagnosis
     };
   };
@@ -2710,66 +2690,6 @@ const MedicalRecordForm = forwardRef(({
     setPrescriptionSaveStatus('idle');
   };
 
-  // Get active treatments from the treatments tab
-  const getActiveTreatments = useCallback(() => {
-    if (!formData.treatments) return [];
-    return formData.treatments
-      .filter(t => t.medication && t.status === 'active')
-      .map(t => ({
-        medication: t.medication || '',
-        dosage: t.dosage || '',
-        frequency: t.frequency || '',
-        route: t.route || 'oral',
-        duration: t.duration || '',
-        quantity: '',
-        instructions: t.instructions || ''
-      }));
-  }, [formData.treatments]);
-
-  // Get recommendations from plan tab
-  const getPlanRecommendations = useCallback(() => {
-    if (!formData.treatmentPlan?.recommendations) return [];
-    return formData.treatmentPlan.recommendations.filter(r => r && r.trim());
-  }, [formData.treatmentPlan?.recommendations]);
-
-  // Auto-apply treatments when checkbox is toggled
-  useEffect(() => {
-    if (prescriptionOptions.includeFromTreatments) {
-      const treatmentMeds = getActiveTreatments();
-      if (treatmentMeds.length > 0) {
-        setPrescriptionData(prev => {
-          // Avoid duplicates
-          const existingMedNames = prev.medications.map(m => m.medication.toLowerCase());
-          const newMeds = treatmentMeds.filter(m => !existingMedNames.includes(m.medication.toLowerCase()));
-          if (newMeds.length > 0) {
-            return { ...prev, medications: [...prev.medications, ...newMeds] };
-          }
-          return prev;
-        });
-      }
-    }
-  }, [prescriptionOptions.includeFromTreatments, getActiveTreatments]);
-
-  // Auto-apply recommendations when checkbox is toggled
-  useEffect(() => {
-    if (prescriptionOptions.includeFromPlan) {
-      const recommendations = getPlanRecommendations();
-      if (recommendations.length > 0) {
-        const recommendationsText = recommendations.join('\n- ');
-        setPrescriptionData(prev => {
-          // Only add if not already present
-          if (!prev.instructions.includes('Recommandations:')) {
-            const newInstructions = prev.instructions
-              ? `${prev.instructions}\n\nRecommandations:\n- ${recommendationsText}`
-              : `Recommandations:\n- ${recommendationsText}`;
-            return { ...prev, instructions: newInstructions };
-          }
-          return prev;
-        });
-      }
-    }
-  }, [prescriptionOptions.includeFromPlan, getPlanRecommendations]);
-
   // Save current prescription to list
   const handleSavePrescriptionToList = async () => {
     if (prescriptionData.medications.length === 0) {
@@ -2789,16 +2709,12 @@ const MedicalRecordForm = forwardRef(({
         validUntil: prescriptionData.validUntil || null,
         renewable: prescriptionData.renewable,
         renewalsRemaining: prescriptionData.renewalsRemaining,
-        // Include snapshots based on options
-        antecedents: prescriptionOptions.includeAntecedents ? (formData.antecedents || {}) : undefined,
-        vitalSigns: prescriptionOptions.includeVitalSigns ? (formData.vitalSigns || {}) : {},
-        physicalExam: prescriptionOptions.includePhysicalExam ? (formData.physicalExam || {}) : undefined,
-        currentMedications: prescriptionOptions.includeCurrentMedications ? (formData.currentMedications || []) : undefined,
-        diagnosis: prescriptionOptions.includeDiagnosis ? {
+        vitalSigns: formData.vitalSigns || {},
+        diagnosis: {
           primaryDiagnosis: formData.diagnoses?.primary || '',
           secondaryDiagnoses: formData.diagnoses?.secondary || [],
           clinicalNotes: formData.subjective?.chiefComplaint || ''
-        } : {},
+        },
         patientSnapshot: {
           firstName: patient?.firstName || '',
           lastName: patient?.lastName || '',
@@ -2880,7 +2796,7 @@ const MedicalRecordForm = forwardRef(({
         name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
         specialty: user?.specialty || ''
       },
-      vitalSigns: prescription.vitalSigns || (prescriptionOptions.includeVitalSigns ? formData.vitalSigns : {}),
+      vitalSigns: prescription.vitalSigns || formData.vitalSigns || {},
       diagnosis: prescription.diagnosis || {}
     });
     setShowPrescriptionPreview(true);
@@ -2974,294 +2890,8 @@ const MedicalRecordForm = forwardRef(({
         </div>
       )}
 
-      {/* Configuration, form and actions - only for users who can prescribe */}
+      {/* Prescription form and actions - only for users who can prescribe */}
       {canPrescribe && (<>
-      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-        <h5 className="font-medium text-purple-900 mb-3 flex items-center">
-          <Settings className="h-4 w-4 mr-2" />
-          {t('medical:form.prescriptionTab.configuration')}
-        </h5>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left column - Checkboxes */}
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <p className="text-sm text-purple-700 font-medium">{t('medical:form.prescriptionTab.elementsToInclude')}</p>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeBasicInfo}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeBasicInfo: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.chiefComplaintAndSymptoms')}</span>
-              </label>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeCurrentIllness}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeCurrentIllness: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.currentIllnessText')}</span>
-              </label>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeAntecedents}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeAntecedents: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.antecedentsHistory')}</span>
-              </label>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeVitalSigns}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeVitalSigns: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.vitalSignsToday')}</span>
-              </label>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includePhysicalExam}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includePhysicalExam: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.physicalExamination')}</span>
-              </label>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeCurrentMedications}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeCurrentMedications: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.currentMedicationsText')}</span>
-              </label>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeDiagnosis}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeDiagnosis: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{t('medical:form.prescriptionTab.diagnoses')}</span>
-              </label>
-            </div>
-            <div className="space-y-3 pt-2 border-t border-purple-200">
-              <p className="text-sm text-purple-700 font-medium">{t('medical:form.prescriptionTab.autoAddFromRecord')}</p>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeFromTreatments}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeFromTreatments: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">
-                  {t('medical:form.prescriptionTab.activeTreatments')}
-                  {getActiveTreatments().length > 0 && (
-                    <span className="ml-1 text-purple-600 font-medium">
-                      ({getActiveTreatments().length})
-                    </span>
-                  )}
-                </span>
-              </label>
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prescriptionOptions.includeFromPlan}
-                  onChange={(e) => setPrescriptionOptions(prev => ({ ...prev, includeFromPlan: e.target.checked }))}
-                  className="h-4 w-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">
-                  {t('medical:form.prescriptionTab.planRecommendations')}
-                  {getPlanRecommendations().length > 0 && (
-                    <span className="ml-1 text-purple-600 font-medium">
-                      ({getPlanRecommendations().length})
-                    </span>
-                  )}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* Right column - Live preview */}
-          <div className="bg-white p-3 rounded-lg border border-purple-200 text-sm">
-            <p className="text-purple-700 font-medium mb-2">{t('medical:form.prescriptionTab.selectedElementsPreview')}</p>
-
-            {/* Basic Info Preview (chief complaint + symptoms) */}
-            {prescriptionOptions.includeBasicInfo && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.chiefComplaintAndSymptoms')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
-                  {formData.basicInfo?.chiefComplaint ? (
-                    <span className="block">{formData.basicInfo.chiefComplaint}</span>
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.placeholders.chiefComplaint')}</span>
-                  )}
-                  {formData.basicInfo?.symptoms?.filter(s => s && s.trim()).length > 0 && (
-                    formData.basicInfo.symptoms.filter(s => s && s.trim()).map((s, i) => (
-                      <span key={i} className="block">• {s}</span>
-                    ))
-                  )}
-                  {formData.basicInfo?.duration && (
-                    <span className="block">{t('medical:form.symptomsDuration')}: {formData.basicInfo.duration}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Current Illness Preview */}
-            {prescriptionOptions.includeCurrentIllness && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.currentIllnessText')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
-                  {formData.currentIllness ? (
-                    <span className="block">{formData.currentIllness.length > 100 ? formData.currentIllness.substring(0, 100) + '...' : formData.currentIllness}</span>
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.currentIllnessTab.placeholder')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Antecedents Preview */}
-            {prescriptionOptions.includeAntecedents && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.antecedentsHistory')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
-                  {(formData.antecedents?.personal?.medicalHistory?.length > 0 ||
-                    formData.antecedents?.personal?.surgicalHistory?.length > 0 ||
-                    formData.antecedents?.personal?.allergies?.length > 0) ? (
-                    <>
-                      {formData.antecedents.personal.medicalHistory?.filter(h => h && h.trim()).map((h, i) => (
-                        <span key={`med-${i}`} className="block">• {h}</span>
-                      ))}
-                      {formData.antecedents.personal.surgicalHistory?.filter(h => h && h.trim()).map((h, i) => (
-                        <span key={`surg-${i}`} className="block">• {h}</span>
-                      ))}
-                      {formData.antecedents.personal.allergies?.filter(a => a && a.trim()).map((a, i) => (
-                        <span key={`allg-${i}`} className="block">⚠ {a}</span>
-                      ))}
-                    </>
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noAntecedents')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Vital Signs Preview */}
-            {prescriptionOptions.includeVitalSigns && formData.vitalSigns && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.vitalSigns')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
-                  {formData.vitalSigns.bloodPressureSystolic && formData.vitalSigns.bloodPressureDiastolic && (
-                    <span className="block">TA: {formData.vitalSigns.bloodPressureSystolic}/{formData.vitalSigns.bloodPressureDiastolic} mmHg</span>
-                  )}
-                  {formData.vitalSigns.heartRate && <span className="block">FC: {formData.vitalSigns.heartRate} bpm</span>}
-                  {formData.vitalSigns.temperature && <span className="block">T°: {formData.vitalSigns.temperature}°C</span>}
-                  {formData.vitalSigns.weight && <span className="block">{t('medical:weight')}: {formData.vitalSigns.weight} kg</span>}
-                  {!formData.vitalSigns.bloodPressureSystolic && !formData.vitalSigns.heartRate && !formData.vitalSigns.temperature && !formData.vitalSigns.weight && (
-                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noVitalSigns')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Physical Exam Preview */}
-            {prescriptionOptions.includePhysicalExam && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.physicalExamination')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
-                  {formData.physicalExam && Object.entries(formData.physicalExam).some(([, v]) => v && v.trim && v.trim()) ? (
-                    Object.entries(formData.physicalExam).filter(([, v]) => v && v.trim && v.trim()).map(([key, value]) => (
-                      <span key={key} className="block">• <strong>{key}:</strong> {value.length > 60 ? value.substring(0, 60) + '...' : value}</span>
-                    ))
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noPhysicalExam')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Current Medications Preview */}
-            {prescriptionOptions.includeCurrentMedications && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.currentMedicationsText')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-orange-300">
-                  {formData.currentMedications && formData.currentMedications.length > 0 ? (
-                    formData.currentMedications.map((med, i) => (
-                      <span key={i} className="block">• {med.name || med.medication || med} {med.dosage ? `- ${med.dosage}` : ''}</span>
-                    ))
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noCurrentMedications')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Diagnosis Preview */}
-            {prescriptionOptions.includeDiagnosis && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.diagnosis')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-purple-300">
-                  {formData.diagnoses?.primary ? (
-                    <span className="block">{formData.diagnoses.primary}</span>
-                  ) : formData.subjective?.chiefComplaint ? (
-                    <span className="block">{formData.subjective.chiefComplaint}</span>
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noDiagnosis')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Treatments Preview */}
-            {prescriptionOptions.includeFromTreatments && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.treatmentsToAdd')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-green-300">
-                  {getActiveTreatments().length > 0 ? (
-                    getActiveTreatments().map((treatment, i) => (
-                      <span key={i} className="block">• {treatment.medication} {treatment.dosage && `- ${treatment.dosage}`} {treatment.frequency && `(${treatment.frequency})`}</span>
-                    ))
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noActiveTreatment')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Recommendations Preview */}
-            {prescriptionOptions.includeFromPlan && (
-              <div className="mb-2">
-                <p className="text-xs font-medium text-gray-600 mb-1">{t('medical:form.prescriptionTab.recommendationsToAdd')}</p>
-                <div className="text-xs text-gray-500 pl-2 border-l-2 border-blue-300">
-                  {getPlanRecommendations().length > 0 ? (
-                    getPlanRecommendations().map((r, i) => (
-                      <span key={i} className="block">• {r}</span>
-                    ))
-                  ) : (
-                    <span className="text-gray-400 italic">{t('medical:form.prescriptionTab.noRecommendation')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* No selection message */}
-            {!prescriptionOptions.includeBasicInfo && !prescriptionOptions.includeCurrentIllness &&
-             !prescriptionOptions.includeAntecedents && !prescriptionOptions.includeVitalSigns &&
-             !prescriptionOptions.includePhysicalExam && !prescriptionOptions.includeCurrentMedications &&
-             !prescriptionOptions.includeDiagnosis &&
-             !prescriptionOptions.includeFromTreatments && !prescriptionOptions.includeFromPlan && (
-              <p className="text-gray-400 italic text-xs">{t('medical:form.prescriptionTab.checkOptionsPreview')}</p>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Error display */}
       {errors.prescription && (
