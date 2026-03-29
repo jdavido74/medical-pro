@@ -16,12 +16,13 @@ import { useMedicalRecords } from '../../../contexts/MedicalRecordContext';
 import { usePatients } from '../../../contexts/PatientContext';
 import { appointmentsApi } from '../../../api/appointmentsApi';
 import MedicalRecordForm from '../../medical/MedicalRecordForm';
+import EpicrisisComposerModal from '../../medical/EpicrisisComposerModal';
 
 // Sous-composant pour la liste groupée par épisode (accordéon parent/enfants)
 const GroupedRecordsList = React.memo(({
   patientRecords, formState, hasContent, formatDate, getTypeColor, getTypeLabel,
   handleViewRecord, handleEditRecord, handleDeleteRecord, handleCreateEvolution,
-  canEditRecords, canDeleteRecords, t
+  handleOpenEpicrisis, canEditRecords, canDeleteRecords, t
 }) => {
   const [expandedParents, setExpandedParents] = useState({});
 
@@ -117,7 +118,7 @@ const GroupedRecordsList = React.memo(({
         const isCurrentlyEditing = formState?.mode === 'edit' && formState.record?.id === parent.id;
         // A parent is "active" (can receive evolutions) if it's not signed/archived
         // and is the most recent parent (first in the list)
-        const isActiveParent = parent.status !== 'signed' && parent.status !== 'archived';
+        const isActiveParent = parent.status !== 'signed' && parent.status !== 'archived' && !parent.isClosed;
 
         return (
           <div key={parent.id} className={`bg-white ${isCurrentlyEditing ? 'ring-2 ring-green-300 ring-inset' : ''}`}>
@@ -157,6 +158,11 @@ const GroupedRecordsList = React.memo(({
                     {parent.status === 'signed' && (
                       <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 whitespace-nowrap">
                         {t('medical:episode.signed', 'Firmado')}
+                      </span>
+                    )}
+                    {parent.isClosed && (
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                        {t('medical:epicrisis.episodeClosed', 'Episodio cerrado')}
                       </span>
                     )}
                     {content.hasTreatments && (
@@ -240,7 +246,7 @@ const GroupedRecordsList = React.memo(({
                   {t('medical:episode.addEvolution', 'Añadir una evolución')}
                 </button>
                 <button
-                  onClick={() => handleViewRecord(parent)}
+                  onClick={() => handleOpenEpicrisis(parent)}
                   className="border border-gray-300 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1.5 text-xs font-medium"
                 >
                   <FileText className="h-3.5 w-3.5" />
@@ -301,6 +307,9 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
   // État de la modal de visualisation complète du dossier
   const [viewRecordModal, setViewRecordModal] = useState({ show: false, record: null });
+
+  // État de la modal d'épicrise
+  const [epicrisisModal, setEpicrisisModal] = useState({ show: false, parentRecord: null });
 
   // État de chargement combiné
   const isLoading = patientsLoading || recordsLoading;
@@ -517,6 +526,16 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
       setViewRecordModal({ show: true, record });
     } finally {
       setIsLoadingRecords(false);
+    }
+  };
+
+  // Ouvrir la modal d'épicrise
+  const handleOpenEpicrisis = async (parentRecord) => {
+    try {
+      const fullRecord = await getRecordById(parentRecord.id);
+      setEpicrisisModal({ show: true, parentRecord: fullRecord });
+    } catch (err) {
+      console.error('Error loading record for epicrisis:', err);
     }
   };
 
@@ -980,6 +999,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       handleEditRecord={handleEditRecord}
                       handleDeleteRecord={handleDeleteRecord}
                       handleCreateEvolution={handleCreateEvolution}
+                      handleOpenEpicrisis={handleOpenEpicrisis}
                       canEditRecords={canEditRecords}
                       canDeleteRecords={canDeleteRecords}
                       t={t}
@@ -1604,6 +1624,21 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {epicrisisModal.show && (
+        <EpicrisisComposerModal
+          isOpen={epicrisisModal.show}
+          onClose={() => setEpicrisisModal({ show: false, parentRecord: null })}
+          parentRecord={epicrisisModal.parentRecord}
+          evolutions={epicrisisModal.parentRecord?.evolutions || []}
+          patient={selectedPatient}
+          provider={{ firstName: user?.firstName, lastName: user?.lastName }}
+          onEpisodeClosed={() => {
+            setEpicrisisModal({ show: false, parentRecord: null });
+            loadPatientRecords(selectedPatient?.id);
+          }}
+        />
       )}
     </div>
   );
