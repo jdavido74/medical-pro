@@ -40,21 +40,25 @@ const HomeModule = ({ setActiveModule }) => {
   // Incomplete patients from context
   const incompletePatients = getIncompletePatients ? getIncompletePatients() : patients.filter(p => p.isIncomplete && !p.deleted);
 
-  // Today's date in YYYY-MM-DD
-  const today = useRef(new Date().toISOString().split('T')[0]).current;
+  // Today's date in local timezone (not UTC) — handles day boundary correctly
+  const _now = new Date();
+  const today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
 
   // Permission check (stable boolean)
   const canViewAppointments = hasPermission('appointments.view');
 
-  // Guard: only load once on mount
+  // Guard: only load once on mount, reset when date changes
   const hasFetchedRef = useRef(false);
+  const lastFetchedDate = useRef(null);
 
   // Fetch today's appointments (manual refresh resets the guard)
   const loadAppointments = useCallback(async () => {
+    const d = new Date();
+    const currentDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     setLoadingAppointments(true);
     try {
       const [calendarResponse, resourcesResponse] = await Promise.all([
-        planningApi.getCalendar({ startDate: today, endDate: today }),
+        planningApi.getCalendar({ startDate: currentDate, endDate: currentDate }),
         planningApi.getResources()
       ]);
       if (calendarResponse.success) {
@@ -63,16 +67,17 @@ const HomeModule = ({ setActiveModule }) => {
       if (resourcesResponse.success) {
         setResources(resourcesResponse.data || { machines: [], providers: [] });
       }
+      lastFetchedDate.current = currentDate;
     } catch (error) {
       console.error('Error loading appointments:', error);
     } finally {
       setLoadingAppointments(false);
     }
-  }, [today]);
+  }, []);
 
-  // Single fetch on mount — no dependency that can oscillate
+  // Fetch on mount + re-fetch if day changes (app left open overnight)
   useEffect(() => {
-    if (canViewAppointments && !hasFetchedRef.current) {
+    if (canViewAppointments && (!hasFetchedRef.current || lastFetchedDate.current !== today)) {
       hasFetchedRef.current = true;
       loadAppointments();
     }

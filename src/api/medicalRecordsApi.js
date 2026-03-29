@@ -100,13 +100,15 @@ async function getStatistics() {
 async function getMedicalRecordById(recordId) {
   try {
     const response = await baseClient.get(`/medical-records/${recordId}`);
-    console.log('[medicalRecordsApi] getMedicalRecordById - raw response:', response);
     const data = dataTransform.unwrapResponse(response);
-    console.log('[medicalRecordsApi] getMedicalRecordById - unwrapped data:', data);
-    console.log('[medicalRecordsApi] getMedicalRecordById - chief_complaint from data:', data?.chief_complaint);
     const transformed = dataTransform.transformMedicalRecordFromBackend(data);
-    console.log('[medicalRecordsApi] getMedicalRecordById - transformed result:', transformed);
-    console.log('[medicalRecordsApi] getMedicalRecordById - basicInfo:', transformed?.basicInfo);
+    // Attach evolutions and parentRecordId from top-level response
+    if (response.evolutions) {
+      transformed.evolutions = response.evolutions;
+    }
+    if (response.parentRecordId) {
+      transformed.parentRecordId = response.parentRecordId;
+    }
     return transformed;
   } catch (error) {
     console.error('[medicalRecordsApi] Error fetching medical record:', error);

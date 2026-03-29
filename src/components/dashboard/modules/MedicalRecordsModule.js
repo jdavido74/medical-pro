@@ -6,7 +6,7 @@ import {
   Plus, Search, Edit2, Trash2, User,
   AlertTriangle, ChevronRight, ChevronLeft, ChevronDown,
   X, Check, UserPlus, Clock, Save, ArrowLeft,
-  Pill, FileText, Stethoscope, Eye, Activity, Heart
+  Pill, FileText, Stethoscope, Eye, Activity, Heart, Printer
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../hooks/useAuth';
@@ -17,16 +17,22 @@ import { usePatients } from '../../../contexts/PatientContext';
 import { appointmentsApi } from '../../../api/appointmentsApi';
 import MedicalRecordForm from '../../medical/MedicalRecordForm';
 
-// Sous-composant pour la liste groupée par épisode
+// Sous-composant pour la liste groupée par épisode (accordéon parent/enfants)
 const GroupedRecordsList = React.memo(({
   patientRecords, formState, hasContent, formatDate, getTypeColor, getTypeLabel,
   handleViewRecord, handleEditRecord, handleDeleteRecord, handleCreateEvolution,
   canEditRecords, canDeleteRecords, t
 }) => {
-  const groupedRecords = useMemo(() => {
+  const [expandedParents, setExpandedParents] = useState({});
+
+  const toggleParent = useCallback((parentId) => {
+    setExpandedParents(prev => ({ ...prev, [parentId]: !prev[parentId] }));
+  }, []);
+
+  // Group records: parents with their evolutions sorted chronologically
+  const groupedParents = useMemo(() => {
     if (!patientRecords.length) return [];
 
-    // Sort by recordDate descending (newest first)
     const sorted = [...patientRecords].sort(
       (a, b) => new Date(b.recordDate || b.createdAt) - new Date(a.recordDate || a.createdAt)
     );
@@ -47,124 +53,202 @@ const GroupedRecordsList = React.memo(({
 
     const result = [];
     for (const parent of parents) {
-      const evos = parentMap.get(parent.id) || [];
-      result.push({ ...parent, _isParent: true, _evolutions: evos });
-      for (const evo of evos) {
-        result.push({ ...evo, _isEvolution: true });
-      }
+      const evos = (parentMap.get(parent.id) || []).sort(
+        (a, b) => new Date(a.recordDate || a.createdAt) - new Date(b.recordDate || b.createdAt)
+      );
+      result.push({ ...parent, _evolutions: evos });
       parentMap.delete(parent.id);
     }
 
-    // Orphaned evolutions
-    for (const evos of parentMap.values()) {
+    // Orphaned evolutions (parent not loaded) — show as standalone
+    for (const [, evos] of parentMap) {
       for (const evo of evos) {
-        result.push({ ...evo, _isEvolution: true });
+        result.push({ ...evo, _evolutions: [], _isOrphan: true });
       }
     }
 
     return result;
   }, [patientRecords]);
 
+  // Action buttons for a record row
+  const renderActions = (record, isEvolution = false) => {
+    const isCurrentlyEditing = formState?.mode === 'edit' && formState.record?.id === record.id;
+    return (
+      <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+        <button
+          onClick={() => handleViewRecord(record)}
+          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title={t('medical:module.masterDetail.viewRecord', 'Ver historial')}
+        >
+          <Eye className={isEvolution ? 'h-4 w-4' : 'h-5 w-5'} />
+        </button>
+        {canEditRecords && (
+          <button
+            onClick={() => handleEditRecord(record)}
+            className={`p-1.5 rounded-lg transition-colors ${
+              isCurrentlyEditing
+                ? 'bg-green-100 text-green-700'
+                : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+            }`}
+            title={t('common:edit')}
+          >
+            <Edit2 className={isEvolution ? 'h-4 w-4' : 'h-5 w-5'} />
+          </button>
+        )}
+        {canDeleteRecords && (
+          <button
+            onClick={() => handleDeleteRecord(record)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title={t('common:delete')}
+          >
+            <Trash2 className={isEvolution ? 'h-4 w-4' : 'h-5 w-5'} />
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="divide-y">
-      {groupedRecords.map((record) => {
-        const content = hasContent(record);
-        const isCurrentlyEditing = formState?.mode === 'edit' && formState.record?.id === record.id;
+    <div className="divide-y overflow-hidden">
+      {groupedParents.map((parent) => {
+        const hasEvolutions = parent._evolutions.length > 0;
+        const isExpanded = expandedParents[parent.id] ?? false;
+        const content = hasContent(parent);
+        const isCurrentlyEditing = formState?.mode === 'edit' && formState.record?.id === parent.id;
+        // A parent is "active" (can receive evolutions) if it's not signed/archived
+        // and is the most recent parent (first in the list)
+        const isActiveParent = parent.status !== 'signed' && parent.status !== 'archived';
 
         return (
-          <React.Fragment key={record.id}>
-            <div
-              className={`p-4 hover:bg-gray-50 transition-colors ${
-                record._isEvolution ? 'ml-6 border-l-2 border-blue-200 bg-blue-50/30' : ''
-              } ${isCurrentlyEditing ? 'bg-green-50 border-l-4 border-green-500' : ''}`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className="text-lg font-bold text-gray-900">
-                      {formatDate(record.createdAt)}
+          <div key={parent.id} className={`bg-white ${isCurrentlyEditing ? 'ring-2 ring-green-300 ring-inset' : ''}`}>
+            {/* Parent row */}
+            <div className="flex items-center">
+              {/* Chevron */}
+              <button
+                onClick={() => hasEvolutions && toggleParent(parent.id)}
+                className={`flex items-center justify-center w-8 flex-shrink-0 self-stretch transition-colors ${
+                  hasEvolutions ? 'hover:bg-gray-100 cursor-pointer text-gray-500' : 'text-gray-200 cursor-default'
+                }`}
+              >
+                {hasEvolutions ? (
+                  isExpanded
+                    ? <ChevronDown className="h-4 w-4" />
+                    : <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <span className="w-4" />
+                )}
+              </button>
+
+              {/* Parent content — single compact line */}
+              <div className="flex-1 min-w-0 py-3 pr-3 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <span className="font-bold text-gray-900 whitespace-nowrap">
+                      {formatDate(parent.recordDate || parent.createdAt)}
                     </span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(record.type)}`}>
-                      {record._isEvolution
-                        ? t('medical:episode.evolution', 'Evolución')
-                        : getTypeLabel(record.type)}
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getTypeColor(parent.type)}`}>
+                      {getTypeLabel(parent.type)}
                     </span>
-                    {record._evolutions?.length > 0 && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                        {t('medical:episode.badge', 'Episodio')} ({record._evolutions.length})
+                    {hasEvolutions && (
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
+                        {t('medical:episode.badge', 'Episodio')} ({parent._evolutions.length})
                       </span>
                     )}
-                    {record.status === 'signed' && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                        Signé
+                    {parent.status === 'signed' && (
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 whitespace-nowrap">
+                        {t('medical:episode.signed', 'Firmado')}
                       </span>
                     )}
-                  </div>
-                  <p className="text-gray-700 mb-2">
-                    {record.basicInfo?.chiefComplaint || record.diagnosis?.primary || t('medical:module.masterDetail.noDescription')}
-                  </p>
-                  <div className="flex items-center space-x-3 text-sm">
                     {content.hasTreatments && (
-                      <span className="flex items-center text-purple-600" title="Traitements">
-                        <Pill className="h-4 w-4 mr-1" />
-                        <span>{record.treatments?.length}</span>
+                      <span className="flex items-center text-purple-500 text-xs whitespace-nowrap">
+                        <Pill className="h-3.5 w-3.5 mr-0.5" />{parent.treatments?.length}
                       </span>
                     )}
                     {content.hasMedications && (
-                      <span className="flex items-center text-blue-600" title="Médicaments actuels">
-                        <Stethoscope className="h-4 w-4 mr-1" />
-                        <span>{record.currentMedications?.length}</span>
+                      <span className="flex items-center text-blue-500 text-xs whitespace-nowrap">
+                        <Stethoscope className="h-3.5 w-3.5 mr-0.5" />{parent.currentMedications?.length}
                       </span>
                     )}
                   </div>
+                  {renderActions(parent)}
                 </div>
-                <div className="flex items-center space-x-1 ml-4">
-                  <button
-                    onClick={() => handleViewRecord(record)}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title={t('medical:module.masterDetail.viewRecord', 'Voir le dossier')}
-                  >
-                    <Eye className="h-5 w-5" />
-                  </button>
-                  {canEditRecords && (
-                    <button
-                      onClick={() => handleEditRecord(record)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        isCurrentlyEditing
-                          ? 'bg-green-100 text-green-700'
-                          : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-                      }`}
-                      title={t('common:edit')}
-                    >
-                      <Edit2 className="h-5 w-5" />
-                    </button>
-                  )}
-                  {canDeleteRecords && (
-                    <button
-                      onClick={() => handleDeleteRecord(record)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title={t('common:delete')}
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  )}
-                </div>
+                <p className="text-sm text-gray-600 truncate mt-0.5">
+                  {parent.basicInfo?.chiefComplaint || parent.diagnosis?.primary || t('medical:module.masterDetail.noDescription')}
+                </p>
               </div>
             </div>
 
-            {/* "+ Ajouter une évolution" button for parent records */}
-            {!record._isEvolution && !record.parentRecordId && canEditRecords && (
-              <div className="ml-6 py-1">
+            {/* Collapsed hint: clickable episode count */}
+            {hasEvolutions && !isExpanded && (
+              <div className="pl-8 pb-1">
                 <button
-                  onClick={() => handleCreateEvolution(record)}
-                  className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
+                  onClick={() => toggleParent(parent.id)}
+                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
                 >
-                  <Plus className="h-4 w-4" />
-                  {t('medical:episode.addEvolution', '+ Añadir una evolución')}
+                  <Activity className="h-3 w-3" />
+                  {parent._evolutions.length} {t('medical:episode.evolutions', 'evolución(es)')}
                 </button>
               </div>
             )}
-          </React.Fragment>
+
+            {/* Expanded accordion: evolutions */}
+            {isExpanded && (
+              <div className="bg-gray-50/30" style={{ maxWidth: '100%' }}>
+                {parent._evolutions.map((evo) => {
+                  const evoEditing = formState?.mode === 'edit' && formState.record?.id === evo.id;
+                  return (
+                    <div
+                      key={evo.id}
+                      className={`border-l-2 border-blue-200 ml-8 py-2 px-3 hover:bg-blue-50/40 transition-colors ${
+                        evoEditing ? 'bg-green-50 border-l-4 border-green-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs text-blue-400">↳</span>
+                            <span className="text-sm font-medium text-gray-700">
+                              {formatDate(evo.recordDate || evo.createdAt)}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">
+                              {t('medical:episode.evolution', 'Evolución')}
+                            </span>
+                          </div>
+                          {(evo.basicInfo?.chiefComplaint || evo.evolution) && (
+                            <p className="text-xs text-gray-500 mt-1 break-words">
+                              {evo.basicInfo?.chiefComplaint || evo.evolution}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex-shrink-0">
+                          {renderActions(evo, true)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Action buttons — ALWAYS visible for active parents */}
+            {canEditRecords && isActiveParent && (
+              <div className="pl-8 py-1.5 flex items-center gap-2">
+                <button
+                  onClick={() => handleCreateEvolution(parent)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                >
+                  {t('medical:episode.addEvolution', 'Añadir una evolución')}
+                </button>
+                <button
+                  onClick={() => handleViewRecord(parent)}
+                  className="border border-gray-300 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  {t('medical:episode.finishHistory', 'Terminar el historial')}
+                </button>
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -717,26 +801,24 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
             </div>
           ) : (
             /* Patient sélectionné */
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
               {/* En-tête patient */}
               <div className="border-b bg-gray-50 p-4 sticky top-0 z-10">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center min-w-0">
-                    {formState && (
-                      <button
-                        onClick={() => setPanelCollapsed(!panelCollapsed)}
-                        className="p-1.5 mr-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
-                        title={panelCollapsed
-                          ? t('medical:module.masterDetail.showPatients', 'Afficher les patients')
-                          : t('medical:module.masterDetail.hidePatients', 'Masquer les patients')
-                        }
-                      >
-                        {panelCollapsed
-                          ? <ChevronRight className="h-5 w-5 text-gray-500" />
-                          : <ChevronLeft className="h-5 w-5 text-gray-500" />
-                        }
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setPanelCollapsed(!panelCollapsed)}
+                      className="p-1.5 mr-2 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
+                      title={panelCollapsed
+                        ? t('medical:module.masterDetail.showPatients', 'Afficher les patients')
+                        : t('medical:module.masterDetail.hidePatients', 'Masquer les patients')
+                      }
+                    >
+                      {panelCollapsed
+                        ? <ChevronRight className="h-5 w-5 text-gray-500" />
+                        : <ChevronLeft className="h-5 w-5 text-gray-500" />
+                      }
+                    </button>
                     <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-full bg-green-100 flex items-center justify-center mr-3 flex-shrink-0">
                       <User className="h-5 w-5 xl:h-6 xl:w-6 text-green-600" />
                     </div>
@@ -750,14 +832,27 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                       </p>
                     </div>
                   </div>
-                  {canCreateRecords && !formState && (
-                    <button
-                      onClick={handleCreateRecord}
-                      className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm flex-shrink-0"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden xl:inline">{t('medical:module.masterDetail.newRecord')}</span>
-                    </button>
+                  {!formState && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {panelCollapsed && (
+                        <button
+                          onClick={() => setPanelCollapsed(false)}
+                          className="px-3 py-2 text-gray-600 bg-white border rounded-lg hover:bg-gray-50 text-sm flex items-center gap-2"
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                          <span className="hidden xl:inline">{t('medical:module.masterDetail.backToList', 'Volver')}</span>
+                        </button>
+                      )}
+                      {canCreateRecords && (
+                        <button
+                          onClick={handleCreateRecord}
+                          className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span className="hidden xl:inline">{t('medical:module.masterDetail.newRecord')}</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                   {formState && (
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -990,7 +1085,7 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
             {/* Content - Scrollable */}
             {(() => { const record = viewRecordModal.record; return (
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4" data-print-record>
 
               {/* Parent link if this is an evolution */}
               {record.parentRecordId && (
@@ -1316,13 +1411,63 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
               {record.evolutions?.length > 0 && (
                 <section className="border-b border-gray-200 pb-4">
                   <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">
-                    {t('medical:episode.evolutions', 'Evoluciones')}
+                    {t('medical:episode.evolutions', 'Evoluciones')} ({record.evolutions.length})
                   </h4>
                   <div className="space-y-3">
                     {record.evolutions.map((evo) => (
-                      <div key={evo.id} className="border-l-2 border-blue-300 pl-3">
-                        <p className="text-sm text-gray-500">{formatDate(evo.recordDate)}</p>
-                        {evo.chiefComplaint && <p className="text-sm text-gray-700">{evo.chiefComplaint}</p>}
+                      <div key={evo.id} className="py-2">
+                        <p className="text-sm font-semibold text-gray-900 mb-1">{formatDate(evo.recordDate)}</p>
+                        {evo.chiefComplaint && (
+                          <div className="mb-1">
+                            <p className="text-xs text-gray-500">{t('medical:form.chiefComplaint', 'Motivo')}</p>
+                            <p className="text-sm text-gray-700">{evo.chiefComplaint}</p>
+                          </div>
+                        )}
+                        {evo.evolution && (
+                          <div className="mb-1">
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{evo.evolution}</p>
+                          </div>
+                        )}
+                        {evo.currentIllness && (
+                          <div className="mb-1">
+                            <p className="text-xs text-gray-500">{t('medical:form.tabs.currentIllness', 'Enfermedad actual')}</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{evo.currentIllness}</p>
+                          </div>
+                        )}
+                        {evo.diagnosis?.primary && (
+                          <div className="mb-1">
+                            <p className="text-xs text-gray-500">{t('medical:form.tabs.diagnosis', 'Diagnóstico')}</p>
+                            <p className="text-sm text-gray-700">{evo.diagnosis.primary}</p>
+                          </div>
+                        )}
+                        {evo.treatments?.length > 0 && (
+                          <div className="mb-1">
+                            <p className="text-xs text-gray-500">{t('medical:form.tabs.treatments', 'Tratamientos')}</p>
+                            <div className="text-sm text-gray-700">
+                              {evo.treatments.map((tr, i) => (
+                                <span key={i}>{tr.medication}{tr.dosage ? ` (${tr.dosage})` : ''}{i < evo.treatments.length - 1 ? ', ' : ''}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {evo.vitalSigns && Object.values(evo.vitalSigns).some(v => v) && (
+                          <div className="mb-1">
+                            <p className="text-xs text-gray-500">{t('medical:form.tabs.vitals', 'Constantes')}</p>
+                            <div className="text-sm text-gray-700 flex flex-wrap gap-3">
+                              {evo.vitalSigns.weight && <span>Peso: {evo.vitalSigns.weight}kg</span>}
+                              {evo.vitalSigns.bloodPressure?.systolic && <span>TA: {evo.vitalSigns.bloodPressure.systolic}/{evo.vitalSigns.bloodPressure.diastolic}</span>}
+                              {evo.vitalSigns.heartRate && <span>FC: {evo.vitalSigns.heartRate}</span>}
+                              {evo.vitalSigns.temperature && <span>T°: {evo.vitalSigns.temperature}°C</span>}
+                              {evo.vitalSigns.oxygenSaturation && <span>SpO2: {evo.vitalSigns.oxygenSaturation}%</span>}
+                            </div>
+                          </div>
+                        )}
+                        {evo.notes && (
+                          <div>
+                            <p className="text-xs text-gray-500">{t('medical:form.notes', 'Notas')}</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{evo.notes}</p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1400,16 +1545,56 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
 
             {/* Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
-              <button
-                onClick={() => {
-                  setViewRecordModal({ show: false, record: null });
-                  handleEditRecord(viewRecordModal.record);
-                }}
-                className="px-4 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors flex items-center space-x-2"
-              >
-                <Edit2 className="h-4 w-4" />
-                <span>{t('common:edit')}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setViewRecordModal({ show: false, record: null });
+                    handleEditRecord(viewRecordModal.record);
+                  }}
+                  className="px-4 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors flex items-center space-x-2"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  <span>{t('common:edit')}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    // Print the modal content as PDF via browser print dialog
+                    const contentEl = document.querySelector('[data-print-record]');
+                    if (!contentEl) return;
+                    const printFrame = document.createElement('iframe');
+                    printFrame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:800px;height:600px;';
+                    document.body.appendChild(printFrame);
+                    const doc = printFrame.contentDocument;
+                    const style = doc.createElement('style');
+                    style.textContent = `
+                      body { font-family: Arial, sans-serif; padding: 40px; color: #111; max-width: 800px; margin: 0 auto; font-size: 14px; }
+                      h1 { font-size: 20px; border-bottom: 2px solid #111; padding-bottom: 8px; }
+                      h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin: 16px 0 8px 0; }
+                      section { border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 4px; }
+                      p { margin: 4px 0; }
+                      .print-footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #ccc; font-size: 11px; color: #9ca3af; }
+                    `;
+                    doc.head.appendChild(style);
+                    const header = doc.createElement('h1');
+                    header.textContent = `${selectedPatient?.firstName || ''} ${selectedPatient?.lastName || ''} — ${formatDate(viewRecordModal.record.recordDate || viewRecordModal.record.createdAt)}`;
+                    doc.body.appendChild(header);
+                    // Clone the scrollable content
+                    const clone = contentEl.cloneNode(true);
+                    doc.body.appendChild(clone);
+                    // Footer
+                    const footer = doc.createElement('div');
+                    footer.className = 'print-footer';
+                    footer.textContent = `${t('medical:print.generated', 'Generado el')} ${new Date().toLocaleDateString()} — MediMaestro`;
+                    doc.body.appendChild(footer);
+                    printFrame.contentWindow.onafterprint = () => document.body.removeChild(printFrame);
+                    setTimeout(() => { printFrame.contentWindow.print(); }, 300);
+                  }}
+                  className="px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors flex items-center space-x-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  <span>{t('medical:print.button', 'Imprimir PDF')}</span>
+                </button>
+              </div>
               <button
                 onClick={() => setViewRecordModal({ show: false, record: null })}
                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
