@@ -3,23 +3,24 @@ import React, { useState, useEffect, useContext } from 'react';
 import {
   Users, Search, Edit2, Eye, Plus,
   Phone, Mail, MapPin, Calendar, AlertCircle,
-  Heart, Shield, Activity, Archive, Stethoscope,
+  Heart, Shield, Activity, Stethoscope,
   ClipboardCheck, RefreshCw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../hooks/useAuth';
+import { useLocaleNavigation } from '../../../hooks/useLocaleNavigation';
 import { PatientContext } from '../../../contexts/PatientContext';
 import { usePermissions } from '../../auth/PermissionGuard';
 import { PERMISSIONS } from '../../../utils/permissionsStorage';
 import { initializeSamplePatients, patientsStorage } from '../../../utils/patientsStorage';
 import PatientFormModal from '../modals/PatientFormModal';
 import PatientDetailModal from '../modals/PatientDetailModal';
-import MedicalHistoryModal from '../modals/MedicalHistoryModal';
 
 const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const { t } = useTranslation('patients');
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
+  const { navigateTo } = useLocaleNavigation();
   const patientContext = useContext(PatientContext);
 
   // État local du module
@@ -28,18 +29,14 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const [filterType, setFilterType] = useState('active');
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isMedicalHistoryModalOpen, setIsMedicalHistoryModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState(null);
   const [viewingPatient, setViewingPatient] = useState(null);
-  const [viewingMedicalHistory, setViewingMedicalHistory] = useState(null);
   const [initialTab, setInitialTab] = useState('general');
 
   // Permissions basées sur les permissions système - US nouvelles
   const canViewMedicalData = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW);
   const canEditPatients = hasPermission(PERMISSIONS.PATIENTS_EDIT);
   const canCreatePatients = hasPermission(PERMISSIONS.PATIENTS_CREATE);
-  const canDeletePatients = hasPermission(PERMISSIONS.PATIENTS_DELETE);
-  const canViewAllData = hasPermission(PERMISSIONS.PATIENTS_VIEW_ALL);
 
   // DEMO DATA REMOVED - No longer initialize sample patients
   // useEffect(() => {
@@ -120,24 +117,19 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   };
 
   const handleViewConsents = (patient) => {
-    // Journaliser l'accès aux consentements
     patientsStorage.logAccess(patient.id, 'consents_access', user?.id || 'unknown', {
       userRole: user?.role,
       timestamp: new Date().toISOString()
     });
-
-    handleViewPatient(patient, 'consents');
+    navigateTo('/consents', { state: { patientId: patient.id } });
   };
 
   const handleViewMedicalHistory = (patient) => {
-    // Journaliser l'accès au dossier médical
     patientsStorage.logAccess(patient.id, 'medical_history_access', user?.id || 'unknown', {
       userRole: user?.role,
       timestamp: new Date().toISOString()
     });
-
-    setViewingMedicalHistory(patient);
-    setIsMedicalHistoryModalOpen(true);
+    navigateTo('/medical-records', { state: { patientId: patient.id } });
   };
 
   const handleSavePatient = async (patientData) => {
@@ -165,20 +157,6 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
       setEditingPatient(null);
     } catch (error) {
       console.error('[PatientsModule] Erreur sauvegarde patient:', error);
-    }
-  };
-
-  const handleDeletePatient = async (patientId) => {
-    if (window.confirm(t('confirmations.archivePatient'))) {
-      try {
-        // Suppression via contexte (permissions + audit automatiques)
-        await patientContext.deletePatient(patientId, {
-          reason: 'Patient archived from patients module'
-        });
-        // Les données sont synchrones via PatientContext
-      } catch (error) {
-        console.error('[PatientsModule] Erreur suppression patient:', error);
-      }
     }
   };
 
@@ -470,15 +448,6 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
                           </button>
                         )}
 
-                        {canDeletePatients && (
-                          <button
-                            onClick={() => handleDeletePatient(patient.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                            title={t('tooltips.archive')}
-                          >
-                            <Archive className="h-4 w-4" />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -511,28 +480,12 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
           onClose={() => {
             setIsDetailModalOpen(false);
             setViewingPatient(null);
-            setInitialTab('general');
+            setInitialTab('ficha');
           }}
-          onEdit={canEditPatients ? () => {
-            setIsDetailModalOpen(false);
-            handleEditPatient(viewingPatient);
-          } : null}
-          canViewMedicalData={canViewMedicalData}
-          canViewAllData={canViewAllData}
           initialTab={initialTab}
         />
       )}
 
-      {isMedicalHistoryModalOpen && viewingMedicalHistory && (
-        <MedicalHistoryModal
-          patient={viewingMedicalHistory}
-          isOpen={isMedicalHistoryModalOpen}
-          onClose={() => {
-            setIsMedicalHistoryModalOpen(false);
-            setViewingMedicalHistory(null);
-          }}
-        />
-      )}
     </div>
   );
 };
