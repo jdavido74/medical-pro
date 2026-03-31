@@ -230,7 +230,8 @@
     "sendReminder": "Envoyer rappel",
     "start": "Démarrer",
     "noShow": "Absent",
-    "completed": "Terminé"
+    "completed": "Terminé",
+    "saveAndNew": "Enregistrer et nouveau"
   },
 
   "summary": {

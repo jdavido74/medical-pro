@@ -230,7 +230,8 @@
     "sendReminder": "Enviar recordatorio",
     "start": "Iniciar",
     "noShow": "Ausente",
-    "completed": "Terminado"
+    "completed": "Terminado",
+    "saveAndNew": "Guardar y nuevo"
   },
 
   "summary": {

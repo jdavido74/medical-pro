@@ -231,6 +231,8 @@ const PlanningModule = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [bookingInitialDate, setBookingInitialDate] = useState(null);
+  const [bookingInitialTime, setBookingInitialTime] = useState(null);
   const [toast, setToast] = useState(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [summaryAppointment, setSummaryAppointment] = useState(null);
@@ -672,6 +674,15 @@ const PlanningModule = () => {
   // Handle booking modal
   const handleNewAppointment = () => {
     setSelectedAppointment(null);
+    setBookingInitialDate(null);
+    setBookingInitialTime(null);
+    setShowBookingModal(true);
+  };
+
+  const handleQuickBook = (date, time = null) => {
+    setSelectedAppointment(null);
+    setBookingInitialDate(date);
+    setBookingInitialTime(time);
     setShowBookingModal(true);
   };
 
@@ -1256,7 +1267,8 @@ const PlanningModule = () => {
     return (
       <div
         key={`header-${dateStr}`}
-        className={`flex-1 min-w-[100px] p-2 text-center border-r last:border-r-0 ${bgClass}`}
+        className={`flex-1 min-w-[100px] p-2 text-center border-r last:border-r-0 ${bgClass} ${!isClosed ? 'cursor-pointer hover:bg-blue-100 transition-colors' : ''}`}
+        onClick={() => !isClosed && handleQuickBook(formatDateLocal(day))}
       >
         <div className={`text-xs ${isClosed ? 'text-gray-400' : 'text-gray-500'}`}>
           {day.toLocaleDateString('fr-FR', { weekday: 'short' })}
@@ -1538,14 +1550,19 @@ const PlanningModule = () => {
                       } : {})
                     }}
                   >
-                    {/* Hour grid lines */}
-                    {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => (
-                      <div
-                        key={`grid-${i}`}
-                        className="absolute left-0 right-0 border-b border-gray-100"
-                        style={{ top: `${i * 60 * PIXELS_PER_MINUTE}px` }}
-                      />
-                    ))}
+                    {/* Hour grid lines (clickable to quick-book) */}
+                    {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => {
+                      const hour = DAY_START_HOUR + i;
+                      const timeStr = `${String(hour).padStart(2, '0')}:00`;
+                      return (
+                        <div
+                          key={`grid-${i}`}
+                          className={`absolute left-0 right-0 border-b border-gray-100 ${!isClosed ? 'cursor-pointer hover:bg-blue-50/50 transition-colors' : ''}`}
+                          style={{ top: `${i * 60 * PIXELS_PER_MINUTE}px`, height: `${60 * PIXELS_PER_MINUTE}px` }}
+                          onClick={() => !isClosed && handleQuickBook(dayDateStr, timeStr)}
+                        />
+                      );
+                    })}
 
                     {/* Half-hour lines (lighter) */}
                     {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => (
@@ -2357,11 +2374,13 @@ const PlanningModule = () => {
       {showBookingModal && (
         <PlanningBookingModal
           isOpen={showBookingModal}
-          onClose={() => setShowBookingModal(false)}
+          onClose={() => { setShowBookingModal(false); setBookingInitialDate(null); setBookingInitialTime(null); }}
           onSave={handleBookingSave}
+          onSaveAndNew={(savedApt) => { loadData(); }}
           appointment={selectedAppointment}
           resources={resources}
-          initialDate={formatDateLocal(currentDate)}
+          initialDate={bookingInitialDate || formatDateLocal(currentDate)}
+          initialTime={bookingInitialTime}
           clinicSettings={clinicSettings}
         />
       )}

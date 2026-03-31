@@ -230,7 +230,8 @@
     "sendReminder": "Send reminder",
     "start": "Start",
     "noShow": "No show",
-    "completed": "Completed"
+    "completed": "Completed",
+    "saveAndNew": "Save and new"
   },
 
   "summary": {

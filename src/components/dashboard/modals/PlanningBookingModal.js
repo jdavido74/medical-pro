@@ -4,7 +4,7 @@
  * Supports multi-treatment bookings with chained appointments
  */
 
-import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Cpu, User, Calendar, Clock, Search, Check, AlertCircle, Plus, Trash2, ChevronRight, ChevronDown, ChevronUp, Link, Edit3, Users, AlertTriangle, UserCheck, Loader2, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
 import planningApi from '../../../api/planningApi';
@@ -310,9 +310,11 @@ const PlanningBookingModal = ({
   isOpen,
   onClose,
   onSave,
+  onSaveAndNew,
   appointment,
   resources,
   initialDate,
+  initialTime,
   clinicSettings
 }) => {
   const { t } = useTranslation('planning');
@@ -363,6 +365,9 @@ const PlanningBookingModal = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompletedAppointments, setShowCompletedAppointments] = useState(false);
   const [patientAppointmentsCount, setPatientAppointmentsCount] = useState(0);
+
+  // Save and new ref
+  const saveAndNewRef = useRef(false);
 
   // Conflict state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -1306,6 +1311,24 @@ const PlanningBookingModal = ({
       }
 
       if (response.success) {
+        if (saveAndNewRef.current) {
+          saveAndNewRef.current = false;
+          // Notify parent to refresh data but don't close
+          if (onSaveAndNew) onSaveAndNew(response.data);
+          // Reset form for new appointment on same day
+          setStep(1);
+          setPatientId('');
+          setSelectedTreatments([]);
+          setSelectedSlot(null);
+          setProviderId('');
+          setAssistantId('');
+          setReason('');
+          setNotes('');
+          setPriority('normal');
+          setError(null);
+          setSaving(false);
+          return;
+        }
         onSave(response.data);
       } else {
         // Check for specific error codes
@@ -1342,6 +1365,11 @@ const PlanningBookingModal = ({
   };
 
   // Handle save with conflict detection
+  const handleSaveAndNew = () => {
+    saveAndNewRef.current = true;
+    handleSave();
+  };
+
   const handleSave = async () => {
     if (!selectedSlot || !patientId) {
       setError(t('validation.patientRequired'));
@@ -2615,13 +2643,25 @@ const PlanningBookingModal = ({
               {t('actions.next')}
             </button>
           ) : (
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? t('actions.saving') : (isEditMode ? t('actions.save') : t('actions.create'))}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? t('actions.saving') : (isEditMode ? t('actions.save') : t('actions.create'))}
+              </button>
+              {!isEditMode && (
+                <button
+                  onClick={handleSaveAndNew}
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  title={t('actions.saveAndNew', 'Guardar y nuevo')}
+                >
+                  {t('actions.saveAndNew', 'Guardar y nuevo')}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
