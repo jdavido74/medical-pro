@@ -6,6 +6,7 @@ import { DynamicTranslationsProvider } from './contexts/DynamicTranslationsConte
 import { MedicalModulesProvider } from './contexts/MedicalModulesContext';
 import { PatientProvider } from './contexts/PatientContext';
 import { AppointmentProvider } from './contexts/AppointmentContext';
+import VersionChecker from './components/common/VersionChecker';
 import { UserProvider } from './contexts/UserContext';
 import { ConsentProvider } from './contexts/ConsentContext';
 import { MedicalRecordProvider } from './contexts/MedicalRecordContext';
@@ -53,6 +54,7 @@ const MediMaestroApp = () => {
                       <ConsentProvider>
                         <MedicalRecordProvider>
                           <AppRoutes />
+                          <VersionChecker />
                         </MedicalRecordProvider>
                       </ConsentProvider>
                     </AppointmentProvider>

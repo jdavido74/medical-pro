@@ -841,12 +841,17 @@ function transformMedicalRecordFromBackend(record) {
       originalMedication: t.original_medication || t.originalMedication || null
     })),
 
-    // Treatment plan
-    treatmentPlan: record.treatment_plan ? {
-      recommendations: record.treatment_plan.recommendations || [],
-      followUp: record.treatment_plan.follow_up || record.treatment_plan.followUp,
-      tests: record.treatment_plan.tests || []
-    } : {},
+    // Treatment plan (may be string if column is TEXT instead of JSONB)
+    treatmentPlan: (() => {
+      let tp = record.treatment_plan;
+      if (!tp) return {};
+      if (typeof tp === 'string') { try { tp = JSON.parse(tp); } catch { return {}; } }
+      return {
+        recommendations: tp.recommendations || [],
+        followUp: tp.follow_up || tp.followUp,
+        tests: tp.tests || []
+      };
+    })(),
 
     // Current medications (patient's existing medications)
     currentMedications: (record.current_medications || []).map(m => ({
