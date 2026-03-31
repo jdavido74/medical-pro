@@ -213,7 +213,7 @@
   },
 
   "actions": {
-    "create": "Crear",
+    "create": "Crear la cita",
     "save": "Guardar",
     "cancel": "Cancelar",
     "delete": "Eliminar",
@@ -231,7 +231,7 @@
     "start": "Iniciar",
     "noShow": "Ausente",
     "completed": "Terminado",
-    "saveAndNew": "Guardar y nuevo"
+    "saveAndNew": "Crear y añadir otro"
   },
 
   "summary": {

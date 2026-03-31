@@ -2154,7 +2154,7 @@ const PlanningBookingModal = ({
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-2 max-h-64 overflow-y-auto" id="slots-container">
                     {availableSlots.map((slot, idx) => {
                       const hasSegments = slot.segments && slot.segments.length > 0;
                       const slotKey = `${slot.startTime || slot.start}-${slot.endTime || slot.end}`;
@@ -2164,6 +2164,7 @@ const PlanningBookingModal = ({
                       return (
                         <button
                           key={idx}
+                          ref={isSelected ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100); } : null}
                           onClick={() => handleSlotSelect(slot)}
                           className={`w-full p-3 rounded-lg border text-left transition-all ${
                             isSelected

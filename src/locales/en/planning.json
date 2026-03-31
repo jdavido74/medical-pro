@@ -213,7 +213,7 @@
   },
 
   "actions": {
-    "create": "Create",
+    "create": "Create appointment",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -231,7 +231,7 @@
     "start": "Start",
     "noShow": "No show",
     "completed": "Completed",
-    "saveAndNew": "Save and new"
+    "saveAndNew": "Create and add another"
   },
 
   "summary": {

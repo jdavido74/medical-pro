@@ -213,7 +213,7 @@
   },
 
   "actions": {
-    "create": "Créer",
+    "create": "Créer le rendez-vous",
     "save": "Enregistrer",
     "cancel": "Annuler",
     "delete": "Supprimer",
@@ -231,7 +231,7 @@
     "start": "Démarrer",
     "noShow": "Absent",
     "completed": "Terminé",
-    "saveAndNew": "Enregistrer et nouveau"
+    "saveAndNew": "Créer et en ajouter un autre"
   },
 
   "summary": {
