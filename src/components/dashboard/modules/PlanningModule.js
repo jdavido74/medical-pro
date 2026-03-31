@@ -1550,28 +1550,23 @@ const PlanningModule = () => {
                       } : {})
                     }}
                   >
-                    {/* Hour grid lines (clickable to quick-book) */}
-                    {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => {
-                      const hour = DAY_START_HOUR + i;
-                      const timeStr = `${String(hour).padStart(2, '0')}:00`;
+                    {/* 15-minute grid lines (clickable) */}
+                    {Array.from({ length: (DAY_END_HOUR - DAY_START_HOUR) * 4 }, (_, i) => {
+                      const totalMinutes = DAY_START_HOUR * 60 + i * 15;
+                      const hour = Math.floor(totalMinutes / 60);
+                      const minute = totalMinutes % 60;
+                      const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                      const isHour = minute === 0;
+                      const isHalfHour = minute === 30;
                       return (
                         <div
                           key={`grid-${i}`}
-                          className={`absolute left-0 right-0 border-b border-gray-100 ${!isClosed ? 'cursor-pointer hover:bg-blue-50/50 transition-colors' : ''}`}
-                          style={{ top: `${i * 60 * PIXELS_PER_MINUTE}px`, height: `${60 * PIXELS_PER_MINUTE}px` }}
+                          className={`absolute left-0 right-0 ${isHour ? 'border-b border-gray-200' : isHalfHour ? 'border-b border-gray-100' : 'border-b border-gray-50'} ${!isClosed ? 'cursor-pointer hover:bg-blue-50/50 transition-colors' : ''}`}
+                          style={{ top: `${i * 15 * PIXELS_PER_MINUTE}px`, height: `${15 * PIXELS_PER_MINUTE}px` }}
                           onClick={() => !isClosed && handleQuickBook(dayDateStr, timeStr)}
                         />
                       );
                     })}
-
-                    {/* Half-hour lines (lighter) */}
-                    {Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => (
-                      <div
-                        key={`grid-half-${i}`}
-                        className="absolute left-0 right-0 border-b border-gray-50"
-                        style={{ top: `${(i * 60 + 30) * PIXELS_PER_MINUTE}px` }}
-                      />
-                    ))}
 
                     {/* Closed day message */}
                     {isClosed && (

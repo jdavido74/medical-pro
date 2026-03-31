@@ -154,6 +154,13 @@ const Sidebar = () => {
             )}
           </div>
         </div>
+        <button
+          onClick={handleLogout}
+          className="mt-2 flex items-center space-x-1.5 text-xs text-red-500 hover:text-red-700 transition-colors"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          <span>{t('sidebar.logout')}</span>
+        </button>
       </div>
 
       {/* Langue + Date/Heure */}
@@ -236,16 +243,6 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      {/* Bouton de déconnexion */}
-      <div className="p-4 border-t">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          <span>{t('sidebar.logout')}</span>
-        </button>
-      </div>
     </div>
   );
 };

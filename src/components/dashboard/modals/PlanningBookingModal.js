@@ -900,6 +900,27 @@ const PlanningBookingModal = ({
   // Get selected patient from context
   const selectedPatient = patientId ? patientContext?.patients?.find(p => p.id === patientId) : null;
 
+  // Auto-select the slot closest to initialTime
+  const autoSelectClosestSlot = useCallback((slots) => {
+    if (initialTime && slots.length > 0 && !selectedSlot) {
+      const targetMinutes = parseInt(initialTime.split(':')[0]) * 60 + parseInt(initialTime.split(':')[1]);
+      let closest = slots[0];
+      let closestDiff = Infinity;
+      for (const slot of slots) {
+        const slotTime = slot.startTime || slot.start;
+        if (slotTime) {
+          const slotMinutes = parseInt(slotTime.split(':')[0]) * 60 + parseInt(slotTime.split(':')[1]);
+          const diff = Math.abs(slotMinutes - targetMinutes);
+          if (diff < closestDiff) {
+            closestDiff = diff;
+            closest = slot;
+          }
+        }
+      }
+      setSelectedSlot(closest);
+    }
+  }, [initialTime, selectedSlot]);
+
   // Load available slots when date/treatments change
   const loadSlots = useCallback(async () => {
     if (!date) return;
@@ -928,8 +949,10 @@ const PlanningBookingModal = ({
           };
           const response = await planningApi.getSlots(params);
           if (response.success) {
-            setAvailableSlots(response.data?.slots || response.data?.allSlots || []);
+            const slots = response.data?.slots || response.data?.allSlots || [];
+            setAvailableSlots(slots);
             setSlotWarnings(response.data?.warnings || []);
+            autoSelectClosestSlot(slots);
           }
         } else {
           // Multiple treatments - use multi-treatment endpoint
@@ -939,8 +962,10 @@ const PlanningBookingModal = ({
           })), { allowAfterHours: afterHours });
           console.log('[PlanningBookingModal] Multi-treatment slots response:', response);
           if (response.success) {
-            setAvailableSlots(response.data?.slots || []);
+            const multiSlots = response.data?.slots || [];
+            setAvailableSlots(multiSlots);
             setSlotWarnings(response.data?.warnings || []);
+            autoSelectClosestSlot(multiSlots);
             // Show message if no slots and there's a reason
             if (response.data?.slots?.length === 0 && response.data?.message) {
               setError(response.data.message);
@@ -964,7 +989,9 @@ const PlanningBookingModal = ({
         };
         const response = await planningApi.getSlots(params);
         if (response.success) {
-          setAvailableSlots(response.data?.slots || []);
+          const consultSlots = response.data?.slots || [];
+          setAvailableSlots(consultSlots);
+          autoSelectClosestSlot(consultSlots);
         }
       }
     } catch (err) {
@@ -972,7 +999,7 @@ const PlanningBookingModal = ({
     } finally {
       setLoadingSlots(false);
     }
-  }, [date, category, selectedTreatments, providerId, closedDayInfo, afterHours]);
+  }, [date, category, selectedTreatments, providerId, closedDayInfo, afterHours, autoSelectClosestSlot]);
 
   useEffect(() => {
     if (step === 3) {

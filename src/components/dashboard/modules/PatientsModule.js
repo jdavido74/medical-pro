@@ -31,7 +31,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState(null);
   const [viewingPatient, setViewingPatient] = useState(null);
-  const [initialTab, setInitialTab] = useState('general');
+  const [initialTab, setInitialTab] = useState('ficha');
 
   // Permissions basées sur les permissions système - US nouvelles
   const canViewMedicalData = hasPermission(PERMISSIONS.MEDICAL_RECORDS_VIEW);
@@ -104,7 +104,7 @@ const PatientsModule = ({ selectedPatientId, setSelectedPatientId }) => {
     setIsFormModalOpen(true);
   };
 
-  const handleViewPatient = (patient, tab = 'general') => {
+  const handleViewPatient = (patient, tab = 'ficha') => {
     // Journaliser l'accès - US 6.2
     patientsStorage.logAccess(patient.id, 'view_access', user?.id || 'unknown', {
       userRole: user?.role,
