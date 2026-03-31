@@ -64,13 +64,48 @@
   },
   "detail": {
     "tabs": {
-      "general": "General Information",
-      "contact": "Contact",
-      "medical": "Medical History",
-      "administrative": "Administrative Data",
-      "appointments": "Appointments",
-      "consents": "Consents",
-      "access": "Access History"
+      "ficha": "Info",
+      "citas": "Appointments",
+      "tratamientos": "Treatments",
+      "consentimientos": "Consents"
+    },
+    "identity": "Identity",
+    "contact": "Contact",
+    "emergencyContact": "Emergency Contact",
+    "insurance": "Medical Insurance",
+    "age": "{{years}} years old",
+    "noPhone": "No phone",
+    "noEmail": "No email",
+    "noEmergencyContact": "No emergency contact registered",
+    "noInsurance": "No insurance registered",
+    "relationship": "Relationship",
+    "appointments": {
+      "completed": "Completed",
+      "upcoming": "Upcoming",
+      "cancelled": "Cancelled",
+      "noAppointments": "No appointments registered",
+      "loadMore": "Load more"
+    },
+    "treatments": {
+      "chronological": "Chronological",
+      "byTreatment": "By treatment",
+      "realized": "Completed",
+      "planned": "Planned",
+      "suspended": "Suspended",
+      "cancelled": "Cancelled",
+      "sessions": "sessions",
+      "noTreatments": "No treatments registered"
+    },
+    "consents": {
+      "alertTitle": "Consent alerts",
+      "alertProximamente": "Consent alerts will be available soon.",
+      "signed": "Signed",
+      "expired": "Expired",
+      "pending": "Pending",
+      "notSent": "Not sent",
+      "noConsents": "No consents registered",
+      "missingConsent": "Unsigned consent",
+      "expiredConsent": "Expired consent"
     },
     "patientNumber": "Patient #{{number}}",
     "dateOfBirth": "Date of Birth",

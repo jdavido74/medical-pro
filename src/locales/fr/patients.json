@@ -183,13 +183,48 @@
   },
   "detail": {
     "tabs": {
-      "general": "Informations Générales",
-      "contact": "Contact",
-      "medical": "Historique Médical",
-      "administrative": "Données Administratives",
-      "appointments": "Rendez-vous",
-      "consents": "Consentements",
-      "access": "Historique d'Accès"
+      "ficha": "Fiche",
+      "citas": "Rendez-vous",
+      "tratamientos": "Traitements",
+      "consentimientos": "Consentements"
+    },
+    "identity": "Identité",
+    "contact": "Contact",
+    "emergencyContact": "Contact d'urgence",
+    "insurance": "Assurance médicale",
+    "age": "{{years}} ans",
+    "noPhone": "Sans téléphone",
+    "noEmail": "Sans email",
+    "noEmergencyContact": "Aucun contact d'urgence enregistré",
+    "noInsurance": "Aucune assurance enregistrée",
+    "relationship": "Relation",
+    "appointments": {
+      "completed": "Réalisés",
+      "upcoming": "À venir",
+      "cancelled": "Annulés",
+      "noAppointments": "Aucun rendez-vous enregistré",
+      "loadMore": "Voir plus"
+    },
+    "treatments": {
+      "chronological": "Chronologique",
+      "byTreatment": "Par traitement",
+      "realized": "Réalisés",
+      "planned": "Prévus",
+      "suspended": "Suspendus",
+      "cancelled": "Annulés",
+      "sessions": "séances",
+      "noTreatments": "Aucun traitement enregistré"
+    },
+    "consents": {
+      "alertTitle": "Alertes de consentement",
+      "alertProximamente": "Les alertes seront disponibles prochainement.",
+      "signed": "Signé",
+      "expired": "Expiré",
+      "pending": "En attente",
+      "notSent": "Non envoyé",
+      "noConsents": "Aucun consentement enregistré",
+      "missingConsent": "Consentement non signé",
+      "expiredConsent": "Consentement expiré"
     },
     "patientNumber": "Patient #{{number}}",
     "dateOfBirth": "Date de Naissance",
