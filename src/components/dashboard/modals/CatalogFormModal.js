@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  X, Package, Pill, Syringe, Stethoscope, Building2
+  X, Package, Pill, Syringe, Stethoscope, Building2, Heart
 } from 'lucide-react';
 import { catalogStorage } from '../../../utils/catalogStorage';
 import tagsApi from '../../../api/tagsApi';
@@ -29,7 +29,9 @@ import { useCountryConfig } from '../../../config/ConfigManager';
 const TYPE_ICONS = {
   medication: Pill,
   treatment: Syringe,
-  service: Stethoscope
+  service: Stethoscope,
+  supplement: Heart,
+  supply: Package
 };
 
 const CatalogFormModal = ({
@@ -414,7 +416,15 @@ const CatalogFormModal = ({
         // Family/Variant
         parentId: formData.parentId || null,
         isFamily: formData.isFamily || false,
-        isVariant: formData.isVariant || false
+        isVariant: formData.isVariant || false,
+
+        // Stock fields
+        stockQuantity: formData.stockQuantity || 0,
+        stockMinAlert: formData.stockMinAlert || null,
+        lotNumber: formData.lotNumber || null,
+        expiryDate: formData.expiryDate || null,
+        supplierName: formData.supplierName || null,
+        supplierReference: formData.supplierReference || null
       };
 
       if (mode === 'edit') {
@@ -922,10 +932,44 @@ const CatalogFormModal = ({
                     </div>
                   )}
 
+                  {/* Stock fields — only for stockable items */}
+                  {['medication', 'supplement', 'supply', 'product'].includes(formData.type || formData.itemType) && (
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('stock.quantity', 'Stock')}</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('stock.quantity', 'Stock actual')}</label>
+                          <input type="number" value={formData.stockQuantity || ''} onChange={e => handleChange('stockQuantity', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 border rounded-lg text-sm" step="0.01" min="0" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('stock.minAlert', 'Alerta mínima')}</label>
+                          <input type="number" value={formData.stockMinAlert || ''} onChange={e => handleChange('stockMinAlert', parseFloat(e.target.value) || null)} className="w-full px-3 py-2 border rounded-lg text-sm" step="0.01" min="0" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('stock.supplier', 'Proveedor')}</label>
+                          <input type="text" value={formData.supplierName || ''} onChange={e => handleChange('supplierName', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('stock.supplierRef', 'Ref. proveedor')}</label>
+                          <input type="text" value={formData.supplierReference || ''} onChange={e => handleChange('supplierReference', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('stock.lotNumber', 'Nº Lote')}</label>
+                          <input type="text" value={formData.lotNumber || ''} onChange={e => handleChange('lotNumber', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('stock.expiryDate', 'Fecha caducidad')}</label>
+                          <input type="date" value={formData.expiryDate || ''} onChange={e => handleChange('expiryDate', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* No attributes message */}
                   {!shouldShowField('dosage', formData.type) &&
                    !shouldShowField('volume', formData.type) &&
-                   !shouldShowField('duration', formData.type) && (
+                   !shouldShowField('duration', formData.type) &&
+                   !['medication', 'supplement', 'supply', 'product'].includes(formData.type || formData.itemType) && (
                     <p className="text-sm text-gray-500 text-center py-8">
                       {t('empty.title')}
                     </p>

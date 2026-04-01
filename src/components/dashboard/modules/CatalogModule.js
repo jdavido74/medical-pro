@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Package, Plus, Search, Edit, Trash2, Copy,
   ChevronDown, ChevronRight, Pill, Syringe, Stethoscope, Tag,
-  ToggleLeft, ToggleRight, X, Check, RefreshCw
+  ToggleLeft, ToggleRight, X, Check, RefreshCw, Heart, Upload
 } from 'lucide-react';
 import { catalogStorage } from '../../../utils/catalogStorage';
 import categoriesApi from '../../../api/categoriesApi';
@@ -16,13 +16,17 @@ import tagsApi from '../../../api/tagsApi';
 import { CATALOG_TYPES, DOSAGE_UNITS } from '../../../constants/catalogConfig';
 import { usePermissions } from '../../auth/PermissionGuard';
 import CatalogFormModal from '../modals/CatalogFormModal';
+import StockBadge from '../../catalog/StockBadge';
+import ImportInvoiceModal from '../../catalog/ImportInvoiceModal';
 
 // Icon mapping for item types
 const TYPE_ICONS = {
   medication: Pill,
   treatment: Syringe,
   service: Stethoscope,
-  product: Package  // Fallback for legacy 'product' type
+  product: Package,  // Fallback for legacy 'product' type
+  supplement: Heart,
+  supply: Package
 };
 
 // Color mapping for item types
@@ -30,7 +34,9 @@ const TYPE_COLORS = {
   medication: 'bg-green-100 text-green-700',
   treatment: 'bg-blue-100 text-blue-700',
   service: 'bg-purple-100 text-purple-700',
-  product: 'bg-gray-100 text-gray-700'  // Fallback for legacy 'product' type
+  product: 'bg-gray-100 text-gray-700',  // Fallback for legacy 'product' type
+  supplement: 'bg-orange-100 text-orange-700',
+  supply: 'bg-cyan-100 text-cyan-700'
 };
 
 const CatalogModule = () => {
@@ -41,6 +47,7 @@ const CatalogModule = () => {
   const canCreate = hasPermission('catalog.create');
   const canEdit = hasPermission('catalog.edit');
   const canDelete = hasPermission('catalog.delete');
+  const canImport = hasPermission('catalog.import');
 
   // State
   const [items, setItems] = useState([]);
@@ -55,6 +62,7 @@ const CatalogModule = () => {
   const [selectedTagFilter, setSelectedTagFilter] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [formMode, setFormMode] = useState('create'); // 'create', 'edit'
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [toast, setToast] = useState(null);
@@ -131,7 +139,9 @@ const CatalogModule = () => {
         const typeMap = {
           medications: 'medication',
           treatments: 'treatment',
-          services: 'service'
+          services: 'service',
+          supplements: 'supplement',
+          supplies: 'supply'
         };
         if (item.type !== typeMap[activeTab]) return false;
       }
@@ -326,7 +336,9 @@ const CatalogModule = () => {
     byType: {
       medication: items.filter(i => i.type === 'medication').length,
       treatment: items.filter(i => i.type === 'treatment').length,
-      service: items.filter(i => i.type === 'service').length
+      service: items.filter(i => i.type === 'service').length,
+      supplement: items.filter(i => i.type === 'supplement').length,
+      supply: items.filter(i => i.type === 'supply').length
     }
   }), [items]);
 
@@ -409,6 +421,11 @@ const CatalogModule = () => {
           {/* Price column */}
           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
             {formatPrice(item.price)}
+          </td>
+
+          {/* Stock column */}
+          <td className="px-6 py-4 whitespace-nowrap">
+            <StockBadge quantity={item.stockQuantity} minAlert={item.stockMinAlert} />
           </td>
 
           {/* VAT column */}
@@ -766,6 +783,15 @@ const CatalogModule = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {canImport && (
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+            >
+              <Upload className="h-4 w-4" />
+              {t('import.title', 'Importar')}
+            </button>
+          )}
           {canCreate && (
             <button
               onClick={() => handleCreate()}
@@ -782,7 +808,7 @@ const CatalogModule = () => {
       <div className="bg-white rounded-lg border">
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px">
-            {['all', 'medications', 'treatments', 'services', 'categories'].map(tab => (
+            {['all', 'medications', 'treatments', 'services', 'supplements', 'supplies', 'categories'].map(tab => (
               <button
                 key={tab}
                 onClick={() => {
@@ -937,6 +963,9 @@ const CatalogModule = () => {
                         {t('fields.price')}
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {t('stock.quantity', 'Stock')}
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {t('fields.vatRate')}
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -972,6 +1001,17 @@ const CatalogModule = () => {
           categories={categories}
           allItems={items}
           defaultParentId={createVariantParentId}
+        />
+      )}
+
+      {/* Import Invoice Modal */}
+      {showImportModal && (
+        <ImportInvoiceModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImportComplete={() => { setShowImportModal(false); loadData(); }}
+          defaultCategory={activeTab === 'supplements' ? 'supplement' : activeTab === 'supplies' ? 'supply' : 'medication'}
+          t={t}
         />
       )}
 
