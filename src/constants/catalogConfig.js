@@ -27,6 +27,20 @@ export const CATALOG_TYPES = {
     impactsAppointments: true,
     icon: 'Stethoscope',
     defaultDuration: 30
+  },
+  supplement: {
+    id: 'supplement',
+    fields: ['dosage', 'dosageUnit'],
+    canHaveVariants: true,
+    icon: 'Heart',
+    defaultDuration: null
+  },
+  supply: {
+    id: 'supply',
+    fields: [],
+    canHaveVariants: false,
+    icon: 'Package',
+    defaultDuration: null
   }
 };
 

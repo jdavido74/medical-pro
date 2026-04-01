@@ -13,7 +13,9 @@
   "types": {
     "medication": "Medicamento",
     "treatment": "Tratamiento",
-    "service": "Servicio"
+    "service": "Servicio",
+    "supplement": "Complemento",
+    "supply": "Suministro"
   },
 
   "fields": {
@@ -306,11 +308,21 @@
   },
 
   "import": {
-    "title": "Importar elementos",
+    "title": "Importar factura proveedor",
     "description": "Importa elementos desde un archivo JSON",
     "dropzone": "Arrastra un archivo JSON aquí o haz clic para seleccionar",
     "overwrite": "Reemplazar elementos existentes",
-    "preview": "Vista previa de la importación"
+    "preview": "Vista previa de la importación",
+    "upload": "Subir PDF o imagen",
+    "takePhoto": "Tomar foto",
+    "processing": "Procesando con IA...",
+    "category": "Categoría",
+    "existing": "Existente",
+    "new": "Nuevo",
+    "confirm": "Confirmar importación",
+    "skip": "Omitir",
+    "reference": "Referencia",
+    "supplierInfo": "Datos del proveedor"
   },
 
   "export": {
@@ -339,5 +351,35 @@
     "required": "Obligatorio",
     "remove": "Eliminar",
     "noTemplatesAvailable": "No hay plantillas de consentimiento disponibles. Créelas primero en el módulo Consentimientos."
+  },
+
+  "stock": {
+    "quantity": "Stock",
+    "minAlert": "Alerta mínima",
+    "lotNumber": "Nº Lote",
+    "expiryDate": "Fecha caducidad",
+    "supplier": "Proveedor",
+    "supplierRef": "Ref. proveedor",
+    "lowStock": "Stock bajo",
+    "movements": "Movimientos",
+    "entry": "Entrada",
+    "exit": "Salida",
+    "adjustment": "Ajuste",
+    "loss": "Pérdida"
+  },
+
+  "treatmentProducts": {
+    "title": "Productos asociados",
+    "add": "Asociar producto",
+    "quantity": "Cantidad estándar",
+    "inherited": "Heredado",
+    "noProducts": "Sin productos asociados"
+  },
+
+  "deduction": {
+    "title": "Deducción de stock",
+    "confirm": "Confirmar deducción",
+    "adjustQuantity": "Ajustar cantidad",
+    "noProducts": "Sin productos a deducir"
   }
 }

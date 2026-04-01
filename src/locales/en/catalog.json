@@ -13,7 +13,9 @@
   "types": {
     "medication": "Medication",
     "treatment": "Treatment",
-    "service": "Service"
+    "service": "Service",
+    "supplement": "Supplement",
+    "supply": "Supply"
   },
 
   "fields": {
@@ -306,11 +308,21 @@
   },
 
   "import": {
-    "title": "Import items",
+    "title": "Import supplier invoice",
     "description": "Import items from a JSON file",
     "dropzone": "Drop a JSON file here or click to select",
     "overwrite": "Overwrite existing items",
-    "preview": "Import preview"
+    "preview": "Import preview",
+    "upload": "Upload PDF or image",
+    "takePhoto": "Take a photo",
+    "processing": "Processing with AI...",
+    "category": "Category",
+    "existing": "Existing",
+    "new": "New",
+    "confirm": "Confirm import",
+    "skip": "Skip",
+    "reference": "Reference",
+    "supplierInfo": "Supplier information"
   },
 
   "export": {
@@ -339,5 +351,35 @@
     "required": "Required",
     "remove": "Remove",
     "noTemplatesAvailable": "No consent templates available. Create some first in the Consents module."
+  },
+
+  "stock": {
+    "quantity": "Stock",
+    "minAlert": "Minimum alert",
+    "lotNumber": "Lot number",
+    "expiryDate": "Expiry date",
+    "supplier": "Supplier",
+    "supplierRef": "Supplier ref.",
+    "lowStock": "Low stock",
+    "movements": "Movements",
+    "entry": "Entry",
+    "exit": "Exit",
+    "adjustment": "Adjustment",
+    "loss": "Loss"
+  },
+
+  "treatmentProducts": {
+    "title": "Associated products",
+    "add": "Associate product",
+    "quantity": "Standard quantity",
+    "inherited": "Inherited",
+    "noProducts": "No associated products"
+  },
+
+  "deduction": {
+    "title": "Stock deduction",
+    "confirm": "Confirm deduction",
+    "adjustQuantity": "Adjust quantity",
+    "noProducts": "No products to deduct"
   }
 }

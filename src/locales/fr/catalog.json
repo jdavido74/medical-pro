@@ -13,7 +13,9 @@
   "types": {
     "medication": "Médicament",
     "treatment": "Traitement",
-    "service": "Service"
+    "service": "Service",
+    "supplement": "Complément",
+    "supply": "Fourniture"
   },
 
   "fields": {
@@ -306,11 +308,21 @@
   },
 
   "import": {
-    "title": "Importer des éléments",
+    "title": "Importer une facture fournisseur",
     "description": "Importez des éléments depuis un fichier JSON",
     "dropzone": "Déposez un fichier JSON ici ou cliquez pour sélectionner",
     "overwrite": "Remplacer les éléments existants",
-    "preview": "Aperçu de l'import"
+    "preview": "Aperçu de l'import",
+    "upload": "Télécharger PDF ou image",
+    "takePhoto": "Prendre une photo",
+    "processing": "Traitement par IA...",
+    "category": "Catégorie",
+    "existing": "Existant",
+    "new": "Nouveau",
+    "confirm": "Confirmer l'importation",
+    "skip": "Ignorer",
+    "reference": "Référence",
+    "supplierInfo": "Informations fournisseur"
   },
 
   "export": {
@@ -339,5 +351,35 @@
     "required": "Obligatoire",
     "remove": "Retirer",
     "noTemplatesAvailable": "Aucun modèle de consentement disponible. Créez-en d'abord dans le module Consentements."
+  },
+
+  "stock": {
+    "quantity": "Stock",
+    "minAlert": "Alerte minimum",
+    "lotNumber": "N° Lot",
+    "expiryDate": "Date péremption",
+    "supplier": "Fournisseur",
+    "supplierRef": "Réf. fournisseur",
+    "lowStock": "Stock bas",
+    "movements": "Mouvements",
+    "entry": "Entrée",
+    "exit": "Sortie",
+    "adjustment": "Ajustement",
+    "loss": "Perte"
+  },
+
+  "treatmentProducts": {
+    "title": "Produits associés",
+    "add": "Associer un produit",
+    "quantity": "Quantité standard",
+    "inherited": "Hérité",
+    "noProducts": "Aucun produit associé"
+  },
+
+  "deduction": {
+    "title": "Déduction de stock",
+    "confirm": "Confirmer la déduction",
+    "adjustQuantity": "Ajuster la quantité",
+    "noProducts": "Aucun produit à déduire"
   }
 }
