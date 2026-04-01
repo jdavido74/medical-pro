@@ -25,6 +25,8 @@ import InvoiceFormModal from '../modals/InvoiceFormModal';
 import QuoteFormModal from '../modals/QuoteFormModal';
 import { createDocument, updateDocument, getDocument, buildDocumentPayload, getBillingSettings, transformDocumentForDisplay, fetchClientForBilling } from '../../../api/documentsApi';
 import { STATUS_CONFIG } from '../../../constants/appointmentStatuses';
+import StockDeductionModal from '../../planning/StockDeductionModal';
+import { getStockDeduction } from '../../../api/stockApi';
 
 // Time grid constants for day view
 const DAY_START_HOUR = 7;  // 7:00
@@ -285,6 +287,8 @@ const PlanningModule = () => {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateData, setDuplicateData] = useState(null);
   const [duplicateLoading, setDuplicateLoading] = useState(false);
+
+  const [stockDeductionModal, setStockDeductionModal] = useState({ show: false, appointmentId: null, treatmentName: null });
 
   // Calculate date range based on view mode
   const dateRange = useMemo(() => {
@@ -549,12 +553,31 @@ const PlanningModule = () => {
   // Quick status change from list view
   const handleQuickStatusChange = async (appointmentId, newStatus) => {
     try {
-      await planningApi.updateAppointment(appointmentId, { status: newStatus });
+      const response = await planningApi.updateAppointment(appointmentId, { status: newStatus });
       // Update local state immediately for responsive UI
       setListAppointments(prev => prev.map(apt =>
         apt.id === appointmentId ? { ...apt, status: newStatus } : apt
       ));
       showToast(t(`statuses.${newStatus}`), 'success');
+      // Check if appointment was completed and needs stock deduction
+      if (newStatus === 'completed') {
+        const savedData = response?.data;
+        if (savedData && savedData.serviceId) {
+          try {
+            const deductionRes = await getStockDeduction(appointmentId);
+            if (deductionRes.success && deductionRes.data && deductionRes.data.length > 0) {
+              setStockDeductionModal({
+                show: true,
+                appointmentId: appointmentId,
+                treatmentName: savedData.title || savedData.service?.title || '',
+              });
+            }
+          } catch (err) {
+            // Non-blocking — stock deduction is optional
+            console.warn('[planning] Could not check stock deduction:', err);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       const msg = error?.response?.data?.error?.message || error.message || t('messages.saveError');
@@ -908,6 +931,23 @@ const PlanningModule = () => {
     await loadData();
     if (viewMode === 'list') {
       await loadListData();
+    }
+    // After successful save, check if appointment was completed and needs stock deduction
+    const savedData = result;
+    if (savedData && savedData.status === 'completed' && savedData.serviceId) {
+      try {
+        const deductionRes = await getStockDeduction(savedData.id);
+        if (deductionRes.success && deductionRes.data && deductionRes.data.length > 0) {
+          setStockDeductionModal({
+            show: true,
+            appointmentId: savedData.id,
+            treatmentName: savedData.title || savedData.service?.title || '',
+          });
+        }
+      } catch (err) {
+        // Non-blocking — stock deduction is optional
+        console.warn('[planning] Could not check stock deduction:', err);
+      }
     }
   };
 
@@ -2437,6 +2477,17 @@ const PlanningModule = () => {
         billingSettings={billingSettings}
         initialItems={!editingBillingInvoice ? billingItems : null}
       />
+
+      {/* Stock Deduction Modal */}
+      {stockDeductionModal.show && (
+        <StockDeductionModal
+          isOpen={stockDeductionModal.show}
+          onClose={() => setStockDeductionModal({ show: false, appointmentId: null, treatmentName: null })}
+          appointmentId={stockDeductionModal.appointmentId}
+          treatmentName={stockDeductionModal.treatmentName}
+          onConfirm={() => loadData()}
+        />
+      )}
 
       {/* Click outside handler for action menu */}
       {actionMenuOpen && (
