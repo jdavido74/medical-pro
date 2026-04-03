@@ -12,6 +12,9 @@ import { consentTemplatesApi } from '../../api/consentTemplatesApi';
 import { useConsentTypes, useSpecialties } from '../../hooks/useSystemCategories';
 import { useAuth } from '../../hooks/useAuth';
 import { sanitizeHTML } from '../../utils/sanitize';
+import ConsentStructuredEditor from '../consent/ConsentStructuredEditor';
+import ConsentStructuredPdfPreview from '../consent/ConsentStructuredPdfPreview';
+import { baseClient } from '../../api/baseClient';
 
 // Available languages for translations
 const AVAILABLE_LANGUAGES = [
@@ -48,7 +51,12 @@ const ConsentTemplateEditorModal = ({
     tags: []
   });
 
-  const [editorMode, setEditorMode] = useState('visual'); // 'visual' ou 'source'
+  const [editorMode, setEditorMode] = useState(editingTemplate?.editor_mode || editingTemplate?.editorMode || 'free');
+  const [structuredSections, setStructuredSections] = useState(editingTemplate?.structured_sections || editingTemplate?.structuredSections || ConsentStructuredEditor.DEFAULT_SECTIONS);
+  const [showStructuredPreview, setShowStructuredPreview] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState(null);
+
   const [validationErrors, setValidationErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -83,6 +91,8 @@ const ConsentTemplateEditorModal = ({
           requiredFields: editingTemplate.requiredFields || [],
           tags: editingTemplate.tags || []
         });
+        setEditorMode(editingTemplate.editor_mode || editingTemplate.editorMode || 'free');
+        setStructuredSections(editingTemplate.structured_sections || editingTemplate.structuredSections || ConsentStructuredEditor.DEFAULT_SECTIONS);
       } else if (mode === 'create') {
         setFormData({
           title: '',
@@ -229,13 +239,17 @@ const ConsentTemplateEditorModal = ({
         code: formData.code || formData.title.toLowerCase().replace(/\s+/g, '_').substring(0, 50),
         title: formData.title,
         description: formData.description,
-        terms: formData.content,
+        terms: editorMode === 'structured'
+          ? (structuredSections.description?.text || structuredSections.title?.text || 'Structured consent')
+          : formData.content,
         version: formData.version || '1.0',
         consentType: formData.consentType,
         status: formData.status,
         isMandatory: formData.isMandatory || false,
         autoSend: formData.autoSend || false,
-        validFrom: formData.validFrom || new Date().toISOString()
+        validFrom: formData.validFrom || new Date().toISOString(),
+        editorMode: editorMode,
+        structuredSections: editorMode === 'structured' ? structuredSections : null
       };
 
       let result;
@@ -265,7 +279,7 @@ const ConsentTemplateEditorModal = ({
 
     if (!formData.title?.trim()) errors.title = t('templateEditor.validation.titleRequired');
     // Description is optional
-    if (!formData.content?.trim()) errors.content = t('templateEditor.validation.contentRequired');
+    if (editorMode === 'free' && !formData.content?.trim()) errors.content = t('templateEditor.validation.contentRequired');
     if (!formData.consentType) errors.consentType = t('templateEditor.validation.consentTypeRequired');
     if (!formData.speciality) errors.speciality = t('templateEditor.validation.specialtyRequired');
 
@@ -289,6 +303,11 @@ const ConsentTemplateEditorModal = ({
     setShowPreview(false);
     setImportedFileName('');
     setDetectedVariables([]);
+    setEditorMode('free');
+    setStructuredSections(ConsentStructuredEditor.DEFAULT_SECTIONS);
+    setShowStructuredPreview(false);
+    setTranslating(false);
+    setTranslateError(null);
     setIsInitialized(false); // Reset so next open re-initializes
     // Reset translation states
     setActiveEditorTab('content');
@@ -759,13 +778,51 @@ const ConsentTemplateEditorModal = ({
                             </p>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 items-start">
                           <button
                             onClick={cancelTranslationEdit}
                             className="px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
                           >
                             {t('templateEditor.buttons.cancel')}
                           </button>
+                          {editingTemplate?.id && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  setTranslating(true);
+                                  setTranslateError(null);
+                                  try {
+                                    const res = await baseClient.post(`/consent-templates/${editingTemplate.id}/translate`, {
+                                      sourceLanguage: editingTemplate.default_language || editingTemplate.defaultLanguage || 'es',
+                                      targetLanguage: selectedTranslationLang,
+                                    });
+                                    if (res.success && res.data) {
+                                      setEditingTranslation(prev => ({
+                                        ...prev,
+                                        title: res.data.title || prev.title,
+                                        description: res.data.description || prev.description,
+                                        terms: res.data.terms || prev.terms,
+                                      }));
+                                    }
+                                  } catch (err) {
+                                    setTranslateError(err.message || t('consents:aiTranslation.error'));
+                                  } finally {
+                                    setTranslating(false);
+                                  }
+                                }}
+                                disabled={translating || !selectedTranslationLang}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 text-sm"
+                              >
+                                {translating ? (
+                                  <><Loader className="h-4 w-4 animate-spin" /> {t('consents:aiTranslation.generating')}</>
+                                ) : (
+                                  <><Globe className="h-4 w-4" /> {t('consents:aiTranslation.generate')}</>
+                                )}
+                              </button>
+                              {translateError && <p className="text-xs text-red-500 mt-1">{translateError}</p>}
+                            </div>
+                          )}
                           <button
                             onClick={handleSaveTranslation}
                             disabled={translationSaving}
@@ -1134,128 +1191,182 @@ const ConsentTemplateEditorModal = ({
             ) : (
               // Mode édition
               <div className="flex-1 flex flex-col">
-                <div className="p-4 border-b bg-gray-50">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('templateEditor.editor.contentLabel')}
-                  </label>
-                  <p className="text-xs text-gray-500 mb-3">
-                    {t('templateEditor.editor.variablesHint')}
-                  </p>
-
-                  {/* Barre d'outils de formatage */}
-                  <div className="flex flex-wrap items-center gap-1 p-2 bg-white border rounded-lg">
-                    <span className="text-xs text-gray-500 mr-2">{t('templateEditor.editor.formatting')}</span>
-                    <button
-                      type="button"
-                      onClick={() => applyFormatting('\n# ', '\n')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
-                      title="Titre 1 - Sélectionnez du texte puis cliquez"
-                    >
-                      H1
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyFormatting('\n## ', '\n')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
-                      title="Titre 2 - Sélectionnez du texte puis cliquez"
-                    >
-                      H2
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1" />
-                    <button
-                      type="button"
-                      onClick={() => applyFormatting('**', '**')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Gras - Sélectionnez du texte puis cliquez"
-                    >
-                      <Bold className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyFormatting('_', '_')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Italique - Sélectionnez du texte puis cliquez"
-                    >
-                      <Italic className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyFormatting('__', '__')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Souligné - Sélectionnez du texte puis cliquez"
-                    >
-                      <Underline className="h-4 w-4" />
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1" />
-                    <button
-                      type="button"
-                      onClick={() => insertAtCursor('\n• ')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Liste à puces"
-                    >
-                      <List className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertAtCursor('\n1. ')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Liste numérotée"
-                    >
-                      <ListOrdered className="h-4 w-4" />
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1" />
-                    <button
-                      type="button"
-                      onClick={() => insertAtCursor('\n☐ ')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                      title="Case à cocher"
-                    >
-                      <CheckSquare className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertAtCursor('\n☐ Oui    ☐ Non')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
-                      title="Oui/Non"
-                    >
-                      ☐/☐
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1" />
-                    <button
-                      type="button"
-                      onClick={() => insertAtCursor('\n' + '═'.repeat(40) + '\n')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
-                      title="Ligne de séparation"
-                    >
-                      ―――
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1" />
-                    <button
-                      type="button"
-                      onClick={() => insertAtCursor('\n\n[LOGO_CLINIQUE]\n[NOM_CLINIQUE]\n[ADRESSE_CLINIQUE]\nTél: [TÉLÉPHONE_CLINIQUE] | Email: [EMAIL_CLINIQUE]\n' + '═'.repeat(50) + '\n\n')}
-                      className="p-1.5 rounded hover:bg-gray-100 text-blue-600 text-xs font-medium"
-                      title="Insérer en-tête clinique"
-                    >
-                      {t('templateEditor.editor.header')}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <textarea
-                    ref={textareaRef}
-                    value={formData.content}
-                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    className={`w-full h-full p-4 border-0 resize-none focus:ring-0 focus:outline-none font-mono text-sm ${
-                      validationErrors.content ? 'bg-red-50' : 'bg-white'
-                    }`}
-                    placeholder={t('templateEditor.editor.placeholder')}
-                  />
-                  {validationErrors.content && (
-                    <div className="bg-red-50 border-t border-red-200 p-2">
-                      <p className="text-red-700 text-sm">{validationErrors.content}</p>
+                {/* Editor Mode Selector */}
+                {(mode === 'create' || formData.status === 'draft') && (
+                  <div className="p-4 border-b bg-gray-50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('consents:structuredEditor.modeSelector')}
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditorMode('free')}
+                        className={`p-3 border-2 rounded-lg text-left transition-colors ${
+                          editorMode === 'free' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <p className="font-medium text-sm">{t('consents:structuredEditor.modeFree')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('consents:structuredEditor.modeFreeDesc')}</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditorMode('structured')}
+                        className={`p-3 border-2 rounded-lg text-left transition-colors ${
+                          editorMode === 'structured' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <p className="font-medium text-sm">{t('consents:structuredEditor.modeStructured')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('consents:structuredEditor.modeStructuredDesc')}</p>
+                      </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {editorMode === 'free' ? (
+                  <>
+                    <div className="p-4 border-b bg-gray-50">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('templateEditor.editor.contentLabel')}
+                      </label>
+                      <p className="text-xs text-gray-500 mb-3">
+                        {t('templateEditor.editor.variablesHint')}
+                      </p>
+
+                      {/* Barre d'outils de formatage */}
+                      <div className="flex flex-wrap items-center gap-1 p-2 bg-white border rounded-lg">
+                        <span className="text-xs text-gray-500 mr-2">{t('templateEditor.editor.formatting')}</span>
+                        <button
+                          type="button"
+                          onClick={() => applyFormatting('\n# ', '\n')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
+                          title="Titre 1 - Sélectionnez du texte puis cliquez"
+                        >
+                          H1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyFormatting('\n## ', '\n')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
+                          title="Titre 2 - Sélectionnez du texte puis cliquez"
+                        >
+                          H2
+                        </button>
+                        <div className="w-px h-5 bg-gray-300 mx-1" />
+                        <button
+                          type="button"
+                          onClick={() => applyFormatting('**', '**')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                          title="Gras - Sélectionnez du texte puis cliquez"
+                        >
+                          <Bold className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyFormatting('_', '_')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                          title="Italique - Sélectionnez du texte puis cliquez"
+                        >
+                          <Italic className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyFormatting('__', '__')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                          title="Souligné - Sélectionnez du texte puis cliquez"
+                        >
+                          <Underline className="h-4 w-4" />
+                        </button>
+                        <div className="w-px h-5 bg-gray-300 mx-1" />
+                        <button
+                          type="button"
+                          onClick={() => insertAtCursor('\n• ')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                          title="Liste à puces"
+                        >
+                          <List className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertAtCursor('\n1. ')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                          title="Liste numérotée"
+                        >
+                          <ListOrdered className="h-4 w-4" />
+                        </button>
+                        <div className="w-px h-5 bg-gray-300 mx-1" />
+                        <button
+                          type="button"
+                          onClick={() => insertAtCursor('\n☐ ')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                          title="Case à cocher"
+                        >
+                          <CheckSquare className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertAtCursor('\n☐ Oui    ☐ Non')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
+                          title="Oui/Non"
+                        >
+                          ☐/☐
+                        </button>
+                        <div className="w-px h-5 bg-gray-300 mx-1" />
+                        <button
+                          type="button"
+                          onClick={() => insertAtCursor('\n' + '═'.repeat(40) + '\n')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
+                          title="Ligne de séparation"
+                        >
+                          ―――
+                        </button>
+                        <div className="w-px h-5 bg-gray-300 mx-1" />
+                        <button
+                          type="button"
+                          onClick={() => insertAtCursor('\n\n[LOGO_CLINIQUE]\n[NOM_CLINIQUE]\n[ADRESSE_CLINIQUE]\nTél: [TÉLÉPHONE_CLINIQUE] | Email: [EMAIL_CLINIQUE]\n' + '═'.repeat(50) + '\n\n')}
+                          className="p-1.5 rounded hover:bg-gray-100 text-blue-600 text-xs font-medium"
+                          title="Insérer en-tête clinique"
+                        >
+                          {t('templateEditor.editor.header')}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <textarea
+                        ref={textareaRef}
+                        value={formData.content}
+                        onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                        className={`w-full h-full p-4 border-0 resize-none focus:ring-0 focus:outline-none font-mono text-sm ${
+                          validationErrors.content ? 'bg-red-50' : 'bg-white'
+                        }`}
+                        placeholder={t('templateEditor.editor.placeholder')}
+                      />
+                      {validationErrors.content && (
+                        <div className="bg-red-50 border-t border-red-200 p-2">
+                          <p className="text-red-700 text-sm">{validationErrors.content}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* Structured editor */
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <ConsentStructuredEditor
+                      sections={structuredSections}
+                      onChange={setStructuredSections}
+                      t={t}
+                    />
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowStructuredPreview(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                      >
+                        <Eye className="h-4 w-4" />
+                        {t('consents:structuredEditor.preview')}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1263,6 +1374,20 @@ const ConsentTemplateEditorModal = ({
           )}
         </div>
       </div>
+
+      {showStructuredPreview && (
+        <ConsentStructuredPdfPreview
+          isOpen={showStructuredPreview}
+          onClose={() => setShowStructuredPreview(false)}
+          sections={structuredSections}
+          template={editingTemplate || formData}
+          patient={null}
+          provider={null}
+          clinicInfo={null}
+          pdfStyle="standard"
+          t={t}
+        />
+      )}
     </div>
   );
 };
