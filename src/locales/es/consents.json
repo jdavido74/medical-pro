@@ -454,5 +454,42 @@
     "verbal": "Verbal (con testigo)",
     "written": "Escrito (firma física)",
     "electronic": "Firma electrónica"
+  },
+  "structuredEditor": {
+    "modeSelector": "Modo de edición",
+    "modeFree": "Modo libre",
+    "modeFreeDesc": "Editor de texto con variables",
+    "modeStructured": "Modo estructurado",
+    "modeStructuredDesc": "Formulario por secciones (PDF profesional)",
+    "sections": {
+      "header": "Encabezado de la clínica",
+      "title": "Título del consentimiento",
+      "patientId": "Identificación del paciente",
+      "physicianId": "Identificación del médico",
+      "description": "Descripción del tratamiento",
+      "risks": "Riesgos y complicaciones",
+      "alternatives": "Alternativas al tratamiento",
+      "benefits": "Beneficios esperados",
+      "declarations": "Declaraciones del paciente",
+      "patientSignature": "Firma del paciente",
+      "physicianSignature": "Firma del médico",
+      "revocation": "Cláusula de revocación"
+    },
+    "required": "Obligatorio (Ley 41/2002)",
+    "optional": "Opcional",
+    "addRisk": "Añadir riesgo",
+    "addDeclaration": "Añadir declaración",
+    "removeItem": "Eliminar",
+    "autoFilled": "Completado automáticamente",
+    "pdfStyle": "Estilo del PDF",
+    "pdfStandard": "Estándar (blanco y negro)",
+    "pdfBranded": "Personalizado (colores de la clínica)",
+    "preview": "Vista previa del PDF"
+  },
+  "aiTranslation": {
+    "generate": "Generar traducción con IA",
+    "generating": "Generando traducción...",
+    "generated": "Traducción generada — revisar y guardar",
+    "error": "Error al generar la traducción"
   }
 }

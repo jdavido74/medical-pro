@@ -454,5 +454,42 @@
     "verbal": "Verbal (with witness)",
     "written": "Written (physical signature)",
     "electronic": "Electronic signature"
+  },
+  "structuredEditor": {
+    "modeSelector": "Editing mode",
+    "modeFree": "Free mode",
+    "modeFreeDesc": "Text editor with variables",
+    "modeStructured": "Structured mode",
+    "modeStructuredDesc": "Section-based form (professional PDF)",
+    "sections": {
+      "header": "Clinic header",
+      "title": "Consent title",
+      "patientId": "Patient identification",
+      "physicianId": "Physician identification",
+      "description": "Treatment description",
+      "risks": "Risks and complications",
+      "alternatives": "Treatment alternatives",
+      "benefits": "Expected benefits",
+      "declarations": "Patient declarations",
+      "patientSignature": "Patient signature",
+      "physicianSignature": "Physician signature",
+      "revocation": "Revocation clause"
+    },
+    "required": "Required (Ley 41/2002)",
+    "optional": "Optional",
+    "addRisk": "Add risk",
+    "addDeclaration": "Add declaration",
+    "removeItem": "Remove",
+    "autoFilled": "Auto-filled",
+    "pdfStyle": "PDF style",
+    "pdfStandard": "Standard (black and white)",
+    "pdfBranded": "Custom (clinic colours)",
+    "preview": "PDF preview"
+  },
+  "aiTranslation": {
+    "generate": "Generate AI translation",
+    "generating": "Generating translation...",
+    "generated": "Translation generated — review and save",
+    "error": "Error generating translation"
   }
 }
