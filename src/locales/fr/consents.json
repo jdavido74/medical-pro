@@ -239,7 +239,16 @@
       "statusDraft": "Brouillon",
       "statusActive": "Actif",
       "statusInactive": "Inactif",
-      "loading": "Chargement..."
+      "loading": "Chargement...",
+      "defaultLanguage": "Langue par défaut",
+      "allSpecialties": "Toutes les spécialités"
+    },
+    "wizard": {
+      "step1": "Informations générales",
+      "step2": "Type et mode",
+      "step3": "Contenu",
+      "previous": "Précédent",
+      "next": "Suivant"
     },
     "importExport": {
       "title": "Import/Export",

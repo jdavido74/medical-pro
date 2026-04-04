@@ -239,7 +239,16 @@
       "statusDraft": "Draft",
       "statusActive": "Active",
       "statusInactive": "Inactive",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "defaultLanguage": "Default language",
+      "allSpecialties": "All specialties"
+    },
+    "wizard": {
+      "step1": "General information",
+      "step2": "Type and mode",
+      "step3": "Content",
+      "previous": "Previous",
+      "next": "Next"
     },
     "importExport": {
       "title": "Import/Export",
