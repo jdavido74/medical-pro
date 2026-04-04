@@ -51,6 +51,9 @@ const ConsentTemplateEditorModal = ({
     tags: []
   });
 
+  const [wizardStep, setWizardStep] = useState(mode === 'edit' ? 3 : 1);
+  const [defaultLanguage, setDefaultLanguage] = useState(editingTemplate?.default_language || editingTemplate?.defaultLanguage || 'es');
+
   const [editorMode, setEditorMode] = useState(editingTemplate?.editor_mode || editingTemplate?.editorMode || 'free');
   const [structuredSections, setStructuredSections] = useState(editingTemplate?.structured_sections || editingTemplate?.structuredSections || ConsentStructuredEditor.DEFAULT_SECTIONS);
   const [showStructuredPreview, setShowStructuredPreview] = useState(false);
@@ -93,6 +96,8 @@ const ConsentTemplateEditorModal = ({
         });
         setEditorMode(editingTemplate.editor_mode || editingTemplate.editorMode || 'free');
         setStructuredSections(editingTemplate.structured_sections || editingTemplate.structuredSections || ConsentStructuredEditor.DEFAULT_SECTIONS);
+        setDefaultLanguage(editingTemplate.default_language || editingTemplate.defaultLanguage || 'es');
+        setWizardStep(mode === 'edit' ? 3 : 1);
       } else if (mode === 'create') {
         setFormData({
           title: '',
@@ -249,7 +254,8 @@ const ConsentTemplateEditorModal = ({
         autoSend: formData.autoSend || false,
         validFrom: formData.validFrom || new Date().toISOString(),
         editorMode: editorMode,
-        structuredSections: editorMode === 'structured' ? structuredSections : null
+        structuredSections: editorMode === 'structured' ? structuredSections : null,
+        defaultLanguage: defaultLanguage
       };
 
       let result;
@@ -303,6 +309,8 @@ const ConsentTemplateEditorModal = ({
     setShowPreview(false);
     setImportedFileName('');
     setDetectedVariables([]);
+    setWizardStep(mode === 'edit' ? 3 : 1);
+    setDefaultLanguage('es');
     setEditorMode('free');
     setStructuredSections(ConsentStructuredEditor.DEFAULT_SECTIONS);
     setShowStructuredPreview(false);
@@ -634,7 +642,7 @@ const ConsentTemplateEditorModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
@@ -686,7 +694,143 @@ const ConsentTemplateEditorModal = ({
           </div>
         </div>
 
-        <div className="flex h-[85vh]">
+        {/* Progress bar - only in create/duplicate mode */}
+        {mode !== 'edit' && (
+          <div className="flex-shrink-0 px-6 py-3 bg-gray-50 border-b">
+            <div className="flex items-center justify-between max-w-md mx-auto">
+              {[
+                { step: 1, label: t('templateEditor.wizard.step1', 'Informacion general') },
+                { step: 2, label: t('templateEditor.wizard.step2', 'Tipo y modo') },
+                { step: 3, label: t('templateEditor.wizard.step3', 'Contenido') },
+              ].map(({ step, label }, idx) => (
+                <React.Fragment key={step}>
+                  {idx > 0 && <div className={`flex-1 h-0.5 mx-2 ${wizardStep >= step ? 'bg-blue-500' : 'bg-gray-300'}`} />}
+                  <div className="flex flex-col items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      wizardStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+                    }`}>
+                      {step}
+                    </div>
+                    <span className="text-xs text-gray-500 mt-1 whitespace-nowrap">{label}</span>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* WIZARD STEP 1: General Info */}
+        {wizardStep === 1 && (
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-lg mx-auto space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templateEditor.form.title')} *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder={t('templateEditor.form.titlePlaceholder', 'Ej: Consentimiento para Ozonoterapia')}
+                />
+                {validationErrors.title && <p className="text-red-500 text-xs mt-1">{validationErrors.title}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templateEditor.form.description')}</label>
+                <textarea
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  rows={3}
+                  placeholder={t('templateEditor.form.descriptionPlaceholder', 'Description optionnelle du modele')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templateEditor.form.defaultLanguage', 'Idioma por defecto')}</label>
+                <select
+                  value={defaultLanguage}
+                  onChange={e => setDefaultLanguage(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="es">Espanol</option>
+                  <option value="fr">Francais</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* WIZARD STEP 2: Type & Mode */}
+        {wizardStep === 2 && (
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-lg mx-auto space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templateEditor.form.consentType')} *</label>
+                <select
+                  value={formData.consentType}
+                  onChange={e => setFormData(prev => ({ ...prev, consentType: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  {consentTypesLoading ? (
+                    <option>Loading...</option>
+                  ) : (
+                    consentTypes.map(ct => (
+                      <option key={ct.code || ct.id} value={ct.code || ct.id}>
+                        {getConsentTypeName(ct) || ct.code}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templateEditor.form.specialty')}</label>
+                <select
+                  value={formData.speciality}
+                  onChange={e => setFormData(prev => ({ ...prev, speciality: e.target.value }))}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="general">{t('templateEditor.form.allSpecialties', 'Todas las especialidades')}</option>
+                  {!specialtiesLoading && specialties.map(s => (
+                    <option key={s.code || s.id} value={s.code || s.id}>
+                      {getSpecialtyName(s) || s.code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Editor mode selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('consents:structuredEditor.modeSelector')}</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('free')}
+                    className={`p-4 border-2 rounded-lg text-left transition-colors ${
+                      editorMode === 'free' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-medium text-sm">{t('consents:structuredEditor.modeFree')}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('consents:structuredEditor.modeFreeDesc')}</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('structured')}
+                    className={`p-4 border-2 rounded-lg text-left transition-colors ${
+                      editorMode === 'structured' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-medium text-sm">{t('consents:structuredEditor.modeStructured')}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('consents:structuredEditor.modeStructuredDesc')}</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* WIZARD STEP 3: Editor */}
+        {wizardStep === 3 && (
+          <>
           {/* Translations Panel - shown when translations tab is active */}
           {activeEditorTab === 'translations' && mode === 'edit' && editingTemplate?.id ? (
             <div className="flex-1 flex">
@@ -927,95 +1071,15 @@ const ConsentTemplateEditorModal = ({
             </div>
           ) : (
           /* Original content editor - wrapped in else condition */
-          <>
-          {/* Panneau de configuration */}
-          <div className="w-80 bg-gray-50 border-r overflow-y-auto p-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Informations générales */}
+          <div className="flex flex-1 overflow-hidden">
+          {/* Panneau de configuration (sidebar) - reduced: only settings not in steps 1-2 */}
+          <div className="w-72 bg-gray-50 border-r overflow-y-auto p-4">
+            <div className="space-y-4">
+              {/* Settings */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <h3 className="font-medium text-gray-900 mb-3">{t('templateEditor.form.generalInfo')}</h3>
 
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {t('templateEditor.form.title')}
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        validationErrors.title ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder={t('templateEditor.form.titlePlaceholder')}
-                    />
-                    {validationErrors.title && (
-                      <p className="text-red-500 text-sm mt-1">{validationErrors.title}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {t('templateEditor.form.description')}
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder={t('templateEditor.form.descriptionPlaceholder')}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {t('templateEditor.form.consentType')}
-                    </label>
-                    <select
-                      value={formData.consentType}
-                      onChange={(e) => setFormData(prev => ({ ...prev, consentType: e.target.value }))}
-                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        validationErrors.consentType ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      disabled={consentTypesLoading}
-                    >
-                      {consentTypesLoading ? (
-                        <option>{t('templateEditor.form.loading')}</option>
-                      ) : (
-                        consentTypes.map(type => (
-                          <option key={type.code} value={type.code}>
-                            {getConsentTypeName(type)}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    {validationErrors.consentType && (
-                      <p className="text-red-500 text-sm mt-1">{validationErrors.consentType}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {t('templateEditor.form.specialty')}
-                    </label>
-                    <select
-                      value={formData.speciality}
-                      onChange={(e) => setFormData(prev => ({ ...prev, speciality: e.target.value }))}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={specialtiesLoading}
-                    >
-                      {specialtiesLoading ? (
-                        <option>{t('templateEditor.form.loading')}</option>
-                      ) : (
-                        specialties.map(specialty => (
-                          <option key={specialty.code} value={specialty.code}>
-                            {getSpecialtyName(specialty)}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       {t('templateEditor.form.status')}
@@ -1029,6 +1093,30 @@ const ConsentTemplateEditorModal = ({
                       <option value="active">{t('templateEditor.form.statusActive')}</option>
                       <option value="inactive">{t('templateEditor.form.statusInactive')}</option>
                     </select>
+                  </div>
+
+                  {/* isMandatory toggle */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">{t('templateEditor.form.isMandatory', 'Obligatorio')}</label>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isMandatory: !prev.isMandatory }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isMandatory ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isMandatory ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+
+                  {/* autoSend toggle */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">{t('templateEditor.form.autoSend', 'Envio automatico')}</label>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, autoSend: !prev.autoSend }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.autoSend ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.autoSend ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1056,7 +1144,7 @@ const ConsentTemplateEditorModal = ({
 
                   {importedFileName && (
                     <p className="text-sm text-green-600">
-                      ✓ {t('templateEditor.importExport.imported')} {importedFileName}
+                      {t('templateEditor.importExport.imported')} {importedFileName}
                     </p>
                   )}
 
@@ -1081,7 +1169,7 @@ const ConsentTemplateEditorModal = ({
                 </div>
               </div>
 
-              {/* Variables détectées */}
+              {/* Variables detectees */}
               {detectedVariables.length > 0 && (
                 <div className="bg-white rounded-lg p-4 shadow-sm">
                   <h3 className="font-medium text-gray-900 mb-3">{t('templateEditor.variables.detected')}</h3>
@@ -1095,7 +1183,7 @@ const ConsentTemplateEditorModal = ({
                 </div>
               )}
 
-              {/* Variables prédéfinies organisées par catégorie */}
+              {/* Variables predefinies organisees par categorie */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <h3 className="font-medium text-gray-900 mb-3">{t('templateEditor.variables.predefined')}</h3>
                 <div className="space-y-3">
@@ -1127,47 +1215,19 @@ const ConsentTemplateEditorModal = ({
                 </div>
               </div>
 
-              {/* Erreur générale */}
+              {/* Erreur generale */}
               {validationErrors.general && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-red-700 text-sm">{validationErrors.general}</p>
                 </div>
               )}
-
-              {/* Boutons */}
-              <div className="flex space-x-2 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="flex-1 px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
-                >
-                  {t('templateEditor.buttons.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      {t('templateEditor.buttons.saving')}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      {t('templateEditor.buttons.save')}
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
 
-          {/* Éditeur principal */}
+          {/* Editeur principal */}
           <div className="flex-1 flex flex-col">
             {showPreview ? (
-              // Mode aperçu
+              // Mode apercu
               <div className="flex-1 p-6 overflow-y-auto bg-white">
                 <div className="max-w-4xl mx-auto">
                   <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -1189,10 +1249,10 @@ const ConsentTemplateEditorModal = ({
                 </div>
               </div>
             ) : (
-              // Mode édition
-              <div className="flex-1 flex flex-col">
-                {/* Editor Mode Selector */}
-                {(mode === 'create' || formData.status === 'draft') && (
+              // Mode edition
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Editor Mode Selector - only show in edit mode (steps 1-2 handle this for create) */}
+                {mode === 'edit' && (
                   <div className="p-4 border-b bg-gray-50">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       {t('consents:structuredEditor.modeSelector')}
@@ -1239,7 +1299,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => applyFormatting('\n# ', '\n')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
-                          title="Titre 1 - Sélectionnez du texte puis cliquez"
+                          title="Titre 1 - Selectionnez du texte puis cliquez"
                         >
                           H1
                         </button>
@@ -1247,7 +1307,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => applyFormatting('\n## ', '\n')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs font-bold"
-                          title="Titre 2 - Sélectionnez du texte puis cliquez"
+                          title="Titre 2 - Selectionnez du texte puis cliquez"
                         >
                           H2
                         </button>
@@ -1256,7 +1316,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => applyFormatting('**', '**')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                          title="Gras - Sélectionnez du texte puis cliquez"
+                          title="Gras - Selectionnez du texte puis cliquez"
                         >
                           <Bold className="h-4 w-4" />
                         </button>
@@ -1264,7 +1324,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => applyFormatting('_', '_')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                          title="Italique - Sélectionnez du texte puis cliquez"
+                          title="Italique - Selectionnez du texte puis cliquez"
                         >
                           <Italic className="h-4 w-4" />
                         </button>
@@ -1272,7 +1332,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => applyFormatting('__', '__')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                          title="Souligné - Sélectionnez du texte puis cliquez"
+                          title="Souligne - Selectionnez du texte puis cliquez"
                         >
                           <Underline className="h-4 w-4" />
                         </button>
@@ -1281,7 +1341,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => insertAtCursor('\n• ')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                          title="Liste à puces"
+                          title="Liste a puces"
                         >
                           <List className="h-4 w-4" />
                         </button>
@@ -1289,7 +1349,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => insertAtCursor('\n1. ')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                          title="Liste numérotée"
+                          title="Liste numerotee"
                         >
                           <ListOrdered className="h-4 w-4" />
                         </button>
@@ -1298,7 +1358,7 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => insertAtCursor('\n☐ ')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-                          title="Case à cocher"
+                          title="Case a cocher"
                         >
                           <CheckSquare className="h-4 w-4" />
                         </button>
@@ -1315,16 +1375,16 @@ const ConsentTemplateEditorModal = ({
                           type="button"
                           onClick={() => insertAtCursor('\n' + '═'.repeat(40) + '\n')}
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-600 text-xs"
-                          title="Ligne de séparation"
+                          title="Ligne de separation"
                         >
                           ―――
                         </button>
                         <div className="w-px h-5 bg-gray-300 mx-1" />
                         <button
                           type="button"
-                          onClick={() => insertAtCursor('\n\n[LOGO_CLINIQUE]\n[NOM_CLINIQUE]\n[ADRESSE_CLINIQUE]\nTél: [TÉLÉPHONE_CLINIQUE] | Email: [EMAIL_CLINIQUE]\n' + '═'.repeat(50) + '\n\n')}
+                          onClick={() => insertAtCursor('\n\n[LOGO_CLINIQUE]\n[NOM_CLINIQUE]\n[ADRESSE_CLINIQUE]\nTel: [TELEPHONE_CLINIQUE] | Email: [EMAIL_CLINIQUE]\n' + '═'.repeat(50) + '\n\n')}
                           className="p-1.5 rounded hover:bg-gray-100 text-blue-600 text-xs font-medium"
-                          title="Insérer en-tête clinique"
+                          title="Inserer en-tete clinique"
                         >
                           {t('templateEditor.editor.header')}
                         </button>
@@ -1370,8 +1430,68 @@ const ConsentTemplateEditorModal = ({
               </div>
             )}
           </div>
-          </>
+          </div>
           )}
+          </>
+        )}
+
+        {/* Footer with navigation */}
+        <div className="flex-shrink-0 px-6 py-3 bg-gray-100 border-t flex justify-between items-center">
+          <div>
+            {wizardStep > 1 && mode !== 'edit' && (
+              <button
+                type="button"
+                onClick={() => setWizardStep(prev => prev - 1)}
+                className="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50 text-sm"
+              >
+                {t('templateEditor.wizard.previous', 'Anterior')}
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={handleClose} className="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50 text-sm">
+              {t('templateEditor.buttons.cancel')}
+            </button>
+            {wizardStep < 3 && mode !== 'edit' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  // Validate current step before proceeding
+                  if (wizardStep === 1 && !formData.title.trim()) {
+                    setValidationErrors({ title: t('templateEditor.validation.titleRequired') });
+                    return;
+                  }
+                  setValidationErrors({});
+                  setWizardStep(prev => prev + 1);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              >
+                {t('templateEditor.wizard.next', 'Siguiente')}
+              </button>
+            ) : wizardStep === 3 ? (
+              <>
+                {editorMode === 'structured' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowStructuredPreview(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    {t('consents:structuredEditor.preview')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm flex items-center gap-2"
+                >
+                  {isSubmitting ? <Loader className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {t('templateEditor.buttons.save')}
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
 
