@@ -30,6 +30,7 @@ const mapCimaRoute = (cimaRoute) => {
   if (lower.includes('oral')) return 'oral';
   if (lower.includes('intravenosa')) return 'iv';
   if (lower.includes('intramuscular')) return 'im';
+  if (lower.includes('subcutánea') || lower.includes('subcutanea') || lower.includes('sous-cutanée') || lower.includes('subcutaneous')) return 'subcutaneous';
   if (lower.includes('topica') || lower.includes('cutánea') || lower.includes('cutanea')) return 'topical';
   if (lower.includes('inhalat')) return 'inhaled';
   if (lower.includes('sublingual')) return 'sublingual';
@@ -2097,6 +2098,7 @@ const MedicalRecordForm = forwardRef(({
                       <option value="im">{t('medical:form.treatmentsTab.routes.im')}</option>
                       <option value="topical">{t('medical:form.treatmentsTab.routes.topical')}</option>
                       <option value="inhaled">{t('medical:form.treatmentsTab.routes.inhaled')}</option>
+                      <option value="subcutaneous">{t('medical:form.treatmentsTab.routes.subcutaneous')}</option>
                     </select>
                   </div>
 
@@ -2999,6 +3001,7 @@ const MedicalRecordForm = forwardRef(({
                     <option value="inhaled">{t('medical:form.prescriptionTab.routes.inhaled')}</option>
                     <option value="sublingual">{t('medical:form.prescriptionTab.routes.sublingual')}</option>
                     <option value="rectal">{t('medical:form.prescriptionTab.routes.rectal')}</option>
+                    <option value="subcutaneous">{t('medical:form.prescriptionTab.routes.subcutaneous')}</option>
                   </select>
                 </div>
                 <div className="flex items-end">

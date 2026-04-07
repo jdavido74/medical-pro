@@ -298,7 +298,8 @@
         "iv": "Intravenosa",
         "im": "Intramuscular",
         "topical": "Tópica",
-        "inhaled": "Inhalada"
+        "inhaled": "Inhalada",
+        "subcutaneous": "Subcutánea"
       },
       "startDate": "Fecha Inicio",
       "status": "Estado",
@@ -382,7 +383,8 @@
         "topical": "Tópica",
         "inhaled": "Inhalada",
         "sublingual": "Sublingual",
-        "rectal": "Rectal"
+        "rectal": "Rectal",
+        "subcutaneous": "Subcutánea"
       },
       "duration": "Duración",
       "durationPlaceholder": "7 días",
