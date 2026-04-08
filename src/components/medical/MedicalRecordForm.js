@@ -2333,6 +2333,7 @@ const MedicalRecordForm = forwardRef(({
                     <option value="im">{t('medical:form.treatmentsTab.routes.im')}</option>
                     <option value="topical">{t('medical:form.treatmentsTab.routes.topical')}</option>
                     <option value="inhaled">{t('medical:form.treatmentsTab.routes.inhaled')}</option>
+                    <option value="subcutaneous">{t('medical:form.treatmentsTab.routes.subcutaneous')}</option>
                   </select>
                 </div>
 
