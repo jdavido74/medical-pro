@@ -6,8 +6,8 @@ import { countries, getCountryByCode, getPhonePrefix, getPhoneDigits } from '../
  * Each country has specific rules for local phone numbers (without prefix)
  */
 export const phoneRules = {
+  // — Primary markets —
   ES: {
-    // Spain: 9 digits, starts with 6, 7, 8, or 9
     digits: 9,
     pattern: /^[6-9][0-9]{8}$/,
     example: '612 345 678',
@@ -15,76 +15,22 @@ export const phoneRules = {
     landlineStart: ['8', '9']
   },
   FR: {
-    // France: 9 digits (without leading 0), starts with 1-9
-    // Mobile: 6, 7 | Landline: 1-5, 8, 9
     digits: 9,
     pattern: /^[1-9][0-9]{8}$/,
     example: '6 12 34 56 78',
     mobileStart: ['6', '7'],
     landlineStart: ['1', '2', '3', '4', '5', '8', '9']
   },
-  GB: {
-    // UK: 10 digits, starts with 7 (mobile) or 1, 2, 3 (landline)
-    digits: 10,
-    pattern: /^[1-9][0-9]{9}$/,
-    example: '7123 456 789',
-    mobileStart: ['7'],
-    landlineStart: ['1', '2', '3']
-  },
-  DE: {
-    // Germany: 10-11 digits, flexible
-    digits: 10,
-    minDigits: 10,
-    maxDigits: 11,
-    pattern: /^[1-9][0-9]{9,10}$/,
-    example: '151 1234 5678',
-    mobileStart: ['15', '16', '17'],
-    landlineStart: ['2', '3', '4', '5', '6', '7', '8', '9']
-  },
-  IT: {
-    // Italy: 9-10 digits, mobile starts with 3
-    digits: 10,
-    minDigits: 9,
-    maxDigits: 10,
-    pattern: /^[0-9]{9,10}$/,
-    example: '312 345 6789',
-    mobileStart: ['3'],
-    landlineStart: ['0']
-  },
-  PT: {
-    // Portugal: 9 digits, mobile starts with 9
-    digits: 9,
-    pattern: /^[0-9]{9}$/,
-    example: '912 345 678',
-    mobileStart: ['9'],
-    landlineStart: ['2']
-  },
-  BE: {
-    // Belgium: 9 digits
-    digits: 9,
-    pattern: /^[0-9]{9}$/,
-    example: '471 23 45 67',
-    mobileStart: ['4'],
-    landlineStart: ['2', '3', '5', '6', '7', '8', '9']
-  },
-  NL: {
-    // Netherlands: 9 digits
-    digits: 9,
-    pattern: /^[0-9]{9}$/,
-    example: '612 345 678',
-    mobileStart: ['6'],
-    landlineStart: ['1', '2', '3', '4', '5', '7', '8', '9']
-  },
-  CH: {
-    // Switzerland: 9 digits
-    digits: 9,
-    pattern: /^[0-9]{9}$/,
-    example: '79 123 45 67',
-    mobileStart: ['7'],
-    landlineStart: ['2', '3', '4', '5', '6', '8']
+
+  // — Western Europe —
+  AD: {
+    digits: 6,
+    minDigits: 6,
+    maxDigits: 9,
+    pattern: /^[0-9]{6,9}$/,
+    example: '312 345'
   },
   AT: {
-    // Austria: 10-13 digits, flexible
     digits: 10,
     minDigits: 10,
     maxDigits: 13,
@@ -93,16 +39,53 @@ export const phoneRules = {
     mobileStart: ['6'],
     landlineStart: ['1', '2', '3', '4', '5', '7']
   },
+  BE: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '471 23 45 67',
+    mobileStart: ['4'],
+    landlineStart: ['2', '3', '5', '6', '7', '8', '9']
+  },
+  CH: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '79 123 45 67',
+    mobileStart: ['7'],
+    landlineStart: ['2', '3', '4', '5', '6', '8']
+  },
+  DE: {
+    digits: 10,
+    minDigits: 10,
+    maxDigits: 11,
+    pattern: /^[1-9][0-9]{9,10}$/,
+    example: '151 1234 5678',
+    mobileStart: ['15', '16', '17'],
+    landlineStart: ['2', '3', '4', '5', '6', '7', '8', '9']
+  },
+  GB: {
+    digits: 10,
+    pattern: /^[1-9][0-9]{9}$/,
+    example: '7123 456 789',
+    mobileStart: ['7'],
+    landlineStart: ['1', '2', '3']
+  },
   IE: {
-    // Ireland: 9 digits
     digits: 9,
     pattern: /^[0-9]{9}$/,
     example: '85 123 4567',
     mobileStart: ['8'],
     landlineStart: ['1', '2', '4', '5', '6', '7', '9']
   },
+  IT: {
+    digits: 10,
+    minDigits: 9,
+    maxDigits: 10,
+    pattern: /^[0-9]{9,10}$/,
+    example: '312 345 6789',
+    mobileStart: ['3'],
+    landlineStart: ['0']
+  },
   LU: {
-    // Luxembourg: 8-9 digits
     digits: 9,
     minDigits: 8,
     maxDigits: 9,
@@ -111,34 +94,46 @@ export const phoneRules = {
     mobileStart: ['6'],
     landlineStart: ['2', '3', '4', '5']
   },
+  MC: {
+    digits: 8,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '6 12 34 56 7'
+  },
+  NL: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '612 345 678',
+    mobileStart: ['6'],
+    landlineStart: ['1', '2', '3', '4', '5', '7', '8', '9']
+  },
+  PT: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '912 345 678',
+    mobileStart: ['9'],
+    landlineStart: ['2']
+  },
+
+  // — Northern Europe —
   DK: {
-    // Denmark: 8 digits
     digits: 8,
     pattern: /^[0-9]{8}$/,
     example: '20 12 34 56',
     mobileStart: ['2', '3', '4', '5'],
     landlineStart: ['3', '4', '5', '6', '7', '8', '9']
   },
-  SE: {
-    // Sweden: 9 digits
-    digits: 9,
-    minDigits: 7,
-    maxDigits: 9,
-    pattern: /^[0-9]{7,9}$/,
-    example: '70 123 45 67',
-    mobileStart: ['7'],
-    landlineStart: ['1', '2', '3', '4', '5', '6', '8', '9']
-  },
-  NO: {
-    // Norway: 8 digits
+  EE: {
     digits: 8,
-    pattern: /^[0-9]{8}$/,
-    example: '40 12 34 56',
-    mobileStart: ['4', '9'],
-    landlineStart: ['2', '3', '5', '6', '7']
+    minDigits: 7,
+    maxDigits: 8,
+    pattern: /^[0-9]{7,8}$/,
+    example: '5123 4567',
+    mobileStart: ['5'],
+    landlineStart: ['3', '4', '6', '7']
   },
   FI: {
-    // Finland: 9-10 digits
     digits: 9,
     minDigits: 9,
     maxDigits: 10,
@@ -147,32 +142,124 @@ export const phoneRules = {
     mobileStart: ['4', '5'],
     landlineStart: ['1', '2', '3', '6', '7', '8', '9']
   },
-  PL: {
-    // Poland: 9 digits
+  IS: {
+    digits: 7,
+    pattern: /^[0-9]{7}$/,
+    example: '611 1234'
+  },
+  LT: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '6123 4567',
+    mobileStart: ['6'],
+    landlineStart: ['3', '4', '5']
+  },
+  LV: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '2123 4567',
+    mobileStart: ['2'],
+    landlineStart: ['6', '7']
+  },
+  NO: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '40 12 34 56',
+    mobileStart: ['4', '9'],
+    landlineStart: ['2', '3', '5', '6', '7']
+  },
+  SE: {
+    digits: 9,
+    minDigits: 7,
+    maxDigits: 9,
+    pattern: /^[0-9]{7,9}$/,
+    example: '70 123 45 67',
+    mobileStart: ['7'],
+    landlineStart: ['1', '2', '3', '4', '5', '6', '8', '9']
+  },
+
+  // — Central & Eastern Europe —
+  AL: {
+    digits: 9,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '66 123 4567'
+  },
+  BA: {
+    digits: 8,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '61 234 567'
+  },
+  BG: {
+    digits: 9,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '87 123 4567',
+    mobileStart: ['8', '9'],
+    landlineStart: ['2', '3', '4', '5', '6', '7']
+  },
+  BY: {
     digits: 9,
     pattern: /^[0-9]{9}$/,
-    example: '512 345 678',
-    mobileStart: ['5', '6', '7', '8'],
-    landlineStart: ['1', '2', '3', '4', '9']
+    example: '29 123 45 67'
   },
   CZ: {
-    // Czech Republic: 9 digits
     digits: 9,
     pattern: /^[0-9]{9}$/,
     example: '601 234 567',
     mobileStart: ['6', '7'],
     landlineStart: ['2', '3', '4', '5']
   },
-  GR: {
-    // Greece: 10 digits
-    digits: 10,
-    pattern: /^[0-9]{10}$/,
-    example: '69 1234 5678',
-    mobileStart: ['6'],
-    landlineStart: ['2']
+  GE: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '555 12 34 56'
+  },
+  HR: {
+    digits: 9,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '91 234 5678',
+    mobileStart: ['9'],
+    landlineStart: ['1', '2', '3', '4', '5']
+  },
+  HU: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '20 123 4567',
+    mobileStart: ['20', '30', '31', '50', '70'],
+    landlineStart: ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+  },
+  MD: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '6912 3456'
+  },
+  ME: {
+    digits: 8,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '67 123 456'
+  },
+  MK: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '7012 3456'
+  },
+  PL: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '512 345 678',
+    mobileStart: ['5', '6', '7', '8'],
+    landlineStart: ['1', '2', '3', '4', '9']
   },
   RO: {
-    // Romania: 9 digits
     digits: 9,
     minDigits: 9,
     maxDigits: 10,
@@ -181,8 +268,306 @@ export const phoneRules = {
     mobileStart: ['7'],
     landlineStart: ['2', '3']
   },
+  RS: {
+    digits: 9,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '60 123 4567'
+  },
+  RU: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '912 345 6789',
+    mobileStart: ['9'],
+    landlineStart: ['3', '4', '8']
+  },
+  SI: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '31 234 567',
+    mobileStart: ['3', '4', '5'],
+    landlineStart: ['1', '2', '7']
+  },
+  SK: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '901 234 567',
+    mobileStart: ['9'],
+    landlineStart: ['2', '3', '4', '5']
+  },
+  UA: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '50 123 4567',
+    mobileStart: ['5', '6', '7', '9'],
+    landlineStart: ['3', '4']
+  },
+  XK: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '44 123 456'
+  },
+
+  // — Southern Europe / Mediterranean —
+  CY: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '96 123 456',
+    mobileStart: ['9'],
+    landlineStart: ['2']
+  },
+  GR: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '69 1234 5678',
+    mobileStart: ['6'],
+    landlineStart: ['2']
+  },
+  MT: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '7912 3456',
+    mobileStart: ['7', '9'],
+    landlineStart: ['2']
+  },
+  TR: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '532 123 4567',
+    mobileStart: ['5'],
+    landlineStart: ['2', '3', '4']
+  },
+
+  // — North Africa / Maghreb —
+  DZ: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '551 23 45 67',
+    mobileStart: ['5', '6', '7'],
+    landlineStart: ['2', '3', '4']
+  },
+  EG: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '10 1234 5678',
+    mobileStart: ['10', '11', '12', '15']
+  },
+  LY: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '91 234 5678'
+  },
+  MA: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '612 345 678',
+    mobileStart: ['6', '7'],
+    landlineStart: ['5']
+  },
+  TN: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '20 123 456',
+    mobileStart: ['2', '5', '9'],
+    landlineStart: ['7']
+  },
+
+  // — Sub-Saharan Africa —
+  CI: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '01 23 45 67 89'
+  },
+  CM: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '6 71 23 45 67',
+    mobileStart: ['6'],
+    landlineStart: ['2', '3']
+  },
+  CD: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '81 234 5678'
+  },
+  GH: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '24 123 4567',
+    mobileStart: ['2', '5'],
+    landlineStart: ['3']
+  },
+  GN: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '622 12 34 56'
+  },
+  KE: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '712 345 678',
+    mobileStart: ['7', '1'],
+    landlineStart: ['2', '4']
+  },
+  ML: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '6312 3456'
+  },
+  NG: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '802 345 6789',
+    mobileStart: ['7', '8', '9'],
+    landlineStart: ['1', '2']
+  },
+  SN: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '77 123 45 67',
+    mobileStart: ['7'],
+    landlineStart: ['3']
+  },
+  ZA: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '71 234 5678',
+    mobileStart: ['6', '7', '8'],
+    landlineStart: ['1', '2', '3', '4', '5']
+  },
+
+  // — Middle East —
+  AE: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '50 123 4567',
+    mobileStart: ['5'],
+    landlineStart: ['2', '3', '4', '6', '7']
+  },
+  IL: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '50 123 4567',
+    mobileStart: ['5'],
+    landlineStart: ['2', '3', '4', '8', '9']
+  },
+  JO: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '79 123 4567',
+    mobileStart: ['7'],
+    landlineStart: ['2', '3', '4', '5', '6']
+  },
+  LB: {
+    digits: 8,
+    minDigits: 7,
+    maxDigits: 8,
+    pattern: /^[0-9]{7,8}$/,
+    example: '71 123 456',
+    mobileStart: ['3', '7'],
+    landlineStart: ['1', '4', '5', '6', '8', '9']
+  },
+  SA: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '51 234 5678',
+    mobileStart: ['5'],
+    landlineStart: ['1']
+  },
+
+  // — Asia —
+  BD: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '1712 345 678',
+    mobileStart: ['1']
+  },
+  CN: {
+    digits: 11,
+    pattern: /^1[0-9]{10}$/,
+    example: '138 1234 5678',
+    mobileStart: ['1']
+  },
+  ID: {
+    digits: 10,
+    minDigits: 9,
+    maxDigits: 12,
+    pattern: /^[0-9]{9,12}$/,
+    example: '812 345 6789',
+    mobileStart: ['8'],
+    landlineStart: ['2', '3', '4', '5', '6', '7']
+  },
+  IN: {
+    digits: 10,
+    pattern: /^[6-9][0-9]{9}$/,
+    example: '98765 43210',
+    mobileStart: ['6', '7', '8', '9']
+  },
+  JP: {
+    digits: 10,
+    minDigits: 9,
+    maxDigits: 10,
+    pattern: /^[0-9]{9,10}$/,
+    example: '90 1234 5678',
+    mobileStart: ['7', '8', '9'],
+    landlineStart: ['1', '2', '3', '4', '5', '6']
+  },
+  KR: {
+    digits: 10,
+    minDigits: 9,
+    maxDigits: 10,
+    pattern: /^[0-9]{9,10}$/,
+    example: '10 1234 5678',
+    mobileStart: ['1'],
+    landlineStart: ['2', '3', '4', '5', '6']
+  },
+  MY: {
+    digits: 10,
+    minDigits: 9,
+    maxDigits: 10,
+    pattern: /^[0-9]{9,10}$/,
+    example: '12 345 6789',
+    mobileStart: ['1'],
+    landlineStart: ['3', '4', '5', '6', '7', '8', '9']
+  },
+  PH: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '917 123 4567',
+    mobileStart: ['9']
+  },
+  PK: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '300 123 4567',
+    mobileStart: ['3']
+  },
+  SG: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '9123 4567',
+    mobileStart: ['8', '9'],
+    landlineStart: ['3', '6']
+  },
+  TH: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '81 234 5678',
+    mobileStart: ['6', '8', '9'],
+    landlineStart: ['2', '3', '4', '5', '7']
+  },
+  VN: {
+    digits: 9,
+    minDigits: 9,
+    maxDigits: 10,
+    pattern: /^[0-9]{9,10}$/,
+    example: '91 234 56 78',
+    mobileStart: ['3', '5', '7', '8', '9']
+  },
+
+  // — North America —
   US: {
-    // USA: 10 digits (area code + number), cannot start with 0 or 1
     digits: 10,
     pattern: /^[2-9][0-9]{9}$/,
     example: '212 555 1234',
@@ -190,13 +575,143 @@ export const phoneRules = {
     landlineStart: ['2', '3', '4', '5', '6', '7', '8', '9']
   },
   CA: {
-    // Canada: 10 digits (same NANP format as US)
     digits: 10,
     pattern: /^[2-9][0-9]{9}$/,
     example: '416 555 1234',
     mobileStart: ['2', '3', '4', '5', '6', '7', '8', '9'],
     landlineStart: ['2', '3', '4', '5', '6', '7', '8', '9']
-  }
+  },
+  MX: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '55 1234 5678',
+    mobileStart: ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+  },
+
+  // — Central America & Caribbean —
+  CR: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '8312 3456'
+  },
+  CU: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '5123 4567',
+    mobileStart: ['5']
+  },
+  DO: {
+    digits: 10,
+    pattern: /^[2-9][0-9]{9}$/,
+    example: '809 555 1234'
+  },
+  GT: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '5123 4567'
+  },
+  HN: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '9412 3456'
+  },
+  NI: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '8123 4567'
+  },
+  PA: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '6123 4567'
+  },
+  SV: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '7123 4567'
+  },
+
+  // — South America —
+  AR: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '11 2345 6789',
+    mobileStart: ['1', '2', '3']
+  },
+  BO: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '7123 4567'
+  },
+  BR: {
+    digits: 11,
+    minDigits: 10,
+    maxDigits: 11,
+    pattern: /^[0-9]{10,11}$/,
+    example: '11 91234 5678',
+    mobileStart: ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+  },
+  CL: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '9 1234 5678',
+    mobileStart: ['9']
+  },
+  CO: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '312 345 6789',
+    mobileStart: ['3']
+  },
+  EC: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '99 123 4567',
+    mobileStart: ['9']
+  },
+  PE: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '912 345 678',
+    mobileStart: ['9']
+  },
+  PY: {
+    digits: 9,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '981 234 567'
+  },
+  UY: {
+    digits: 8,
+    pattern: /^[0-9]{8}$/,
+    example: '91 234 567',
+    mobileStart: ['9']
+  },
+  VE: {
+    digits: 10,
+    pattern: /^[0-9]{10}$/,
+    example: '412 345 6789',
+    mobileStart: ['4']
+  },
+
+  // — Oceania —
+  AU: {
+    digits: 9,
+    pattern: /^[0-9]{9}$/,
+    example: '412 345 678',
+    mobileStart: ['4'],
+    landlineStart: ['2', '3', '7', '8']
+  },
+  NZ: {
+    digits: 9,
+    minDigits: 8,
+    maxDigits: 9,
+    pattern: /^[0-9]{8,9}$/,
+    example: '21 234 5678',
+    mobileStart: ['2'],
+    landlineStart: ['3', '4', '6', '7', '9']
+  },
 };
 
 /**
@@ -377,8 +892,14 @@ export const parseFullPhoneNumber = (fullPhone) => {
 
   const cleaned = fullPhone.replace(/[^0-9+]/g, '');
 
+  // Sort countries by prefix length (longest first) to avoid partial matches
+  // e.g. +351 (Portugal) must be checked before +35x, +593 (Ecuador) before +59
+  const sortedCountries = [...countries].sort(
+    (a, b) => b.phone.length - a.phone.length
+  );
+
   // Try to match country prefix
-  for (const country of countries) {
+  for (const country of sortedCountries) {
     const prefix = country.phone;
     if (cleaned.startsWith(prefix)) {
       const localNumber = cleaned.substring(prefix.length);
@@ -388,15 +909,21 @@ export const parseFullPhoneNumber = (fullPhone) => {
         localNumber: localNumber
       };
     }
-    // Also check without + sign
+    // Also check without + sign, but only if the remaining digits
+    // form a plausible local number (at least 6 digits) to avoid
+    // false matches on short local numbers (e.g. "612345678" ≠ AU +61)
     const prefixWithoutPlus = prefix.replace('+', '');
     if (cleaned.startsWith(prefixWithoutPlus) && !cleaned.startsWith('+')) {
       const localNumber = cleaned.substring(prefixWithoutPlus.length);
-      return {
-        countryCode: country.code,
-        prefix: prefix,
-        localNumber: localNumber
-      };
+      const rules = phoneRules[country.code];
+      const minDigits = (rules && rules.minDigits) || country.digits || 7;
+      if (localNumber.length >= minDigits) {
+        return {
+          countryCode: country.code,
+          prefix: prefix,
+          localNumber: localNumber
+        };
+      }
     }
   }
 
