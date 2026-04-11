@@ -56,7 +56,49 @@
     "insuranceInfo": "Informations d'assurance",
     "create": "Créer le patient",
     "update": "Mettre à jour",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "patientIdentity": "Identité du Patient",
+    "contactData": "Coordonnées",
+    "administrativeInfo": "Informations Administratives",
+    "emergencyContact": "Contact d'Urgence",
+    "duplicateWarning": "Patient similaire trouvé",
+    "duplicateWarningDetail": "{{message}} : {{name}} ({{number}})",
+    "selectGender": "Sélectionner le sexe",
+    "male": "Masculin",
+    "female": "Féminin",
+    "other": "Autre",
+    "preferNotToSay": "Préfère ne pas dire",
+    "idNumberPlaceholder": "CNI, Passeport, Titre de séjour...",
+    "selectNationality": "Sélectionner la nationalité",
+    "streetPlaceholder": "Rue, numéro, étage...",
+    "cityPlaceholder": "Ville",
+    "postalCodePlaceholder": "Code postal",
+    "selectCountry": "Sélectionner le pays",
+    "emailPlaceholder": "email@exemple.com",
+    "selectRelationship": "Sélectionner la relation",
+    "relationships": {
+      "spouse": "Conjoint(e)",
+      "child": "Enfant",
+      "father": "Père",
+      "mother": "Mère",
+      "sibling": "Frère/Sœur",
+      "relative": "Famille",
+      "friend": "Ami(e)",
+      "other": "Autre"
+    },
+    "medicalInsurance": "Assurance Maladie",
+    "policyNumber": "Numéro de Police",
+    "policyNumberPlaceholder": "Numéro de police",
+    "insuranceType": "Type d'Assurance",
+    "selectInsuranceType": "Sélectionner le type",
+    "insuranceTypes": {
+      "public": "Publique (Sécurité Sociale)",
+      "private": "Privée",
+      "mixed": "Mixte"
+    },
+    "patientStatus": "État du Patient",
+    "statusActive": "Actif",
+    "statusInactive": "Inactif"
   },
   "messages": {
     "patientCreated": "Patient créé avec succès",
@@ -325,5 +367,27 @@
     "duplicateDetected": "Patient détecté",
     "matchType": "Correspondance",
     "badge": "Provisoire"
+  },
+  "countries": {
+    "ES": "Espagne", "FR": "France", "AD": "Andorre", "AT": "Autriche", "BE": "Belgique", "CH": "Suisse", "DE": "Allemagne", "GB": "Royaume-Uni", "IE": "Irlande", "IT": "Italie", "LU": "Luxembourg", "MC": "Monaco", "NL": "Pays-Bas", "PT": "Portugal",
+    "DK": "Danemark", "EE": "Estonie", "FI": "Finlande", "IS": "Islande", "LT": "Lituanie", "LV": "Lettonie", "NO": "Norvège", "SE": "Suède",
+    "AL": "Albanie", "BA": "Bosnie-Herzégovine", "BG": "Bulgarie", "BY": "Biélorussie", "CZ": "Tchéquie", "GE": "Géorgie", "HR": "Croatie", "HU": "Hongrie", "MD": "Moldavie", "ME": "Monténégro", "MK": "Macédoine du Nord", "PL": "Pologne", "RO": "Roumanie", "RS": "Serbie", "RU": "Russie", "SI": "Slovénie", "SK": "Slovaquie", "UA": "Ukraine", "XK": "Kosovo",
+    "CY": "Chypre", "GR": "Grèce", "MT": "Malte", "TR": "Turquie",
+    "DZ": "Algérie", "EG": "Égypte", "LY": "Libye", "MA": "Maroc", "TN": "Tunisie",
+    "CI": "Côte d'Ivoire", "CM": "Cameroun", "CD": "RD Congo", "GH": "Ghana", "GN": "Guinée", "KE": "Kenya", "ML": "Mali", "NG": "Nigéria", "SN": "Sénégal", "ZA": "Afrique du Sud",
+    "AE": "Émirats arabes unis", "IL": "Israël", "JO": "Jordanie", "LB": "Liban", "SA": "Arabie saoudite",
+    "BD": "Bangladesh", "CN": "Chine", "ID": "Indonésie", "IN": "Inde", "JP": "Japon", "KR": "Corée du Sud", "MY": "Malaisie", "PH": "Philippines", "PK": "Pakistan", "SG": "Singapour", "TH": "Thaïlande", "VN": "Vietnam",
+    "CA": "Canada", "MX": "Mexique", "US": "États-Unis",
+    "CR": "Costa Rica", "CU": "Cuba", "DO": "République dominicaine", "GT": "Guatemala", "HN": "Honduras", "NI": "Nicaragua", "PA": "Panama", "SV": "Salvador",
+    "AR": "Argentine", "BO": "Bolivie", "BR": "Brésil", "CL": "Chili", "CO": "Colombie", "EC": "Équateur", "PE": "Pérou", "PY": "Paraguay", "UY": "Uruguay", "VE": "Venezuela",
+    "AU": "Australie", "NZ": "Nouvelle-Zélande"
+  },
+  "nationalities": {
+    "ES": "Espagnole", "FR": "Française", "AD": "Andorrane", "AL": "Albanaise", "AT": "Autrichienne", "BA": "Bosnienne", "BE": "Belge", "BG": "Bulgare", "BY": "Biélorusse", "CH": "Suisse", "CY": "Chypriote", "CZ": "Tchèque", "DE": "Allemande", "DK": "Danoise", "EE": "Estonienne", "FI": "Finlandaise", "GB": "Britannique", "GE": "Géorgienne", "GR": "Grecque", "HR": "Croate", "HU": "Hongroise", "IE": "Irlandaise", "IS": "Islandaise", "IT": "Italienne", "LT": "Lituanienne", "LU": "Luxembourgeoise", "LV": "Lettone", "MC": "Monégasque", "MD": "Moldave", "ME": "Monténégrine", "MK": "Macédonienne", "MT": "Maltaise", "NL": "Néerlandaise", "NO": "Norvégienne", "PL": "Polonaise", "PT": "Portugaise", "RO": "Roumaine", "RS": "Serbe", "RU": "Russe", "SE": "Suédoise", "SI": "Slovène", "SK": "Slovaque", "TR": "Turque", "UA": "Ukrainienne", "XK": "Kosovare",
+    "AE": "Émiratie", "DZ": "Algérienne", "EG": "Égyptienne", "IL": "Israélienne", "JO": "Jordanienne", "LB": "Libanaise", "LY": "Libyenne", "MA": "Marocaine", "SA": "Saoudienne", "TN": "Tunisienne",
+    "CD": "Congolaise", "CI": "Ivoirienne", "CM": "Camerounaise", "GH": "Ghanéenne", "GN": "Guinéenne", "KE": "Kényane", "ML": "Malienne", "NG": "Nigériane", "SN": "Sénégalaise", "ZA": "Sud-africaine",
+    "BD": "Bangladaise", "CN": "Chinoise", "ID": "Indonésienne", "IN": "Indienne", "JP": "Japonaise", "KR": "Sud-coréenne", "MY": "Malaisienne", "PH": "Philippine", "PK": "Pakistanaise", "SG": "Singapourienne", "TH": "Thaïlandaise", "VN": "Vietnamienne",
+    "AR": "Argentine", "BO": "Bolivienne", "BR": "Brésilienne", "CA": "Canadienne", "CL": "Chilienne", "CO": "Colombienne", "CR": "Costaricaine", "CU": "Cubaine", "DO": "Dominicaine", "EC": "Équatorienne", "GT": "Guatémaltèque", "HN": "Hondurienne", "MX": "Mexicaine", "NI": "Nicaraguayenne", "PA": "Panaméenne", "PE": "Péruvienne", "PY": "Paraguayenne", "SV": "Salvadorienne", "US": "Américaine", "UY": "Uruguayenne", "VE": "Vénézuélienne",
+    "AU": "Australienne", "NZ": "Néo-zélandaise"
   }
 }

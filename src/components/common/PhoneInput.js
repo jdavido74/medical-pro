@@ -221,7 +221,7 @@ const PhoneInput = ({
               ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50'}
               rounded-l-lg
             `}
-            aria-label={t('common:phone.selectCountry', 'Select country')}
+            aria-label={t('common:phoneInput.selectCountry', 'Select country')}
           >
             {availableCountries.map((country) => (
               <option key={country.code} value={country.code}>
@@ -282,7 +282,7 @@ const PhoneInput = ({
           ) : (
             !compact && (
               <p className="text-xs text-gray-500">
-                {t('common:phone.digitsExpected', 'Expected: {{digits}} digits', { digits: rules.minDigits || rules.digits })}
+                {t('common:phoneInput.digitsExpected', 'Expected: {{digits}} digits', { digits: rules.minDigits || rules.digits })}
                 {rules.maxDigits && rules.maxDigits !== rules.digits && ` - ${rules.maxDigits}`}
               </p>
             )

@@ -189,5 +189,9 @@
     "revoked": "Revoked"
   },
   "years": "years",
-  "minutes": "min"
+  "minutes": "min",
+  "phoneInput": {
+    "selectCountry": "Select country",
+    "digitsExpected": "Expected: {{digits}} digits"
+  }
 }

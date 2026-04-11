@@ -6,31 +6,18 @@ import {
   Heart, AlertCircle, Check, Users, Building
 } from 'lucide-react';
 import { PatientContext } from '../../../contexts/PatientContext';
-import { countries, nationalities } from '../../../data/countries';
+import { countries } from '../../../data/countries';
 import PhoneInput from '../../common/PhoneInput';
 import { validatePhoneForCountry, parseFullPhoneNumber } from '../../../utils/phoneUtils';
 import { useLocale } from '../../../contexts/LocaleContext';
 
 const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
-  const { t } = useTranslation('patients');
+  const { t } = useTranslation(['patients', 'common']);
   const patientContext = useContext(PatientContext);
   const { country: localeCountry, name: localeName } = useLocale();
 
-  // Get default nationality and country name based on locale
-  const getDefaultNationality = () => {
-    const nationalityMap = {
-      'FR': 'Française',
-      'ES': 'Española',
-      'GB': 'British',
-      'US': 'American',
-      'PT': 'Portuguesa',
-      'DE': 'Deutsche',
-      'IT': 'Italiana',
-      'BE': 'Belge',
-      'CH': 'Suisse'
-    };
-    return nationalityMap[localeCountry] || 'Française';
-  };
+  // Default nationality is the locale country code
+  const getDefaultNationality = () => localeCountry || 'ES';
 
   const [formData, setFormData] = useState({
     // US 1.1 - Identité du patient
@@ -83,7 +70,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
         birthDate: patient.birthDate || '',
         gender: patient.gender || '',
         idNumber: patient.idNumber || '',
-        nationality: patient.nationality || 'Española',
+        nationality: patient.nationality || localeCountry || 'ES',
         address: {
           street: patient.address?.street || '',
           city: patient.address?.city || '',
@@ -374,7 +361,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
           <div className="space-y-6">
             <div className="flex items-center space-x-2 mb-4">
               <User className="h-5 w-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Identidad del Paciente</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('patients:form.patientIdentity')}</h3>
             </div>
 
             {/* Warning doublons */}
@@ -383,7 +370,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                 <div className="flex items-start">
                   <AlertCircle className="h-5 w-5 text-orange-600 mr-2 mt-0.5" />
                   <div>
-                    <p className="text-orange-800 font-medium">Paciente similar encontrado</p>
+                    <p className="text-orange-800 font-medium">{t('patients:form.duplicateWarning')}</p>
                     <p className="text-orange-700 text-sm">
                       {duplicateWarning.message}: {duplicateWarning.patientName} ({duplicateWarning.patientNumber})
                     </p>
@@ -395,7 +382,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre *
+                  {t('patients:firstName')} *
                 </label>
                 <input
                   type="text"
@@ -412,7 +399,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Apellidos *
+                  {t('patients:lastName')} *
                 </label>
                 <input
                   type="text"
@@ -420,7 +407,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.lastName ? 'border-red-300' : 'border-gray-300'
                     }`}
-                  placeholder="Apellidos del paciente"
+                  placeholder={t('patients:lastName')}
                 />
                 {errors.lastName && (
                   <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>
@@ -429,7 +416,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de Nacimiento
+                  {t('patients:birthDate')}
                 </label>
                 <input
                   type="date"
@@ -441,7 +428,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sexo
+                  {t('patients:gender')}
                 </label>
                 <select
                   value={formData.gender}
@@ -449,11 +436,11 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.gender ? 'border-red-300' : 'border-gray-300'
                     }`}
                 >
-                  <option value="">Seleccionar sexo</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                  <option value="O">Otro</option>
-                  <option value="N/A">Prefiere no decir</option>
+                  <option value="">{t('patients:form.selectGender')}</option>
+                  <option value="M">{t('patients:form.male')}</option>
+                  <option value="F">{t('patients:form.female')}</option>
+                  <option value="O">{t('patients:form.other')}</option>
+                  <option value="N/A">{t('patients:form.preferNotToSay')}</option>
                 </select>
                 {errors.gender && (
                   <p className="text-red-600 text-sm mt-1">{errors.gender}</p>
@@ -462,7 +449,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Documento
+                  {t('patients:detail.idNumber')}
                 </label>
                 <input
                   type="text"
@@ -470,7 +457,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                   onChange={(e) => handleInputChange('idNumber', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.idNumber ? 'border-red-300' : 'border-gray-300'
                     }`}
-                  placeholder="DNI, NIE, Pasaporte..."
+                  placeholder={t('patients:form.idNumberPlaceholder')}
                 />
                 {errors.idNumber && (
                   <p className="text-red-600 text-sm mt-1">{errors.idNumber}</p>
@@ -479,16 +466,16 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nacionalidad
+                  {t('patients:detail.nationality')}
                 </label>
                 <select
                   value={formData.nationality}
                   onChange={(e) => handleInputChange('nationality', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="">Seleccionar nacionalidad</option>
-                  {nationalities.map(nat => (
-                    <option key={nat.code} value={nat.name}>{nat.name}</option>
+                  <option value="">{t('patients:form.selectNationality')}</option>
+                  {countries.map(c => (
+                    <option key={c.code} value={c.code}>{t(`patients:nationalities.${c.code}`, c.name)}</option>
                   ))}
                 </select>
               </div>
@@ -499,62 +486,62 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
           <div className="space-y-6">
             <div className="flex items-center space-x-2 mb-4">
               <MapPin className="h-5 w-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Datos de Contacto</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('patients:form.contactData')}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dirección
+                  {t('patients:address')}
                 </label>
                 <input
                   type="text"
                   value={formData.address.street}
                   onChange={(e) => handleNestedInputChange('address', 'street', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Calle, número, piso..."
+                  placeholder={t('patients:form.streetPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ciudad
+                  {t('patients:city')}
                 </label>
                 <input
                   type="text"
                   value={formData.address.city}
                   onChange={(e) => handleNestedInputChange('address', 'city', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Ciudad"
+                  placeholder={t('patients:form.cityPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Código Postal
+                  {t('patients:zipCode')}
                 </label>
                 <input
                   type="text"
                   value={formData.address.postalCode}
                   onChange={(e) => handleNestedInputChange('address', 'postalCode', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Código postal"
+                  placeholder={t('patients:form.postalCodePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  País
+                  {t('patients:country')}
                 </label>
                 <select
                   value={formData.address.country}
                   onChange={(e) => handleNestedInputChange('address', 'country', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="">Seleccionar país</option>
+                  <option value="">{t('patients:form.selectCountry')}</option>
                   {countries.map(country => (
                     <option key={country.code} value={country.code}>
-                      {country.flag} {country.name}
+                      {country.flag} {t(`patients:countries.${country.code}`, country.name)}
                     </option>
                   ))}
                 </select>
@@ -573,7 +560,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                   onValidationChange={(isValid) => setPhoneValid(isValid)}
                   defaultCountry={localeCountry}
                   name="phone"
-                  label={t('fields.phone', 'Teléfono') + ' *'}
+                  label={t('patients:phone') + ' *'}
                   required
                   error={errors.phone}
                   showValidation
@@ -582,7 +569,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
+                  {t('patients:email')} *
                 </label>
                 <input
                   type="email"
@@ -590,7 +577,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                   onChange={(e) => handleNestedInputChange('contact', 'email', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
-                  placeholder="email@ejemplo.com"
+                  placeholder={t('patients:form.emailPlaceholder')}
                 />
                 {errors.email && (
                   <p className="text-red-600 text-sm mt-1">{errors.email}</p>
@@ -602,13 +589,13 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
             <div className="border-t pt-4">
               <div className="flex items-center space-x-2 mb-4">
                 <Phone className="h-4 w-4 text-red-600" />
-                <h4 className="font-medium text-gray-900">Contacto de Emergencia</h4>
+                <h4 className="font-medium text-gray-900">{t('patients:form.emergencyContact')}</h4>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre
+                    {t('common:name')}
                   </label>
                   <input
                     type="text"
@@ -621,7 +608,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Relación
+                    {t('patients:detail.relationship')}
                   </label>
                   <select
                     value={formData.contact.emergencyContact.relationship}
@@ -629,15 +616,15 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.emergencyRelationship ? 'border-red-300' : 'border-gray-300'
                       }`}
                   >
-                    <option value="">Seleccionar relación</option>
-                    <option value="Cónyuge">Cónyuge</option>
-                    <option value="Hijo/a">Hijo/a</option>
-                    <option value="Padre">Padre</option>
-                    <option value="Madre">Madre</option>
-                    <option value="Hermano/a">Hermano/a</option>
-                    <option value="Familiar">Familiar</option>
-                    <option value="Amigo/a">Amigo/a</option>
-                    <option value="Otro">Otro</option>
+                    <option value="">{t('patients:form.selectRelationship')}</option>
+                    <option value="spouse">{t('patients:form.relationships.spouse')}</option>
+                    <option value="child">{t('patients:form.relationships.child')}</option>
+                    <option value="father">{t('patients:form.relationships.father')}</option>
+                    <option value="mother">{t('patients:form.relationships.mother')}</option>
+                    <option value="sibling">{t('patients:form.relationships.sibling')}</option>
+                    <option value="relative">{t('patients:form.relationships.relative')}</option>
+                    <option value="friend">{t('patients:form.relationships.friend')}</option>
+                    <option value="other">{t('patients:form.relationships.other')}</option>
                   </select>
                   {errors.emergencyRelationship && (
                     <p className="text-red-600 text-sm mt-1">{errors.emergencyRelationship}</p>
@@ -651,7 +638,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
                     onValidationChange={(isValid) => setEmergencyPhoneValid(isValid)}
                     defaultCountry={localeCountry}
                     name="emergencyPhone"
-                    label={t('fields.emergencyPhone', 'Teléfono')}
+                    label={t('patients:phone')}
                     required={false}
                     error={errors.emergencyPhone}
                     showValidation
@@ -666,13 +653,13 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
           <div className="space-y-6">
             <div className="flex items-center space-x-2 mb-4">
               <Building className="h-5 w-5 text-purple-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Información Administrativa</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('patients:form.administrativeInfo')}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Seguro Médico
+                  {t('patients:form.medicalInsurance')}
                 </label>
                 <input
                   type="text"
@@ -685,45 +672,45 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Póliza
+                  {t('patients:form.policyNumber')}
                 </label>
                 <input
                   type="text"
                   value={formData.insurance.number}
                   onChange={(e) => handleNestedInputChange('insurance', 'number', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Número de póliza"
+                  placeholder={t('patients:form.policyNumberPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Seguro
+                  {t('patients:form.insuranceType')}
                 </label>
                 <select
                   value={formData.insurance.type}
                   onChange={(e) => handleNestedInputChange('insurance', 'type', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="">Seleccionar tipo</option>
-                  <option value="Pública">Pública (Seguridad Social)</option>
-                  <option value="Privada">Privada</option>
-                  <option value="Mixta">Mixta</option>
+                  <option value="">{t('patients:form.selectInsuranceType')}</option>
+                  <option value="public">{t('patients:form.insuranceTypes.public')}</option>
+                  <option value="private">{t('patients:form.insuranceTypes.private')}</option>
+                  <option value="mixed">{t('patients:form.insuranceTypes.mixed')}</option>
                 </select>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estado del Paciente
+                {t('patients:form.patientStatus')}
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange('status', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
+                <option value="active">{t('patients:form.statusActive')}</option>
+                <option value="inactive">{t('patients:form.statusInactive')}</option>
               </select>
             </div>
           </div>
@@ -747,7 +734,7 @@ const PatientFormModal = ({ patient, isOpen, onClose, onSave }) => {
               onClick={onClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Cancelar
+              {t('patients:form.cancel')}
             </button>
             <button
               type="submit"

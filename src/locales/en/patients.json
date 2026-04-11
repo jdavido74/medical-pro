@@ -191,6 +191,57 @@
     "documentContent": "Document content",
     "digitalSignature": "Digital signature"
   },
+  "form": {
+    "personalInfo": "Personal Information",
+    "contactInfo": "Contact Information",
+    "medicalInfo": "Medical Information",
+    "insuranceInfo": "Insurance Information",
+    "create": "Create Patient",
+    "update": "Update",
+    "cancel": "Cancel",
+    "patientIdentity": "Patient Identity",
+    "contactData": "Contact Details",
+    "administrativeInfo": "Administrative Information",
+    "emergencyContact": "Emergency Contact",
+    "duplicateWarning": "Similar patient found",
+    "duplicateWarningDetail": "{{message}}: {{name}} ({{number}})",
+    "selectGender": "Select gender",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "preferNotToSay": "Prefer not to say",
+    "idNumberPlaceholder": "ID, Passport...",
+    "selectNationality": "Select nationality",
+    "streetPlaceholder": "Street, number, floor...",
+    "cityPlaceholder": "City",
+    "postalCodePlaceholder": "Postal code",
+    "selectCountry": "Select country",
+    "emailPlaceholder": "email@example.com",
+    "selectRelationship": "Select relationship",
+    "relationships": {
+      "spouse": "Spouse",
+      "child": "Child",
+      "father": "Father",
+      "mother": "Mother",
+      "sibling": "Sibling",
+      "relative": "Relative",
+      "friend": "Friend",
+      "other": "Other"
+    },
+    "medicalInsurance": "Medical Insurance",
+    "policyNumber": "Policy Number",
+    "policyNumberPlaceholder": "Policy number",
+    "insuranceType": "Insurance Type",
+    "selectInsuranceType": "Select type",
+    "insuranceTypes": {
+      "public": "Public (National Health)",
+      "private": "Private",
+      "mixed": "Mixed"
+    },
+    "patientStatus": "Patient Status",
+    "statusActive": "Active",
+    "statusInactive": "Inactive"
+  },
   "statuses": {
     "active": "Active",
     "inactive": "Inactive",
@@ -231,5 +282,27 @@
     "duplicateDetected": "Patient detected",
     "matchType": "Match type",
     "badge": "Provisional"
+  },
+  "countries": {
+    "ES": "Spain", "FR": "France", "AD": "Andorra", "AT": "Austria", "BE": "Belgium", "CH": "Switzerland", "DE": "Germany", "GB": "United Kingdom", "IE": "Ireland", "IT": "Italy", "LU": "Luxembourg", "MC": "Monaco", "NL": "Netherlands", "PT": "Portugal",
+    "DK": "Denmark", "EE": "Estonia", "FI": "Finland", "IS": "Iceland", "LT": "Lithuania", "LV": "Latvia", "NO": "Norway", "SE": "Sweden",
+    "AL": "Albania", "BA": "Bosnia and Herzegovina", "BG": "Bulgaria", "BY": "Belarus", "CZ": "Czechia", "GE": "Georgia", "HR": "Croatia", "HU": "Hungary", "MD": "Moldova", "ME": "Montenegro", "MK": "North Macedonia", "PL": "Poland", "RO": "Romania", "RS": "Serbia", "RU": "Russia", "SI": "Slovenia", "SK": "Slovakia", "UA": "Ukraine", "XK": "Kosovo",
+    "CY": "Cyprus", "GR": "Greece", "MT": "Malta", "TR": "Turkey",
+    "DZ": "Algeria", "EG": "Egypt", "LY": "Libya", "MA": "Morocco", "TN": "Tunisia",
+    "CI": "Ivory Coast", "CM": "Cameroon", "CD": "DR Congo", "GH": "Ghana", "GN": "Guinea", "KE": "Kenya", "ML": "Mali", "NG": "Nigeria", "SN": "Senegal", "ZA": "South Africa",
+    "AE": "United Arab Emirates", "IL": "Israel", "JO": "Jordan", "LB": "Lebanon", "SA": "Saudi Arabia",
+    "BD": "Bangladesh", "CN": "China", "ID": "Indonesia", "IN": "India", "JP": "Japan", "KR": "South Korea", "MY": "Malaysia", "PH": "Philippines", "PK": "Pakistan", "SG": "Singapore", "TH": "Thailand", "VN": "Vietnam",
+    "CA": "Canada", "MX": "Mexico", "US": "United States",
+    "CR": "Costa Rica", "CU": "Cuba", "DO": "Dominican Republic", "GT": "Guatemala", "HN": "Honduras", "NI": "Nicaragua", "PA": "Panama", "SV": "El Salvador",
+    "AR": "Argentina", "BO": "Bolivia", "BR": "Brazil", "CL": "Chile", "CO": "Colombia", "EC": "Ecuador", "PE": "Peru", "PY": "Paraguay", "UY": "Uruguay", "VE": "Venezuela",
+    "AU": "Australia", "NZ": "New Zealand"
+  },
+  "nationalities": {
+    "ES": "Spanish", "FR": "French", "AD": "Andorran", "AL": "Albanian", "AT": "Austrian", "BA": "Bosnian", "BE": "Belgian", "BG": "Bulgarian", "BY": "Belarusian", "CH": "Swiss", "CY": "Cypriot", "CZ": "Czech", "DE": "German", "DK": "Danish", "EE": "Estonian", "FI": "Finnish", "GB": "British", "GE": "Georgian", "GR": "Greek", "HR": "Croatian", "HU": "Hungarian", "IE": "Irish", "IS": "Icelandic", "IT": "Italian", "LT": "Lithuanian", "LU": "Luxembourgish", "LV": "Latvian", "MC": "Monegasque", "MD": "Moldovan", "ME": "Montenegrin", "MK": "Macedonian", "MT": "Maltese", "NL": "Dutch", "NO": "Norwegian", "PL": "Polish", "PT": "Portuguese", "RO": "Romanian", "RS": "Serbian", "RU": "Russian", "SE": "Swedish", "SI": "Slovenian", "SK": "Slovak", "TR": "Turkish", "UA": "Ukrainian", "XK": "Kosovar",
+    "AE": "Emirati", "DZ": "Algerian", "EG": "Egyptian", "IL": "Israeli", "JO": "Jordanian", "LB": "Lebanese", "LY": "Libyan", "MA": "Moroccan", "SA": "Saudi", "TN": "Tunisian",
+    "CD": "Congolese", "CI": "Ivorian", "CM": "Cameroonian", "GH": "Ghanaian", "GN": "Guinean", "KE": "Kenyan", "ML": "Malian", "NG": "Nigerian", "SN": "Senegalese", "ZA": "South African",
+    "BD": "Bangladeshi", "CN": "Chinese", "ID": "Indonesian", "IN": "Indian", "JP": "Japanese", "KR": "South Korean", "MY": "Malaysian", "PH": "Filipino", "PK": "Pakistani", "SG": "Singaporean", "TH": "Thai", "VN": "Vietnamese",
+    "AR": "Argentine", "BO": "Bolivian", "BR": "Brazilian", "CA": "Canadian", "CL": "Chilean", "CO": "Colombian", "CR": "Costa Rican", "CU": "Cuban", "DO": "Dominican", "EC": "Ecuadorian", "GT": "Guatemalan", "HN": "Honduran", "MX": "Mexican", "NI": "Nicaraguan", "PA": "Panamanian", "PE": "Peruvian", "PY": "Paraguayan", "SV": "Salvadoran", "US": "American", "UY": "Uruguayan", "VE": "Venezuelan",
+    "AU": "Australian", "NZ": "New Zealander"
   }
 }
