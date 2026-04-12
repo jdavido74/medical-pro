@@ -502,15 +502,45 @@ function transformHealthcareProviderToBackend(provider) {
 function transformClinicSettingsFromBackend(settings) {
   if (!settings) return null;
 
+  // Operating days (array of day numbers: 0=Sunday, 1=Monday, etc.)
+  const operatingDays = settings.operating_days || [1, 2, 3, 4, 5];
+  const rawOperatingHours = settings.operating_hours || {};
+
+  // Defensive sync: operatingDays is the source of truth for which weekdays
+  // the clinic is open. If operatingHours[day].enabled is out of sync (e.g.
+  // user re-enabled a day in operatingDays but the legacy enabled flag was
+  // never updated), force it to match here so all consumers (booking modal,
+  // availability manager, slot generators) agree.
+  const dayNameByIndex = {
+    0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
+    4: 'thursday', 5: 'friday', 6: 'saturday'
+  };
+  const normalizedOperatingHours = { ...rawOperatingHours };
+  for (let dayIdx = 0; dayIdx <= 6; dayIdx++) {
+    const dayName = dayNameByIndex[dayIdx];
+    const shouldBeEnabled = operatingDays.includes(dayIdx);
+    const existing = normalizedOperatingHours[dayName];
+    if (existing && typeof existing === 'object') {
+      if (existing.enabled !== shouldBeEnabled) {
+        normalizedOperatingHours[dayName] = { ...existing, enabled: shouldBeEnabled };
+      }
+    } else if (shouldBeEnabled) {
+      // Day is open but no hours configured yet — provide sensible defaults
+      normalizedOperatingHours[dayName] = {
+        enabled: true,
+        hasLunchBreak: false,
+        start: '08:00',
+        end: '18:00'
+      };
+    }
+  }
+
   return {
     id: settings.id,
     facilityId: settings.facility_id,
 
-    // Operating days (array of day numbers: 0=Sunday, 1=Monday, etc.)
-    operatingDays: settings.operating_days || [1, 2, 3, 4, 5],
-
-    // Operating hours (keep snake_case structure for compatibility)
-    operatingHours: settings.operating_hours || {},
+    operatingDays,
+    operatingHours: normalizedOperatingHours,
 
     // Slot settings
     slotSettings: {
