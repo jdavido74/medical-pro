@@ -5,12 +5,14 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { clinicSettingsApi } from '../api/clinicSettingsApi';
+import { useAuth } from '../hooks/useAuth';
 
 const ClinicSettingsContext = createContext(null);
 
 export const ClinicSettingsProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [clinicSettings, setClinicSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const refresh = useCallback(async () => {
@@ -29,12 +31,18 @@ export const ClinicSettingsProvider = ({ children }) => {
     }
   }, []);
 
-  // Initial load
+  // Only load when authenticated. Calling /clinic-settings without auth
+  // triggers the 401 handler which redirects to /login, causing a loop
+  // on the login page itself.
   useEffect(() => {
+    if (!isAuthenticated) {
+      setClinicSettings(null);
+      return;
+    }
     refresh().catch(() => {
       // Error already logged in refresh(); don't crash the provider
     });
-  }, [refresh]);
+  }, [isAuthenticated, refresh]);
 
   // Save settings through the API and update local state so all consumers
   // re-render immediately without a manual refresh.
