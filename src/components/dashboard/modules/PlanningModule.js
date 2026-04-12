@@ -15,7 +15,7 @@ import {
 import planningApi, { getAppointmentGroup } from '../../../api/planningApi';
 import { sendPreconsultationLink, sendReminder } from '../../../api/preconsultationApi';
 import PreconsultationStatusBadge from '../../preconsultation/PreconsultationStatusBadge';
-import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
+import { useClinicSettings } from '../../../contexts/ClinicSettingsContext';
 import { usePermissions } from '../../auth/PermissionGuard';
 import PlanningBookingModal from '../modals/PlanningBookingModal';
 import DuplicateBookingModal from '../modals/DuplicateBookingModal';
@@ -221,10 +221,13 @@ const PlanningModule = () => {
   const canCreate = hasPermission('appointments.create');
   const canEdit = hasPermission('appointments.edit');
 
+  // Shared clinic settings (operating hours, closed dates) — re-renders
+  // automatically when the config modal saves new settings.
+  const { clinicSettings } = useClinicSettings();
+
   // State
   const [appointments, setAppointments] = useState([]);
   const [resources, setResources] = useState({ machines: [], providers: [] });
-  const [clinicSettings, setClinicSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('week'); // day, week, month, list
@@ -348,18 +351,7 @@ const PlanningModule = () => {
     loadData();
   }, [loadData]);
 
-  // Load clinic settings once
-  useEffect(() => {
-    const loadClinicSettings = async () => {
-      try {
-        const settings = await clinicSettingsApi.getClinicSettings();
-        setClinicSettings(settings);
-      } catch (error) {
-        console.error('Error loading clinic settings:', error);
-      }
-    };
-    loadClinicSettings();
-  }, []);
+  // Clinic settings are provided by ClinicSettingsContext — no local load needed.
 
   // List view: calculate date range based on period filter
   const listDateRange = useMemo(() => {

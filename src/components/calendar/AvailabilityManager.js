@@ -20,7 +20,7 @@ import {
   shouldShowPractitionerFilter
 } from '../../utils/appointmentPermissions';
 import { useLocale } from '../../contexts/LocaleContext';
-import { clinicSettingsApi } from '../../api/clinicSettingsApi';
+import { useClinicSettings } from '../../contexts/ClinicSettingsContext';
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { useTranslation } from 'react-i18next';
 
@@ -42,8 +42,8 @@ const AvailabilityManager = ({
 
   const isPractitioner = isPractitionerRole(user?.role);
 
-  // État pour les paramètres de la clinique (horaires d'ouverture, jours fermés)
-  const [clinicSettings, setClinicSettings] = useState(null);
+  // Paramètres de la clinique (horaires, jours fermés) — partagés via contexte
+  const { clinicSettings } = useClinicSettings();
 
   // Mapping des jours pour vérifier les fermetures de la clinique
   const DAY_NAMES_MAP = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -82,18 +82,7 @@ const AvailabilityManager = ({
     return dayConfig && dayConfig.enabled === false;
   };
 
-  // Charger les paramètres de la clinique
-  useEffect(() => {
-    const fetchClinicSettings = async () => {
-      try {
-        const settings = await clinicSettingsApi.getClinicSettings();
-        setClinicSettings(settings);
-      } catch (error) {
-        console.error('[AvailabilityManager] Error loading clinic settings:', error);
-      }
-    };
-    fetchClinicSettings();
-  }, []);
+  // clinicSettings fournis par ClinicSettingsContext — pas de chargement local
 
   // Auto-filtrer pour les praticiens au chargement initial
   // Utiliser providerId (healthcare_provider.id) et non user.id (central user id)

@@ -11,7 +11,7 @@ import { usePermissions } from '../auth/PermissionGuard';
 import { PERMISSIONS } from '../../utils/permissionsStorage';
 import practitionerAvailabilityApi from '../../api/practitionerAvailabilityApi';
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
-import { clinicSettingsApi } from '../../api/clinicSettingsApi';
+import { useClinicSettings } from '../../contexts/ClinicSettingsContext';
 import PatientSearchSelect from '../common/PatientSearchSelect';
 import QuickPatientModal from './QuickPatientModal';
 import { useLocale } from '../../contexts/LocaleContext';
@@ -63,7 +63,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
   const [quickPatientSearchQuery, setQuickPatientSearchQuery] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMode, setDeleteMode] = useState(null); // 'notify' ou 'silent'
-  const [clinicSettings, setClinicSettings] = useState(null);
+  const { clinicSettings } = useClinicSettings();
   const [isClinicClosedOnSelectedDate, setIsClinicClosedOnSelectedDate] = useState(false);
   const [occupiedSlots, setOccupiedSlots] = useState([]); // Slots occupés par d'autres RDV
   const [slotDeselectionConfirm, setSlotDeselectionConfirm] = useState({ show: false, slot: null }); // Confirmation de désélection
@@ -141,18 +141,7 @@ const AppointmentFormModal = ({ isOpen, onClose, onSave, editingAppointment = nu
     return false;
   };
 
-  // Fetch clinic settings on mount
-  useEffect(() => {
-    const fetchClinicSettings = async () => {
-      try {
-        const settings = await clinicSettingsApi.getClinicSettings();
-        setClinicSettings(settings);
-      } catch (error) {
-        console.error('[AppointmentFormModal] Error loading clinic settings:', error);
-      }
-    };
-    fetchClinicSettings();
-  }, []);
+  // clinicSettings come from ClinicSettingsContext; no local fetch needed.
 
   // Update isClinicClosedOnSelectedDate when date changes
   useEffect(() => {

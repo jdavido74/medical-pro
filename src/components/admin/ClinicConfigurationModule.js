@@ -5,10 +5,10 @@ import {
   ChevronRight, Building2, UserPlus, Edit2,
   CheckCircle, AlertCircle, X
 } from 'lucide-react';
-import { clinicSettingsApi } from '../../api/clinicSettingsApi';
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
+import { useClinicSettings } from '../../contexts/ClinicSettingsContext';
 
 import ClinicConfigModal from './ClinicConfigModal';
 import PractitionerManagementModal from './PractitionerManagementModal';
@@ -22,7 +22,7 @@ import {
 const ClinicConfigurationModule = () => {
   const { t } = useTranslation('admin');
   const { user } = useAuth();
-  const [config, setConfig] = useState(null);
+  const { clinicSettings: config } = useClinicSettings();
   const [practitioners, setPractitioners] = useState([]);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isPractitionerModalOpen, setIsPractitionerModalOpen] = useState(false);
@@ -58,11 +58,8 @@ const ClinicConfigurationModule = () => {
       setIsLoading(true);
       setError(null);
 
-      // Charger les paramètres de la clinique
-      const clinicSettings = await clinicSettingsApi.getClinicSettings();
-      setConfig(clinicSettings);
-
-      // Charger la liste des praticiens
+      // Clinic settings are now managed by ClinicSettingsContext.
+      // Load only the practitioners list here.
       const providersData = await healthcareProvidersApi.getHealthcareProviders();
       setPractitioners(providersData.providers || []);
 
@@ -75,9 +72,9 @@ const ClinicConfigurationModule = () => {
     }
   };
 
-  const handleConfigSave = () => {
-    loadData();
-  };
+  // The shared context already updates clinicSettings after ClinicConfigModal
+  // saves, so we don't need to reload anything here.
+  const handleConfigSave = () => {};
 
   const handleManageAvailability = (practitionerId) => {
     setSelectedPractitionerId(practitionerId);

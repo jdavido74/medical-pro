@@ -1,22 +1,35 @@
 // components/admin/ClinicConfigModal.js - Modal de configuration de clinique
 import React, { useState, useEffect } from 'react';
 import { X, Clock, Calendar, Settings, Plus, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
-import { clinicSettingsApi } from '../../api/clinicSettingsApi';
 import { useTranslation } from 'react-i18next';
+import { useClinicSettings } from '../../contexts/ClinicSettingsContext';
 
 const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
   const { t } = useTranslation(['admin', 'common']);
+  const {
+    clinicSettings,
+    refresh,
+    updateSettings,
+    addClosedDate: addClosedDateCtx,
+    removeClosedDate: removeClosedDateCtx
+  } = useClinicSettings();
   const [config, setConfig] = useState(null);
   const [activeTab, setActiveTab] = useState('schedule');
   const [newClosedDate, setNewClosedDate] = useState({ date: '', reason: '', type: 'holiday' });
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState(null);
 
+  // Hydrate local editable config from shared context when modal opens
+  // or when context settings change.
   useEffect(() => {
-    if (isOpen) {
-      loadConfig();
+    if (isOpen && clinicSettings) {
+      const normalized = {
+        ...clinicSettings,
+        operatingHours: normalizeOperatingHours(clinicSettings.operatingHours)
+      };
+      setConfig(normalized);
     }
-  }, [isOpen]);
+  }, [isOpen, clinicSettings]);
 
   // Auto-hide notification after 3 seconds
   useEffect(() => {
@@ -48,19 +61,6 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
     return normalized;
   };
 
-  const loadConfig = async () => {
-    try {
-      const clinicSettings = await clinicSettingsApi.getClinicSettings();
-      if (clinicSettings?.operatingHours) {
-        clinicSettings.operatingHours = normalizeOperatingHours(clinicSettings.operatingHours);
-      }
-      setConfig(clinicSettings);
-    } catch (error) {
-      console.error('[ClinicConfigModal] Error loading config:', error);
-      setNotification({ type: 'error', message: t('admin:clinicConfiguration.messages.loadError') });
-    }
-  };
-
   const handleSave = async () => {
     if (!config) return;
 
@@ -68,7 +68,10 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
       setIsSaving(true);
       setNotification(null);
 
-      const savedConfig = await clinicSettingsApi.updateClinicSettings(config);
+      // updateSettings goes through the shared context so every other
+      // component (PlanningModule, booking modal, etc.) re-renders with
+      // the new settings without a manual refresh.
+      const savedConfig = await updateSettings(config);
       setConfig(savedConfig);
       onSave?.(savedConfig);
 
@@ -168,8 +171,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
     if (!newClosedDate.date || !newClosedDate.reason) return;
 
     try {
-      await clinicSettingsApi.addClosedDate(newClosedDate.date, newClosedDate.reason, newClosedDate.type);
-      await loadConfig();
+      await addClosedDateCtx(newClosedDate.date, newClosedDate.reason, newClosedDate.type);
       setNewClosedDate({ date: '', reason: '', type: 'holiday' });
       setNotification({ type: 'success', message: t('admin:clinicConfiguration.messages.closedAdded') });
     } catch (error) {
@@ -180,8 +182,7 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
 
   const removeClosedDate = async (dateId) => {
     try {
-      await clinicSettingsApi.removeClosedDate(dateId);
-      await loadConfig();
+      await removeClosedDateCtx(dateId);
       setNotification({ type: 'success', message: t('admin:clinicConfiguration.messages.closedRemoved') });
     } catch (error) {
       console.error('[ClinicConfigModal] Error removing closed date:', error);

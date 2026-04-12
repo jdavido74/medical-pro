@@ -9,7 +9,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { facilitiesApi } from '../../../api/facilitiesApi';
 import { profileApi } from '../../../api/profileApi';
-import { clinicSettingsApi } from '../../../api/clinicSettingsApi';
+import { useClinicSettings } from '../../../contexts/ClinicSettingsContext';
 import PractitionerAvailabilityWeekly from '../../calendar/PractitionerAvailabilityWeekly';
 
 const SettingsModule = () => {
@@ -20,7 +20,7 @@ const SettingsModule = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [facility, setFacility] = useState(null);
-  const [clinicSettings, setClinicSettings] = useState(null);
+  const { clinicSettings } = useClinicSettings();
   const [error, setError] = useState(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -54,19 +54,7 @@ const SettingsModule = () => {
     loadFacilityData();
   }, []);
 
-  // Charger les paramètres de la clinique pour les disponibilités
-  useEffect(() => {
-    const loadClinicSettings = async () => {
-      try {
-        const settings = await clinicSettingsApi.getClinicSettings();
-        setClinicSettings(settings);
-      } catch (err) {
-        console.error('[SettingsModule] Error loading clinic settings:', err);
-        // Non-blocking error - availability will work without clinic hours
-      }
-    };
-    loadClinicSettings();
-  }, []);
+  // clinicSettings provided by ClinicSettingsContext — no local load needed.
 
   const loadFacilityData = async () => {
     try {

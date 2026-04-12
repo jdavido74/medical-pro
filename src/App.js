@@ -10,6 +10,7 @@ import VersionChecker from './components/common/VersionChecker';
 import { UserProvider } from './contexts/UserContext';
 import { ConsentProvider } from './contexts/ConsentContext';
 import { MedicalRecordProvider } from './contexts/MedicalRecordContext';
+import { ClinicSettingsProvider } from './contexts/ClinicSettingsContext';
 import { detectRegion, getRegionConfig } from './utils/regionDetector';
 import ClinicStatusGuard from './components/ClinicStatusGuard';
 import routes from './routes';
@@ -49,16 +50,18 @@ const MediMaestroApp = () => {
             <DynamicTranslationsProvider>
               <MedicalModulesProvider>
                 <UserProvider>
-                  <PatientProvider>
-                    <AppointmentProvider>
-                      <ConsentProvider>
-                        <MedicalRecordProvider>
-                          <AppRoutes />
-                          <VersionChecker />
-                        </MedicalRecordProvider>
-                      </ConsentProvider>
-                    </AppointmentProvider>
-                  </PatientProvider>
+                  <ClinicSettingsProvider>
+                    <PatientProvider>
+                      <AppointmentProvider>
+                        <ConsentProvider>
+                          <MedicalRecordProvider>
+                            <AppRoutes />
+                            <VersionChecker />
+                          </MedicalRecordProvider>
+                        </ConsentProvider>
+                      </AppointmentProvider>
+                    </PatientProvider>
+                  </ClinicSettingsProvider>
                 </UserProvider>
               </MedicalModulesProvider>
             </DynamicTranslationsProvider>
