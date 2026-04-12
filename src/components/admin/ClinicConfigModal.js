@@ -192,11 +192,36 @@ const ClinicConfigModal = ({ isOpen, onClose, onSave }) => {
   const toggleOperatingDay = (dayIndex) => {
     setConfig(prev => {
       const currentDays = prev.operatingDays || [];
+      const isEnabling = !currentDays.includes(dayIndex);
+
+      // Map day number to day name for operatingHours sync
+      const dayNameByIndex = {
+        0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
+        4: 'thursday', 5: 'friday', 6: 'saturday'
+      };
+      const dayName = dayNameByIndex[dayIndex];
+
+      // Keep operatingHours[dayName].enabled in sync to avoid
+      // "clinic closed" false positives in the booking modal
+      const currentDayHours = prev.operatingHours?.[dayName] || {
+        enabled: isEnabling,
+        hasLunchBreak: false,
+        start: '08:00',
+        end: '18:00'
+      };
+
       return {
         ...prev,
-        operatingDays: currentDays.includes(dayIndex)
-          ? currentDays.filter(d => d !== dayIndex)
-          : [...currentDays, dayIndex].sort()
+        operatingDays: isEnabling
+          ? [...currentDays, dayIndex].sort()
+          : currentDays.filter(d => d !== dayIndex),
+        operatingHours: {
+          ...(prev.operatingHours || {}),
+          [dayName]: {
+            ...currentDayHours,
+            enabled: isEnabling
+          }
+        }
       };
     });
   };

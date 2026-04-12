@@ -414,13 +414,20 @@ const PlanningBookingModal = ({
     const dateObj = new Date(date + 'T00:00:00');
     const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1=Monday, ...
 
-    // Check if it's not an operating day
+    // operatingDays is the source of truth for which weekdays the clinic is open.
+    // If the day is explicitly in operatingDays, trust it (ignore stale
+    // operatingHours.enabled=false that may linger from prior toggles).
     const operatingDays = clinicSettings.operatingDays || [1, 2, 3, 4, 5];
-    if (!operatingDays.includes(dayOfWeek)) {
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    const dayHours = clinicSettings.operatingHours?.[dayName];
+
+    const isOperatingDay = operatingDays.includes(dayOfWeek);
+    if (!isOperatingDay && !(dayHours && dayHours.enabled === true)) {
       return { isClosed: true, reason: 'nonOperatingDay' };
     }
 
-    // Check if it's in the closed dates list
+    // Check if it's in the closed dates list (specific holidays)
     const closedDates = clinicSettings.closedDates || [];
     const closedEntry = closedDates.find(cd => (cd.date || cd) === date);
     if (closedEntry) {
@@ -429,14 +436,6 @@ const PlanningBookingModal = ({
         reason: 'closedDay',
         closedReason: closedEntry.reason || null
       };
-    }
-
-    // Check if the day is disabled in operating hours
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = dayNames[dayOfWeek];
-    const dayHours = clinicSettings.operatingHours?.[dayName];
-    if (dayHours && dayHours.enabled === false) {
-      return { isClosed: true, reason: 'nonOperatingDay' };
     }
 
     return null;
