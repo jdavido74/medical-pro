@@ -662,13 +662,22 @@ const AppointmentsModule = ({ navigateToPatient }) => {
                     </button>
                   )}
                   {appointment.status === 'in_progress' && (
-                    <button
-                      onClick={() => handleStatusChange(appointment.id, 'completed')}
-                      className="p-1 hover:bg-gray-100 rounded text-gray-600 transition-colors"
-                      title={t('appointments:actions.complete')}
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleStatusChange(appointment.id, 'completed')}
+                        className="p-1 hover:bg-gray-100 rounded text-gray-600 transition-colors"
+                        title={t('appointments:actions.complete')}
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(appointment.id, 'interrupted')}
+                        className="p-1 hover:bg-purple-100 rounded text-purple-600 transition-colors"
+                        title={t('todayAppointments.interrupt', 'Interrumpir')}
+                      >
+                        <AlertCircle className="h-4 w-4" />
+                      </button>
+                    </>
                   )}
 
                   {/* Pre-consultation actions */}
