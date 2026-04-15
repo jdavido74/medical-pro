@@ -219,6 +219,7 @@
     "delete": "Supprimer",
     "confirm": "Confirmer",
     "complete": "Terminer",
+    "interrupt": "Interrompre",
     "reschedule": "Reprogrammer",
     "viewDetails": "Voir les détails",
     "previous": "Précédent",

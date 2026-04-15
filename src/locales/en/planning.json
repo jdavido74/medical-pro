@@ -219,6 +219,7 @@
     "delete": "Delete",
     "confirm": "Confirm",
     "complete": "Complete",
+    "interrupt": "Interrupt",
     "reschedule": "Reschedule",
     "viewDetails": "View details",
     "previous": "Previous",

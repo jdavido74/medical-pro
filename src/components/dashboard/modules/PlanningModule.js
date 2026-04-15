@@ -1871,7 +1871,7 @@ const PlanningModule = () => {
                                     className="px-2 py-1 text-xs font-medium rounded-md border border-purple-300 text-purple-600 hover:bg-purple-50 transition-colors inline-flex items-center gap-1"
                                   >
                                     <AlertCircle className="w-3.5 h-3.5" />
-                                    {t('todayAppointments.interrupt', 'Interrumpir')}
+                                    {t('actions.interrupt', 'Interrompre')}
                                   </button>
                                   <button
                                     onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
