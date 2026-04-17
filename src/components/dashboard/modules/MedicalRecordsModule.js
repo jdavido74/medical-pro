@@ -17,6 +17,7 @@ import { usePatients } from '../../../contexts/PatientContext';
 import { appointmentsApi } from '../../../api/appointmentsApi';
 import MedicalRecordForm from '../../medical/MedicalRecordForm';
 import EpicrisisComposerModal from '../../medical/EpicrisisComposerModal';
+import DocumentsBlock from '../medical-records/DocumentsBlock';
 
 // Sous-composant pour la liste groupée par épisode (accordéon parent/enfants)
 const GroupedRecordsList = React.memo(({
@@ -1560,6 +1561,9 @@ const MedicalRecordsModule = ({ navigateToPatient }) => {
                   <p className="text-sm text-gray-700 whitespace-pre-wrap">{record.notes}</p>
                 </section>
               )}
+
+              {/* === DOCUMENTS === */}
+              <DocumentsBlock patientId={selectedPatient?.id} medicalRecordId={record.id} />
             </div>
             ); })()}
 
