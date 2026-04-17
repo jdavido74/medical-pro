@@ -12,6 +12,7 @@ import { medicalRecordsApi } from '../../api/medicalRecordsApi';
 import { prescriptionsApi } from '../../api/prescriptionsApi';
 import { healthcareProvidersApi } from '../../api/healthcareProvidersApi';
 import PrescriptionPreview from './PrescriptionPreview';
+import DocumentsBlock from '../dashboard/medical-records/DocumentsBlock';
 import SmokingAssessment from './SmokingAssessment';
 import AlcoholAssessment from './AlcoholAssessment';
 import CatalogProductSelector from '../common/CatalogProductSelector';
@@ -910,6 +911,7 @@ const MedicalRecordForm = forwardRef(({
     { id: 'basic', label: t('medical:form.tabs.basic'), icon: FileText },
     { id: 'antecedents', label: t('medical:form.tabs.antecedents'), icon: Clock },
     { id: 'currentIllness', label: t('medical:form.tabs.currentIllness'), icon: AlertTriangle },
+    { id: 'documents', label: t('planning:documents.title', 'Documents'), icon: FileText },
     { id: 'vitals', label: t('medical:form.tabs.vitals'), icon: Activity },
     { id: 'evolution', label: t('medical:form.tabs.evolution'), icon: TrendingUp },
     { id: 'currentMedications', label: t('medical:form.tabs.currentMedications'), icon: Pill },
@@ -3261,6 +3263,15 @@ const MedicalRecordForm = forwardRef(({
           {activeTab === 'antecedents' && renderAntecedentsTab()}
           {activeTab === 'vitals' && renderVitalsTab()}
           {activeTab === 'currentIllness' && renderCurrentIllnessTab()}
+          {activeTab === 'documents' && existingRecord?.id && (
+            <DocumentsBlock patientId={patient?.id || formData?.patientId} medicalRecordId={existingRecord.id} />
+          )}
+          {activeTab === 'documents' && !existingRecord?.id && (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">{t('medical:form.documentsTab.saveFirst', 'Enregistrez le dossier pour pouvoir y déposer des documents')}</p>
+            </div>
+          )}
           {activeTab === 'evolution' && renderEvolutionTab()}
           {activeTab === 'currentMedications' && renderCurrentMedicationsTab()}
           {activeTab === 'diagnosis' && renderDiagnosisTab()}
