@@ -406,5 +406,56 @@
     "recalculateChain": "Recalculate chain schedule",
     "recalculateChainDesc": "Duration changes by {{direction}}{{diff}} min — following appointments will be shifted",
     "noMachineAvailable": "No compatible machine available at this time slot"
+  },
+  "documents": {
+    "title": "Documents",
+    "empty": "No documents",
+    "upload": "Upload document",
+    "source": { "patient": "Patient", "staff": "Staff" },
+    "badges": { "toCategorize": "To categorize" },
+    "actions": {
+      "view": "View",
+      "download": "Download",
+      "delete": "Delete",
+      "categorize": "Categorize",
+      "saveCategories": "Save",
+      "laterCategorize": "Later"
+    },
+    "category": {
+      "prescription": "Prescription",
+      "lab_result": "Lab result",
+      "imaging": "Imaging",
+      "report": "Report",
+      "certificate": "Certificate",
+      "consent": "Consent",
+      "correspondence": "Correspondence",
+      "identity": "Identity",
+      "insurance": "Insurance",
+      "other": "Other"
+    },
+    "uploadModal": {
+      "title": "Upload documents",
+      "dropHint": "Drag files here or click to select",
+      "maxInfo": "Up to 10 files, 10 MB max per file",
+      "submit": "Upload {{count}} file(s)",
+      "uploading": "Uploading..."
+    },
+    "categorizeModal": {
+      "title": "Categorize documents",
+      "placeholder": "Choose a category"
+    },
+    "deleteModal": {
+      "title": "Delete this document",
+      "reasonLabel": "Reason for deletion",
+      "reasonPlaceholder": "e.g. Document uploaded by mistake",
+      "warning": "The document remains archived for 15 years for traceability.",
+      "confirm": "Delete"
+    },
+    "errors": {
+      "uploadFailed": "Upload failed",
+      "invalidCategory": "Invalid category",
+      "invalidFile": "File not allowed",
+      "tooLarge": "File > 10 MB"
+    }
   }
 }

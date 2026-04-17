@@ -406,5 +406,56 @@
     "recalculateChain": "Recalcular los horarios de la cadena",
     "recalculateChainDesc": "La duración cambia {{direction}}{{diff}} min — las citas siguientes se desplazarán",
     "noMachineAvailable": "No hay máquina compatible disponible para este horario"
+  },
+  "documents": {
+    "title": "Documentos",
+    "empty": "Sin documentos",
+    "upload": "Subir documento",
+    "source": { "patient": "Paciente", "staff": "Equipo" },
+    "badges": { "toCategorize": "Por categorizar" },
+    "actions": {
+      "view": "Ver",
+      "download": "Descargar",
+      "delete": "Eliminar",
+      "categorize": "Categorizar",
+      "saveCategories": "Guardar",
+      "laterCategorize": "Más tarde"
+    },
+    "category": {
+      "prescription": "Receta",
+      "lab_result": "Análisis",
+      "imaging": "Imagen médica",
+      "report": "Informe",
+      "certificate": "Certificado",
+      "consent": "Consentimiento",
+      "correspondence": "Correspondencia",
+      "identity": "Identidad",
+      "insurance": "Seguro",
+      "other": "Otro"
+    },
+    "uploadModal": {
+      "title": "Subir documentos",
+      "dropHint": "Arrastre sus archivos aquí o haga clic para seleccionar",
+      "maxInfo": "Hasta 10 archivos, 10 MB máx. por archivo",
+      "submit": "Subir {{count}} archivo(s)",
+      "uploading": "Subiendo..."
+    },
+    "categorizeModal": {
+      "title": "Categorizar documentos",
+      "placeholder": "Elegir categoría"
+    },
+    "deleteModal": {
+      "title": "Eliminar este documento",
+      "reasonLabel": "Motivo de eliminación",
+      "reasonPlaceholder": "Ej. Documento subido por error",
+      "warning": "El documento permanece archivado 15 años para trazabilidad.",
+      "confirm": "Eliminar"
+    },
+    "errors": {
+      "uploadFailed": "Error al subir",
+      "invalidCategory": "Categoría inválida",
+      "invalidFile": "Archivo no permitido",
+      "tooLarge": "Archivo > 10 MB"
+    }
   }
 }

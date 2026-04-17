@@ -406,5 +406,56 @@
     "recalculateChain": "Recalculer les horaires de la chaîne",
     "recalculateChainDesc": "La durée change de {{direction}}{{diff}} min — les RDV suivants seront décalés",
     "noMachineAvailable": "Aucune machine compatible disponible pour ce créneau"
+  },
+  "documents": {
+    "title": "Documents",
+    "empty": "Aucun document",
+    "upload": "Déposer un document",
+    "source": { "patient": "Patient", "staff": "Équipe" },
+    "badges": { "toCategorize": "À catégoriser" },
+    "actions": {
+      "view": "Voir",
+      "download": "Télécharger",
+      "delete": "Supprimer",
+      "categorize": "Catégoriser",
+      "saveCategories": "Enregistrer",
+      "laterCategorize": "Plus tard"
+    },
+    "category": {
+      "prescription": "Ordonnance",
+      "lab_result": "Analyse",
+      "imaging": "Imagerie",
+      "report": "Compte-rendu",
+      "certificate": "Certificat",
+      "consent": "Consentement",
+      "correspondence": "Courrier",
+      "identity": "Identité",
+      "insurance": "Assurance",
+      "other": "Autre"
+    },
+    "uploadModal": {
+      "title": "Déposer des documents",
+      "dropHint": "Glissez vos fichiers ici ou cliquez pour sélectionner",
+      "maxInfo": "Jusqu'à 10 fichiers, 10 Mo max par fichier",
+      "submit": "Uploader {{count}} fichier(s)",
+      "uploading": "Envoi en cours..."
+    },
+    "categorizeModal": {
+      "title": "Catégoriser les documents",
+      "placeholder": "Choisir une catégorie"
+    },
+    "deleteModal": {
+      "title": "Supprimer ce document",
+      "reasonLabel": "Motif de suppression",
+      "reasonPlaceholder": "Ex. Document uploadé par erreur",
+      "warning": "Le document reste archivé 15 ans pour traçabilité.",
+      "confirm": "Supprimer"
+    },
+    "errors": {
+      "uploadFailed": "Échec de l'upload",
+      "invalidCategory": "Catégorie invalide",
+      "invalidFile": "Fichier non autorisé",
+      "tooLarge": "Fichier > 10 Mo"
+    }
   }
 }
