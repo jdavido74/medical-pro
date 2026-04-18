@@ -290,6 +290,24 @@ await planningApi.cancelAppointment(appointmentId, { recalculateChain: true });
 
 Le backend fait tout en transaction atomique. La fonction `handleDeleteRecalculate` (lignes ~642-682) est supprimée.
 
+**Fix UX — En-tête modale : titre traitement synchronisé**
+
+Quand un traitement est substitué (ou modifié), le nom du traitement affiché dans l'en-tête de la modale d'édition doit se mettre à jour immédiatement. Actuellement l'en-tête conserve le nom de l'ancien traitement même après substitution. Le titre doit refléter le traitement sélectionné en temps réel, que le RDV soit chaîné ou non.
+
+Dans `PlanningBookingModal.js`, le titre de la modale (affiché dans le header) doit être dérivé de `selectedTreatments[0]` (qui est mis à jour par `handleSubstituteSelect`) et non de `appointment.service?.title` (qui est l'ancien traitement figé au chargement).
+
+**Fix UX — Bouton "Changer le traitement" plus visible**
+
+Le bouton actuel de substitution est petit et se perd dans le formulaire. Remplacer par un bouton proéminent :
+
+- Position : dans la section traitement du formulaire, juste sous le nom du traitement actuel
+- Style : bouton secondaire large (full-width de la section), couleur distincte (ex: `bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100`), icône `RefreshCw` ou `ArrowLeftRight`
+- Libellé : "Changer le traitement" / "Cambiar tratamiento" / "Change treatment"
+- Au clic : ouvre le sélecteur de traitements (comportement existant)
+- Après substitution : le bouton affiche le nouveau traitement sélectionné avec une icône check, et reste cliquable pour changer à nouveau
+
+Ce fix est un MVP volontairement simple. L'UX sera affinée après test utilisateur en conditions réelles.
+
 **Modale de substitution :**
 
 Après sélection du nouveau traitement, si le RDV est chaîné et que la durée change, afficher :
@@ -379,6 +397,10 @@ Nouvelles clés dans `planning.json` (FR/ES/EN) :
   "cancel": "Retour",
   "successRecalculated": "Traitement annulé. Les rendez-vous de {{patientName}} ont été rapprochés.",
   "successKept": "Traitement annulé. Les horaires des autres soins n'ont pas changé."
+},
+"substitution": {
+  "changeButton": "Changer le traitement",
+  "changed": "Traitement changé : {{newTreatment}}"
 },
 "chainSubstitute": {
   "title": "Remplacement dans un enchaînement",
