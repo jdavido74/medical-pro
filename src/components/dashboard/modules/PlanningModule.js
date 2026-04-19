@@ -27,6 +27,7 @@ import { createDocument, updateDocument, getDocument, buildDocumentPayload, getB
 import { STATUS_CONFIG } from '../../../constants/appointmentStatuses';
 import StockDeductionModal from '../../planning/StockDeductionModal';
 import { getStockDeduction } from '../../../api/stockApi';
+import ChainDeleteChoiceModal from '../modals/ChainDeleteChoiceModal';
 
 // Time grid constants for day view
 const DAY_START_HOUR = 7;  // 7:00
@@ -261,6 +262,7 @@ const PlanningModule = () => {
   const [consentPatient, setConsentPatient] = useState(null);
   const [consentAppointmentId, setConsentAppointmentId] = useState(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
+  const [chainDeleteModal, setChainDeleteModal] = useState(null);
 
   // Live clock for late detection (updates every minute)
   const [now, setNow] = useState(new Date());
@@ -581,6 +583,41 @@ const PlanningModule = () => {
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  // Chain-aware cancel: opens ChainDeleteChoiceModal for chained appointments
+  const handleCancelAppointment = (apt) => {
+    const isChained = apt.isLinked || apt.linkedAppointmentId || (apt.linkSequence && apt.linkSequence > 1);
+    if (isChained) {
+      const patientName = apt.patient
+        ? `${apt.patient.firstName || ''} ${apt.patient.lastName || ''}`.trim()
+        : '';
+      setChainDeleteModal({
+        appointment: apt,
+        patientName,
+        chainCount: null
+      });
+    } else {
+      if (window.confirm(t('actions.deleteConfirm', 'Supprimer ce rendez-vous ?'))) {
+        handleQuickStatusChange(apt.id, 'cancelled');
+      }
+    }
+  };
+
+  const handleChainDeleteConfirm = async (recalculateChain) => {
+    if (!chainDeleteModal) return;
+    try {
+      await planningApi.cancelAppointment(chainDeleteModal.appointment.id, { recalculateChain });
+      const msg = recalculateChain
+        ? t('chainDelete.successRecalculated', { patientName: chainDeleteModal.patientName })
+        : t('chainDelete.successKept');
+      showToast(msg, 'success');
+      loadData();
+    } catch (e) {
+      showToast(t('messages.error'), 'error');
+    } finally {
+      setChainDeleteModal(null);
+    }
   };
 
   // Navigation
@@ -1829,7 +1866,7 @@ const PlanningModule = () => {
                                     {t('actions.confirm')}
                                   </button>
                                   <button
-                                    onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
+                                    onClick={() => handleCancelAppointment(apt)}
                                     className="px-2 py-1 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
                                   >
                                     {t('actions.cancel')}
@@ -1851,7 +1888,7 @@ const PlanningModule = () => {
                                     {t('actions.start')}
                                   </button>
                                   <button
-                                    onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
+                                    onClick={() => handleCancelAppointment(apt)}
                                     className="px-2 py-1 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
                                   >
                                     {t('actions.cancel')}
@@ -1874,7 +1911,7 @@ const PlanningModule = () => {
                                     {t('actions.interrupt', 'Interrompre')}
                                   </button>
                                   <button
-                                    onClick={() => handleQuickStatusChange(apt.id, 'cancelled')}
+                                    onClick={() => handleCancelAppointment(apt)}
                                     className="px-2 py-1 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
                                   >
                                     {t('actions.cancel')}
@@ -2485,6 +2522,17 @@ const PlanningModule = () => {
           appointmentId={stockDeductionModal.appointmentId}
           treatmentName={stockDeductionModal.treatmentName}
           onConfirm={() => loadData()}
+        />
+      )}
+
+      {/* Chain Delete Choice Modal */}
+      {chainDeleteModal && (
+        <ChainDeleteChoiceModal
+          appointment={chainDeleteModal.appointment}
+          patientName={chainDeleteModal.patientName}
+          chainCount={chainDeleteModal.chainCount}
+          onConfirm={handleChainDeleteConfirm}
+          onClose={() => setChainDeleteModal(null)}
         />
       )}
 
