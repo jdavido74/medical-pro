@@ -67,8 +67,10 @@ export const updateAppointment = async (id, data) => {
  * Cancel an appointment
  * @param {string} id - Appointment ID
  */
-export const cancelAppointment = async (id) => {
-  return baseClient.delete(`${ENDPOINT}/appointments/${id}`);
+export const cancelAppointment = async (id, opts = {}) => {
+  return baseClient.delete(`${ENDPOINT}/appointments/${id}`, {
+    body: opts.recalculateChain != null ? { recalculateChain: opts.recalculateChain } : undefined
+  });
 };
 
 /**
