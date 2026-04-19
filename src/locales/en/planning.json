@@ -457,5 +457,28 @@
       "invalidFile": "File not allowed",
       "tooLarge": "File > 10 MB"
     }
+  },
+
+  "chainDelete": {
+    "title": "Cancel in a chain",
+    "description": "This treatment is part of a chain of {{count}} sessions for {{patientName}}.",
+    "recalculate": "Cancel and bring {{patientName}}'s other appointments closer",
+    "keepGap": "Cancel without changing other schedules",
+    "cancel": "Back",
+    "successRecalculated": "Treatment cancelled. {{patientName}}'s appointments have been regrouped.",
+    "successKept": "Treatment cancelled. Other session schedules were not changed."
+  },
+  "chainSubstitute": {
+    "title": "Replace in a chain",
+    "description": "Replace {{oldTreatment}} with {{newTreatment}} in {{patientName}}'s chain.",
+    "recalculate": "Replace and bring {{patientName}}'s other appointments closer",
+    "keepGap": "Replace without changing other schedules",
+    "cancel": "Back",
+    "successRecalculated": "Treatment replaced. {{patientName}}'s appointments have been regrouped.",
+    "successKept": "Treatment replaced. Other session schedules were not changed."
+  },
+  "substitution": {
+    "changeButton": "Change treatment",
+    "changed": "Treatment changed: {{newTreatment}}"
   }
 }

@@ -457,5 +457,28 @@
       "invalidFile": "Archivo no permitido",
       "tooLarge": "Archivo > 10 MB"
     }
+  },
+
+  "chainDelete": {
+    "title": "Cancelación en una cadena",
+    "description": "Este tratamiento forma parte de una cadena de {{count}} sesiones para {{patientName}}.",
+    "recalculate": "Cancelar y acercar las demás citas de {{patientName}}",
+    "keepGap": "Cancelar sin modificar los horarios",
+    "cancel": "Volver",
+    "successRecalculated": "Tratamiento cancelado. Las citas de {{patientName}} se han reagrupado.",
+    "successKept": "Tratamiento cancelado. Los horarios de las demás sesiones no han cambiado."
+  },
+  "chainSubstitute": {
+    "title": "Reemplazo en una cadena",
+    "description": "Reemplazar {{oldTreatment}} por {{newTreatment}} en la cadena de {{patientName}}.",
+    "recalculate": "Reemplazar y acercar las demás citas de {{patientName}}",
+    "keepGap": "Reemplazar sin modificar los horarios",
+    "cancel": "Volver",
+    "successRecalculated": "Tratamiento reemplazado. Las citas de {{patientName}} se han reagrupado.",
+    "successKept": "Tratamiento reemplazado. Los horarios de las demás sesiones no han cambiado."
+  },
+  "substitution": {
+    "changeButton": "Cambiar el tratamiento",
+    "changed": "Tratamiento cambiado: {{newTreatment}}"
   }
 }

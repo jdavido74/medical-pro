@@ -457,5 +457,28 @@
       "invalidFile": "Fichier non autorisé",
       "tooLarge": "Fichier > 10 Mo"
     }
+  },
+
+  "chainDelete": {
+    "title": "Annulation dans un enchaînement",
+    "description": "Ce traitement fait partie d'un enchaînement de {{count}} soins pour {{patientName}}.",
+    "recalculate": "Annuler le créneau et rapprocher les autres rendez-vous de {{patientName}}",
+    "keepGap": "Annuler sans modifier les horaires",
+    "cancel": "Retour",
+    "successRecalculated": "Traitement annulé. Les rendez-vous de {{patientName}} ont été rapprochés.",
+    "successKept": "Traitement annulé. Les horaires des autres soins n'ont pas changé."
+  },
+  "chainSubstitute": {
+    "title": "Remplacement dans un enchaînement",
+    "description": "Remplacer {{oldTreatment}} par {{newTreatment}} dans l'enchaînement de {{patientName}}.",
+    "recalculate": "Remplacer et rapprocher les autres rendez-vous de {{patientName}}",
+    "keepGap": "Remplacer sans modifier les horaires",
+    "cancel": "Retour",
+    "successRecalculated": "Traitement remplacé. Les rendez-vous de {{patientName}} ont été rapprochés.",
+    "successKept": "Traitement remplacé. Les horaires des autres soins n'ont pas changé."
+  },
+  "substitution": {
+    "changeButton": "Changer le traitement",
+    "changed": "Traitement changé : {{newTreatment}}"
   }
 }
