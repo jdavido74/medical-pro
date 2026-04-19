@@ -643,35 +643,7 @@ const PlanningBookingModal = ({
     setShowDeleteConfirm(false);
     setSaving(true);
     try {
-      // First cancel this appointment
-      await planningApi.cancelAppointment(appointment.id);
-
-      // Then recalculate the chain times
-      // Find appointments after this one and shift them
-      if (linkedGroup?.appointments) {
-        const currentSequence = appointment.linkSequence || 1;
-        const followingAppts = linkedGroup.appointments
-          .filter(a => (a.linkSequence || 1) > currentSequence && a.status !== 'completed');
-
-        if (followingAppts.length > 0) {
-          // Calculate new start time (this appointment's start time)
-          let newStartTime = appointment.startTime;
-
-          for (const apt of followingAppts) {
-            // Update each following appointment with new time
-            await planningApi.updateAppointment(apt.id, {
-              startTime: newStartTime,
-              date: apt.date
-            });
-
-            // Calculate next start time
-            const [hours, mins] = newStartTime.split(':').map(Number);
-            const newMins = hours * 60 + mins + (apt.duration || 30);
-            newStartTime = `${String(Math.floor(newMins / 60)).padStart(2, '0')}:${String(newMins % 60).padStart(2, '0')}`;
-          }
-        }
-      }
-
+      await planningApi.cancelAppointment(appointment.id, { recalculateChain: true });
       onSave({ deleted: true, recalculated: true });
     } catch (err) {
       console.error('Error recalculating chain:', err);
@@ -747,7 +719,8 @@ const PlanningBookingModal = ({
       treatmentId: treatment.id,
       title: treatment.title,
       duration: treatment.duration || 30,
-      isOverlappable: treatment.is_overlappable
+      isOverlappable: treatment.is_overlappable,
+      targetAppointmentId: treatment.appointmentId || appointment?.id,
     });
     // Update selectedSlot end time to reflect new duration
     if (selectedSlot) {
@@ -1283,9 +1256,10 @@ const PlanningBookingModal = ({
           if (isEditMode) {
             // For substitution in a chain, ensure we send the new serviceId
             const editPayload = substitutionPending
-              ? { ...payload, serviceId: substitutionPending.treatmentId }
-              : payload;
-            response = await planningApi.updateAppointment(appointment.id, editPayload);
+              ? { ...payload, serviceId: substitutionPending.treatmentId, recalculateChain }
+              : { ...payload, recalculateChain };
+            const targetId = substitutionPending?.targetAppointmentId || appointment.id;
+            response = await planningApi.updateAppointment(targetId, editPayload);
           } else {
             response = await planningApi.createAppointment(payload);
           }
@@ -1557,6 +1531,13 @@ const PlanningBookingModal = ({
             </h2>
             <p className="text-sm text-gray-500">
               {t(`booking.step${step}`)}
+              {isEditMode && category === 'treatment' && (
+                <span className="ml-2 text-gray-700 font-medium">
+                  — {substitutionPending
+                    ? substitutionPending.title
+                    : (selectedTreatments[0]?.title || appointment?.service?.title || appointment?.title || '')}
+                </span>
+              )}
               {isEditMode && isLinkedAppointment && editMode === 'single' && (
                 <span className="ml-2 text-purple-600">
                   ({t('linkedGroup.position', { current: appointment.linkSequence || 1, total: linkedGroup?.count || '?' })})
@@ -2271,7 +2252,7 @@ const PlanningBookingModal = ({
                         ? t('multiTreatment.treatmentChain')
                         : t('appointment.treatment')}
                     </h4>
-                    {isEditMode && category === 'treatment' && !showSubstituteSelector && (
+                    {isEditMode && category === 'treatment' && !showSubstituteSelector && !substitutionPending && (
                       <button
                         type="button"
                         onClick={() => setShowSubstituteSelector(true)}
@@ -2427,6 +2408,20 @@ const PlanningBookingModal = ({
                       ))
                     )}
                   </div>
+
+                  {/* Prominent change treatment button */}
+                  {isEditMode && !showSubstituteSelector && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSubstituteSelector(true)}
+                      className="w-full mt-2 px-4 py-3 text-sm font-medium rounded-lg border-2 border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:border-amber-300 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      {substitutionPending
+                        ? t('substitute.changed', { from: appointment?.service?.title || '', to: substitutionPending.title })
+                        : t('substitute.button')}
+                    </button>
+                  )}
 
                   {/* Chain recalculation checkbox */}
                   {isLinkedAppointment && substitutionPending && (appointment?.duration || 30) !== substitutionPending.duration && (
